@@ -384,3 +384,70 @@ export interface DaftarCatat {
   createdAt: Date | string;
   updatedAt: Date | string;
 }
+
+// --- GWM (Ganti Water Meter & Grand Water Meter) ---
+export type AlasanGantiMeter =
+  | 'RUSAK'
+  | 'MATI'
+  | 'BURAM'
+  | 'HILANG'
+  | 'TERA_ULANG'
+  | 'UKURAN_BERUBAH'
+  | 'LAINNYA';
+
+export type StatusVerifikasiGwm = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface WaterMeterMutasi {
+  id: string;
+  nolg: string;
+  periode: number;
+  tglGanti: Date | string;
+  alasan: AlasanGantiMeter;
+  keterangan?: string | null;
+  noMeterLama: string;
+  standAngkat: number;
+  fotoStandAngkat?: string | null;
+  noMeterBaru: string;
+  merkBaru?: string | null;
+  ukuranBaru?: string | null;
+  standPasang: number;
+  noSegelBaru?: string | null;
+  fotoMeterBaru?: string | null;
+  petugasPasang?: string | null;
+  verifikatorId?: string | null;
+  statusVerifikasi: StatusVerifikasiGwm;
+  catatanVerifikasi?: string | null;
+  tglVerifikasi?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface GrandWaterMeter {
+  id: string;
+  kodeGwm: string;
+  nama: string;
+  zonaKode?: string | null;
+  dmaKode?: string | null;
+  ukuranPipa?: string | null;
+  merk?: string | null;
+  noSeri?: string | null;
+  alamat?: string | null;
+  isActive: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface GwmBacaMeter {
+  id: string;
+  gwmId: string;
+  periode: number;
+  tglBaca: Date | string;
+  standAwal: number;
+  standAkhir: number;
+  totalDebitM3: number;
+  petugasId?: string | null;
+  fotoStand?: string | null;
+  catatan?: string | null;
+  createdAt: Date | string;
+}
+

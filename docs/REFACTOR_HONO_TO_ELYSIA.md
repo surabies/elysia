@@ -30,8 +30,10 @@ Agar formula tarif, siklus penutupan buku (*closing*), dan anomali 100% presisi 
 | **1** | **`tarif_blok` & `biaya_tetap`** | **Perhitungan Tarif Progresif**: Menampung tarif per blok konsumsi air (Blok 1: 0-10 m³, Blok 2: 11-20 m³, Blok 3: 21-30 m³, Blok 4: >30 m³) dan biaya beban tetap per ukuran meter ($1/2"$, $3/4"$, dll.). Tanpa tabel ini, nominal rupiah rekening air tidak bisa dihitung akurat. | 🔴 **Sangat Tinggi** |
 | **2** | **`periode_penagihan`** | **Penguncian Siklus Closing (THBL)**: Menandai status periode bulan (e.g. `202601`): `BERJALAN`, `TERKUNCI`, atau `DITUTUP`. Mencegah perubahan data pada bulan yang sudah diterbitkan tagihannya. | 🔴 **Sangat Tinggi** |
 | **3** | **`daftar_catat` (DPM)** | **Beban Kerja Petugas (Daftar Pelanggan Menjadi)**: Daftar pelanggan aktif yang ditugaskan untuk dibaca pada periode berjalan. Menjadi dasar perhitungan *Read Rate %* (Berapa yang sudah dibaca vs total target). | 🟡 **Tinggi** |
-| **4** | **`kunjungan_anomali`** | **Penanganan Kasus Tidak Terukur**: Mencatat hasil tindak lanjut lapangan untuk pelanggan yang berbulan-bulan statusnya `DK`, `TTB`, atau taksiran berulang. | 🟢 **Sedang** |
-| **5** | **`pengaduan` & `riwayat_pengaduan`**| **Modul Komplain Pelanggan**: Penanganan tiket aduan fisik (kebocoran pipa) maupun sengketa rekening tagihan. | 🟢 **Sedang** |
+| **4** | **`water_meter_mutasi` (GWM Sisi Lapangan)** | **Ganti Water Meter & Stand Angkat**: Pencatatan mutasi penggantian fisik meter air (rusak, mati, hilang, tera) beserta stand angkat meter lama dan stand pasang meter baru untuk menjamin akurasi billing. | 🔴 **Sangat Tinggi** |
+| **5** | **`grand_water_meter` & `gwm_baca_meter` (GWM Sisi Teknik)** | **Grand Water Meter & Neraca Air**: Meter induk zona distribusi / DMA untuk monitoring debit masuk dan deteksi tingkat kebocoran (*Non-Revenue Water* / NRW). | 🟡 **Tinggi** |
+| **6** | **`kunjungan_anomali`** | **Penanganan Kasus Tidak Terukur**: Mencatat hasil tindak lanjut lapangan untuk pelanggan yang berbulan-bulan statusnya `DK`, `TTB`, atau taksiran berulang. | 🟢 **Sedang** |
+| **7** | **`pengaduan` & `riwayat_pengaduan`**| **Modul Komplain Pelanggan**: Penanganan tiket aduan fisik (kebocoran pipa) maupun sengketa rekening tagihan. | 🟢 **Sedang** |
 
 ---
 
@@ -97,7 +99,7 @@ flowchart TD
 ## 4. Lembar Pelacak Kemajuan (Progress Tracking Checklist)
 
 - [x] **Fase 0**: Audit menyeluruh berkas `backend-hono-prisma` (Dokumentasi, Skema, dan Router).
-- [x] **Fase 1**: Penambahan skema Drizzle: `tarif_blok`, `biaya_tetap`, `periode_penagihan`, `daftar_catat` & pengujian skema (18 test passing).
+- [x] **Fase 1**: Penyelarasan skema Drizzle komprehensif: `tarif_blok`, `biaya_tetap`, `periode_penagihan`, `daftar_catat`, serta modul GWM (`water_meter_mutasi`, `grand_water_meter`, `gwm_baca_meter`) & pengujian skema (22 test passing 100%).
 - [ ] **Fase 2**: Porting fungsi domain murni (`Tagihan.ts`, `LaporMandiri.ts`, `TaksasiManual.ts`).
 - [ ] **Fase 3**: Konversi Service Layer (Taksasi, Verifikasi V1-V3, Closing, Override DK) ke Drizzle ORM.
 - [ ] **Fase 4**: Pembuatan Route Handler Elysia terintegrasi TypeBox Schema & Macro RBAC.

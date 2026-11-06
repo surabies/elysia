@@ -11,3 +11,4 @@ export * from './billing';
 export * from './rbac';
 export * from './periode';
 export * from './dpm';
+export * from './gwm';

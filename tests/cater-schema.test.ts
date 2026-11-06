@@ -21,6 +21,9 @@ import {
   biayaTetap,
   periodePenagihan,
   daftarCatat,
+  waterMeterMutasi,
+  grandWaterMeter,
+  gwmBacaMeter,
   employeeLevelEnum,
   appRoleEnum,
   caterVerificationStatusEnum,
@@ -97,6 +100,21 @@ describe('Modular Cater Drizzle Schema Integrity', () => {
     expect(caterBacaMeter.tmss).toBeDefined();
     expect(caterBacaMeter.sumberCatat).toBeDefined();
     expect(caterBacaMeter.caterMandiriId).toBeDefined();
+  });
+
+  it('should export GWM tables: waterMeterMutasi, grandWaterMeter, gwmBacaMeter', () => {
+    expect(waterMeterMutasi).toBeDefined();
+    expect(waterMeterMutasi.nolg).toBeDefined();
+    expect(waterMeterMutasi.standAngkat).toBeDefined();
+    expect(waterMeterMutasi.standPasang).toBeDefined();
+
+    expect(grandWaterMeter).toBeDefined();
+    expect(grandWaterMeter.kodeGwm).toBeDefined();
+    expect(grandWaterMeter.zonaKode).toBeDefined();
+
+    expect(gwmBacaMeter).toBeDefined();
+    expect(gwmBacaMeter.gwmId).toBeDefined();
+    expect(gwmBacaMeter.totalDebitM3).toBeDefined();
   });
 
   it('should export all RBAC and organizational hierarchy tables and enums', () => {

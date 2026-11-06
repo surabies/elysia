@@ -4,6 +4,9 @@ import {
   biayaTetap,
   periodePenagihan,
   daftarCatat,
+  waterMeterMutasi,
+  grandWaterMeter,
+  gwmBacaMeter,
   golonganTarif,
   pelanggan,
   ruteCater,
@@ -55,5 +58,44 @@ describe('Fase 1: Schema Reconciled Tables & Constraints', () => {
     expect(daftarCatat.urutan.name).toBe('urutan');
     expect(daftarCatat.sumber.name).toBe('sumber');
     expect(daftarCatat.status.name).toBe('status');
+  });
+
+  it('5. waterMeterMutasi table definition (Ganti Water Meter / Stand Angkat)', () => {
+    expect(waterMeterMutasi).toBeDefined();
+    expect(waterMeterMutasi.id.name).toBe('id');
+    expect(waterMeterMutasi.nolg.name).toBe('nolg');
+    expect(waterMeterMutasi.periode.name).toBe('periode');
+    expect(waterMeterMutasi.tglGanti.name).toBe('tgl_ganti');
+    expect(waterMeterMutasi.alasan.name).toBe('alasan');
+    expect(waterMeterMutasi.noMeterLama.name).toBe('no_meter_lama');
+    expect(waterMeterMutasi.standAngkat.name).toBe('stand_angkat');
+    expect(waterMeterMutasi.fotoStandAngkat.name).toBe('foto_stand_angkat');
+    expect(waterMeterMutasi.noMeterBaru.name).toBe('no_meter_baru');
+    expect(waterMeterMutasi.standPasang.name).toBe('stand_pasang');
+    expect(waterMeterMutasi.fotoMeterBaru.name).toBe('foto_meter_baru');
+    expect(waterMeterMutasi.statusVerifikasi.name).toBe('status_verifikasi');
+  });
+
+  it('6. grandWaterMeter table definition (Grand Water Meter / Meter Induk DMA)', () => {
+    expect(grandWaterMeter).toBeDefined();
+    expect(grandWaterMeter.id.name).toBe('id');
+    expect(grandWaterMeter.kodeGwm.name).toBe('kode_gwm');
+    expect(grandWaterMeter.nama.name).toBe('nama');
+    expect(grandWaterMeter.zonaKode.name).toBe('zona_kode');
+    expect(grandWaterMeter.dmaKode.name).toBe('dma_kode');
+    expect(grandWaterMeter.ukuranPipa.name).toBe('ukuran_pipa');
+    expect(grandWaterMeter.titikLokasi.name).toBe('titik_lokasi');
+    expect(grandWaterMeter.isActive.name).toBe('is_active');
+  });
+
+  it('7. gwmBacaMeter table definition (Pencatatan Debit & Neraca Air)', () => {
+    expect(gwmBacaMeter).toBeDefined();
+    expect(gwmBacaMeter.id.name).toBe('id');
+    expect(gwmBacaMeter.gwmId.name).toBe('gwm_id');
+    expect(gwmBacaMeter.periode.name).toBe('periode');
+    expect(gwmBacaMeter.standAwal.name).toBe('stand_awal');
+    expect(gwmBacaMeter.standAkhir.name).toBe('stand_akhir');
+    expect(gwmBacaMeter.totalDebitM3.name).toBe('total_debit_m3');
+    expect(gwmBacaMeter.titikLokasi.name).toBe('titik_lokasi');
   });
 });
