@@ -9,11 +9,17 @@ import {
 } from '../apps/web/src/server/domain/pengaduan/alur-pengaduan.engine';
 
 describe('Integrasi 3 Pilar: Pencatat Meter, Pengaduan Air, & Penagihan Publik', () => {
-  describe('1. Domain Engine: Pengaduan Air State Machine & Crockford Base32', () => {
-    it('menghasilkan nomor tiket unguessable dengan prefix TW dan format standar', () => {
-      const tiket = generateNomorTiket();
-      expect(tiket.startsWith('TW-')).toBe(true);
-      expect(tiket.length).toBe(14); // e.g. TW-2605-4F2A9K
+  describe('1. Domain Engine: Pengaduan Air State Machine & Format Terukur', () => {
+    it('menghasilkan nomor tiket terukur dengan format [KODE][WILAYAH][TANGGAL][URUT] tanpa simbol', () => {
+      const tiket = generateNomorTiket({
+        kode: 'TK',
+        wilayah: '05',
+        tanggal: new Date('2026-11-06T03:00:00Z'),
+        urut: 1,
+      });
+      expect(tiket).toBe('TK052611060001');
+      expect(tiket.length).toBe(14);
+      expect(tiket.includes('-')).toBe(false);
     });
 
     it('menegakkan aturan transisi status tiket secara ketat', () => {
@@ -125,7 +131,7 @@ describe('Integrasi 3 Pilar: Pencatat Meter, Pengaduan Air, & Penagihan Publik',
 
     it('GET /api/publik/pengaduan/:nomorTiket dapat diakses secara publik tanpa token auth', async () => {
       const res = await app.handle(
-        new Request('http://localhost/api/publik/pengaduan/TW-2605-4F2A9K')
+        new Request('http://localhost/api/publik/pengaduan/TK052611060001')
       );
       // Status bukan 401 (auth lolos)
       expect(res.status).not.toBe(401);

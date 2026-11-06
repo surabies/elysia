@@ -3,11 +3,12 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM, Domain Engine, & Transaksi DB)
  */
 
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, like, sql } from 'drizzle-orm';
 import {
   db,
   pengaduan,
   riwayatPengaduan,
+  pelanggan,
   type PengaduanRow,
   type RiwayatPengaduanRow,
 } from '@cater/db';
@@ -82,11 +83,47 @@ export class PengaduanService {
       }
     }
 
-    const nomorTiket = generateNomorTiket();
+    // Resolusi Kode Wilayah Pelayanan (2 Digit)
+    let wilayah = '00';
+    if (input.nomorLangganan) {
+      const [cust] = await db
+        .select({ ruteKode: pelanggan.ruteKode })
+        .from(pelanggan)
+        .where(eq(pelanggan.nolg, input.nomorLangganan));
+      if (cust?.ruteKode) {
+        const match = cust.ruteKode.match(/\d+/);
+        if (match) {
+          wilayah = match[0].slice(0, 2).padStart(2, '0');
+        }
+      }
+    }
+
     const prioritas = input.prioritas ?? 'NORMAL';
     const sla = hitungTargetSla(prioritas);
 
     return db.transaction(async (tx) => {
+      // Hitung nomor urut harian per wilayah untuk format [KODE][WILAYAH][TANGGAL][URUT]
+      const tgl = new Date();
+      const wibTime = new Date(tgl.getTime() + 7 * 60 * 60 * 1000);
+      const yy = String(wibTime.getUTCFullYear()).slice(-2);
+      const mm = String(wibTime.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(wibTime.getUTCDate()).padStart(2, '0');
+      const tanggalStr = `${yy}${mm}${dd}`;
+
+      const prefix = `TK${wilayah}${tanggalStr}`;
+      const [cnt] = await tx
+        .select({ total: sql<number>`count(*)::int` })
+        .from(pengaduan)
+        .where(like(pengaduan.nomorTiket, `${prefix}%`));
+      const urut = (cnt?.total ?? 0) + 1;
+
+      const nomorTiket = generateNomorTiket({
+        kode: 'TK',
+        wilayah,
+        tanggal: tgl,
+        urut,
+      });
+
       const [row] = await tx
         .insert(pengaduan)
         .values({

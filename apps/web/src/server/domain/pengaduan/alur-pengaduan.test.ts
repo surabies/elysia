@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import {
   generateNomorTiket,
+  parseNomorTiket,
   POLA_NOMOR_TIKET,
   isTransisiSah,
   hitungTargetSla,
@@ -8,18 +9,33 @@ import {
 } from './alur-pengaduan.engine';
 
 describe('Domain Engine: Alur Pengaduan Air (State Machine & SLA)', () => {
-  it('1. generateNomorTiket menghasilkan format Crockford Base32 yang valid', () => {
-    const tiket = generateNomorTiket();
-    expect(tiket).toBeDefined();
-    expect(POLA_NOMOR_TIKET.test(tiket)).toBe(true);
-    expect(tiket.startsWith('TW-')).toBe(true);
+  it('1. generateNomorTiket menghasilkan format [KODE][WILAYAH][TANGGAL][URUT] tanpa simbol', () => {
+    // Pengujian deterministic
+    const tiket = generateNomorTiket({
+      kode: 'TK',
+      wilayah: '05',
+      tanggal: new Date('2026-11-06T03:00:00Z'), // 10:00 WIB
+      urut: 1,
+    });
 
-    // Pastikan 10 tiket berturut-turut unik (tidak ada duplikasi)
-    const setTiket = new Set<string>();
-    for (let i = 0; i < 10; i++) {
-      setTiket.add(generateNomorTiket());
-    }
-    expect(setTiket.size).toBe(10);
+    expect(tiket).toBe('TK052611060001');
+    expect(tiket.length).toBe(14);
+    expect(tiket.includes('-')).toBe(false);
+    expect(POLA_NOMOR_TIKET.test(tiket)).toBe(true);
+
+    // Parse kembali nomor tiket
+    const parsed = parseNomorTiket(tiket);
+    expect(parsed.valid).toBe(true);
+    expect(parsed.kode).toBe('TK');
+    expect(parsed.wilayah).toBe('05');
+    expect(parsed.tanggalStr).toBe('261106');
+    expect(parsed.tahun).toBe(2026);
+    expect(parsed.bulan).toBe(11);
+    expect(parsed.hari).toBe(6);
+    expect(parsed.urut).toBe(1);
+
+    // Format lama yang mengandung tanda minus harus ditolak
+    expect(POLA_NOMOR_TIKET.test('TW-2607-4F2A9K')).toBe(false);
   });
 
   it('2. isTransisiSah menegakkan whitelist alur kerja tiket', () => {

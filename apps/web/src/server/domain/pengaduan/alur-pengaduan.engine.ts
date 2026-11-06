@@ -11,27 +11,119 @@ import type {
   AppRole,
 } from '@cater/types';
 
-// Alfabet Base32 Crockford (tanpa I, L, O, U)
-export const ALFABET_CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-export const PREFIX_TIKET = 'TW';
-export const POLA_NOMOR_TIKET = /^TW-\d{4}-[0-9A-HJKMNP-TV-Z]{6}$/;
+/**
+ * Pemetaan 2 Huruf Semantik Kode Jenis Pengaduan:
+ * Contoh: Bocor Pipa -> BP, Lonjakan Air -> LA, Lapor Meter -> LM, dll.
+ */
+export const KODE_JENIS_PENGADUAN: Record<JenisPengaduan, string> = {
+  BOCOR_PIPA_DINAS: 'BP',
+  LONJAKAN_PEMAKAIAN_AIR: 'LA',
+  LAPOR_STAND_METER: 'LM',
+  PENCATATAN_METER_TIDAK_SESUAI: 'PM',
+  TIDAK_ADA_AIR: 'TA',
+  AIR_KERUH_BAU_BERWARNA: 'AK',
+  GANTI_STOP_KRAN: 'GS',
+  PASANGAN_LIAR: 'PL',
+  MUTASI_GOLONGAN_TARIF: 'MG',
+  TIDAK_MAMPU_BAYAR: 'TB',
+  PINDAH_JARINGAN: 'PJ',
+  LAINNYA: 'TK',
+};
 
 /**
- * Pembangkit Nomor Tiket Acak Berbasis Kriptografis (CSPRNG)
- * Format: TW-YYMM-XXXXXX (misal TW-2605-4F2A9K)
- * Menggunakan WIB (UTC+7)
+ * Format Standar Nomor Tiket Terukur PDAM Tanpa Simbol/Tanda Hubung:
+ * [KODE (2)][WILAYAH (2)][TANGGAL (6: YYMMDD)][URUT (4: 0001-9999)]
+ * Contoh: TK052611060001 (Total: Tepat 14 Karakter)
  */
-export function generateNomorTiket(tgl: Date = new Date()): string {
+export const POLA_NOMOR_TIKET = /^[A-Z]{2}[0-9]{2}[0-9]{6}[0-9]{4}$/;
+
+export interface GenerateNomorTiketOptions {
+  kode?: string;
+  jenis?: JenisPengaduan;
+  wilayah?: string; // 2 digit angka, e.g. '05' atau '00'
+  tanggal?: Date;
+  urut?: number; // nomor urut 1 - 9999
+}
+
+/**
+ * Pembangkit Nomor Tiket Terukur & Bersih Tanpa Simbol
+ * Format: [KODE][WILAYAH][TANGGAL][URUT]
+ * Menggunakan Waktu Indonesia Barat (WIB, UTC+7)
+ */
+export function generateNomorTiket(options?: GenerateNomorTiketOptions | Date): string {
+  let opts: GenerateNomorTiketOptions = {};
+  if (options instanceof Date) {
+    opts = { tanggal: options };
+  } else if (options) {
+    opts = options;
+  }
+
+  // 1. [KODE] 2 Karakter Huruf
+  let kode = opts.kode ?? (opts.jenis ? KODE_JENIS_PENGADUAN[opts.jenis] : 'TK');
+  kode = kode.toUpperCase().padEnd(2, 'K').slice(0, 2);
+
+  // 2. [WILAYAH] 2 Digit Angka
+  let wilayah = opts.wilayah ?? '00';
+  wilayah = wilayah.replace(/\D/g, '').padStart(2, '0').slice(-2);
+
+  // 3. [TANGGAL] 6 Digit Angka (YYMMDD dalam WIB UTC+7)
+  const tgl = opts.tanggal ?? new Date();
   const wibTime = new Date(tgl.getTime() + 7 * 60 * 60 * 1000);
   const yy = String(wibTime.getUTCFullYear()).slice(-2);
   const mm = String(wibTime.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(wibTime.getUTCDate()).padStart(2, '0');
+  const tanggalStr = `${yy}${mm}${dd}`;
 
-  let randomPart = '';
-  for (let i = 0; i < 6; i++) {
-    randomPart += ALFABET_CROCKFORD[randomInt(ALFABET_CROCKFORD.length)];
+  // 4. [URUT] 4 Digit Angka (0001 - 9999)
+  let urutStr: string;
+  if (typeof opts.urut === 'number' && opts.urut > 0) {
+    urutStr = String(opts.urut).padStart(4, '0').slice(-4);
+  } else {
+    // Fallback acak 4 digit jika nomor urut belum dihitung dari database
+    urutStr = String(randomInt(1, 10000)).padStart(4, '0');
   }
 
-  return `${PREFIX_TIKET}-${yy}${mm}-${randomPart}`;
+  return `${kode}${wilayah}${tanggalStr}${urutStr}`;
+}
+
+/**
+ * Membedah (Parse) Nomor Tiket menjadi Komponen-Komponen Terstrukturnya
+ */
+export function parseNomorTiket(nomorTiket: string): {
+  valid: boolean;
+  kode?: string;
+  wilayah?: string;
+  tanggalStr?: string;
+  tahun?: number;
+  bulan?: number;
+  hari?: number;
+  urut?: number;
+} {
+  const clean = nomorTiket.trim().toUpperCase();
+  if (!POLA_NOMOR_TIKET.test(clean)) {
+    return { valid: false };
+  }
+
+  const kode = clean.slice(0, 2);
+  const wilayah = clean.slice(2, 4);
+  const tanggalStr = clean.slice(4, 10);
+  const urutStr = clean.slice(10, 14);
+
+  const yy = parseInt(tanggalStr.slice(0, 2), 10);
+  const mm = parseInt(tanggalStr.slice(2, 4), 10);
+  const dd = parseInt(tanggalStr.slice(4, 6), 10);
+  const urut = parseInt(urutStr, 10);
+
+  return {
+    valid: true,
+    kode,
+    wilayah,
+    tanggalStr,
+    tahun: 2000 + yy,
+    bulan: mm,
+    hari: dd,
+    urut,
+  };
 }
 
 /**
