@@ -1,26 +1,31 @@
 // lib/DataPencarian.ts
 // Tugas: sumber data pencarian (Ctrl+K). Dibangun dari config/Navigasi.ts,
-// jadi menu baru otomatis bisa dicari.
-import { navGroups, type NavItem } from "@/config/Navigasi"
+// mendukung filtering RBAC berdasarkan role yang sedang aktif.
+import { navGroups, type NavGroup, type NavItem } from "@/config/Navigasi"
 
 export type SearchResult = { page: string; title: string; href: string }
 export type SearchGroup = { category: string; results: SearchResult[] }
 
-export function searchDocs(query: string): SearchGroup[] {
+export function searchDocs(
+  query: string,
+  sourceGroups: readonly NavGroup[] = navGroups
+): SearchGroup[] {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   if (terms.length === 0) return []
 
   const groups: SearchGroup[] = []
 
-  for (const group of navGroups) {
-    // Support both NavGroup variants: { id, items } and { title, children }
-    // Hanya grup yang punya `items` (bukan sub-grup tanpa id) yang dicari.
+  for (const group of sourceGroups) {
     const items = "items" in group ? group.items : []
 
     const pageResults: SearchResult[] = items
       .filter(
         (entry): entry is NavItem => "href" in entry && entry.href !== undefined
       )
+      .filter((item) => {
+        const text = `${item.title} ${item.description || ""} ${(item.keywords || []).join(" ")}`.toLowerCase()
+        return terms.every((t) => text.includes(t))
+      })
       .map((item) => ({
         page: item.title,
         title: item.description!,

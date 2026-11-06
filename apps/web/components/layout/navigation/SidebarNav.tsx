@@ -17,10 +17,10 @@
 
 "use client"
 
+import * as React from "react"
 import { cn } from "@/lib/Utilitas"
 import { GroupDetail } from "./sidebar/GroupDetail"
 import { GroupList } from "./sidebar/GroupList"
-import { RowSeparator } from "./sidebar/NavRow"
 import { PrimaryNav } from "./sidebar/PrimaryNav"
 import { SidebarSearch } from "./sidebar/SidebarSearch"
 import { Slide } from "./sidebar/Slide"
@@ -42,13 +42,23 @@ export function SidebarNav({
     backToRoot,
   } = useSidebarDrilldown()
 
+  const isInitialMount = React.useRef(true)
+
+  React.useEffect(() => {
+    isInitialMount.current = false
+  }, [])
+
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       {withSearch && <SidebarSearch />}
 
       <nav aria-label="Menu utama" className="overflow-hidden">
         {currentGroup ? (
-          <Slide key={currentGroup.id} direction={direction}>
+          <Slide
+            key={currentGroup.id}
+            direction={direction}
+            animate={!isInitialMount.current}
+          >
             <GroupDetail
               group={currentGroup}
               active={active}
@@ -56,9 +66,12 @@ export function SidebarNav({
             />
           </Slide>
         ) : (
-          <Slide key="root" direction={direction}>
+          <Slide
+            key="root"
+            direction={direction}
+            animate={!isInitialMount.current}
+          >
             <PrimaryNav />
-            <RowSeparator />
             <GroupList activeGroupId={activeGroupId} onOpen={openGroup} />
           </Slide>
         )}

@@ -26,6 +26,13 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} ${fontBody.variable} ${fontDisplay.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var w=localStorage.getItem("elysia-sidebar-width");if(w){var n=parseInt(w,10);if(n>=256&&n<=420){document.documentElement.style.setProperty("--sidebar-width",n+"px");}else{document.documentElement.style.setProperty("--sidebar-width","256px");localStorage.setItem("elysia-sidebar-width","256");}}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col font-sans bg-background text-foreground antialiased">
         <ThemeProvider
           attribute="class"

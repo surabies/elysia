@@ -178,6 +178,9 @@
    CSS Variables: Root (Light Mode)
    ========================================================================== */
 :root {
+  /* Sidebar Width: Vercel standard default is 256px (16rem), min-width 240px */
+  --sidebar-width: 256px;
+
   /* Geist Base Radius */
   --radius: 6px;
 
@@ -310,8 +313,9 @@
   --accent-foreground: #171717;
   --destructive: var(--ds-red-700);
   --destructive-foreground: #ffffff;
-  --border: var(--ds-gray-alpha-300);
-  --input: var(--ds-gray-alpha-400);
+  /* Border Geist Vercel: sangat tipis & subtle tapi tegas */
+  --border: var(--ds-gray-alpha-200);
+  --input: var(--ds-gray-alpha-200);
   --ring: #D1D1D1;
 
   /* Geist Sizing Dimensions */
@@ -334,7 +338,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #ebebeb;
   --sidebar-accent-foreground: #171717;
-  --sidebar-border: var(--ds-gray-alpha-300);
+  --sidebar-border: var(--ds-gray-alpha-200);
   --sidebar-ring: #D1D1D1;
 }
 
@@ -471,8 +475,9 @@
   --accent-foreground: #ededed;
   --destructive: var(--ds-red-700);
   --destructive-foreground: #ffffff;
-  --border: var(--ds-gray-alpha-400);
-  --input: var(--ds-gray-alpha-400);
+  /* Border Geist Vercel Dark: ultra-subtle tapi tegas */
+  --border: var(--ds-gray-alpha-200);
+  --input: var(--ds-gray-alpha-200);
   --ring: #3D3D3D;
 
   /* Geist Sizing Dimensions */
@@ -495,7 +500,7 @@
   --sidebar-primary-foreground: #000000;
   --sidebar-accent: #1f1f1f;
   --sidebar-accent-foreground: #ededed;
-  --sidebar-border: var(--ds-gray-alpha-400);
+  --sidebar-border: var(--ds-gray-alpha-200);
   --sidebar-ring: #3D3D3D;
 }
 

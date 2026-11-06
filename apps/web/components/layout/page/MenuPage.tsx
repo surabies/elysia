@@ -17,7 +17,7 @@
 
 import { notFound } from "next/navigation"
 
-import { findNavItem, getNavGroupHref } from "@/config/Navigasi"
+import { findNavItem } from "@/config/Navigasi"
 import { PageContainer } from "./PageContainer"
 
 // Label kartu ringkasan placeholder. Ubah di sini jika ingin mengganti isi.
@@ -35,20 +35,10 @@ export function MenuPage({
 
   // group : Direktorat tempat halaman berada
   // item  : halaman yang sedang dibuka
-  // trail : (opsional) folder induk, mis. [Master & Pengolahan Data, ...]
-  const { group, item } = found
+  const { item } = found
 
   return (
-    <PageContainer
-      breadcrumbs={[
-        // Level 1: Direktorat -> mengarah ke halaman pertama di dalamnya.
-        // (Untuk menampilkan folder induk, sisipkan `found.trail` di sini.)
-        { label: group.title, href: getNavGroupHref(group) },
-        // Level terakhir: halaman aktif (tanpa href).
-        { label: item.title },
-      ]}
-      className={className}
-    >
+    <PageContainer className={className}>
       {/* Banner status pengembangan */}
       <div className="mb-6 border border-dashed border-sky-300/60 bg-sky-400/10 p-4 text-sm/6 text-sky-900 sm:mb-8 sm:p-5 dark:border-sky-300/30 dark:text-sky-200">
         <p className="font-medium">Halaman dalam tahap pengembangan</p>

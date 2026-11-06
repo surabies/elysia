@@ -1,23 +1,44 @@
+// components/layout/navbar/NavbarBreadcrumb.tsx
+// Breadcrumb pada navbar sesuai inspeksi Vercel dashboard di docs/NAVBAR.md:
+// - Menggunakan diagonal slash khas Geist (GeistSlash) sebagai pemisah breadcrumb
+// - Parent link: text-sm font-medium text-muted-foreground hover:text-foreground
+// - Separator slash: GeistSlash 16x16 text-muted-foreground/40 shrink-0
+// - Current page: text-sm font-medium text-foreground truncate
+
 "use client"
 
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight } from "lucide-react"
+import { GeistSlash } from "../navigation/sidebar/lib/GeistIcons"
 import { findActiveNav, type NavItem } from "@/config/Navigasi"
 
 export function NavbarBreadcrumb() {
   const pathname = usePathname()
   const active = findActiveNav(pathname)
 
-  // Default jika di root dashboard
+  // Default jika berada di root dashboard
   if (pathname === "/dashboard" || !active) {
     return (
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
-        <span className="font-medium text-muted-foreground">Direktorat Utama</span>
-        <ChevronRight className="size-3.5 text-muted-foreground/60 shrink-0" />
-        <span className="font-semibold text-foreground">Ringkasan Operasional</span>
-      </nav>
+      <div className="flex items-center gap-2 text-sm min-w-0 select-none">
+        <Link
+          href="/dashboard"
+          className="font-medium text-muted-foreground transition-colors hover:text-foreground shrink-0"
+        >
+          Direktorat Utama
+        </Link>
+        <GeistSlash
+          size={16}
+          className="size-4 text-muted-foreground/40 shrink-0"
+          aria-hidden="true"
+        />
+        <span
+          aria-current="page"
+          className="font-medium text-foreground truncate"
+        >
+          Ringkasan Operasional
+        </span>
+      </div>
     )
   }
 
@@ -31,26 +52,39 @@ export function NavbarBreadcrumb() {
   }
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+    <div className="flex items-center gap-2 text-sm min-w-0 truncate select-none">
       <Link
         href={groupHref}
-        className="font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="font-medium text-muted-foreground transition-colors hover:text-foreground shrink-0"
       >
         {active.group.title}
       </Link>
 
-      <ChevronRight className="size-3.5 text-muted-foreground/60 shrink-0" />
+      <GeistSlash
+        size={16}
+        className="size-4 text-muted-foreground/40 shrink-0"
+        aria-hidden="true"
+      />
 
       {active.trail && active.trail.length > 0 && (
         <>
-          <span className="text-muted-foreground">{active.trail[0].title}</span>
-          <ChevronRight className="size-3.5 text-muted-foreground/60 shrink-0" />
+          <span className="font-medium text-muted-foreground shrink-0">
+            {active.trail[0].title}
+          </span>
+          <GeistSlash
+            size={16}
+            className="size-4 text-muted-foreground/40 shrink-0"
+            aria-hidden="true"
+          />
         </>
       )}
 
-      <span className="font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">
+      <span
+        aria-current="page"
+        className="font-medium text-foreground truncate"
+      >
         {active.item.title}
       </span>
-    </nav>
+    </div>
   )
 }

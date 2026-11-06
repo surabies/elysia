@@ -89,13 +89,7 @@ export default function CaterPage() {
   };
 
   return (
-    <PageContainer
-      breadcrumbs={[
-        { label: 'Pengolahan Data', href: '/cater' },
-        { label: 'Baca Meter CHN' },
-      ]}
-      className="space-y-6"
-    >
+    <PageContainer className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>

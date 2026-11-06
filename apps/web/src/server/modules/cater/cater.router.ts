@@ -68,7 +68,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     async ({ params, query }) => {
       try {
         const result = await caterKueriService.getRoutePelanggan(params.kode, query.limit);
-        return { success: true, ...result };
+        return { success: true, ...result, data: result.list };
       } catch (err: any) {
         return { success: false, error: err.message };
       }

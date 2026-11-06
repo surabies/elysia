@@ -6,7 +6,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { primaryNav } from "@/config/Navigasi"
+import { useRbac } from "@/components/layout/shell/RbacContext"
 import { getPrimaryIcon } from "./lib/Icons"
 import { NavRowContent } from "./NavRow"
 import { navRowClass } from "./lib/Styles"
@@ -14,10 +14,11 @@ import { isPrimaryActive } from "./lib/Utilitas"
 
 export function PrimaryNav() {
   const pathname = usePathname()
+  const { filteredPrimaryNav } = useRbac()
 
   return (
-    <ul className="flex flex-col gap-0.5">
-      {primaryNav.map((item) => {
+    <ul className="flex flex-col gap-px">
+      {filteredPrimaryNav.map((item) => {
         const isActive = isPrimaryActive(pathname, item.href)
 
         return (

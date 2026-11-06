@@ -8,17 +8,24 @@ import type { Direction } from "./types/Tipe"
 /** Animasi geser tipis saat berganti tampilan (root <-> detail). */
 export function Slide({
   direction,
+  animate = true,
   children,
 }: {
   direction: Direction
+  animate?: boolean
   children: React.ReactNode
 }) {
-  const [entered, setEntered] = React.useState(false)
+  const [entered, setEntered] = React.useState(!animate)
 
   React.useEffect(() => {
+    if (!animate) return
     const frame = requestAnimationFrame(() => setEntered(true))
     return () => cancelAnimationFrame(frame)
-  }, [])
+  }, [animate])
+
+  if (!animate) {
+    return <div className="translate-x-0 opacity-100">{children}</div>
+  }
 
   return (
     <div

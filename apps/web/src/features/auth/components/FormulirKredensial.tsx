@@ -3,9 +3,9 @@
 // features/auth/components/FormulirKredensial.tsx — form masuk email/username +
 // password.
 //
-// Memakai signIn dari "next-auth/react" (HTTP ke /api/auth/*) dengan
-// `redirect: false`, BUKAN server action. Dua alasan:
-//  1. Endpoint /api/auth/* di app ini dilayani Hono (@hono/auth-js), dan
+// Memakai signIn dari "@/src/lib/auth-client" (Better Auth) dengan
+// `redirect: false`. Dua alasan:
+//  1. Endpoint /api/auth/* dilayani Better Auth Next.js handler, dan
 //     jalur HTTP inilah yang sudah terbukti bekerja end-to-end.
 //  2. `redirect: false` membuat pesan "password salah" tampil di tempat,
 //     tanpa memuat ulang halaman dan tanpa membuang isi form.

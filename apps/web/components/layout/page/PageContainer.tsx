@@ -1,21 +1,14 @@
 // components/layout/page/PageContainer.tsx
-// Tugas: pembungkus isi tiap halaman: breadcrumb desktop, aksi, lalu konten.
-//
-// `penuh`: konten (mis. tabel/grid) menempel ke tepi card utama tanpa padding
-// dan tanpa celah, gaya Neon. Hanya baris breadcrumb yang tetap berpadding.
-// Tanpa `penuh`, perilakunya sama persis seperti sebelumnya.
-//
-// `tanpaHeader`: tidak merender baris header (breadcrumb/aksi) sama sekali,
-// untuk halaman yang membuat kepala halamannya sendiri (mis. dashboard utama).
-// Tanpa prop ini, perilakunya sama persis seperti sebelumnya.
-import Link from "next/link"
+// Tugas: pembungkus isi tiap halaman: aksi (jika ada), lalu konten.
+// Breadcrumb telah dialihkan ke Navbar utama agar tidak terjadi duplikasi.
+
 import type { ReactNode } from "react"
 import { cn } from "@/lib/Utilitas"
 
 export type Crumb = { label: string; href?: string }
 
 export function PageContainer({
-  breadcrumbs,
+  breadcrumbs, // Dipertahankan di tipe agar backward-compatible tapi tidak dirender
   actions,
   className,
   penuh = false,
@@ -39,57 +32,14 @@ export function PageContainer({
         className
       )}
     >
-      {!tanpaHeader && (
+      {!tanpaHeader && actions && (
         <header
           className={cn(
-            "mb-2 flex min-h-7 shrink-0 items-center justify-between gap-3 sm:mb-2.5",
-            // Mode penuh: padding pindah ke header, garis bawah memisahkan dari tabel.
-            // px-4 (16px) disengaja: sama dengan tepi kiri checkbox di kolom
-            // seleksi DataGrid (lebar 48px, checkbox 16px di tengah) dan dengan
-            // padding toolbar DataGrid, jadi breadcrumb, checkbox, dan kotak
-            // cari berada pada satu garis vertikal di semua ukuran layar.
+            "mb-2 flex min-h-7 shrink-0 items-center justify-end gap-3 sm:mb-2.5",
             penuh && "mb-0 px-4 pt-4 pb-3 sm:mb-0 sm:pt-5"
           )}
         >
-          {breadcrumbs && breadcrumbs.length > 0 && (
-            <nav aria-label="Breadcrumb" className="hidden shrink-0 sm:block">
-              <ol className="flex flex-wrap items-center justify-start gap-1.5 text-sm/5 font-medium text-muted-foreground">
-                {breadcrumbs.map((crumb, index) => {
-                  const isLast = index === breadcrumbs.length - 1
-                  return (
-                    <li key={crumb.label} className="flex items-center gap-1.5">
-                      {crumb.href && !isLast ? (
-                        <Link
-                          href={crumb.href}
-                          className="transition-colors hover:text-foreground"
-                        >
-                          {crumb.label}
-                        </Link>
-                      ) : (
-                        <span
-                          aria-current={isLast ? "page" : undefined}
-                          className={isLast ? "text-foreground" : undefined}
-                        >
-                          {crumb.label}
-                        </span>
-                      )}
-                      {!isLast && (
-                        <span
-                          aria-hidden="true"
-                          className="text-muted-foreground"
-                        >
-                          /
-                        </span>
-                      )}
-                    </li>
-                  )
-                })}
-              </ol>
-            </nav>
-          )}
-          {actions && (
-            <div className="flex shrink-0 items-center gap-2">{actions}</div>
-          )}
+          <div className="flex shrink-0 items-center gap-2 ml-auto">{actions}</div>
         </header>
       )}
 

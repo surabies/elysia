@@ -32,6 +32,7 @@ export default async function DashboardLayout({
             email: user.email ?? "",
             image: user.image ?? null,
             role: user.role,
+            roles: user.roles,
           }}
           onKeluar={keluar}
         >

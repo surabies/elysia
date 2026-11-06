@@ -1,31 +1,47 @@
+// components/layout/navbar/MenuPengguna.tsx
+// Menu profil akun pengguna sesuai inspeksi Vercel dashboard di docs/SIDEBAR.md:
+// - Footer Sidebar:
+//   * Baris akun pengguna (Avatar 20px + Nama + '...') sebagai trigger dropdown.
+//   * Tidak ada hover background pada baris avatar/nama pengguna.
+//   * Hover aktif HANYA pada ikon '...' di ujung kanan.
+//   * Posisi dropdown muncul di atas baris footer (side="top", align="start").
+//   * Tombol Notifikasi Bell di samping kanan berbentuk lingkaran size-6 rounded-full border (identik dengan '...').
+// - Dropdown Menu Avatar:
+//   * Tanpa avatar di dalam dropdown.
+//   * Panel info akun: Nama dan Email di kiri, icon Setting gear di pojok kanan (menuju /pengaturan).
+//   * Item "Pengaturan Akun" di daftar menu dihapus karena sudah ada di pojok kanan panel info akun.
+//   * Theme Selector (Segmented pill: Sistem, Terang, Gelap).
+//   * Beranda Publik, Catatan Rilis, Bantuan, Dokumentasi, Keluar.
+//   * Status indicator "Semua sistem normal" dengan dot hijau.
+
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
 import {
   Sun,
   Moon,
   Monitor,
-  LayoutDashboard,
   Home,
   HelpCircle,
   LogOut,
   Settings,
-  MoreHorizontal,
-  Bell,
+  BookOpen,
+  Sparkles,
 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { GeistAvatar } from "../navigation/sidebar/lib/GeistAvatar"
+import { GeistMoreDots, GeistBell } from "../navigation/sidebar/lib/GeistIcons"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/Utilitas"
+import { signOut as clientSignOut } from "@/lib/auth-client"
 
 function inisial(nama: string | null, email: string): string {
   const sumber = nama?.trim() || email
@@ -45,155 +61,164 @@ export function UserMenu({
   email: string
   role: string
   image: string | null
-  onKeluar: () => Promise<void>
+  onKeluar?: () => Promise<void>
   variant?: "navbar" | "sidebar"
 }) {
   const { theme, setTheme } = useTheme()
   const tema = theme ?? "system"
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false)
 
-  // Dropdown content yang dipakai bersama
+  const handleLogout = React.useCallback(async () => {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
+    try {
+      await clientSignOut({
+        fetchOptions: {
+          onSuccess: () => {
+            window.location.href = "/login"
+          },
+        },
+      })
+      if (onKeluar) {
+        await onKeluar()
+      }
+      window.location.href = "/login"
+    } catch {
+      if (onKeluar) {
+        await onKeluar()
+      }
+      window.location.href = "/login"
+    }
+  }, [isLoggingOut, onKeluar])
+
+  // Dropdown content sesuai docs/SIDEBAR.md:
+  // - Tanpa avatar di dalam dropdown
+  // - Panel info akun: Nama + Email di kiri, icon Setting di pojok kanan
+  // - Menu "Pengaturan Akun" di daftar item dihapus karena sudah ada di panel info
   const dropdownContent = (
     <DropdownMenuContent
       align={variant === "navbar" ? "end" : "start"}
       side={variant === "sidebar" ? "top" : "bottom"}
       sideOffset={8}
-      className="w-68 min-w-68 rounded-lg border border-border bg-popover p-1.5 shadow-xl"
+      className="w-64 min-w-64 rounded-xl border border-border bg-popover p-1.5 shadow-2xl text-sm"
     >
-      <DropdownMenuLabel className="flex min-h-16 items-center gap-3 rounded-md px-2.5 py-2 font-normal">
-        <Avatar className="size-10 rounded-full ring-1 ring-border shrink-0">
-          {image && <AvatarImage src={image} alt="" className="rounded-full" />}
-          <AvatarFallback className="text-xs font-medium rounded-full">
-            {inisial(nama, email)}
-          </AvatarFallback>
-        </Avatar>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate text-sm font-medium text-foreground">
+      {/* Panel Info Akun: Nama & Email di kiri, Icon Setting di pojok kanan (tanpa avatar) */}
+      <div className="flex items-center justify-between gap-2 px-2.5 py-2">
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="truncate text-sm font-medium text-foreground leading-tight">
             {nama?.trim() || email}
           </span>
-          <span className="truncate text-xs font-normal text-muted-foreground">
+          <span className="truncate text-xs text-muted-foreground leading-tight mt-0.5">
             {email}
           </span>
-          <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-            {role.replaceAll("_", " ")}
-          </span>
-        </span>
-        {role === "SUPER_ADMIN" && (
-          <DropdownMenuItem
-            asChild
-            className="size-8 shrink-0 justify-center rounded-md p-0 text-muted-foreground"
-          >
-            <Link
-              href="/admin/pengaturan"
-              aria-label="Pengaturan"
-              title="Pengaturan"
-            >
-              <Settings
-                size={16}
-                strokeWidth={1.5}
-                className="size-4"
-              />
-            </Link>
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuLabel>
-      <DropdownMenuSeparator className="my-1.5" />
-      <div className="flex h-10 items-center justify-between gap-2 px-2.5">
-        <span className="text-sm text-foreground">Tema</span>
-        <div
-          role="radiogroup"
-          aria-label="Pilih tema"
-          className="flex h-8 items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5"
-        >
-          {[
-            { value: "light", label: "Terang", Icon: Sun },
-            { value: "system", label: "Sistem", Icon: Monitor },
-            { value: "dark", label: "Gelap", Icon: Moon },
-          ].map(({ value, label, Icon }) => (
-            <button
-              key={value}
-              type="button"
-              aria-label={`Tema ${label.toLowerCase()}`}
-              role="radio"
-              aria-checked={tema === value}
-              title={label}
-              onClick={() => setTheme(value)}
-              className={`inline-flex size-6.5 items-center justify-center rounded-sm transition-colors ${
-                tema === value
-                  ? "bg-background text-foreground shadow-xs ring-1 ring-border/70"
-                  : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
-              }`}
-            >
-              <Icon
-                size={14}
-                strokeWidth={1.5}
-                className="size-3.5"
-              />
-            </button>
-          ))}
         </div>
+        <Link
+          href="/pengaturan"
+          aria-label="Pengaturan Akun"
+          title="Pengaturan Akun"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-neutral-100 hover:text-foreground dark:hover:bg-neutral-800 transition-colors"
+        >
+          <Settings className="size-4" />
+        </Link>
       </div>
+
       <DropdownMenuSeparator className="my-1.5" />
-      <DropdownMenuGroup className="space-y-0.5">
-        <DropdownMenuItem
-          asChild
-          className="h-10 justify-between px-2.5 text-sm font-normal"
-        >
-          <Link href="/dashboard">
-            <span>Dashboard</span>
-            <LayoutDashboard
-              size={16}
-              strokeWidth={1.5}
-              className="size-4 text-muted-foreground"
-              aria-hidden="true"
-            />
+
+      {/* Item Navigasi Sesuai docs/SIDEBAR.md */}
+      <div className="flex flex-col gap-0.5">
+        {/* Theme Selector (Segmented Pill Switcher) */}
+        <div className="flex h-8 items-center justify-between px-2 rounded-md">
+          <span className="text-sm text-foreground">Tema</span>
+          <div
+            role="radiogroup"
+            aria-label="Pilih tema tampilan"
+            className="flex h-6.5 items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5"
+          >
+            {[
+              { value: "system", label: "Sistem", Icon: Monitor },
+              { value: "light", label: "Terang", Icon: Sun },
+              { value: "dark", label: "Gelap", Icon: Moon },
+            ].map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                type="button"
+                aria-label={`Tema ${label.toLowerCase()}`}
+                role="radio"
+                aria-checked={tema === value}
+                title={label}
+                onClick={() => setTheme(value)}
+                className={cn(
+                  "inline-flex size-5.5 items-center justify-center rounded-full transition-colors cursor-pointer",
+                  tema === value
+                    ? "bg-background text-foreground shadow-xs ring-1 ring-border"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className="size-3" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Home Page */}
+        <DropdownMenuItem asChild className="h-8 justify-between px-2 rounded-md cursor-pointer">
+          <Link href="/" className="flex items-center justify-between w-full">
+            <span className="text-sm text-foreground">Beranda Publik</span>
+            <Home className="size-3.5 text-muted-foreground" />
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          asChild
-          className="h-10 justify-between px-2.5 text-sm font-normal"
-        >
-          <Link href="/">
-            <span>Beranda publik</span>
-            <Home
-              size={16}
-              strokeWidth={1.5}
-              className="size-4 text-muted-foreground"
-              aria-hidden="true"
-            />
+
+        {/* Changelog / Pembaruan */}
+        <DropdownMenuItem asChild className="h-8 justify-between px-2 rounded-md cursor-pointer">
+          <Link href="/changelog" className="flex items-center justify-between w-full">
+            <span className="text-sm text-foreground">Catatan Rilis</span>
+            <Sparkles className="size-3.5 text-muted-foreground" />
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          asChild
-          className="h-10 justify-between px-2.5 text-sm font-normal"
-        >
-          <Link href="/bantuan">
-            <span>Bantuan</span>
-            <HelpCircle
-              size={16}
-              strokeWidth={1.5}
-              className="size-4 text-muted-foreground"
-              aria-hidden="true"
-            />
+
+        {/* Help & Support */}
+        <DropdownMenuItem asChild className="h-8 justify-between px-2 rounded-md cursor-pointer">
+          <Link href="/bantuan" className="flex items-center justify-between w-full">
+            <span className="text-sm text-foreground">Bantuan</span>
+            <HelpCircle className="size-3.5 text-muted-foreground" />
           </Link>
         </DropdownMenuItem>
-      </DropdownMenuGroup>
+
+        {/* Docs */}
+        <DropdownMenuItem asChild className="h-8 justify-between px-2 rounded-md cursor-pointer">
+          <Link href="/docs" className="flex items-center justify-between w-full">
+            <span className="text-sm text-foreground">Dokumentasi</span>
+            <BookOpen className="size-3.5 text-muted-foreground" />
+          </Link>
+        </DropdownMenuItem>
+      </div>
+
       <DropdownMenuSeparator className="my-1.5" />
-      <form action={onKeluar}>
-        <DropdownMenuItem
-          asChild
-          className="h-10 justify-between px-2.5 text-sm font-normal text-destructive focus:text-destructive"
-        >
-          <button type="submit" className="w-full">
-            <span>Keluar</span>
-            <LogOut
-              size={16}
-              strokeWidth={1.5}
-              className="size-4"
-              aria-hidden="true"
-            />
-          </button>
-        </DropdownMenuItem>
-      </form>
+
+      {/* Log Out */}
+      <DropdownMenuItem
+        onSelect={(e) => {
+          e.preventDefault()
+          handleLogout()
+        }}
+        disabled={isLoggingOut}
+        className="h-8 justify-between px-2 rounded-md text-sm text-destructive focus:text-destructive cursor-pointer"
+      >
+        <span className="flex items-center justify-between w-full">
+          <span>{isLoggingOut ? "Keluar..." : "Keluar"}</span>
+          <LogOut className="size-3.5" />
+        </span>
+      </DropdownMenuItem>
+
+      <DropdownMenuSeparator className="my-1.5" />
+
+      {/* Footer Status "Semua sistem normal" dengan dot hijau sesuai Vercel */}
+      <div className="flex items-center justify-between px-2 py-1 text-[11px] text-muted-foreground">
+        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+          Semua sistem normal
+        </span>
+        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+      </div>
     </DropdownMenuContent>
   )
 
@@ -204,15 +229,15 @@ export function UserMenu({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="size-9 rounded-full p-0 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="size-8 rounded-full p-0 outline-none focus-visible:ring-1 focus-visible:ring-ring"
             aria-label="Menu akun"
           >
-            <Avatar className="size-9 rounded-full ring-1 ring-border">
-              {image && <AvatarImage src={image} alt="" className="rounded-full" />}
-              <AvatarFallback className="text-xs font-medium rounded-full">
-                {inisial(nama, email)}
-              </AvatarFallback>
-            </Avatar>
+            <GeistAvatar
+              size={32}
+              src={image}
+              initials={inisial(nama, email)}
+              alt={nama || email}
+            />
           </Button>
         </DropdownMenuTrigger>
         {dropdownContent}
@@ -220,69 +245,63 @@ export function UserMenu({
     )
   }
 
-  // Tampilan versi Footer Sidebar:
-  // Kiri: Avatar + Nama (Link ke pengaturan akun)
-  // Kanan: Tombol Notifikasi/Bell + Tombol Arrow Trigger Dropdown
+  // Tampilan versi Footer Sidebar 1:1:
+  // 1. Trigger adalah seluruh baris flex-1 sehingga posisi dropdown tepat membuka di atas footer sidebar (side="top", align="start").
+  // 2. Baris ini bg-transparent TANPA hover background saat kursor diarahkan ke avatar / nama pengguna.
+  // 3. Hover active HANYA pada icon '...' di pojok kanan baris (group-hover/row).
+  // 4. Tombol Bell notifikasi di sebelah kanan berbentuk lingkaran size-6 rounded-full border (gaya identik dengan '...').
   return (
-    <div className="flex h-11 w-full items-center justify-between gap-1">
-      {/* Kiri: Info Profil Akun Pengguna */}
-      <Link
-        href="/pengaturan"
-        className={cn(
-          "flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors",
-          "hover:bg-[#F2F2F2] dark:hover:bg-[#1A1A1A]",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        )}
-        title="Pengaturan Akun"
-      >
-        <Avatar className="size-7.5 rounded-full ring-1 ring-border shrink-0">
-          {image && <AvatarImage src={image} alt="" className="rounded-full" />}
-          <AvatarFallback className="text-[11px] font-medium rounded-full">
-            {inisial(nama, email)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-xs font-semibold text-foreground leading-none">
-            {nama?.trim() || email}
-          </span>
-          <span className="truncate text-[10px] text-muted-foreground uppercase leading-tight mt-0.5">
-            {role.replaceAll("_", " ")}
-          </span>
-        </div>
-      </Link>
-
-      {/* Trigger Dropdown khusus pada icon (...) di sebelah kiri Bell */}
+    <div className="flex items-center w-full gap-1.5">
+      {/* Trigger Dropdown: Seluruh baris akun pengguna, posisi dropdown keluar pas di atas baris (side="top", align="start") */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="Menu akun"
-            title="Buka menu akun"
+            aria-label="Menu akun pengguna"
+            title="Menu Akun"
             className={cn(
-              "flex size-7.5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
-              "hover:bg-[#F2F2F2] hover:text-foreground dark:hover:bg-[#1A1A1A]",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              "group/row relative flex min-w-0 flex-1 items-center gap-2 h-9 bg-transparent cursor-pointer rounded-full transition-colors pl-2.5 pr-1",
+              // PENTING: Baris ini TIDAK ADA hover background (avatar & teks tidak ada hover)
+              "focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
             )}
           >
-            <MoreHorizontal size={15} strokeWidth={1.5} className="size-3.5" />
+            {/* Avatar 20px Geist */}
+            <GeistAvatar
+              size={20}
+              src={image}
+              initials={inisial(nama, email)}
+              alt={`Avatar for ${nama || email}`}
+            />
+
+            {/* Nama Pengguna (tanpa hover bg) */}
+            <span className="flex-1 flex items-center min-w-0 text-left">
+              <span className="truncate text-sm font-medium text-foreground">
+                {nama?.trim() || email}
+              </span>
+            </span>
+
+            {/* Ikon 3 Titik Lingkaran More: HOVER HANYA AKTIF DI SINI! */}
+            <span className="grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card transition-colors text-muted-foreground group-hover/row:bg-neutral-200 dark:group-hover/row:bg-neutral-700 group-hover/row:text-foreground">
+              <GeistMoreDots size={12} />
+            </span>
           </button>
         </DropdownMenuTrigger>
         {dropdownContent}
       </DropdownMenu>
 
-      {/* Icon Notifikasi/Bell di sebelah paling kanan */}
+      {/* Tombol Bell Notifikasi: Lingkaran size-6 rounded-full border (GAYA IDENTIK DENGAN '...') */}
       <Link
         href="/notifikasi"
-        aria-label="Lihat notifikasi"
-        title="Notifikasi"
+        aria-label="Notifikasi"
+        title="Lihat notifikasi"
         className={cn(
-          "relative flex size-7.5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
-          "hover:bg-[#F2F2F2] hover:text-foreground dark:hover:bg-[#1A1A1A]",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          "relative grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card cursor-pointer transition-colors",
+          "text-muted-foreground hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-foreground",
+          "focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
         )}
       >
-        <Bell size={15} strokeWidth={1.5} className="size-3.5" />
-        <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-blue-500" />
+        <GeistBell size={12} className="size-3" />
+        <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-blue-500 ring-1 ring-card" />
       </Link>
     </div>
   )

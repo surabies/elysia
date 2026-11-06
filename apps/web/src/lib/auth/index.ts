@@ -48,6 +48,15 @@ export async function auth() {
  * Server-side SignOut Action
  */
 export async function signOut(opts?: { redirectTo?: string }) {
+  try {
+    const headerList = await headers();
+    await betterAuthInstance.api.signOut({
+      headers: headerList,
+    });
+  } catch (err) {
+    console.error('[SIGN_OUT_ERROR]', err);
+  }
+
   if (opts?.redirectTo) {
     redirect(opts.redirectTo);
   }

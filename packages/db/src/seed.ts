@@ -1,6 +1,9 @@
 import { db } from './client';
-import { user, places, account, userRoles } from './schema';
-import { hashPassword } from 'better-auth/crypto';
+import { places, pelanggan } from './schema';
+import { seedAccounts } from './seed-accounts';
+import { seedMasterKondisi } from './seed-kondisi';
+import { importProgresCater } from './etl/import-progres-cater';
+import { count } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
@@ -8,59 +11,16 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 async function seed() {
-  console.log('Seeding initial data...');
+  console.log('=== STARTING UNIFIED DATABASE SEED ===');
   try {
     const userId = 'seed-user-1';
-    const email = 'demo@example.com';
-    const rawPassword = 'Password123!';
-    const hashedPassword = await hashPassword(rawPassword);
 
-    // Insert demo user if not existing
-    await db
-      .insert(user)
-      .values({
-        id: userId,
-        name: 'Demo Admin',
-        email,
-        emailVerified: true,
-      })
-      .onConflictDoUpdate({
-        target: user.id,
-        set: {
-          name: 'Demo Admin',
-          email,
-          emailVerified: true,
-        },
-      });
+    // 1. Seed Official Accounts (5 Management Roles + 9 Pencatat Lapangan + Demo)
+    console.log('1. Seeding User Accounts & RBAC Roles...');
+    await seedAccounts('Password123!');
 
-    // Insert demo user account with hashed password
-    await db
-      .insert(account)
-      .values({
-        id: 'seed-account-1',
-        accountId: userId,
-        providerId: 'credential',
-        userId,
-        password: hashedPassword,
-      })
-      .onConflictDoUpdate({
-        target: account.id,
-        set: {
-          password: hashedPassword,
-        },
-      });
-
-    // Insert RBAC user roles for admin access
-    await db
-      .insert(userRoles)
-      .values([
-        { userId, role: 'SUPERADMIN' },
-        { userId, role: 'STAFF_ADMIN_BILLING' },
-        { userId, role: 'VERIFIKATOR_1' },
-      ])
-      .onConflictDoNothing();
-
-    // Insert sample places (Monas Jakarta & surrounding landmarks)
+    // 2. Insert sample places
+    console.log('2. Seeding Sample Places...');
     await db
       .insert(places)
       .values([
@@ -88,7 +48,21 @@ async function seed() {
       ])
       .onConflictDoNothing();
 
-    console.log('Seeding completed successfully!');
+    // 3. Seed Master Kondisi Catat (22 Kode STI Resmi PDAM)
+    console.log('3. Seeding Master Kondisi Catat...');
+    await seedMasterKondisi();
+
+    // 4. Seed Data Pelanggan & Pembacaan Meter (jika tabel masih kosong)
+    console.log('4. Checking Pelanggan Dataset...');
+    const [existing] = await db.select({ total: count() }).from(pelanggan);
+    if (!existing || existing.total === 0) {
+      console.log('Populating initial pelanggan & cater records from CSV...');
+      await importProgresCater({ limit: 2000 });
+    } else {
+      console.log(`Pelanggan already populated (${existing.total} records). Skipping ETL.`);
+    }
+
+    console.log('=== SEEDING COMPLETED SUCCESSFULLY! ===');
     process.exit(0);
   } catch (err) {
     console.error('Seeding error:', err);

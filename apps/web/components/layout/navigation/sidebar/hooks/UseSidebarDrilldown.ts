@@ -6,15 +6,20 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import { findActiveNav, navGroups } from "@/config/Navigasi"
+import { findActiveNav, type NavGroup } from "@/config/Navigasi"
+import { useRbac } from "@/components/layout/shell/RbacContext"
 import type { ActiveInfo, Direction } from "../types/Tipe"
 
 export function useSidebarDrilldown() {
+  const { filteredNavGroups } = useRbac()
   const pathname = usePathname()
   const found = findActiveNav(pathname)
-  const activeGroupId = found?.group.id
-  const activeItem = found?.item
-  const activeTrail = found?.trail
+  const isAllowedGroup = found
+    ? filteredNavGroups.some((g: NavGroup) => g.id === found.group.id)
+    : false
+  const activeGroupId = isAllowedGroup ? found?.group.id : undefined
+  const activeItem = isAllowedGroup ? found?.item : undefined
+  const activeTrail = isAllowedGroup ? found?.trail : undefined
 
   const active = React.useMemo<ActiveInfo>(
     () => ({ item: activeItem, trail: activeTrail ?? [] }),
@@ -51,7 +56,7 @@ export function useSidebarDrilldown() {
   }, [])
 
   const currentGroup = openGroupId
-    ? navGroups.find((group) => group.id === openGroupId)
+    ? filteredNavGroups.find((group: NavGroup) => group.id === openGroupId)
     : undefined
 
   return {

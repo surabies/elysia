@@ -220,3 +220,14 @@ export async function seedMasterKondisi() {
   }
   console.log('Master kondisi catat seeded successfully!');
 }
+
+if (import.meta.main) {
+  seedMasterKondisi()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Error seeding master kondisi:', err);
+      process.exit(1);
+    });
+}

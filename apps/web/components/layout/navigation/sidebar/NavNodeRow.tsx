@@ -22,7 +22,7 @@ export function NavNodeRow({ node, active, fallbackIcon }: Props) {
     return (
       <li className="flex flex-col">
         <span className={cn(SECTION_LABEL, "pt-4 pb-1.5")}>{node.title}</span>
-        <ul className="flex flex-col gap-0.5">
+        <ul className="flex flex-col gap-px">
           {node.children.map((child, i) => (
             <NavNodeRow
               key={nodeKey(child, i)}

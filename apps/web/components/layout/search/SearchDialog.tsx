@@ -7,6 +7,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/Utilitas"
 import { searchDocs } from "@/lib/DataPencarian"
+import { useRbac } from "@/components/layout/shell/RbacContext"
 import { Highlight } from "./Highlight"
 import { Search, ArrowRight } from "lucide-react"
 
@@ -36,7 +37,8 @@ export function SearchDialog({
   }
 
   // Tahap 3: hitung hasil. `flat` = daftar datar, dipakai untuk navigasi panah.
-  const groups = searchDocs(query)
+  const { filteredNavGroups } = useRbac()
+  const groups = searchDocs(query, filteredNavGroups)
   const flat = groups.flatMap((g) => g.results)
 
   // Nomor awal tiap grup, supaya indeks global cocok dengan activeIndex

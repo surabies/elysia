@@ -2,11 +2,10 @@
 // Tampilan detail: baris "‹ Nama Grup" untuk kembali, lalu menu grup itu.
 
 import { cn } from "@/lib/Utilitas"
-import { ChevronLeft } from "lucide-react"
+import { GeistChevronLeft } from "./lib/GeistIcons"
 import type { NavGroup } from "@/config/Navigasi"
 import { getGroupIcon } from "./lib/Icons"
 import { NavNodeRow } from "./NavNodeRow"
-import { NavRowContent, RowSeparator } from "./NavRow"
 import { navRowClass } from "./lib/Styles"
 import type { ActiveInfo } from "./types/Tipe"
 import { nodeKey } from "./lib/Utilitas"
@@ -24,19 +23,22 @@ export function GroupDetail({ group, active, onBack }: Props) {
         type="button"
         onClick={onBack}
         aria-label={`Kembali ke daftar menu dari ${group.title}`}
-        className={cn(navRowClass(false), "font-medium")}
+        className={cn(navRowClass(false), "mb-1.5 font-medium pr-0.5")}
       >
-        <NavRowContent
-          icon={ChevronLeft}
-          iconClassName="transition-transform duration-200 group-hover/row:-translate-x-0.5 motion-reduce:transition-none"
-        >
+        <div className="flex-none grid size-9 place-content-center">
+          <GeistChevronLeft
+            size={16}
+            className="size-4 shrink-0 transition-transform duration-200 group-hover/row:-translate-x-0.5 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
+        </div>
+        <span className="flex-1 min-w-0 text-center text-sm font-medium truncate">
           {group.title}
-        </NavRowContent>
+        </span>
+        <div className="flex-none size-9 pointer-events-none" aria-hidden="true" />
       </button>
 
-      <RowSeparator />
-
-      <ul className="flex flex-col gap-0.5">
+      <ul className="flex flex-col gap-px">
         {group.items.map((node, i) => (
           <NavNodeRow
             key={nodeKey(node, i)}

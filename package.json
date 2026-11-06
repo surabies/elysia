@@ -18,6 +18,7 @@
     "db:migrate": "bun --filter \"@cater/db\" db:migrate",
     "db:studio": "bun --filter \"@cater/db\" db:studio",
     "db:seed": "bun --filter \"@cater/db\" db:seed",
+    "db:seed:accounts": "bun --filter \"@cater/db\" db:seed:accounts",
     "cater:import": "bun packages/db/src/etl/import-progres-cater.ts --all"
   },
   "dependencies": {

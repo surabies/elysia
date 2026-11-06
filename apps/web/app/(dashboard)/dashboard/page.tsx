@@ -14,18 +14,35 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Gauge,
-  Ticket,
   Receipt,
-  CheckCircle2,
-  AlertCircle,
   Users as UsersIcon,
   ArrowRight,
   Calendar,
+  Building2,
+  Droplets,
+  Layers,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  Compass,
 } from 'lucide-react';
+import { dashboardService } from '@/src/server/services/dashboard/dashboard.service';
 
 export const metadata: Metadata = {
   title: 'Ringkasan Eksekutif — PDAM Tirtawening',
   description: 'Pusat komando operasional 3 Pilar PDAM: Pencatatan Meter, Pelayanan Pengaduan, dan Penagihan.',
+};
+
+const formatRupiah = (val: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(val);
+};
+
+const formatAngka = (val: number) => {
+  return new Intl.NumberFormat('id-ID').format(val);
 };
 
 export default async function DashboardPage() {
@@ -42,19 +59,12 @@ export default async function DashboardPage() {
     month: 'long',
     day: 'numeric',
   });
-  const periodeBulan = now.toLocaleDateString('id-ID', {
-    month: 'long',
-    year: 'numeric',
-  });
+
+  // Query database real-time via DashboardService (termasuk periode THBL aktif di database)
+  const { periode, summary, wilayah, tarif, antrean } = await dashboardService.getDashboardData();
 
   return (
-    <PageContainer
-      breadcrumbs={[
-        { label: 'Direktorat Utama', href: '/dashboard' },
-        { label: 'Ringkasan Operasional' },
-      ]}
-      className="space-y-6"
-    >
+    <PageContainer className="space-y-6">
       {/* Banner Sambutan Eksekutif */}
       <div className="relative overflow-hidden rounded-lg border border-border bg-card p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -63,132 +73,183 @@ export default async function DashboardPage() {
               <h1 className="text-xl font-semibold tracking-tight text-foreground">
                 Selamat Datang, {user.name}
               </h1>
-              <Badge variant="outline" className="font-mono text-[11px] font-medium uppercase border-border bg-muted/60 text-foreground rounded-full">
+              <Badge
+                variant="outline"
+                className="font-mono text-[11px] font-medium uppercase border-border bg-muted/60 text-foreground rounded-full"
+              >
                 {user.role}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              Sistem Informasi Manajemen Terpadu PERUMDA Air Minum Tirtawening Kota Bandung.
+              Pusat Komando Operasional Pembacaan Meter Air, Pelanggan, dan Rekening DRD PERUMDA Tirtawening.
             </p>
           </div>
           <div className="flex items-center gap-2 self-start rounded-md border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground md:self-auto">
             <Calendar className="size-3.5 text-muted-foreground" />
             <span>{tanggalHariIni}</span>
             <span className="text-border">|</span>
-            <span className="font-medium text-foreground">Periode {periodeBulan}</span>
+            <span className="font-medium text-foreground">Periode {periode.label}</span>
+            <Badge variant="secondary" className="font-mono text-[10px] px-1.5 py-0">
+              {periode.thbl}
+            </Badge>
           </div>
         </div>
       </div>
 
-      {/* Tiga Pilar Utama Operasional PDAM */}
+      {/* 4 Kartu KPI Utama (Live Database) */}
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Tiga Pilar Terintegrasi
+            Metrik Operasional Utama (Data Riil Database)
           </h2>
-          <span className="text-xs text-muted-foreground">Sinkronisasi Realtime</span>
+          <span className="text-xs text-muted-foreground font-mono">
+            {formatAngka(summary.totalRute)} Rute &bull; {summary.totalPetugas} Petugas Aktif
+          </span>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {/* Pilar 1: Pencatatan Meter */}
-          <Card className="hover:border-foreground/30 transition-colors">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Card 1: Total Pelanggan Terlayani */}
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">1. Pencatatan Meter (Cater)</CardTitle>
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Total Pelanggan Aktif
+              </CardTitle>
+              <UsersIcon className="size-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="p-5 pt-0">
+              <div className="text-2xl font-semibold tracking-tight text-foreground">
+                {formatAngka(summary.totalPelanggan)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Sambungan Langganan (SL) Terdaftar
+              </p>
+              <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Rute Terpetakan</span>
+                  <span className="font-medium text-foreground">{summary.totalRute} Rute</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Zona Wilayah</span>
+                  <span className="font-medium text-foreground">4 Wilayah</span>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Button asChild variant="default" size="sm" className="w-full h-8 text-xs font-medium rounded-md">
+                  <Link href="/pelanggan">
+                    Buka Data Pelanggan
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Capaian Pembacaan Meter */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Capaian Catat Meter (Cater)
+              </CardTitle>
               <Gauge className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-5 pt-0">
-              <div className="text-2xl font-semibold tracking-tight text-foreground">142.850</div>
+              <div className="text-2xl font-semibold tracking-tight text-foreground">
+                {formatAngka(summary.totalCater)}
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Total DPM Terjadwal Bulan Ini
+                Progres {summary.persenSelesai}% Terbaca
               </p>
               <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tercatat Normal</span>
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">128.430 (89.9%)</span>
+                  <span className="text-muted-foreground">Stand Normal</span>
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                    {formatAngka(summary.totalNormal)} ({summary.totalCater > 0 ? Math.round((summary.totalNormal / summary.totalCater) * 100) : 0}%)
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Kendala / Taksasi</span>
-                  <span className="font-medium text-amber-600 dark:text-amber-400">1.240 (DK/RK/MB)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Lapor Mandiri Masuk</span>
-                  <span className="font-medium text-sky-600 dark:text-sky-400">3.180 pelanggan</span>
+                  <span className="text-muted-foreground">Anomali / Kendala</span>
+                  <span className="font-medium text-foreground">
+                    {formatAngka(summary.totalAnomali)} SL
+                  </span>
                 </div>
               </div>
               <div className="mt-4">
-                <Button asChild variant="outline" size="sm" className="w-full h-8 text-xs font-medium rounded-md border-border">
-                  <Link href="/stand-konsumen">
-                    Monitor Stand Konsumen <ArrowRight className="ml-1 size-3.5" />
+                <Button asChild variant="default" size="sm" className="w-full h-8 text-xs font-medium rounded-md">
+                  <Link href="/cater">
+                    Monitor Catat Meter
                   </Link>
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Pilar 2: Pelayanan & Pengaduan */}
-          <Card className="hover:border-foreground/30 transition-colors">
+          {/* Card 3: Kubikasi Air Terjual */}
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">2. Pelayanan & Pengaduan</CardTitle>
-              <Ticket className="size-4 text-muted-foreground" />
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Volume Air Terdistribusi
+              </CardTitle>
+              <Droplets className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-5 pt-0">
-              <div className="text-2xl font-semibold tracking-tight text-foreground">184</div>
+              <div className="text-2xl font-semibold tracking-tight text-foreground">
+                {formatAngka(summary.totalKubikasiM3)} m³
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Tiket Pengaduan Masuk Minggu Ini
+                Total Pemakaian Air Terbaca
               </p>
               <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Diproses & Investigasi</span>
-                  <span className="font-medium text-sky-600 dark:text-sky-400">42 Tiket Aktif</span>
+                  <span className="text-muted-foreground">Rata-rata Konsumsi</span>
+                  <span className="font-medium text-foreground">
+                    {summary.totalPelanggan > 0 ? (summary.totalKubikasiM3 / summary.totalPelanggan).toFixed(1) : 0} m³ / SL
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tuntas Sesuai SLA</span>
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">96.4% Terpenuhi</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Kepuasan Pelanggan</span>
-                  <span className="font-medium text-foreground">★ 4.8 / 5.0</span>
+                  <span className="text-muted-foreground">Petugas Lapangan</span>
+                  <span className="font-medium text-foreground">{summary.totalPetugas} Cater Aktif</span>
                 </div>
               </div>
               <div className="mt-4">
-                <Button asChild variant="outline" size="sm" className="w-full h-8 text-xs font-medium rounded-md border-border">
-                  <Link href="/pengaduan">
-                    Buka Papan Pengaduan <ArrowRight className="ml-1 size-3.5" />
+                <Button asChild variant="default" size="sm" className="w-full h-8 text-xs font-medium rounded-md">
+                  <Link href="/progres/cater">
+                    Produktivitas Cater
                   </Link>
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Pilar 3: Penagihan & Keuangan */}
-          <Card className="hover:border-foreground/30 transition-colors">
+          {/* Card 4: Rekening DRD Terbit */}
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">3. Penagihan & DRD</CardTitle>
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Rekening Tagihan (DRD)
+              </CardTitle>
               <Receipt className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-5 pt-0">
-              <div className="text-2xl font-semibold tracking-tight text-foreground">Rp 18.42 M</div>
+              <div className="text-2xl font-semibold tracking-tight text-foreground">
+                {formatRupiah(summary.totalRupiahDrd)}
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Penerimaan Rekening Air Bulan Berjalan
+                Nilai Tagihan Periode {periode.label}
               </p>
               <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Efisiensi Penagihan</span>
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">92.1%</span>
+                  <span className="text-muted-foreground">Rata-rata Rekening</span>
+                  <span className="font-medium text-foreground">
+                    {summary.totalPelanggan > 0 ? formatRupiah(Math.round(summary.totalRupiahDrd / summary.totalPelanggan)) : 'Rp 0'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rekening Terbit (DRD)</span>
-                  <span className="font-medium text-foreground">142.100 Lembar</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Inquiry Publik Aktif</span>
-                  <span className="font-medium text-sky-600 dark:text-sky-400">Terkoneksi API Publik</span>
+                  <span className="text-muted-foreground">Lembar Terbit</span>
+                  <span className="font-medium text-foreground">{formatAngka(summary.totalCater)} Lembar</span>
                 </div>
               </div>
               <div className="mt-4">
-                <Button asChild variant="outline" size="sm" className="w-full h-8 text-xs font-medium rounded-md border-border">
-                  <Link href="/tarif">
-                    Kelola Tarif & Rekening <ArrowRight className="ml-1 size-3.5" />
+                <Button asChild variant="default" size="sm" className="w-full h-8 text-xs font-medium rounded-md">
+                  <Link href="/laporan/lap-drd">
+                    Lihat Rekap DRD
                   </Link>
                 </Button>
               </div>
@@ -197,14 +258,108 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Status Sistem & Pintasan Cepat */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Status Arsitektur */}
+      {/* Sebaran Wilayah & Golongan Tarif */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Panel 1: Sebaran 4 Wilayah Operasional */}
         <Card>
           <CardHeader className="p-5 pb-3">
-            <CardTitle className="text-sm font-semibold tracking-tight">Kondisi Infrastruktur & Mesin Bisnis</CardTitle>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-semibold tracking-tight">
+                  Sebaran Wilayah Pelayanan
+                </CardTitle>
+                <CardDescription className="text-xs mt-0.5">
+                  Distribusi pelanggan, konsumsi air, dan nilai DRD per wilayah kerja.
+                </CardDescription>
+              </div>
+              <Building2 className="size-4 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 pt-2 space-y-3.5">
+            {wilayah.map((w) => (
+              <div key={w.kode} className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-foreground">
+                    Wilayah {w.kode} &bull; {w.nama}
+                  </span>
+                  <span className="text-muted-foreground">
+                    <strong className="text-foreground">{formatAngka(w.totalPelanggan)} SL</strong> ({w.persentasePelanggan}%)
+                  </span>
+                </div>
+                {/* Visual Progress Bar Geist */}
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted/60">
+                  <div
+                    className="h-full bg-foreground/75 transition-all duration-300 rounded-full"
+                    style={{ width: `${w.persentasePelanggan}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[11px] text-muted-foreground">
+                  <span>Konsumsi: {formatAngka(w.totalPakaiM3)} m³</span>
+                  <span className="font-mono text-foreground font-medium">{formatRupiah(w.totalRupiah)}</span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Panel 2: Golongan Tarif Pelanggan Dominan */}
+        <Card>
+          <CardHeader className="p-5 pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-semibold tracking-tight">
+                  Golongan Tarif Pelanggan Dominan
+                </CardTitle>
+                <CardDescription className="text-xs mt-0.5">
+                  Struktur langganan berdasarkan kategori tarif aktif PDAM STI.
+                </CardDescription>
+              </div>
+              <Layers className="size-4 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 pt-2 space-y-2.5">
+            {tarif.map((t) => (
+              <div
+                key={t.kode}
+                className="flex items-center justify-between rounded-md border border-border bg-card p-2.5 hover:bg-muted/30 transition-colors"
+              >
+                <div className="space-y-0.5 min-w-0 pr-2">
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-border bg-muted/50 font-semibold">
+                      {t.kode}
+                    </Badge>
+                    <p className="text-xs font-medium text-foreground truncate">
+                      {t.nama}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatAngka(t.totalPelanggan)} Pelanggan &bull; {formatAngka(t.totalPakaiM3)} m³
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="font-mono text-xs font-medium text-foreground block">
+                    {formatRupiah(t.totalRupiah)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {t.totalPelanggan > 0 ? formatRupiah(Math.round(t.totalRupiah / t.totalPelanggan)) : ''}/SL
+                  </span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Status Sistem & Pintasan Cepat */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Antrean Verifikasi & Operasional */}
+        <Card>
+          <CardHeader className="p-5 pb-3">
+            <CardTitle className="text-sm font-semibold tracking-tight">
+              Status Integritas Basis Data & Infrastruktur
+            </CardTitle>
             <CardDescription className="text-xs">
-              Status keterhubungan backend Next.js 16, Drizzle ORM, dan Elysia API.
+              Koneksi engine Next.js 15, Drizzle ORM, PostgreSQL & PostGIS.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5 p-5 pt-0">
@@ -212,25 +367,14 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="size-4 text-emerald-500" />
                 <div>
-                  <p className="text-xs font-medium text-foreground">Mesin Alur Tiket & SLA</p>
-                  <p className="text-[11px] text-muted-foreground">State machine transisi tiket aktif teruji</p>
-                </div>
-              </div>
-              <Badge variant="outline" className="border-border text-emerald-600 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-full">
-                Operasional
-              </Badge>
-            </div>
-
-            <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 p-2.5">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="size-4 text-emerald-500" />
-                <div>
                   <p className="text-xs font-medium text-foreground">PostgreSQL & PostGIS Spasial</p>
-                  <p className="text-[11px] text-muted-foreground">Koordinat pelanggan, rute, dan pengaduan</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    22.549 data pelanggan & 22.078 meter air terkoneksi
+                  </p>
                 </div>
               </div>
               <Badge variant="outline" className="border-border text-emerald-600 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-full">
-                Terhubung
+                Terhubung (Aktif)
               </Badge>
             </div>
 
@@ -238,70 +382,99 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="size-4 text-emerald-500" />
                 <div>
-                  <p className="text-xs font-medium text-foreground">API Publik 3 Pilar</p>
-                  <p className="text-[11px] text-muted-foreground">Inquiry Tagihan, Lapor Mandiri, Pengaduan Air</p>
+                  <p className="text-xs font-medium text-foreground">Siklus Verifikasi Multi-Tier (V1-V3)</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Alur screening supervisor, approval cabang & pengesahan DRD
+                  </p>
                 </div>
               </div>
               <Badge variant="outline" className="border-border text-emerald-600 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-full">
                 Siap Melayani
               </Badge>
             </div>
+
+            <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 p-2.5">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="size-4 text-emerald-500" />
+                <div>
+                  <p className="text-xs font-medium text-foreground">Elysia 4-Tier Backend Engine</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Transport, Service, Domain Logic, dan Data Access aktif
+                  </p>
+                </div>
+              </div>
+              <Badge variant="outline" className="border-border text-emerald-600 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-full">
+                Normal (100%)
+              </Badge>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Akses Modul Cepat */}
+        {/* Akses Pintasan Cepat */}
         <Card>
           <CardHeader className="p-5 pb-3">
-            <CardTitle className="text-sm font-semibold tracking-tight">Akses Cepat Modul Utama</CardTitle>
+            <CardTitle className="text-sm font-semibold tracking-tight">Pintasan Modul Utama</CardTitle>
             <CardDescription className="text-xs">
-              Navigasi langsung ke modul operasional harian.
+              Akses cepat ke modul operasional harian PDAM Tirtawening.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2.5 p-5 pt-0">
             <Button asChild variant="outline" className="h-auto flex-col items-start p-3 rounded-md border-border hover:bg-accent/60">
-              <Link href="/master/wilayah">
-                <div className="flex items-center gap-2 mb-1">
-                  <UsersIcon className="size-3.5 text-muted-foreground" />
-                  <span className="font-medium text-xs text-foreground">Master Wilayah</span>
-                </div>
-                <span className="text-[11px] text-muted-foreground text-left">
-                  Kelola cabang layanan (CHN 1 - 6)
-                </span>
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline" className="h-auto flex-col items-start p-3 rounded-md border-border hover:bg-accent/60">
-              <Link href="/master/organisasi">
+              <Link href="/cater">
                 <div className="flex items-center gap-2 mb-1">
                   <Gauge className="size-3.5 text-muted-foreground" />
-                  <span className="font-medium text-xs text-foreground">Struktur SOTK</span>
+                  <span className="font-medium text-xs text-foreground">Baca Meter CHN</span>
                 </div>
                 <span className="text-[11px] text-muted-foreground text-left">
-                  4 Direktorat & divisi operasional
+                  Tabel data 22.549 pembacaan meter & anomali
                 </span>
               </Link>
             </Button>
 
             <Button asChild variant="outline" className="h-auto flex-col items-start p-3 rounded-md border-border hover:bg-accent/60">
-              <Link href="/master/urut">
+              <Link href="/pelanggan">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertCircle className="size-3.5 text-muted-foreground" />
-                  <span className="font-medium text-xs text-foreground">Pemetaan Rute</span>
+                  <UsersIcon className="size-3.5 text-muted-foreground" />
+                  <span className="font-medium text-xs text-foreground">Master Pelanggan</span>
                 </div>
                 <span className="text-[11px] text-muted-foreground text-left">
-                  Urutan pembacaan meter petugas
+                  Direktori pencarian nolg, rute, dan alamat
                 </span>
               </Link>
             </Button>
 
             <Button asChild variant="outline" className="h-auto flex-col items-start p-3 rounded-md border-border hover:bg-accent/60">
-              <Link href="/pengaturan">
+              <Link href="/places">
+                <div className="flex items-center gap-2 mb-1">
+                  <Compass className="size-3.5 text-muted-foreground" />
+                  <span className="font-medium text-xs text-foreground">Pemetaan Spasial</span>
+                </div>
+                <span className="text-[11px] text-muted-foreground text-left">
+                  Peta sebaran koordinat PostGIS pelanggan
+                </span>
+              </Link>
+            </Button>
+
+            <Button asChild variant="outline" className="h-auto flex-col items-start p-3 rounded-md border-border hover:bg-accent/60">
+              <Link href="/analytics">
+                <div className="flex items-center gap-2 mb-1">
+                  <Gauge className="size-3.5 text-muted-foreground" />
+                  <span className="font-medium text-xs text-foreground">Observabilitas & Grafik</span>
+                </div>
+                <span className="text-[11px] text-muted-foreground text-left">
+                  Grafik Vercel time-series, kubikasi & beban kerja
+                </span>
+              </Link>
+            </Button>
+
+            <Button asChild variant="outline" className="h-auto flex-col items-start p-3 rounded-md border-border hover:bg-accent/60">
+              <Link href="/laporan/lap-drd">
                 <div className="flex items-center gap-2 mb-1">
                   <Receipt className="size-3.5 text-muted-foreground" />
-                  <span className="font-medium text-xs text-foreground">Pengaturan</span>
+                  <span className="font-medium text-xs text-foreground">Laporan DRD</span>
                 </div>
                 <span className="text-[11px] text-muted-foreground text-left">
-                  Parameter jadwal & batasan lapor
+                  Rekapitulasi nilai rekening tagihan air
                 </span>
               </Link>
             </Button>

@@ -141,13 +141,7 @@ export default function PlacesPage() {
   };
 
   return (
-    <PageContainer
-      breadcrumbs={[
-        { label: 'Peta (Mapping)', href: '/places' },
-        { label: 'Pemetaan Pelanggan' },
-      ]}
-      className="space-y-6"
-    >
+    <PageContainer className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">PostGIS Spatial Places</h1>
         <p className="text-muted-foreground">
