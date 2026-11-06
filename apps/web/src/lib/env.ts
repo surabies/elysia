@@ -1,10 +1,18 @@
 import { z } from 'zod';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+dotenv.config();
 
 const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .url()
-    .default('postgresql://postgres:postgres@localhost:5432/elysia_db'),
+    .default('postgresql://postgres:postgres@localhost:5433/elysia_db'),
   BETTER_AUTH_SECRET: z
     .string()
     .min(16, 'BETTER_AUTH_SECRET must be at least 16 characters')
