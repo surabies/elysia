@@ -24,8 +24,11 @@
     ],
     "paths": {
       "@/*": [
-        "./*",
-        "./src/*"
+        "./apps/web/*",
+        "./apps/web/src/*"
+      ],
+      "@cater/web/*": [
+        "./apps/web/*"
       ],
       "@cater/db": [
         "./packages/db/src"

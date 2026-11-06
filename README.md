@@ -30,44 +30,37 @@ This repository adopts a **single-application, single-project** architecture:
 
 ---
 
-## 3. Project Structure
+## 3. Monorepo Structure
+
+The repository is organized as a **Bun Monorepo** (`apps/*` and `packages/*`). See [`docs/MONOREPO_STRUCTURE.md`](file:///E:/Coding/elysiajs/docs/MONOREPO_STRUCTURE.md) for full details.
 
 ```text
-├── app/
-│   ├── (auth)/
-│   │   ├── sign-in/page.tsx       # Sign in page
-│   │   └── sign-up/page.tsx       # Sign up page
-│   ├── api/
-│   │   ├── [[...slugs]]/route.ts  # Catch-all Route Handler for Elysia API
-│   │   └── auth/[...all]/route.ts # Better Auth Next.js Route Handler
-│   ├── dashboard/
-│   │   ├── dashboard-client.tsx   # Sign out & client actions
-│   │   └── page.tsx               # Protected server-verified dashboard
-│   ├── places/
-│   │   └── page.tsx               # PostGIS Places & proximity search demo UI
-│   ├── globals.css                # Tailwind CSS v4 & theme variables
-│   ├── layout.tsx                 # Root layout & navigation header
-│   └── page.tsx                   # Home landing page with interactive echo tester
-├── components/
-│   └── ui/                        # shadcn/ui components (button, card, input, badge, label)
-├── docs/
-│   ├── DECISIONS.md               # Architecture Decision Records (ADR)
-│   └── FEATURES.md                # Feature Traceability Matrix & Baseline
-├── src/
-│   ├── db/
-│   │   ├── migrations/            # Drizzle SQL migrations
-│   │   ├── schema/
-│   │   │   ├── auth.ts            # Better Auth tables (user, session, account, verification)
-│   │   │   ├── geo.ts             # Spatial places table with geometry(Point, 4326)
-│   │   │   └── index.ts           # Schema aggregator
-│   │   ├── index.ts               # Drizzle client singleton
-│   │   ├── migrate.ts             # Migration runner script
-│   │   └── seed.ts                # Database seeder with sample geospatial landmarks
-│   ├── lib/
-│   │   ├── api-client.ts          # Eden Treaty client
-│   │   ├── auth.ts                # Better Auth server instance
-│   │   ├── auth-client.ts         # Better Auth client
-│   │   ├── env.ts                 # Validated environment variables (Zod)
+elysiajs/ (Root Monorepo)
+├── apps/
+│   ├── web/                     # @cater/web: Next.js 16 + Elysia App Router + Geist UI
+│   │   ├── app/                 # Next.js App Router (home, cater, dashboard, places, auth)
+│   │   ├── components/ui/       # shadcn/ui components with Geist materials
+│   │   ├── src/server/          # Elysia API engine (mounted at /api/*)
+│   │   └── package.json         # Web dependencies
+│   │
+│   └── mobile/                  # @cater/mobile: React Native / Expo Field Cater App
+│       └── src/index.ts         # Meter reading submission & offline sync
+│
+├── packages/
+│   ├── db/                      # @cater/db: Core Database & Drizzle Modular Schema
+│   │   ├── data/jan/            # STI PDAM production CSV datasets (22,549 rows)
+│   │   ├── src/schema/          # Modular schemas (wilayah, tarif, meter, pelanggan, cater, billing)
+│   │   ├── src/etl/             # Fast streaming CSV importer
+│   │   ├── src/migrations/      # Versioned SQL migrations (PostGIS enabled)
+│   │   └── drizzle.config.ts    # Single source of truth for Drizzle Kit
+│   │
+│   └── types/                   # @cater/types: Shared DTOs and contracts
+│
+├── docs/                        # Architecture & documentation guides
+├── tests/                       # Automated test suites (24/24 passing)
+├── docker-compose.yml           # PostgreSQL 16/17 + PostGIS
+└── package.json                 # Monorepo workspaces manager
+```
 │   │   └── utils.ts               # Utility helpers (cn)
 │   └── server/
 │       ├── modules/

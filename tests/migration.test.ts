@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as schema from '@/src/db/schema';
+import * as schema from '@cater/db';
 
 describe('Database Schema & Migration Verification', () => {
   it('Migration file must enable PostGIS extension first', () => {
-    const migrationDir = path.resolve('src/db/migrations');
+    const migrationDir = path.resolve('packages/db/src/migrations');
     const files = fs.readdirSync(migrationDir).filter((f) => f.endsWith('.sql'));
     expect(files.length).toBeGreaterThan(0);
 

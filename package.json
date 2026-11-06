@@ -3,22 +3,22 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "bun@1.4.3",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint app src components packages",
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "db:generate": "bun --cwd packages/db db:generate",
-    "db:migrate": "bun --cwd packages/db db:migrate",
-    "db:studio": "bun --cwd packages/db db:studio",
-    "db:seed": "bun --cwd packages/db db:seed",
-    "auth:generate": "bun x @better-auth/cli generate"
+    "db:generate": "bun --filter \"@cater/db\" db:generate",
+    "db:migrate": "bun --filter \"@cater/db\" db:migrate",
+    "db:studio": "bun --filter \"@cater/db\" db:studio",
+    "db:seed": "bun --filter \"@cater/db\" db:seed",
+    "cater:import": "bun packages/db/src/etl/import-progres-cater.ts --all"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -70,6 +70,7 @@
     "eslint-config-next": "^16.4.5",
     "postcss": "^8.5.32",
     "tailwindcss": "^4.3.4",
+    "turbo": "^2.11.10",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.72.1"
   }

@@ -39,6 +39,12 @@ export default function RootLayout({
                   PostGIS Places
                 </Link>
                 <Link
+                  href="/cater"
+                  className="transition-colors hover:text-foreground/80 text-foreground/60 font-semibold"
+                >
+                  Baca Meter
+                </Link>
+                <Link
                   href="/dashboard"
                   className="transition-colors hover:text-foreground/80 text-foreground/60"
                 >

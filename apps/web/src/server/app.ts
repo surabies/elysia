@@ -5,6 +5,7 @@ import { healthModule } from './modules/health';
 import { echoModule } from './modules/echo';
 import { authModule } from './modules/auth';
 import { geoModule } from './modules/geo';
+import { caterModule } from './modules/cater';
 
 export const app = new Elysia({ prefix: '/api' })
   .use(corsPlugin)
@@ -19,6 +20,7 @@ export const app = new Elysia({ prefix: '/api' })
   .use(healthModule)
   .use(echoModule)
   .use(authModule)
-  .use(geoModule);
+  .use(geoModule)
+  .use(caterModule);
 
 export type App = typeof app;

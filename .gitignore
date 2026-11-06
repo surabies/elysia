@@ -34,6 +34,7 @@ logs/
 .cache/
 .eslintcache
 *.tsbuildinfo
+.turbo/
 
 # IDE & OS
 .idea/
