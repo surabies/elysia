@@ -1,62 +1,47 @@
-// components/layout/navbar/Navbar.tsx
-// Tugas: HANYA merakit komponen-komponen kecil menjadi satu navbar.
-import { NavbarBrand } from "./NavbarBrand"
-import { NavbarLinks } from "./NavbarLinks"
-import { NavbarPlus } from "./NavbarPlus"
-import { NavbarMobileBar } from "./NavbarMobileBar"
-import { NavbarTicker } from "./NavbarTicker"
-import { MobileMenu } from "./MobileMenu"
-import { UserMenu } from "./MenuPengguna"
+"use client"
 
-export function Navbar({
-  user,
-  onKeluar,
-}: {
-  user: {
-    name: string | null
-    email: string
-    image: string | null
-    role: string
-  }
-  onKeluar: () => Promise<void>
-}) {
+import Link from "next/link"
+import { PanelLeft, HelpCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { NavbarBreadcrumb } from "./NavbarBreadcrumb"
+import { useSidebar } from "../shell/SidebarContext"
+
+export function Navbar() {
+  const { toggleSidebar } = useSidebar()
+
   return (
-    // Tanpa border-b dan satu warna dengan sidebar (bg-muted) supaya menyatu.
-    // Tingginya harus sama dengan --navbar-h di DashboardShell.
-    <header className="fixed inset-x-0 top-0 z-10 bg-muted">
-      {/* ===== Bar utama (tampil di semua ukuran layar) ===== */}
-      <div className="flex h-14 items-center justify-between gap-4 px-3">
-        {/* Kiri: logo + dropdown versi */}
-        <NavbarBrand />
-
-        {/* Tengah: Running text reminder / motivasi (khusus rute verifikasi) */}
-        <NavbarTicker />
-
-        {/* Kanan: isinya berbeda untuk mobile dan desktop */}
-        <div className="flex items-center gap-1 lg:gap-6">
-          {/* MOBILE SAJA: ikon titik 3 -> membuka menu layar penuh */}
-          <div className="lg:hidden">
-            <MobileMenu />
-          </div>
-
-          {/* DESKTOP SAJA: link menu dan kotak sorot "Bantuan" */}
-          <div className="flex items-center gap-6 max-lg:hidden">
-            <NavbarLinks />
-            <NavbarPlus />
-          </div>
-
-          <UserMenu
-            nama={user.name}
-            email={user.email}
-            image={user.image}
-            role={user.role}
-            onKeluar={onKeluar}
-          />
-        </div>
+    <header className="relative flex h-20 w-full shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur-sm z-20">
+      {/* Kiri: Tombol sembunyikan/tampilkan sidebar */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          aria-label="Sembunyikan atau tampilkan sidebar"
+          title="Toggle Sidebar (Ctrl+B)"
+          className="size-8 rounded-md text-muted-foreground hover:bg-[#F2F2F2] hover:text-foreground dark:hover:bg-[#1A1A1A]"
+        >
+          <PanelLeft size={16} strokeWidth={1.5} className="size-4" />
+        </Button>
       </div>
 
-      {/* ===== Bar kedua: hamburger + breadcrumb (khusus mobile) ===== */}
-      <NavbarMobileBar />
+      {/* Tengah: Breadcrumb pas di tengah navbar */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-auto">
+        <NavbarBreadcrumb />
+      </div>
+
+      {/* Kanan: Hanya menyisakan tombol Bantuan saja */}
+      <div className="flex items-center gap-2">
+        <Link
+          href="/bantuan"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-[#F2F2F2] dark:hover:bg-[#1F1F1F]"
+          title="Pusat Bantuan & Dokumentasi"
+        >
+          <HelpCircle size={15} strokeWidth={1.5} className="size-3.5 text-muted-foreground" />
+          <span>Bantuan</span>
+        </Link>
+      </div>
     </header>
   )
 }

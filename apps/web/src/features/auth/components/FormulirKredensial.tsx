@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { TriangleAlert } from "@/components/ui/hugeicons-compat"
+import { TriangleAlert } from "lucide-react"
 import { loginSchema } from "../lib/Schema"
 
 export function CredentialsForm({ callbackUrl }: { callbackUrl: string }) {
@@ -86,7 +86,6 @@ export function CredentialsForm({ callbackUrl }: { callbackUrl: string }) {
             id="identifier"
             name="identifier"
             type="text"
-            className="h-10"
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
@@ -111,7 +110,6 @@ export function CredentialsForm({ callbackUrl }: { callbackUrl: string }) {
             id="password"
             name="password"
             type="password"
-            className="h-10"
             autoComplete="current-password"
             aria-invalid={!!errors.password}
             disabled={pending}

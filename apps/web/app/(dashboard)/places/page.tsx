@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { PageContainer } from '@/components/layout/index';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -140,7 +141,13 @@ export default function PlacesPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <PageContainer
+      breadcrumbs={[
+        { label: 'Peta (Mapping)', href: '/places' },
+        { label: 'Pemetaan Pelanggan' },
+      ]}
+      className="space-y-6"
+    >
       <div>
         <h1 className="text-3xl font-bold tracking-tight">PostGIS Spatial Places</h1>
         <p className="text-muted-foreground">
@@ -375,6 +382,6 @@ export default function PlacesPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

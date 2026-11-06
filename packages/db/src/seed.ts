@@ -1,5 +1,6 @@
 import { db } from './client';
-import { user, places, account } from './schema';
+import { user, places, account, userRoles } from './schema';
+import { hashPassword } from 'better-auth/crypto';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
@@ -11,19 +12,28 @@ async function seed() {
   try {
     const userId = 'seed-user-1';
     const email = 'demo@example.com';
+    const rawPassword = 'Password123!';
+    const hashedPassword = await hashPassword(rawPassword);
 
     // Insert demo user if not existing
     await db
       .insert(user)
       .values({
         id: userId,
-        name: 'Demo Explorer',
+        name: 'Demo Admin',
         email,
         emailVerified: true,
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: user.id,
+        set: {
+          name: 'Demo Admin',
+          email,
+          emailVerified: true,
+        },
+      });
 
-    // Insert demo user account with password
+    // Insert demo user account with hashed password
     await db
       .insert(account)
       .values({
@@ -31,8 +41,23 @@ async function seed() {
         accountId: userId,
         providerId: 'credential',
         userId,
-        password: 'Password123!',
+        password: hashedPassword,
       })
+      .onConflictDoUpdate({
+        target: account.id,
+        set: {
+          password: hashedPassword,
+        },
+      });
+
+    // Insert RBAC user roles for admin access
+    await db
+      .insert(userRoles)
+      .values([
+        { userId, role: 'SUPERADMIN' },
+        { userId, role: 'STAFF_ADMIN_BILLING' },
+        { userId, role: 'VERIFIKATOR_1' },
+      ])
       .onConflictDoNothing();
 
     // Insert sample places (Monas Jakarta & surrounding landmarks)

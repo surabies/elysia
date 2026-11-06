@@ -9,8 +9,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/Utilitas"
 import { mobileMenuLinks } from "@/config/Navigasi"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { MoreVerticalIcon, Cancel01Icon } from "@hugeicons/core-free-icons"
+import { MoreVertical, X } from "lucide-react"
 
 export function MobileMenu() {
   // Tahap 1: state buka/tutup
@@ -53,9 +52,9 @@ export function MobileMenu() {
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
-        <HugeiconsIcon
-          icon={MoreVerticalIcon}
-          strokeWidth={2}
+        <MoreVertical
+          size={16}
+          strokeWidth={1.5}
           className="size-4"
         />
       </Button>
@@ -91,9 +90,9 @@ export function MobileMenu() {
             aria-label="Close menu"
             onClick={() => setOpen(false)}
           >
-            <HugeiconsIcon
-              icon={Cancel01Icon}
-              strokeWidth={2}
+            <X
+              size={16}
+              strokeWidth={1.5}
               className="size-4"
             />
           </Button>

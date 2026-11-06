@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { PageContainer } from '@/components/layout/index';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -88,7 +89,13 @@ export default function CaterPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <PageContainer
+      breadcrumbs={[
+        { label: 'Pengolahan Data', href: '/cater' },
+        { label: 'Baca Meter CHN' },
+      ]}
+      className="space-y-6"
+    >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>
@@ -319,6 +326,6 @@ export default function CaterPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

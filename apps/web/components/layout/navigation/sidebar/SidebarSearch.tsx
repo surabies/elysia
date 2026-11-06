@@ -6,8 +6,7 @@
 
 import * as React from "react"
 import { createPortal } from "react-dom"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Search01Icon } from "@hugeicons/core-free-icons"
+import { Search } from "lucide-react"
 import { SearchDialog } from "@/components/layout/search/SearchDialog"
 import { FOCUS_RING } from "./lib/Styles"
 import { useIsClient } from "./hooks/UseIsClient"
@@ -48,19 +47,18 @@ export function SidebarSearch() {
         aria-label="Cari menu"
         onClick={() => setOpen(true)}
         className={cn(
-          "flex h-control w-full items-center gap-2 rounded-lg border border-sidebar-border bg-card px-2.5 text-left text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-hover",
+          "flex h-8 w-full items-center gap-2 rounded-md border border-border bg-card px-2.5 text-left text-xs text-muted-foreground transition-colors hover:bg-[#F2F2F2] hover:text-foreground dark:hover:bg-[#1A1A1A]",
           FOCUS_RING
         )}
       >
-        <HugeiconsIcon
-          icon={Search01Icon}
-          size={16}
-          strokeWidth={1.8}
-          className="shrink-0"
+        <Search
+          size={14}
+          strokeWidth={1.5}
+          className="size-3.5 shrink-0 text-muted-foreground"
           aria-hidden="true"
         />
-        <span className="min-w-0 flex-1 truncate">Cari menu...</span>
-        <kbd className="inline-flex h-5 shrink-0 items-center rounded border border-sidebar-border bg-sidebar px-1.5 font-sans text-xs text-sidebar-foreground">
+        <span className="min-w-0 flex-1 truncate text-xs">Cari menu...</span>
+        <kbd className="inline-flex h-5 shrink-0 items-center rounded border border-border bg-muted/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
           {isMac ? "⌘K" : "Ctrl\u00a0K"}
         </kbd>
       </button>

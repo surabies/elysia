@@ -51,7 +51,7 @@ export function MobileSidebar({
         open ? "visible opacity-100" : "pointer-events-none invisible opacity-0"
       )}
     >
-      <SidebarNav />
+      <SidebarNav withSearch />
     </div>
   )
 }

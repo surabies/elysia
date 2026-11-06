@@ -2,7 +2,7 @@
 // Tampilan detail: baris "‹ Nama Grup" untuk kembali, lalu menu grup itu.
 
 import { cn } from "@/lib/Utilitas"
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
+import { ChevronLeft } from "lucide-react"
 import type { NavGroup } from "@/config/Navigasi"
 import { getGroupIcon } from "./lib/Icons"
 import { NavNodeRow } from "./NavNodeRow"
@@ -27,7 +27,7 @@ export function GroupDetail({ group, active, onBack }: Props) {
         className={cn(navRowClass(false), "font-medium")}
       >
         <NavRowContent
-          icon={ArrowLeft01Icon}
+          icon={ChevronLeft}
           iconClassName="transition-transform duration-200 group-hover/row:-translate-x-0.5 motion-reduce:transition-none"
         >
           {group.title}

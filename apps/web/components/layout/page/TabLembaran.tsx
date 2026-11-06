@@ -6,14 +6,13 @@
 // memakai gaya ini supaya tampilannya seragam.
 import * as React from "react"
 import type { ReactNode } from "react"
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { cn } from "@/lib/Utilitas"
 import { useAreaTinggiLayar } from "./AreaTinggiLayar"
 
 export interface ItemTab<K extends string> {
   kunci: K
   label: string
-  icon?: IconSvgElement
+  icon?: React.ComponentType<{ size?: number | string; className?: string }>
 }
 
 export function TabLembaran<K extends string>({
@@ -109,8 +108,7 @@ export function TabLembaran<K extends string>({
                 onClick={() => pilih(t.kunci)}
                 onKeyDown={(e) => onKey(e, i)}
                 className={cn(
-                  "relative -mb-px flex items-center gap-2 border border-b-0 px-4 text-sm font-medium outline-none",
-                  i === 0 ? "rounded-tl-none rounded-tr-lg" : "rounded-t-lg",
+                  "relative -mb-px flex items-center gap-2 border border-b-0 px-4 text-sm font-medium outline-none rounded-t-md",
                   kerangkaHalaman && i === 0 && "border-l-0",
                   transisi && "transition-all duration-300 ease-out",
                   "focus-visible:ring-2 focus-visible:ring-ring/50",
@@ -128,15 +126,13 @@ export function TabLembaran<K extends string>({
                 )}
               >
                 {t.icon && (
-                  <HugeiconsIcon
-                    icon={t.icon}
-                    strokeWidth={2}
+                  <t.icon
+                    size={16}
                     className={cn(
                       "size-4 shrink-0",
                       transisi && "transition-all duration-300",
                       !dipilih && "opacity-70"
                     )}
-                    aria-hidden
                   />
                 )}
                 {t.label}
@@ -150,7 +146,7 @@ export function TabLembaran<K extends string>({
         className={cn(
           "relative min-h-0 min-w-0 flex-1 overflow-hidden bg-background",
           !kerangkaHalaman &&
-            "rounded-lg rounded-tl-none border border-border bg-card shadow-panel"
+            "rounded-lg rounded-tl-none border border-border bg-card shadow-xs"
         )}
       >
         <div

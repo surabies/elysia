@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { findActiveNav, type NavItem, type NavGroup } from "@/config/Navigasi"
 import { MobileSidebar } from "../navigation/MobileSidebar"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Menu01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import { Menu, ChevronRight } from "lucide-react"
 
 export function NavbarMobileBar() {
   // Tahap 1: state buka/tutup dipegang di sini (induk dari tombol DAN panel)
@@ -55,7 +54,7 @@ export function NavbarMobileBar() {
         aria-expanded={open} // memberi tahu screen reader status panel
         onClick={() => setOpen((prev) => !prev)}
       >
-        <HugeiconsIcon icon={Menu01Icon} strokeWidth={2} className="size-4" />
+        <Menu size={16} strokeWidth={1.5} className="size-4" />
       </Button>
 
       <Breadcrumb>
@@ -66,10 +65,10 @@ export function NavbarMobileBar() {
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator>
-            <HugeiconsIcon
-              icon={ArrowRight01Icon}
-              strokeWidth={2}
-              className="size-4"
+            <ChevronRight
+              size={14}
+              strokeWidth={1.5}
+              className="size-3.5 opacity-60"
             />
           </BreadcrumbSeparator>
           <BreadcrumbItem>

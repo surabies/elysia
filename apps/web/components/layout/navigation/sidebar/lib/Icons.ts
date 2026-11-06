@@ -1,208 +1,247 @@
 // components/layout/navigation/sidebar/lib/Icons.ts
-// Satu-satunya tempat pemetaan ikon sidebar. Menambah menu baru = tambah satu
-// baris di ITEM_ICONS (atau biarkan: otomatis memakai ikon grupnya).
+// Sistem ikon hybrid: Geist UI + GitHub Octicons + Lucide.
+// Menjamin keselarasan visual Swiss minimalist geometry (Geist)
+// dipadukan dengan semantik enterprise (Octicons) dan utilitas domain (Lucide).
 
-import type { IconSvgElement } from "@hugeicons/react"
+import type * as React from "react"
+import type { SidebarIconComponent } from "../NavRow"
+
+// 1. GEIST ICONS (Minimalis, Swiss geometry, presisi Vercel)
 import {
-  Activity01Icon,
-  Analytics01Icon,
-  DashboardSquare01Icon,
-  File01Icon,
-  AddSquareIcon,
-  Alert01Icon,
-  Alert02Icon,
-  AlertDiamondIcon,
-  ArrowDataTransferHorizontalIcon,
-  ArrowDataTransferVerticalIcon,
-  ArrowUpDownIcon,
-  Calendar03Icon,
-  CalendarAdd01Icon,
-  CalendarLock01Icon,
-  CalendarRemove01Icon,
-  CalculatorIcon,
-  Camera01Icon,
-  ChartBarLineIcon,
-  ChartLineData01Icon,
-  CheckmarkBadge01Icon,
-  CloudUploadIcon,
-  ContactBookIcon,
-  DashboardSpeed01Icon,
-  DatabaseIcon,
-  DatabaseImportIcon,
-  DatabaseSync01Icon,
-  Download01Icon,
-  Edit02Icon,
-  File02Icon,
-  FileAttachmentIcon,
-  FileExportIcon,
-  FileImportIcon,
-  FileSearchIcon,
-  FileSyncIcon,
-  GitCompareIcon,
+  Grid,
+  Activity,
+  FileText,
+  Database,
+  MapPin,
+  Tool,
+  Settings,
+  HelpCircle,
+  RefreshCw,
+  Sliders,
+  User,
+  Users,
+  Map,
+  Camera,
+  Clock,
+  Layers,
+  Calendar,
+  AlertTriangle,
+  AlertCircle,
+  UploadCloud,
+  DownloadCloud,
+  Bell,
+  Sliders as SlidersIcon,
+} from "@geist-ui/icons"
+
+// 2. OCTICONS (Semantik Git, Branch, Merge, Otorisasi, Audit)
+import {
   GitMergeIcon,
+  GitPullRequestIcon,
+  RepoIcon,
+  SortDescIcon,
+  ArrowSwitchIcon,
+  ShieldLockIcon,
+  GraphIcon,
+  ChecklistIcon,
   HistoryIcon,
-  Image01Icon,
-  ImageDone01Icon,
-  ImageUpload01Icon,
-  Invoice01Icon,
-  Layers01Icon,
-  Location01Icon,
-  MapsIcon,
-  MapsLocation01Icon,
-  NewsIcon,
-  PencilEdit01Icon,
-  PercentCircleIcon,
-  RefreshIcon,
-  Route01Icon,
-  Sent02Icon,
-  SentIcon,
-  SmartPhone01Icon,
-  Sorting05Icon,
-  Task01Icon,
-  Task02Icon,
-  TrendingDownIcon,
-  TrendingUpIcon,
-  Upload04Icon,
-  UserAccountIcon,
-  UserGroupIcon,
-  UserListIcon,
-  UserShield01Icon,
-  Wrench01Icon,
-} from "@hugeicons/core-free-icons"
+  OrganizationIcon,
+  MegaphoneIcon,
+  EyeIcon,
+  TableIcon,
+  SyncIcon,
+  GitCompareIcon,
+} from "@primer/octicons-react"
+
+// 3. LUCIDE ICONS (Domain utilities, alat ukur air & meter)
+import {
+  Gauge,
+  Receipt,
+  Ticket,
+  Calculator,
+  TrendingUp,
+  TrendingDown,
+  CircleSlash,
+  FileSpreadsheet,
+  PhoneCall,
+  FilePlus,
+  Files,
+  Lock,
+  Compass,
+  Workflow,
+  Percent,
+  BarChart3,
+  UserCheck,
+  Diff,
+  UserPlus,
+  Droplets,
+  Building2,
+  FolderOpen,
+} from "lucide-react"
 
 // ----------------------------------------------------------------------------
-// IKON GRUP — key HARUS sama dengan `id` di navigation.ts
+// IKON MENU UTAMA (Puncak Sidebar: Dashboard / Analytics / Pengaduan)
 // ----------------------------------------------------------------------------
-export const GROUP_ICONS: Record<string, IconSvgElement> = {
-  master: DatabaseIcon,
-  "pengolahan-data": DashboardSpeed01Icon,
-  peta: MapsIcon,
-  progress: ChartLineData01Icon,
-  laporan: File02Icon,
-  "tool-tutup-bulan": CalendarLock01Icon,
-  tools: Wrench01Icon,
-  "sync-tutup-bulan": RefreshIcon,
-  pengaturan: Calendar03Icon,
+export const PRIMARY_ICONS: Record<string, SidebarIconComponent> = {
+  "/dashboard": Grid,
+  "/analytics": GraphIcon,
+  "/pengaduan": Ticket,
 }
 
-export const FALLBACK_GROUP_ICON: IconSvgElement = Layers01Icon
-
-// ----------------------------------------------------------------------------
-// IKON MENU — key = judul menu (huruf besar/kecil tidak berpengaruh).
-// Menu yang tidak ada di sini memakai ikon grupnya.
-// ----------------------------------------------------------------------------
-const ITEM_ICONS: Record<string, IconSvgElement> = {
-  // Master
-  kelainan: Alert02Icon,
-  "otorisasi menu": UserShield01Icon,
-  user: UserAccountIcon,
-  petugas: UserGroupIcon,
-  "pemetaan petugas": MapsLocation01Icon,
-  "pengurutan rute petugas": Sorting05Icon,
-  "penggabungan rute": GitMergeIcon,
-  "pindah rute": Route01Icon,
-  "pindah rute monitoring": Activity01Icon,
-  "jendela laporan mandiri": CalendarAdd01Icon,
-
-  // Pengolahan Data
-  "baca meter wilayah (chn)": DashboardSpeed01Icon,
-  "info pelanggan": ContactBookIcon,
-  "mutasi pb-pk": ArrowDataTransferHorizontalIcon,
-  "no hp pelanggan": SmartPhone01Icon,
-  "pindah jenis pelanggan": ArrowDataTransferVerticalIcon,
-  "manual add": AddSquareIcon,
-  "manual add all": Layers01Icon,
-  "hitung rata-rata": CalculatorIcon,
-  "cek foto petugas": Camera01Icon,
-  "verifikasi catat mandiri": CheckmarkBadge01Icon,
-
-  // Peta
-  "pemetaan pelanggan": Location01Icon,
-  "peta wilayah": MapsIcon,
-  "peta pengaduan air": MapsLocation01Icon,
-  "peta pengaduan": MapsLocation01Icon,
-
-  // Progress
-  "grafik pelanggan": ChartLineData01Icon,
-  "progress per wilayah": ChartBarLineIcon,
-  "progress per cater": UserListIcon,
-  "presentase koreksi": PercentCircleIcon,
-  "ikhtisar pemakaian ekstrim": TrendingUpIcon,
-  "ikhtisar pemakaian turun": TrendingDownIcon,
-  "ikhtisar pemakaian 0": Alert01Icon,
-  "hasil foto petugas": ImageDone01Icon,
-
-  // Laporan
-  "laporan drd": Invoice01Icon,
-  "lap. mutasi pel": FileSyncIcon,
-  "lap. mutasi pb-pk": FileExportIcon,
-  "lap. periode cater": Calendar03Icon,
-  "lap data meter": FileSearchIcon,
-  "lap kelainan meter": AlertDiamondIcon,
-  "lap evaluasi": Task01Icon,
-  "lap pelanggan": UserListIcon,
-  "lap. selisih hari": CalendarRemove01Icon,
-  "lap data st. awal & akhir": ArrowUpDownIcon,
-  "lap data st. 0 (nol)": Alert01Icon,
-  "lap history": HistoryIcon,
-  "lap perubahan pel": Edit02Icon,
-  "lap. data dan foto": Image01Icon,
-  "lap. monitoring kubikasi koreksi": Activity01Icon,
-
-  // Tool Tutup Bulan
-  pbpk: FileAttachmentIcon,
-  "stand angkat": Upload04Icon,
-  "update zonasi": Layers01Icon,
-  "posting datameter": SentIcon,
-  "create closed drd": CalendarLock01Icon,
-  "create perbandingan": GitCompareIcon,
-  "create bulan baru": CalendarAdd01Icon,
-  "upload master pelanggan": CloudUploadIcon,
-  "sync pelanggan baru": RefreshIcon,
-  "update data pelanggan": PencilEdit01Icon,
-  "cek selisih pelanggan": FileSearchIcon,
-  "monitoring tutup bulan": Activity01Icon,
-
-  // Tools
-  "running text": NewsIcon,
-  "import stand angkat": DatabaseImportIcon,
-  "import pb pk": FileImportIcon,
-  "proses pbpk": Task02Icon,
-  "import backup photo": ImageUpload01Icon,
-  "import backup photo gwm": ImageUpload01Icon,
-  "import backup data": DatabaseImportIcon,
-  "import data spt": FileImportIcon,
-  "import data anomali": Alert02Icon,
-  "import data gwm": DatabaseImportIcon,
-  "import tutup": CalendarLock01Icon,
-
-  // Sync Tutup Bulan
-  "sync (1) kirim mutasi": Sent02Icon,
-  "sync (2) kirim datameter": DatabaseSync01Icon,
-  "sync (3) import sti": Download01Icon,
-  "sync (4) bulan baru": CalendarAdd01Icon,
+export function getPrimaryIcon(href: string): SidebarIconComponent {
+  return PRIMARY_ICONS[href] ?? Grid
 }
 
-export function getItemIcon(
-  title: string,
-  fallback: IconSvgElement
-): IconSvgElement {
-  return ITEM_ICONS[title.trim().toLowerCase()] ?? fallback
+// ----------------------------------------------------------------------------
+// IKON GRUP / DIREKTORAT (Sesuai docs/SIDEBAR_REFERENCE.md)
+// ----------------------------------------------------------------------------
+export const GROUP_ICONS: Record<string, SidebarIconComponent> = {
+  master: Database,
+  "pengolahan-data": Gauge,
+  peta: Map,
+  progres: BarChart3,
+  progress: BarChart3,
+  laporan: FileText,
+  "tool-tutup-bulan": Lock,
+  tools: Tool,
+  "sync-tutup-bulan": RefreshCw,
+  pengaturan: Settings,
+  bantuan: HelpCircle,
 }
 
-export function getGroupIcon(groupId: string): IconSvgElement {
+export const FALLBACK_GROUP_ICON: SidebarIconComponent = Layers
+
+export function getGroupIcon(groupId: string): SidebarIconComponent {
   return GROUP_ICONS[groupId] ?? FALLBACK_GROUP_ICON
 }
 
 // ----------------------------------------------------------------------------
-// IKON MENU UTAMA (Dashboard / Analytics / Report) — key = href di primaryNav
+// IKON SUBMENU (Pemetaan presisi dari 3 library)
 // ----------------------------------------------------------------------------
-const PRIMARY_ICONS: Record<string, IconSvgElement> = {
-  "/dashboard": DashboardSquare01Icon,
-  "/analytics": Analytics01Icon,
-  "/report": File01Icon,
+const ITEM_ICONS: Record<string, SidebarIconComponent> = {
+  // === 2. MASTER ===
+  kelainan: AlertTriangle,
+  "otorisasi menu": ShieldLockIcon,
+  user: User,
+  pengguna: User,
+  petugas: Users,
+  "pemetaan petugas": Compass,
+  "pemetaan rute": Compass,
+  "pengurutan rute petugas": SortDescIcon,
+  "pengurutan rute": SortDescIcon,
+  "penggabungan rute": GitMergeIcon,
+  "pindah rute": ArrowSwitchIcon,
+  "pindah rute monitoring": Activity,
+  "struktur organisasi": OrganizationIcon,
+  "wilayah administratif": Map,
+  "tarif & harga air": Receipt,
+
+  // === 3. PENGOLAHAN DATA ===
+  "baca meter chn": Gauge,
+  "daftar pencatatan meter": RepoIcon,
+  "info pelanggan": User,
+  "mutasi pb-pk": GitPullRequestIcon,
+  "mutasi pbpk": GitPullRequestIcon,
+  "no hp pel": PhoneCall,
+  "no hp pelanggan": PhoneCall,
+  "pindah jenis pel": ArrowSwitchIcon,
+  "pindah jenis pelanggan": ArrowSwitchIcon,
+  "manual add": FilePlus,
+  "manual add all": Files,
+  "hitung rata-rata": Calculator,
+  "cek foto petugas": EyeIcon,
+  "verifikasi catat mandiri": ChecklistIcon,
+  "baca meter pelanggan": ChecklistIcon,
+  "cek stand konsumen": ChecklistIcon,
+
+  // === 4. PETA (MAPPING) ===
+  "pemetaan pelanggan": MapPin,
+  "peta wilayah": Map,
+  "peta pengaduan air": Ticket,
+  "peta pengaduan": Ticket,
+
+  // === 5. PROGRESS ===
+  "grafik pelanggan": GraphIcon,
+  "progress per wilayah": BarChart3,
+  "progress per cater": UserCheck,
+  "progres pencatat": UserCheck,
+  "presentase koreksi": Percent,
+  "ikhtisar pemakaian ekstrim": TrendingUp,
+  "ikhtisar pemakaian turun": TrendingDown,
+  "ikhtisar pemakaian 0": CircleSlash,
+  "ikhtisar pemakaian 0 (nol)": CircleSlash,
+  "hasil foto petugas": Camera,
+
+  // === 6. LAPORAN (REPORTS) ===
+  "laporan drd": Receipt,
+  "lap. mutasi pel": SyncIcon,
+  "lap. mutasi pb-pk": GitPullRequestIcon,
+  "lap. periode cater": Clock,
+  "lap data meter": FileSpreadsheet,
+  "lap. data meter": FileSpreadsheet,
+  "lap kelainan meter": AlertCircle,
+  "lap. kelainan meter": AlertCircle,
+  "lap evaluasi": FileText,
+  "lap. evaluasi": FileText,
+  "lap pelanggan": Users,
+  "lap. pelanggan": Users,
+  "lap. selisih hari": Diff,
+  "lap data st. awal & akhir": TableIcon,
+  "lap. data st. awal & akhir": TableIcon,
+  "lap data st. 0 (nol)": CircleSlash,
+  "lap. data st. 0 (nol)": CircleSlash,
+  "lap history": HistoryIcon,
+  "lap. history": HistoryIcon,
+  "lap perubahan pel": ArrowSwitchIcon,
+  "lap. perubahan pel": ArrowSwitchIcon,
+  "lap. data dan foto": Camera,
+  "lap. monitoring kubikasi koreksi": Activity,
+
+  // === 7. TOOL TUTUP BULAN ===
+  pbpk: GitPullRequestIcon,
+  "stand angkat": ChecklistIcon,
+  "update zonasi": Map,
+  "posting datameter": TableIcon,
+  "create closed drd": Lock,
+  "create perbandingan": GitCompareIcon,
+  "create bulan baru": Calendar,
+  "upload master pelanggan": UploadCloud,
+  "sync pelanggan baru": UserPlus,
+  "update data pelanggan": SyncIcon,
+  "cek selisih pelanggan": Diff,
+  "monitoring ttp bulan": Activity,
+  "monitoring tutup bulan": Activity,
+
+  // === 8. TOOLS & INTEGRASI ===
+  "running text": MegaphoneIcon,
+  "import st angkat": DownloadCloud,
+  "import stand angkat": DownloadCloud,
+  "import pb pk": GitPullRequestIcon,
+  "import pbpk": GitPullRequestIcon,
+  "proses pbpk": Workflow,
+  "import backup photo": Camera,
+  "import backup photo gwm": Droplets,
+  "import backup data": Database,
+  "import data spt": FileText,
+  "import data anomali": AlertTriangle,
+  "import data gwm": Droplets,
+  "import tutup": Lock,
+
+  // === 9. SYNC TUTUP BULAN ===
+  "sync (1) kirim mutasi": SyncIcon,
+  "sync (2) kirim datameter": RepoIcon,
+  "sync (3) import sti": FileSpreadsheet,
+  "sync (4) bulan baru": Calendar,
+
+  // === 10. PENGATURAN & BANTUAN ===
+  "jendela laporan mandiri": Calendar,
+  notifikasi: Bell,
+  "panduan pengguna": HelpCircle,
 }
 
-export function getPrimaryIcon(href: string): IconSvgElement {
-  return PRIMARY_ICONS[href] ?? FALLBACK_GROUP_ICON
+export function getItemIcon(
+  title: string,
+  fallback: SidebarIconComponent
+): SidebarIconComponent {
+  const key = title.trim().toLowerCase()
+  return ITEM_ICONS[key] ?? fallback
 }

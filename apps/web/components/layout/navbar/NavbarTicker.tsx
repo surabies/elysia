@@ -6,8 +6,7 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { SparklesIcon } from "@hugeicons/core-free-icons"
+import { Sparkles } from "lucide-react"
 
 const PESAN_REMINDER = [
   "Tetap semangat bekerja dan lakukan yang terbaik untuk perusahaan ✨",
@@ -27,13 +26,13 @@ export function NavbarTicker() {
   return (
     <div
       aria-label="Pengingat dan motivasi kerja"
-      className="group relative hidden max-w-xs items-center gap-2 overflow-hidden rounded-full border border-white bg-card px-2.5 py-1 text-xs text-foreground shadow-xs transition-colors md:flex sm:max-w-sm lg:max-w-md xl:max-w-lg dark:border-border"
+      className="group relative hidden max-w-xs items-center gap-2 overflow-hidden rounded-full border border-border bg-card px-2.5 py-1 text-xs text-foreground shadow-xs transition-colors md:flex sm:max-w-sm lg:max-w-md xl:max-w-lg"
     >
       {/* Badge penanda statis di sisi kiri */}
       <div className="flex shrink-0 items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
-        <HugeiconsIcon
-          icon={SparklesIcon}
-          strokeWidth={2}
+        <Sparkles
+          size={12}
+          strokeWidth={1.5}
           className="size-3 text-blue-600 dark:text-blue-400"
           aria-hidden="true"
         />

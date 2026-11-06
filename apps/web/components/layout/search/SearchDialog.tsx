@@ -8,8 +8,7 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/Utilitas"
 import { searchDocs } from "@/lib/DataPencarian"
 import { Highlight } from "./Highlight"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Search01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import { Search, ArrowRight } from "lucide-react"
 
 export function SearchDialog({
   open,
@@ -115,16 +114,16 @@ export function SearchDialog({
         aria-modal="true"
         aria-label="Cari menu"
         className={cn(
-          "flex max-h-[80dvh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-background shadow-2xl ring-1 ring-black/5",
+          "flex max-h-[80dvh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl",
           "transition-transform duration-200 ease-out motion-reduce:transition-none",
           open ? "scale-100" : "scale-[0.98]"
         )}
       >
         {/* ===== Baris input ===== */}
-        <div className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
-          <HugeiconsIcon
-            icon={Search01Icon}
-            strokeWidth={2}
+        <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
+          <Search
+            size={16}
+            strokeWidth={1.5}
             className="size-4 shrink-0 text-muted-foreground"
           />
           <input
@@ -142,7 +141,7 @@ export function SearchDialog({
             type="button"
             onClick={onClose}
             aria-label="Tutup pencarian"
-            className="rounded-md border bg-muted/50 px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+            className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
           >
             esc
           </button>
@@ -181,16 +180,16 @@ export function SearchDialog({
                       className={cn(
                         "flex w-full items-center gap-4 rounded-lg px-4 py-3 text-left transition-colors",
                         isActive
-                          ? "bg-sky-500 text-white [&_mark]:text-white"
-                          : "bg-muted/50"
+                          ? "bg-[#EBEBEB] text-[#171717] dark:bg-[#1F1F1F] dark:text-[#EDEDED]"
+                          : "bg-transparent text-foreground hover:bg-[#EBEBEB]/60 dark:hover:bg-[#1F1F1F]/60"
                       )}
                     >
                       <span
                         className={cn(
                           "flex size-8 shrink-0 items-center justify-center rounded-md border text-sm",
                           isActive
-                            ? "border-white/30 bg-white/10 text-white"
-                            : "bg-background text-muted-foreground"
+                            ? "border-border bg-background text-foreground"
+                            : "border-transparent bg-background text-muted-foreground"
                         )}
                       >
                         #
@@ -206,9 +205,9 @@ export function SearchDialog({
                         </span>
                       </span>
 
-                      <HugeiconsIcon
-                        icon={ArrowRight01Icon}
-                        strokeWidth={2}
+                      <ArrowRight
+                        size={16}
+                        strokeWidth={1.5}
                         className="size-4 shrink-0 opacity-70"
                       />
                     </button>

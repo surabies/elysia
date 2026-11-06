@@ -13,6 +13,8 @@ export { SearchDialog } from "./search/SearchDialog"
 export { Highlight } from "./search/Highlight"
 
 export { DashboardShell } from "./shell/DashboardShell"
+export { SidebarProvider, useSidebar } from "./shell/SidebarContext"
+export { WorkSwitcher } from "./navigation/sidebar/WorkSwitcher"
 export { PatternRule, PatternStrip } from "./shell/Pattern"
 
 export { PageContainer } from "./page/PageContainer"

@@ -17,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { TriangleAlert } from "@/components/ui/hugeicons-compat"
+import { TriangleAlert } from "lucide-react"
 import { pesanErrorMasuk } from "../lib/GalatMasuk"
 import { GoogleSignInButton } from "./TombolMasukGoogle"
 import { CredentialsForm } from "./FormulirKredensial"

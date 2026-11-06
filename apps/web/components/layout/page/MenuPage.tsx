@@ -64,7 +64,7 @@ export function MenuPage({
           {SUMMARY_LABELS.map((label) => (
             <div
               key={label}
-              className="min-w-0 rounded-lg border bg-card p-4 sm:p-5"
+              className="min-w-0 rounded-lg border border-border bg-card p-4 sm:p-5"
             >
               <p className="text-sm text-muted-foreground">{label}</p>
               <p className="mt-2 text-2xl font-medium">&mdash;</p>
@@ -74,7 +74,7 @@ export function MenuPage({
       </section>
 
       {/* Area data (placeholder; ganti dengan tabel/grafik modul) */}
-      <section className="mt-5 rounded-lg border bg-card p-4 sm:mt-6 sm:p-5">
+      <section className="mt-5 rounded-lg border border-border bg-card p-4 sm:mt-6 sm:p-5">
         <h2 className="font-medium">Data {item.title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Data untuk modul ini akan ditampilkan di sini.

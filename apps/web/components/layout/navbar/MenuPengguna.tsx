@@ -2,17 +2,18 @@
 
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ComputerIcon,
-  HelpCircleIcon,
-  Home07Icon,
-  Logout01Icon,
-  MoonIcon,
-  SettingsIcon,
-  SunIcon,
-  DashboardSquare01Icon,
-} from "@hugeicons/core-free-icons"
+  Sun,
+  Moon,
+  Monitor,
+  LayoutDashboard,
+  Home,
+  HelpCircle,
+  LogOut,
+  Settings,
+  MoreHorizontal,
+  Bell,
+} from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/Utilitas"
 
 function inisial(nama: string | null, email: string): string {
   const sumber = nama?.trim() || email
@@ -37,179 +39,251 @@ export function UserMenu({
   role,
   image,
   onKeluar,
+  variant = "sidebar",
 }: {
   nama: string | null
   email: string
   role: string
   image: string | null
   onKeluar: () => Promise<void>
+  variant?: "navbar" | "sidebar"
 }) {
   const { theme, setTheme } = useTheme()
   const tema = theme ?? "system"
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full"
-          aria-label="Menu akun"
-        >
-          <Avatar className="size-8">
-            {image && <AvatarImage src={image} alt="" />}
-            <AvatarFallback className="text-xs font-medium">
-              {inisial(nama, email)}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent
-        align="end"
-        sideOffset={6}
-        className="w-72.5 min-w-72.5 rounded-xl border border-border bg-popover p-1.5 shadow-lg ring-1 ring-black/5"
-      >
-        <DropdownMenuLabel className="flex min-h-16 items-center gap-3 rounded-lg px-2 py-2 font-normal">
-          <Avatar className="size-9 ring-1 ring-border">
-            {image && <AvatarImage src={image} alt="" />}
-            <AvatarFallback className="text-xs font-medium">
-              {inisial(nama, email)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="truncate text-sm font-medium text-foreground">
-              {nama?.trim() || email}
-            </span>
-            <span className="truncate text-xs font-normal text-muted-foreground">
-              {email}
-            </span>
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              {role.replaceAll("_", " ")}
-            </span>
+  // Dropdown content yang dipakai bersama
+  const dropdownContent = (
+    <DropdownMenuContent
+      align={variant === "navbar" ? "end" : "start"}
+      side={variant === "sidebar" ? "top" : "bottom"}
+      sideOffset={8}
+      className="w-68 min-w-68 rounded-lg border border-border bg-popover p-1.5 shadow-xl"
+    >
+      <DropdownMenuLabel className="flex min-h-16 items-center gap-3 rounded-md px-2.5 py-2 font-normal">
+        <Avatar className="size-10 rounded-full ring-1 ring-border shrink-0">
+          {image && <AvatarImage src={image} alt="" className="rounded-full" />}
+          <AvatarFallback className="text-xs font-medium rounded-full">
+            {inisial(nama, email)}
+          </AvatarFallback>
+        </Avatar>
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-sm font-medium text-foreground">
+            {nama?.trim() || email}
           </span>
-          {role === "SUPER_ADMIN" && (
-            <DropdownMenuItem
-              asChild
-              className="size-8 shrink-0 justify-center rounded-md p-0 text-muted-foreground"
+          <span className="truncate text-xs font-normal text-muted-foreground">
+            {email}
+          </span>
+          <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            {role.replaceAll("_", " ")}
+          </span>
+        </span>
+        {role === "SUPER_ADMIN" && (
+          <DropdownMenuItem
+            asChild
+            className="size-8 shrink-0 justify-center rounded-md p-0 text-muted-foreground"
+          >
+            <Link
+              href="/admin/pengaturan"
+              aria-label="Pengaturan"
+              title="Pengaturan"
             >
-              <Link
-                href="/admin/pengaturan"
-                aria-label="Pengaturan"
-                title="Pengaturan"
-              >
-                <HugeiconsIcon
-                  icon={SettingsIcon}
-                  strokeWidth={2}
-                  className="size-4.5"
-                />
-              </Link>
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="my-1.5" />
-        <div className="flex h-10 items-center justify-between gap-2 px-2">
-          <span className="text-[13px]">Tema</span>
-          <div
-            role="radiogroup"
-            aria-label="Pilih tema"
-            className="flex h-7.5 items-center gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5"
-          >
-            {[
-              { value: "light", label: "Terang", icon: SunIcon },
-              { value: "system", label: "Sistem", icon: ComputerIcon },
-              { value: "dark", label: "Gelap", icon: MoonIcon },
-            ].map(({ value, label, icon }) => (
-              <button
-                key={value}
-                type="button"
-                aria-label={`Tema ${label.toLowerCase()}`}
-                role="radio"
-                aria-checked={tema === value}
-                title={label}
-                onClick={() => setTheme(value)}
-                className={`inline-flex size-6 items-center justify-center rounded-md transition-colors ${
-                  tema === value
-                    ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.12)] ring-1 ring-border/70"
-                    : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
-                }`}
-              >
-                <HugeiconsIcon
-                  icon={icon}
-                  strokeWidth={2}
-                  className="size-3.75"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-        <DropdownMenuSeparator className="my-1.5" />
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            asChild
-            className="h-8 justify-between px-2 text-[13px] font-normal"
-          >
-            <Link href="/dashboard">
-              Dashboard
-              <HugeiconsIcon
-                icon={DashboardSquare01Icon}
-                strokeWidth={2}
-                className="size-4.25 text-muted-foreground"
-                aria-hidden="true"
+              <Settings
+                size={16}
+                strokeWidth={1.5}
+                className="size-4"
               />
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="h-8 justify-between px-2 text-[13px] font-normal"
-          >
-            <Link href="/">
-              Beranda publik
-              <HugeiconsIcon
-                icon={Home07Icon}
-                strokeWidth={2}
-                className="size-4.25 text-muted-foreground"
-                aria-hidden="true"
-              />
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="h-8 justify-between px-2 text-[13px] font-normal"
-          >
-            <Link href="/bantuan">
-              Bantuan
-              <HugeiconsIcon
-                icon={HelpCircleIcon}
-                strokeWidth={2}
-                className="size-4.25 text-muted-foreground"
-                aria-hidden="true"
-              />
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="my-1.5" />
-        <form action={onKeluar}>
-          <DropdownMenuItem
-            asChild
-            className="h-8 justify-between px-2 text-[13px] font-normal text-destructive focus:text-destructive"
-          >
-            <button type="submit" className="w-full">
-              Keluar
-              <HugeiconsIcon
-                icon={Logout01Icon}
-                strokeWidth={2}
-                className="size-4.25"
-                aria-hidden="true"
+        )}
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator className="my-1.5" />
+      <div className="flex h-10 items-center justify-between gap-2 px-2.5">
+        <span className="text-sm text-foreground">Tema</span>
+        <div
+          role="radiogroup"
+          aria-label="Pilih tema"
+          className="flex h-8 items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5"
+        >
+          {[
+            { value: "light", label: "Terang", Icon: Sun },
+            { value: "system", label: "Sistem", Icon: Monitor },
+            { value: "dark", label: "Gelap", Icon: Moon },
+          ].map(({ value, label, Icon }) => (
+            <button
+              key={value}
+              type="button"
+              aria-label={`Tema ${label.toLowerCase()}`}
+              role="radio"
+              aria-checked={tema === value}
+              title={label}
+              onClick={() => setTheme(value)}
+              className={`inline-flex size-6.5 items-center justify-center rounded-sm transition-colors ${
+                tema === value
+                  ? "bg-background text-foreground shadow-xs ring-1 ring-border/70"
+                  : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
+              }`}
+            >
+              <Icon
+                size={14}
+                strokeWidth={1.5}
+                className="size-3.5"
               />
             </button>
-          </DropdownMenuItem>
-        </form>
-        <div className="mt-1 flex h-9 items-center justify-between border-t border-border px-2 text-xs text-info">
-          <span>Akun aktif</span>
-          <span aria-hidden="true" className="size-2 rounded-full bg-info" />
+          ))}
         </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </div>
+      <DropdownMenuSeparator className="my-1.5" />
+      <DropdownMenuGroup className="space-y-0.5">
+        <DropdownMenuItem
+          asChild
+          className="h-10 justify-between px-2.5 text-sm font-normal"
+        >
+          <Link href="/dashboard">
+            <span>Dashboard</span>
+            <LayoutDashboard
+              size={16}
+              strokeWidth={1.5}
+              className="size-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          asChild
+          className="h-10 justify-between px-2.5 text-sm font-normal"
+        >
+          <Link href="/">
+            <span>Beranda publik</span>
+            <Home
+              size={16}
+              strokeWidth={1.5}
+              className="size-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          asChild
+          className="h-10 justify-between px-2.5 text-sm font-normal"
+        >
+          <Link href="/bantuan">
+            <span>Bantuan</span>
+            <HelpCircle
+              size={16}
+              strokeWidth={1.5}
+              className="size-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuGroup>
+      <DropdownMenuSeparator className="my-1.5" />
+      <form action={onKeluar}>
+        <DropdownMenuItem
+          asChild
+          className="h-10 justify-between px-2.5 text-sm font-normal text-destructive focus:text-destructive"
+        >
+          <button type="submit" className="w-full">
+            <span>Keluar</span>
+            <LogOut
+              size={16}
+              strokeWidth={1.5}
+              className="size-4"
+              aria-hidden="true"
+            />
+          </button>
+        </DropdownMenuItem>
+      </form>
+    </DropdownMenuContent>
+  )
+
+  // Tampilan versi Navbar (jika dipanggil di navbar)
+  if (variant === "navbar") {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="size-9 rounded-full p-0 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            aria-label="Menu akun"
+          >
+            <Avatar className="size-9 rounded-full ring-1 ring-border">
+              {image && <AvatarImage src={image} alt="" className="rounded-full" />}
+              <AvatarFallback className="text-xs font-medium rounded-full">
+                {inisial(nama, email)}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        {dropdownContent}
+      </DropdownMenu>
+    )
+  }
+
+  // Tampilan versi Footer Sidebar:
+  // Kiri: Avatar + Nama (Link ke pengaturan akun)
+  // Kanan: Tombol Notifikasi/Bell + Tombol Arrow Trigger Dropdown
+  return (
+    <div className="flex h-11 w-full items-center justify-between gap-1">
+      {/* Kiri: Info Profil Akun Pengguna */}
+      <Link
+        href="/pengaturan"
+        className={cn(
+          "flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors",
+          "hover:bg-[#F2F2F2] dark:hover:bg-[#1A1A1A]",
+          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        )}
+        title="Pengaturan Akun"
+      >
+        <Avatar className="size-7.5 rounded-full ring-1 ring-border shrink-0">
+          {image && <AvatarImage src={image} alt="" className="rounded-full" />}
+          <AvatarFallback className="text-[11px] font-medium rounded-full">
+            {inisial(nama, email)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-xs font-semibold text-foreground leading-none">
+            {nama?.trim() || email}
+          </span>
+          <span className="truncate text-[10px] text-muted-foreground uppercase leading-tight mt-0.5">
+            {role.replaceAll("_", " ")}
+          </span>
+        </div>
+      </Link>
+
+      {/* Trigger Dropdown khusus pada icon (...) di sebelah kiri Bell */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="Menu akun"
+            title="Buka menu akun"
+            className={cn(
+              "flex size-7.5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
+              "hover:bg-[#F2F2F2] hover:text-foreground dark:hover:bg-[#1A1A1A]",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            )}
+          >
+            <MoreHorizontal size={15} strokeWidth={1.5} className="size-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        {dropdownContent}
+      </DropdownMenu>
+
+      {/* Icon Notifikasi/Bell di sebelah paling kanan */}
+      <Link
+        href="/notifikasi"
+        aria-label="Lihat notifikasi"
+        title="Notifikasi"
+        className={cn(
+          "relative flex size-7.5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
+          "hover:bg-[#F2F2F2] hover:text-foreground dark:hover:bg-[#1A1A1A]",
+          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        )}
+      >
+        <Bell size={15} strokeWidth={1.5} className="size-3.5" />
+        <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-blue-500" />
+      </Link>
+    </div>
   )
 }

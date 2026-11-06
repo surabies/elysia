@@ -26,7 +26,13 @@ import { SidebarSearch } from "./sidebar/SidebarSearch"
 import { Slide } from "./sidebar/Slide"
 import { useSidebarDrilldown } from "./sidebar/hooks/UseSidebarDrilldown"
 
-export function SidebarNav({ className }: { className?: string }) {
+export function SidebarNav({
+  className,
+  withSearch = false,
+}: {
+  className?: string
+  withSearch?: boolean
+}) {
   const {
     active,
     activeGroupId,
@@ -37,8 +43,8 @@ export function SidebarNav({ className }: { className?: string }) {
   } = useSidebarDrilldown()
 
   return (
-    <div className={cn("-mt-6 flex flex-col gap-3", className)}>
-      <SidebarSearch />
+    <div className={cn("flex flex-col gap-2", className)}>
+      {withSearch && <SidebarSearch />}
 
       <nav aria-label="Menu utama" className="overflow-hidden">
         {currentGroup ? (

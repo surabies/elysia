@@ -27,11 +27,11 @@ export function ModuleEmptyState({
     <section
       aria-labelledby="empty-state-title"
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-lg border bg-card px-6 py-16 text-center",
+        "flex flex-col items-center justify-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center",
         className
       )}
     >
-      <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <span className="flex size-10 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground">
         <Icon className="size-5" aria-hidden="true" />
       </span>
       <div className="max-w-prose space-y-1">

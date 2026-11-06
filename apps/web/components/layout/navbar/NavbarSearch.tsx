@@ -5,8 +5,7 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { SearchDialog } from "../search/SearchDialog"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Search01Icon } from "@hugeicons/core-free-icons"
+import { Search } from "lucide-react"
 
 // Deteksi Mac tanpa setState di effect.
 // - server: selalu false (supaya HTML server = HTML awal client, tanpa hydration error)
@@ -45,29 +44,24 @@ export function NavbarSearch() {
         className="lg:hidden"
         onClick={() => setOpen(true)}
       >
-        <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-4" />
+        <Search size={16} strokeWidth={1.5} className="size-4" />
       </Button>
 
-      {/* Tombol desktop: class & SVG disalin dari hasil inspeksi tailwindcss.com */}
+      {/* Tombol desktop: Vercel Geist search trigger */}
       <button
         type="button"
         aria-label="Cari menu"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 rounded-full bg-gray-950/2 px-2 py-1 inset-ring inset-ring-gray-950/8 max-lg:hidden dark:bg-white/5 dark:inset-ring-white/2"
+        className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-muted-foreground transition-colors hover:bg-[#F2F2F2] hover:text-foreground dark:hover:bg-[#1A1A1A] max-lg:hidden"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 16 16"
+        <Search
+          size={16}
+          strokeWidth={1.5}
+          className="size-4 shrink-0 text-muted-foreground"
           aria-hidden="true"
-          className="-ml-0.5 size-4 fill-gray-600 dark:fill-gray-500"
-        >
-          <path
-            fillRule="evenodd"
-            d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <kbd className="font-sans text-xs/4 text-gray-500 dark:text-gray-400">
+        />
+        <span className="text-sm">Cari...</span>
+        <kbd className="inline-flex h-5.5 items-center rounded border border-border bg-muted/60 px-1.5 font-mono text-[10px] text-muted-foreground">
           {isMac ? "⌘K" : "Ctrl\u00a0K"}
         </kbd>
       </button>
