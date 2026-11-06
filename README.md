@@ -258,3 +258,4 @@ bun run build
   Ensure `BETTER_AUTH_URL` matches the active deployment host, or configure `trustedOrigins` in `src/lib/auth.ts`.
 - **Database Connection Limits in Serverless**:
   The database singleton uses `postgres(env.DATABASE_URL, { prepare: false })` to support connection pooling proxies like PgBouncer and Supabase / Neon poolers.
+# elysia

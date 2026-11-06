@@ -26,6 +26,12 @@
       "@/*": [
         "./*",
         "./src/*"
+      ],
+      "@cater/db": [
+        "./packages/db/src"
+      ],
+      "@cater/types": [
+        "./packages/types/src"
       ]
     }
   },

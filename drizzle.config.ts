@@ -9,7 +9,7 @@ export default defineConfig({
   out: './src/db/migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/elysia_db',
+    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/elysia_db',
   },
   tablesFilter: ['!spatial_ref_sys', '!geometry_columns', '!geography_columns'],
   verbose: true,

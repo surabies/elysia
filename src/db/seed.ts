@@ -1,5 +1,6 @@
 import { db } from './index';
-import { user, places } from './schema';
+import { user, places, account } from './schema';
+import { hashPassword } from 'better-auth/crypto';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
@@ -8,19 +9,33 @@ dotenv.config({ path: '.env' });
 async function seed() {
   console.log('Seeding initial data...');
   try {
+    const userId = 'seed-user-1';
+    const email = 'demo@example.com';
+    const password = 'Password123!';
+
     // Insert demo user if not existing
-    const demoUser = await db
+    await db
       .insert(user)
       .values({
-        id: 'seed-user-1',
+        id: userId,
         name: 'Demo Explorer',
-        email: 'demo@example.com',
+        email,
         emailVerified: true,
       })
-      .onConflictDoNothing()
-      .returning();
+      .onConflictDoNothing();
 
-    const userId = demoUser[0]?.id || 'seed-user-1';
+    // Insert demo user account with password
+    const hashedPassword = await hashPassword(password);
+    await db
+      .insert(account)
+      .values({
+        id: 'seed-account-1',
+        accountId: userId,
+        providerId: 'credential',
+        userId,
+        password: hashedPassword,
+      })
+      .onConflictDoNothing();
 
     // Insert sample places (Monas Jakarta & surrounding landmarks)
     await db
@@ -51,6 +66,7 @@ async function seed() {
       .onConflictDoNothing();
 
     console.log('Seeding completed successfully!');
+    process.exit(0);
   } catch (err) {
     console.error('Seeding error:', err);
     process.exit(1);
