@@ -47,6 +47,7 @@
   ],
   "exclude": [
     "node_modules",
-    "backend-hono-prisma"
+    "backend-hono-prisma",
+    "frontend-lama"
   ]
 }

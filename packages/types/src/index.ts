@@ -79,7 +79,9 @@ export type AppRole =
   | 'VERIFIKATOR_2'
   | 'VERIFIKATOR_1'
   | 'STAFF_ADMIN_BILLING'
-  | 'PENCATAT';
+  | 'PENCATAT'
+  | 'PELAKSANA'
+  | 'USER';
 
 // Status Siklus Verifikasi Baca Meter (3-Tier + Staff Correction)
 export type CaterVerificationStatus =

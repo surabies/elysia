@@ -32,6 +32,8 @@ export const appRoleEnum = pgEnum('app_role', [
   'VERIFIKATOR_1',        // Supervisor (Initial Screening tingkat rute)
   'STAFF_ADMIN_BILLING',  // Staff Administrasi Rute, GIS, Closing & Koreksi Pasca-Verifikasi
   'PENCATAT',             // Pelaksana Lapangan (Mobile App)
+  'PELAKSANA',            // Pelaksana Non-Cater
+  'USER',                 // Warga / Pelanggan Mandiri
 ]);
 
 // 3. Status Siklus Verifikasi Baca Meter (3-Tier + Staff Correction)
