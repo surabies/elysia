@@ -1,16 +1,20 @@
 import { Elysia, t } from 'elysia';
 import { sql, eq, desc, and } from 'drizzle-orm';
-import { db } from '@cater/db';
 import {
+  db,
   pelanggan,
   caterBacaMeter,
   rekeningDrd,
   ruteCater,
   petugasCater,
   golonganTarif,
+  caterVerifikasiLog,
+  userRoles,
 } from '@cater/db';
+import { authPlugin } from '../../plugins/auth';
 
 export const caterModule = new Elysia({ prefix: '/cater' })
+  .use(authPlugin)
   // 1. Dashboard Overview Stats
   .get('/stats', async () => {
     try {
@@ -308,4 +312,306 @@ export const caterModule = new Elysia({ prefix: '/cater' })
         error: err.message,
       };
     }
-  });
+  })
+
+  // 6. Riwayat Audit Verifikasi (Audit Trail History)
+  .get(
+    '/history/:caterId',
+    async ({ params: { caterId }, set }) => {
+      try {
+        const logs = await db
+          .select()
+          .from(caterVerifikasiLog)
+          .where(eq(caterVerifikasiLog.caterId, caterId))
+          .orderBy(desc(caterVerifikasiLog.createdAt));
+
+        return {
+          success: true,
+          data: logs,
+        };
+      } catch (err: any) {
+        set.status = 500;
+        return {
+          success: false,
+          error: err.message,
+        };
+      }
+    },
+    {
+      params: t.Object({
+        caterId: t.String(),
+      }),
+    }
+  )
+
+  // 7. Verifikasi V1 - Supervisor (Seksi / Rute)
+  .post(
+    '/verify/v1',
+    async ({ body, user, set }) => {
+      const { caterId, action, catatan } = body;
+      const [cater] = await db
+        .select()
+        .from(caterBacaMeter)
+        .where(eq(caterBacaMeter.id, caterId));
+
+      if (!cater) {
+        set.status = 404;
+        return { success: false, error: 'Data baca meter tidak ditemukan' };
+      }
+
+      const nextStatus = action === 'APPROVE' ? 'VERIFIED_L1' : 'NEED_RESURVEY';
+
+      await db.transaction(async (tx) => {
+        await tx.insert(caterVerifikasiLog).values({
+          caterId,
+          userId: user!.id,
+          stage: 'V1',
+          action,
+          stmaSebelum: cater.stma,
+          stmaSesudah: cater.stma,
+          pakaiSebelum: cater.pakaiM3,
+          pakaiSesudah: cater.pakaiM3,
+          alasan: catatan || (action === 'APPROVE' ? 'Disetujui oleh Supervisor (V1)' : 'Diminta cek ulang fisik lapangan'),
+        });
+
+        await tx
+          .update(caterBacaMeter)
+          .set({
+            statusVerifikasi: nextStatus,
+            catatan: catatan ? `[V1] ${catatan}` : cater.catatan,
+            updatedAt: new Date(),
+          })
+          .where(eq(caterBacaMeter.id, caterId));
+      });
+
+      return {
+        success: true,
+        message: `Verifikasi V1 berhasil disimpan (${nextStatus})`,
+        data: { caterId, statusVerifikasi: nextStatus },
+      };
+    },
+    {
+      requireRole: ['VERIFIKATOR_1'],
+      body: t.Object({
+        caterId: t.String(),
+        action: t.Union([t.Literal('APPROVE'), t.Literal('REQUEST_RESURVEY')]),
+        catatan: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  // 8. Verifikasi V2 - Manager (Cabang / Wilayah)
+  .post(
+    '/verify/v2',
+    async ({ body, user, set }) => {
+      const { caterId, action, stmaKoreksi, catatan } = body;
+      const [cater] = await db
+        .select()
+        .from(caterBacaMeter)
+        .where(eq(caterBacaMeter.id, caterId));
+
+      if (!cater) {
+        set.status = 404;
+        return { success: false, error: 'Data baca meter tidak ditemukan' };
+      }
+
+      let stmaSesudah = cater.stma;
+      let pakaiSesudah = cater.pakaiM3;
+      let nextStatus = 'VERIFIED_L2';
+
+      if (action === 'REQUEST_RESURVEY') {
+        nextStatus = 'NEED_RESURVEY';
+      } else if (action === 'ADJUST_STAND') {
+        if (stmaKoreksi === undefined) {
+          set.status = 400;
+          return { success: false, error: 'stmaKoreksi wajib diisi untuk penyesuaian angka meter' };
+        }
+        stmaSesudah = String(stmaKoreksi);
+        const stmlNum = Number(cater.stml);
+        pakaiSesudah = String(stmaKoreksi - stmlNum);
+      }
+
+      await db.transaction(async (tx) => {
+        await tx.insert(caterVerifikasiLog).values({
+          caterId,
+          userId: user!.id,
+          stage: 'V2',
+          action,
+          stmaSebelum: cater.stma,
+          stmaSesudah,
+          pakaiSebelum: cater.pakaiM3,
+          pakaiSesudah,
+          alasan: catatan || `Verifikasi V2 Cabang: ${action}`,
+        });
+
+        await tx
+          .update(caterBacaMeter)
+          .set({
+            stma: stmaSesudah,
+            pakaiM3: pakaiSesudah,
+            statusVerifikasi: nextStatus,
+            catatan: catatan ? `[V2] ${catatan}` : cater.catatan,
+            updatedAt: new Date(),
+          })
+          .where(eq(caterBacaMeter.id, caterId));
+      });
+
+      return {
+        success: true,
+        message: `Verifikasi V2 Cabang berhasil disimpan (${nextStatus})`,
+        data: { caterId, statusVerifikasi: nextStatus, stma: stmaSesudah, pakaiM3: pakaiSesudah },
+      };
+    },
+    {
+      requireRole: ['VERIFIKATOR_2'],
+      body: t.Object({
+        caterId: t.String(),
+        action: t.Union([t.Literal('APPROVE'), t.Literal('ADJUST_STAND'), t.Literal('REQUEST_RESURVEY')]),
+        stmaKoreksi: t.Optional(t.Number()),
+        catatan: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  // 9. Verifikasi V3 - Senior Manager / Direksi (Final Release Per Periode)
+  .post(
+    '/verify/v3',
+    async ({ body, user, set }) => {
+      const { caterId, catatan } = body;
+      const [cater] = await db
+        .select()
+        .from(caterBacaMeter)
+        .where(eq(caterBacaMeter.id, caterId));
+
+      if (!cater) {
+        set.status = 404;
+        return { success: false, error: 'Data baca meter tidak ditemukan' };
+      }
+
+      const nextStatus = 'APPROVED_FINAL';
+
+      await db.transaction(async (tx) => {
+        await tx.insert(caterVerifikasiLog).values({
+          caterId,
+          userId: user!.id,
+          stage: 'V3',
+          action: 'APPROVE',
+          stmaSebelum: cater.stma,
+          stmaSesudah: cater.stma,
+          pakaiSebelum: cater.pakaiM3,
+          pakaiSesudah: cater.pakaiM3,
+          alasan: catatan || 'Disahkan oleh Senior Manager / Direksi (V3 Final Release)',
+        });
+
+        await tx
+          .update(caterBacaMeter)
+          .set({
+            statusVerifikasi: nextStatus,
+            catatan: catatan ? `[V3] ${catatan}` : cater.catatan,
+            updatedAt: new Date(),
+          })
+          .where(eq(caterBacaMeter.id, caterId));
+      });
+
+      return {
+        success: true,
+        message: 'Pengesahan akhir V3 berhasil (APPROVED_FINAL)',
+        data: { caterId, statusVerifikasi: nextStatus },
+      };
+    },
+    {
+      requireRole: ['VERIFIKATOR_3', 'EXECUTIVE'],
+      body: t.Object({
+        caterId: t.String(),
+        catatan: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  // 10. Koreksi Pasca-Verifikasi oleh Staff (Kondisional Guard)
+  .post(
+    '/staff/correct',
+    async ({ body, user, set }) => {
+      const { caterId, stmaBaru, pakaiM3Baru, nomorTiketKomplain, alasan } = body;
+      const [cater] = await db
+        .select()
+        .from(caterBacaMeter)
+        .where(eq(caterBacaMeter.id, caterId));
+
+      if (!cater) {
+        set.status = 404;
+        return { success: false, error: 'Data baca meter tidak ditemukan' };
+      }
+
+      // KONDISI UTAMA: Cek apakah sudah pernah diverifikasi sebelumnya (harus ada minimal 1 record histori)
+      const logs = await db
+        .select({ id: caterVerifikasiLog.id })
+        .from(caterVerifikasiLog)
+        .where(eq(caterVerifikasiLog.caterId, caterId))
+        .limit(1);
+
+      if (!logs || logs.length === 0) {
+        set.status = 400;
+        return {
+          success: false,
+          error: 'Fitur tidak aktif: Data belum pernah diverifikasi oleh V1-V3. Koreksi oleh Staff tidak diizinkan sebelum verifikasi reguler.',
+        };
+      }
+
+      // Cegah mutasi jika data sudah berstatus closing tagihan DRD
+      if (cater.statusVerifikasi === 'LOCKED_BILLING') {
+        set.status = 403;
+        return {
+          success: false,
+          error: 'Data sudah terkunci dalam Rekening Tagihan (DRD). Wajib menggunakan prosedur Berita Acara Khusus.',
+        };
+      }
+
+      await db.transaction(async (tx) => {
+        await tx.insert(caterVerifikasiLog).values({
+          caterId,
+          userId: user!.id,
+          stage: 'STAFF_CORRECTION',
+          action: 'STAFF_POST_CORRECT',
+          stmaSebelum: cater.stma,
+          stmaSesudah: String(stmaBaru),
+          pakaiSebelum: cater.pakaiM3,
+          pakaiSesudah: String(pakaiM3Baru),
+          nomorTiketKomplain,
+          alasan,
+        });
+
+        await tx
+          .update(caterBacaMeter)
+          .set({
+            stma: String(stmaBaru),
+            pakaiM3: String(pakaiM3Baru),
+            statusVerifikasi: 'CORRECTED_POST_VERIF',
+            catatan: `[Staff Correction] Tiket: ${nomorTiketKomplain ?? '-'} | ${alasan}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(caterBacaMeter.id, caterId));
+      });
+
+      return {
+        success: true,
+        message: 'Koreksi administratif pasca-verifikasi berhasil disimpan',
+        data: {
+          caterId,
+          stmaBaru,
+          pakaiM3Baru,
+          statusVerifikasi: 'CORRECTED_POST_VERIF',
+        },
+      };
+    },
+    {
+      requireRole: ['STAFF_ADMIN_BILLING'],
+      body: t.Object({
+        caterId: t.String(),
+        stmaBaru: t.Number(),
+        pakaiM3Baru: t.Number(),
+        nomorTiketKomplain: t.Optional(t.String()),
+        alasan: t.String({ minLength: 5 }),
+      }),
+    }
+  );

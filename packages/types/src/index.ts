@@ -17,15 +17,96 @@ export type KondisiCatat =
 
 export type MetodeCatat = 'ONSITE' | 'OFFSITE';
 
+// 6 Tingkatan Hirarki Jabatan Kepegawaian (HR)
+export type EmployeeLevel =
+  | 'DIREKSI'
+  | 'SENIOR_MANAGER'
+  | 'MANAGER'
+  | 'SUPERVISOR'
+  | 'STAFF_PENYELIA'
+  | 'PELAKSANA';
+
+// Peran Sistem RBAC
+export type AppRole =
+  | 'SUPERADMIN'
+  | 'EXECUTIVE'
+  | 'VERIFIKATOR_3'
+  | 'VERIFIKATOR_2'
+  | 'VERIFIKATOR_1'
+  | 'STAFF_ADMIN_BILLING'
+  | 'PENCATAT';
+
+// Status Siklus Verifikasi Baca Meter (3-Tier + Staff Correction)
+export type CaterVerificationStatus =
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'NEED_RESURVEY'
+  | 'VERIFIED_L1'
+  | 'VERIFIED_L2'
+  | 'APPROVED_FINAL'
+  | 'CORRECTED_POST_VERIF'
+  | 'LOCKED_BILLING';
+
 export type StatusVerifikasi =
   | 'DRAFT'
   | 'SUBMITTED'
   | 'VERIFIED'
   | 'ANOMALY_HIGH'
   | 'ANOMALY_LOW'
-  | 'REVISED';
+  | 'REVISED'
+  | CaterVerificationStatus;
 
 export type StatusPelanggan = 'AKTIF' | 'SEGEL' | 'PUTUS' | 'TIDAK_AKTIF';
+
+// --- RBAC & Kepegawaian Domain Models ---
+export interface Pegawai {
+  id: string;
+  userId?: string | null;
+  nip: string;
+  namaLengkap: string;
+  level: EmployeeLevel;
+  jabatanNama?: string | null;
+  unitKerja?: string | null;
+  atasanId?: string | null;
+  noHp?: string | null;
+  aktif: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface UserRoleRecord {
+  userId: string;
+  role: AppRole;
+  createdAt: Date | string;
+}
+
+export interface UserWilayahScope {
+  userId: string;
+  wiladmKode: string;
+  createdAt: Date | string;
+}
+
+export interface UserRuteAssignment {
+  userId: string;
+  ruteKode: string;
+  periodeThbl: string;
+  createdAt: Date | string;
+}
+
+export interface CaterVerifikasiLog {
+  id: string;
+  caterId: string;
+  userId: string;
+  stage: 'V1' | 'V2' | 'V3' | 'STAFF_CORRECTION';
+  action: 'APPROVE' | 'REQUEST_RESURVEY' | 'ADJUST_STAND' | 'STAFF_POST_CORRECT';
+  stmaSebelum?: string | number | null;
+  stmaSesudah?: string | number | null;
+  pakaiSebelum?: string | number | null;
+  pakaiSesudah?: string | number | null;
+  nomorTiketKomplain?: string | null;
+  alasan: string;
+  createdAt: Date | string;
+}
 
 // --- Domain Models ---
 export interface WilayahAdministrasi {
@@ -136,4 +217,19 @@ export interface BillingDrd {
   totalTagihan: number;
   jmlRekNunggak: number;
   tagNunggak: number;
+}
+
+export interface VerifyCaterInput {
+  caterId: string;
+  action: 'APPROVE' | 'REQUEST_RESURVEY' | 'ADJUST_STAND';
+  stmaKoreksi?: number;
+  catatan?: string;
+}
+
+export interface StaffCorrectionInput {
+  caterId: string;
+  stmaBaru: number;
+  pakaiM3Baru: number;
+  nomorTiketKomplain?: string;
+  alasan: string;
 }

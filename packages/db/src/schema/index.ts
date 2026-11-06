@@ -6,3 +6,4 @@ export * from './meter';
 export * from './pelanggan';
 export * from './cater';
 export * from './billing';
+export * from './rbac';

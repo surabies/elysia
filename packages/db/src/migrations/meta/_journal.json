@@ -15,6 +15,13 @@
       "when": 1793924435943,
       "tag": "0001_cute_speed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793930899039,
+      "tag": "0002_heavy_stature",
+      "breakpoints": true
     }
   ]
 }

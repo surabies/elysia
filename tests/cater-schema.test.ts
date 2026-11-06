@@ -10,6 +10,14 @@ import {
   golonganTarif,
   waterMeter,
   rekeningDrd,
+  pegawai,
+  userRoles,
+  userWilayahScope,
+  userRuteAssignment,
+  caterVerifikasiLog,
+  employeeLevelEnum,
+  appRoleEnum,
+  caterVerificationStatusEnum,
 } from '@cater/db';
 
 describe('Modular Cater Drizzle Schema Integrity', () => {
@@ -24,6 +32,56 @@ describe('Modular Cater Drizzle Schema Integrity', () => {
     expect(golonganTarif).toBeDefined();
     expect(waterMeter).toBeDefined();
     expect(rekeningDrd).toBeDefined();
+  });
+
+  it('should export all RBAC and organizational hierarchy tables and enums', () => {
+    expect(pegawai).toBeDefined();
+    expect(userRoles).toBeDefined();
+    expect(userWilayahScope).toBeDefined();
+    expect(userRuteAssignment).toBeDefined();
+    expect(caterVerifikasiLog).toBeDefined();
+    expect(employeeLevelEnum).toBeDefined();
+    expect(appRoleEnum).toBeDefined();
+    expect(caterVerificationStatusEnum).toBeDefined();
+
+    // Verify 6 levels of organizational hierarchy
+    expect(employeeLevelEnum.enumValues).toEqual([
+      'DIREKSI',
+      'SENIOR_MANAGER',
+      'MANAGER',
+      'SUPERVISOR',
+      'STAFF_PENYELIA',
+      'PELAKSANA',
+    ]);
+
+    // Verify system roles including V1, V2, V3, and STAFF_ADMIN_BILLING
+    expect(appRoleEnum.enumValues).toContain('VERIFIKATOR_1');
+    expect(appRoleEnum.enumValues).toContain('VERIFIKATOR_2');
+    expect(appRoleEnum.enumValues).toContain('VERIFIKATOR_3');
+    expect(appRoleEnum.enumValues).toContain('STAFF_ADMIN_BILLING');
+    expect(appRoleEnum.enumValues).toContain('PENCATAT');
+  });
+
+  it('pegawai table should have structural columns', () => {
+    expect(pegawai.id).toBeDefined();
+    expect(pegawai.nip).toBeDefined();
+    expect(pegawai.namaLengkap).toBeDefined();
+    expect(pegawai.level).toBeDefined();
+    expect(pegawai.jabatanNama).toBeDefined();
+    expect(pegawai.atasanId).toBeDefined();
+    expect(pegawai.aktif).toBeDefined();
+  });
+
+  it('caterVerifikasiLog table should have audit trail columns', () => {
+    expect(caterVerifikasiLog.id).toBeDefined();
+    expect(caterVerifikasiLog.caterId).toBeDefined();
+    expect(caterVerifikasiLog.userId).toBeDefined();
+    expect(caterVerifikasiLog.stage).toBeDefined();
+    expect(caterVerifikasiLog.action).toBeDefined();
+    expect(caterVerifikasiLog.stmaSebelum).toBeDefined();
+    expect(caterVerifikasiLog.stmaSesudah).toBeDefined();
+    expect(caterVerifikasiLog.nomorTiketKomplain).toBeDefined();
+    expect(caterVerifikasiLog.alasan).toBeDefined();
   });
 
   it('pelanggan table should have required STI columns', () => {
