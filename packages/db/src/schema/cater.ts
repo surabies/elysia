@@ -1,8 +1,10 @@
 import { pgTable, text, varchar, numeric, integer, timestamp, index, geometry } from 'drizzle-orm/pg-core';
 import { pelanggan } from './pelanggan';
 import { ruteCater, petugasCater } from './wilayah';
+import { masterKondisiCatat } from './kondisi';
+import { caterMandiriPelanggan } from './mandiri';
 
-// Transaksi Catat Meter Lapangan (Mobile -> Backend)
+// Transaksi Catat Meter Lapangan (Mobile -> Backend) & Baca Mandiri Terverifikasi
 export const caterBacaMeter = pgTable(
   'cater_baca_meter',
   {
@@ -19,8 +21,16 @@ export const caterBacaMeter = pgTable(
     stma: numeric('stma', { precision: 10, scale: 2 }).notNull(), // Stand Meter Akhir
     pakaiM3: numeric('pakai_m3', { precision: 10, scale: 2 }).notNull(), // Pemakaian m3
     pakaiLalu: numeric('pakai_lalu', { precision: 10, scale: 2 }), // Pemakaian bulan lalu
+    
+    // Kode Kondisi STI & Keterangan Catat
+    tmss: varchar('tmss', { length: 10 }).default(' ').references(() => masterKondisiCatat.kodeTmss),
     ketCatat: varchar('ket_catat', { length: 50 }).notNull().default('Normal'),
     metodeCatat: varchar('metode_catat', { length: 20 }).notNull().default('ONSITE'), // ONSITE / OFFSITE
+    
+    // Sumber Pencatatan & Relasi ke Mandiri
+    sumberCatat: varchar('sumber_catat', { length: 30 }).notNull().default('PETUGAS_ONSITE'), // PETUGAS_ONSITE | PETUGAS_OFFSITE | MANDIRI_WEB | MANDIRI_APP
+    caterMandiriId: text('cater_mandiri_id').references((): any => caterMandiriPelanggan.id, { onDelete: 'set null' }),
+
     tglCatat: timestamp('tgl_catat').notNull().defaultNow(),
     durasiDetik: integer('durasi_detik').default(0),
     fotoMeterUrl: text('foto_meter_url'),
@@ -38,6 +48,8 @@ export const caterBacaMeter = pgTable(
     index('cater_petugas_idx').on(table.petugasId),
     index('cater_lokasi_gps_idx').using('gist', table.lokasiGps),
     index('cater_status_verifikasi_idx').on(table.statusVerifikasi),
+    index('cater_tmss_idx').on(table.tmss),
+    index('cater_sumber_catat_idx').on(table.sumberCatat),
   ]
 );
 

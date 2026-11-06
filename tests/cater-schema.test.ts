@@ -15,6 +15,8 @@ import {
   userWilayahScope,
   userRuteAssignment,
   caterVerifikasiLog,
+  masterKondisiCatat,
+  caterMandiriPelanggan,
   employeeLevelEnum,
   appRoleEnum,
   caterVerificationStatusEnum,
@@ -32,6 +34,27 @@ describe('Modular Cater Drizzle Schema Integrity', () => {
     expect(golonganTarif).toBeDefined();
     expect(waterMeter).toBeDefined();
     expect(rekeningDrd).toBeDefined();
+  });
+
+  it('should export masterKondisiCatat and caterMandiriPelanggan tables', () => {
+    expect(masterKondisiCatat).toBeDefined();
+    expect(masterKondisiCatat.kodeTmss).toBeDefined();
+    expect(masterKondisiCatat.nama).toBeDefined();
+    expect(masterKondisiCatat.triggerBacaMandiri).toBeDefined();
+
+    expect(caterMandiriPelanggan).toBeDefined();
+    expect(caterMandiriPelanggan.id).toBeDefined();
+    expect(caterMandiriPelanggan.nolg).toBeDefined();
+    expect(caterMandiriPelanggan.stma).toBeDefined();
+    expect(caterMandiriPelanggan.fotoMeterUrl).toBeDefined();
+    expect(caterMandiriPelanggan.lokasiGps).toBeDefined();
+    expect(caterMandiriPelanggan.jarakDariRumahMeter).toBeDefined();
+    expect(caterMandiriPelanggan.statusVerifikasi).toBeDefined();
+
+    // Verify caterBacaMeter has new integration columns
+    expect(caterBacaMeter.tmss).toBeDefined();
+    expect(caterBacaMeter.sumberCatat).toBeDefined();
+    expect(caterBacaMeter.caterMandiriId).toBeDefined();
   });
 
   it('should export all RBAC and organizational hierarchy tables and enums', () => {

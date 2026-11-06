@@ -4,6 +4,8 @@ export * from './wilayah';
 export * from './tarif';
 export * from './meter';
 export * from './pelanggan';
+export * from './kondisi';
+export * from './mandiri';
 export * from './cater';
 export * from './billing';
 export * from './rbac';

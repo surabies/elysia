@@ -4,18 +4,63 @@
  */
 
 // --- Status & Enums ---
+export type KodeTmss =
+  | ' '
+  | '-'
+  | 'H'
+  | 'R'
+  | 'N'
+  | 'Z'
+  | 'P'
+  | '2'
+  | '8'
+  | '7'
+  | '3'
+  | '5'
+  | '6'
+  | 'E'
+  | 'O'
+  | 'D'
+  | '4'
+  | 'Q'
+  | 'F'
+  | 'U'
+  | 'T'
+  | '9'
+  | 'AA';
+
 export type KondisiCatat =
   | 'Normal'
-  | 'Terhalang'
-  | 'Rumah Kosong'
-  | 'Meter Rusak'
-  | 'Meter Hilang'
-  | 'Meter Buram'
-  | 'Terkunci'
+  | 'TIDAK DIPAKAI'
+  | 'RUMAH KOSONG'
+  | 'STAND TEMPEL'
+  | 'STAND-KONSUMEN'
+  | 'REV.PENCATAT'
+  | 'DK'
+  | 'TIDAK ADA AIR'
+  | 'MATI ADA AIR'
   | 'MTA'
-  | 'Tidak Dipakai';
+  | 'TTB'
+  | 'BMK/BMB'
+  | 'TERHALANG'
+  | 'METER RUSAK'
+  | 'DICABUT'
+  | 'MB'
+  | 'ADA ANJING'
+  | 'METER MUNDUR'
+  | 'MUDA KEMBALI'
+  | 'METER TERBALIK'
+  | 'LOS METER'
+  | 'Meter Dalam Air'
+  | 'MANDIRI';
 
 export type MetodeCatat = 'ONSITE' | 'OFFSITE';
+
+export type SumberCatat =
+  | 'PETUGAS_ONSITE'
+  | 'PETUGAS_OFFSITE'
+  | 'MANDIRI_WEB'
+  | 'MANDIRI_APP';
 
 // 6 Tingkatan Hirarki Jabatan Kepegawaian (HR)
 export type EmployeeLevel =
@@ -232,4 +277,47 @@ export interface StaffCorrectionInput {
   pakaiM3Baru: number;
   nomorTiketKomplain?: string;
   alasan: string;
+}
+
+export interface MasterKondisiCatat {
+  kodeTmss: string;
+  nama: string;
+  kategori: 'TERBACA' | 'KENDALA_AKSES' | 'KERUSAKAN_FISIK' | 'PELANGGARAN';
+  isKendalaAkses: boolean;
+  triggerBacaMandiri: boolean;
+  deskripsi?: string | null;
+  aktif: boolean;
+  createdAt: Date | string;
+}
+
+export interface CaterMandiriPelanggan {
+  id: string;
+  thbl: string;
+  nolg: string;
+  stma: number | string;
+  pakaiM3?: number | string | null;
+  fotoMeterUrl: string;
+  fotoRumahUrl?: string | null;
+  jarakDariRumahMeter?: number | string | null;
+  isLokasiValid: boolean;
+  channel: 'WEB_PORTAL' | 'MOBILE_APP';
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  statusVerifikasi: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+  alasanPenolakan?: string | null;
+  verifiedBy?: string | null;
+  verifiedAt?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface SubmitMandiriInput {
+  thbl: string;
+  nolg: string;
+  stma: number;
+  fotoMeterUrl: string;
+  fotoRumahUrl?: string;
+  longitude?: number;
+  latitude?: number;
+  channel?: 'WEB_PORTAL' | 'MOBILE_APP';
 }

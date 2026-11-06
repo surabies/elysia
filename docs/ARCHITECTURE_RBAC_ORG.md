@@ -1,16 +1,15 @@
-# Arsitektur Pondasi: Struktur Kepegawaian, RBAC & Workflow Verifikasi Baca Meter
+# Arsitektur Pondasi: Struktur Kepegawaian, RBAC, Kamus Kondisi Catat & Workflow Baca Mandiri
 
-Dokumen ini mendefinisikan arsitektur pondasi resmi aplikasi Baca Meter (Cater), menggabungkan aturan operasional eksisting dan tata kelola keamanan modern:
-1. **Hirarki Jabatan Kepegawaian (HR)**
+Dokumen ini mendefinisikan arsitektur pondasi resmi aplikasi Baca Meter (Cater):
+1. **Hirarki Jabatan Kepegawaian (HR Level - 6 Tingkat)**
 2. **Pemetaan Role Sistem & Verifikator (V1, V2, V3, Pencatat, Staff)**
-3. **Kewenangan Khusus Staff Administrasi / Billing (Rute, Pemetaan, Closing, & Koreksi Pasca-Verifikasi)**
-4. **Guard Kondisional & Audit Trail Integritas Data**
+3. **Kewenangan Khusus Staff Administrasi / Billing & Koreksi Pasca-Verifikasi**
+4. **Kamus Standar 22 Kondisi Catat Lapangan (Hasil Audit Data Riil STI)**
+5. **Arsitektur Modul Baca Meter Mandiri Pelanggan (Pengurangan Kasus DK via PostGIS Geofencing)**
 
 ---
 
 ## 1. Pemetaan Struktur Kepegawaian ke Peran Sistem
-
-Berdasarkan aturan operasional nyata:
 
 ```mermaid
 flowchart TD
@@ -39,8 +38,6 @@ flowchart TD
     PLK --> R_CATER
 ```
 
-### Tabel Rincian Kewenangan
-
 | Jabatan | Role Sistem | Tingkat Verifikasi | Lingkup Kewenangan Utama |
 | :--- | :--- | :---: | :--- |
 | **Pelaksana** | `PENCATAT` | Input Awal | Melakukan pembacaan lapangan via mobile app, ambil foto stand meter, lock koordinat GPS. |
@@ -48,226 +45,75 @@ flowchart TD
 | **Manager** | `VERIFIKATOR_2` | **V2** | Validasi dan persetujuan tingkat cabang/wilayah atas eskalasi V1, approval penyesuaian (*adjustment*) stand cabang. |
 | **Senior Manager** | `VERIFIKATOR_3` | **V3** | Pengesahan akhir penutupan buku periode cater per divisi. |
 | **Direksi** | `VERIFIKATOR_3` / `EXECUTIVE` | **V3** (Override) | Dashboard analitik KPI eksekutif, dengan hak override V3 bila dibutuhkan pada kondisi khusus. |
-| **Staff / Penyelia**| `STAFF_ADMIN_BILLING` | **Non-Verifikator Reguler** (Koreksi Kondisional) | **1.** Administrasi Rute (pindah/gabung/pecah rute)<br>**2.** Pemetaan Spasial (GIS pelanggan & rute)<br>**3.** Input manual stand susulan<br>**4.** Eksekusi closing periode menjadi DRD<br>**5.** **Koreksi Pasca-Verifikasi** (hanya aktif jika data memiliki histori verifikasi V1-V3). |
+| **Staff / Penyelia**| `STAFF_ADMIN_BILLING` | **Non-Verifikator Reguler** (Koreksi Kondisional) | **1.** Administrasi Rute (pindah/gabung rute)<br>**2.** Pemetaan Spasial GIS<br>**3.** Input manual stand susulan<br>**4.** Eksekusi closing periode ke DRD<br>**5.** **Koreksi Pasca-Verifikasi** (hanya aktif jika data memiliki histori verifikasi V1-V3). |
 
 ---
 
-## 2. Aturan Kritis: Peran Strategis & Koreksi Kondisional "Staff"
+## 2. Kamus Master Kondisi Catat (Audit Data Riil 22.549 Baris)
 
-Staff **bukan verifikator harian**. Staff tidak memverifikasi data mentah yang baru masuk dari lapangan agar alur berjenjang (Supervisor $\rightarrow$ Manager) tidak dilompati (*bypass*).
+Berdasarkan audit data produksi `ProgresCater-PW5.csv` dan `lapdatametertes.csv`, sistem membakukan 22 kode kondisi resmi:
 
-Namun, Staff memegang kendali operasional administrasi dan **koreksi rekonsiliasi pasca-verifikasi**:
+| Kode `tmss` | Keterangan Catat | Kategori | Kendala Akses? | Trigger Mandiri? | Makna Lapangan |
+| :---: | :--- | :--- | :---: | :---: | :--- |
+| ` ` / `-` | **Normal** | TERBACA | Tidak | Tidak | Terbaca normal di lapangan (62,66%) |
+| `H` | **TIDAK DIPAKAI** | TERBACA | Tidak | Tidak | Konsumsi 0 m3 / stand tetap (12,05%) |
+| `R` | **RUMAH KOSONG** | KENDALA_AKSES | Ya | Ya | Rumah kosong / tidak berpenghuni (5,69%) |
+| `N` | **STAND TEMPEL** | KENDALA_AKSES | Ya | Ya | Angka meter ditempel di pagar/pintu (5,54%) |
+| `Z` | **STAND-KONSUMEN** | TERBACA | Tidak | Ya | Angka dilaporkan oleh pelanggan (2,46%) |
+| `P` | **REV.PENCATAT** | TERBACA | Tidak | Tidak | Catatan revisi khusus petugas (2,17%) |
+| `2` | **DK** | KENDALA_AKSES | Ya | Ya | **Pagar/Rumah Dikunci (1,81%)** |
+| `8` | **TIDAK ADA AIR** | KENDALA_TEKNIS | Tidak | Tidak | Aliran air PDAM mati (1,50%) |
+| `7` | **MATI ADA AIR** | KERUSAKAN_FISIK | Tidak | Tidak | Meter macet padahal air mengalir (1,39%) |
+| `3` | **MTA** | KERUSAKAN_FISIK | Tidak | Tidak | Meter Tak Ada / hilang / dicopot (1,21%) |
+| `5` | **TTB** | KENDALA_AKSES | Ya | Ya | Tidak Terbaca (tertimbun tanah/air) (1,16%) |
+| `6` | **BMK/BMB** | KERUSAKAN_FISIK | Tidak | Tidak | Bodi / Kaca meter buram (1,01%) |
+| `E` | **TERHALANG** | KENDALA_AKSES | Ya | Ya | Terhalang material / kendaraan (0,67%) |
+| `O` | **METER RUSAK** | KERUSAKAN_FISIK | Tidak | Tidak | Kerusakan fisik meter (0,45%) |
+| `D` | **DICABUT** | PELANGGARAN | Tidak | Tidak | Meteran dicabut dinas (0,12%) |
+| `4` | **MB** | KERUSAKAN_FISIK | Tidak | Tidak | Meter Buram (0,03%) |
+| `Q` | **ADA ANJING** | KENDALA_AKSES | Ya | Ya | Ada anjing penjaga (0,03%) |
+| `F` | **METER MUNDUR** | KERUSAKAN_FISIK | Tidak | Tidak | Putaran meter mundur (0,03%) |
+| `U` | **MUDA KEMBALI** | TERBACA | Tidak | Tidak | Roll-over meter (9999 -> 0000) (0,01%) |
+| `T` | **METER TERBALIK** | KERUSAKAN_FISIK | Tidak | Tidak | Posisi meter terbalik pasang |
+| `9` | **LOS METER** | PELANGGARAN | Tidak | Tidak | Sambungan bypass tanpa meter |
+| `AA` | **Meter Dalam Air** | KENDALA_AKSES | Ya | Ya | Meteran terendam air galian/got (0,02%) |
+
+---
+
+## 3. Modul Baca Meter Mandiri Pelanggan (Anti-DK & PostGIS Geofencing)
 
 ```mermaid
-flowchart LR
-    A["Data Baru dari Pencatat"] --> B["Verifikasi V1 (Supervisor)"]
-    B --> C["Verifikasi V2 (Manager)"]
-    C --> D["Verifikasi V3 (Senior Manager/Direksi)"]
+sequenceDiagram
+    autonumber
+    actor Petugas as Petugas Cater Lapangan
+    actor Pelanggan as Pelanggan (Web/Mobile)
+    participant Sistem as Backend & PostGIS
+    actor Verifikator as Verifikator Kantor
+
+    Petugas->>Sistem: Kirim catatan: tmss "2" (DK), Foto Pagar Terkunci
+    Sistem-->>Pelanggan: Auto Notifikasi (WA/SMS): "Pagar terkunci. Silakan lapor mandiri."
     
-    A -.->|Fitur Koreksi Staff DISABLED| LOCK["Terkunci (Belum Ada Histori)"]
+    Pelanggan->>Sistem: Upload Foto Water Meter + Input Angka Stand + GPS Geotag
+    Sistem->>Sistem: Hitung deviasi jarak GPS vs Koordinat Rumah via ST_Distance
     
-    B -->|Ada Histori Verifikasi| ACTIVE["Fitur Koreksi Staff AKTIF"]
-    C -->|Ada Histori Verifikasi| ACTIVE
-    D -->|Ada Histori Verifikasi| ACTIVE
+    Note over Sistem,Verifikator: Masuk Antrean Tab: "Verifikasi Baca Mandiri Pelanggan"
     
-    ACTIVE -->|Koreksi Administratif + Catatan| AUDIT["Tercatat di cater_verifikasi_log"]
-```
-
-### Aturan Bisnis Guard Kondisional:
-1. **Data Mentah (`status: SUBMITTED`, `histori_verifikasi == 0`)**:
-   - Fitur edit/koreksi stand meter oleh Staff **TIDAK AKTIF (DISABLED)**. Data wajib diverifikasi terlebih dahulu oleh Supervisor (V1).
-2. **Data Sudah Diverifikasi (`status: VERIFIED_L1 / L2 / L3`, `histori_verifikasi > 0`)**:
-   - Tombol/Menu **"Koreksi Administratif / Rekonsiliasi"** oleh Staff menjadi **AKTIF**.
-   - Contoh kasus: Komplain pelanggan di loket pelayanan bahwa meter bocor setelah diverifikasi, atau ditemukan salah baca saat rekonsiliasi pra-closing.
-   - **Kewajiban Audit**: Staff wajib mengisi nomor tiket komplain / dasar nota dinas serta alasan koreksi. Data sebelum dan sesudah perubahan dicatat permanen di log audit.
-3. **Closing Data**:
-   - Staff memiliki kewenangan memicu proses *batch closing* data yang sudah berstatus `APPROVED_FINAL` untuk di-generate menjadi tagihan rekening air (DRD).
-
----
-
-## 3. Matriks Hak Akses Fitur Aplikasi
-
-| Modul & Fitur | PENCATAT | V1 (Supervisor) | V2 (Manager) | V3 (Sr. Mgr / Direksi) | STAFF ADMIN |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Input Stand & Foto (Mobile)** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Verifikasi Reguler Harian** | ❌ | ✅ (V1) | ✅ (V2) | ✅ (V3) | ❌ |
-| **Perintah Re-Survey Lapangan** | ❌ | ✅ | ✅ | ❌ | ❌ |
-| **Koreksi Stand di Alur Reguler** | ❌ | ❌ | ✅ | ✅ | ❌ |
-| **Pindah & Gabung Rute Cater** | ❌ | ❌ | ❌ | ❌ | ✅ |
-| **Pemetaan & GIS Koordinat** | ❌ | ❌ | ❌ | ❌ | ✅ |
-| **Manual Input Stand (Susulan)**| ❌ | ❌ | ❌ | ❌ | ✅ |
-| **Koreksi Pasca-Verifikasi** | ❌ | ❌ | ❌ | ❌ | ✅ *(Kondisional)* |
-| **Eksekusi Closing Periode (DRD)**| ❌ | ❌ | ❌ | ❌ | ✅ |
-| **Executive Dashboard & KPI** | ❌ | ❌ | ❌ | ✅ | ❌ |
-
----
-
-## 4. Spesifikasi Skema Database (Drizzle ORM)
-
-### A. Enum Hirarki & Peran Sistem
-
-```typescript
-import { pgEnum } from 'drizzle-orm/pg-core';
-
-// 1. Tingkatan Jabatan Kepegawaian (HR)
-export const employeeLevelEnum = pgEnum('employee_level', [
-  'DIREKSI',
-  'SENIOR_MANAGER',
-  'MANAGER',
-  'SUPERVISOR',
-  'STAFF_PENYELIA',
-  'PELAKSANA',
-]);
-
-// 2. Peran Sistem RBAC
-export const appRoleEnum = pgEnum('app_role', [
-  'SUPERADMIN',
-  'EXECUTIVE',            // Direksi (Analitik & Override V3)
-  'VERIFIKATOR_3',        // Senior Manager (Final Release)
-  'VERIFIKATOR_2',        // Manager Cabang (Regional Approval)
-  'VERIFIKATOR_1',        // Supervisor (Initial Screening)
-  'STAFF_ADMIN_BILLING',  // Staff Administrasi Rute, GIS, Closing & Koreksi Pasca-Verifikasi
-  'PENCATAT',             // Pelaksana Lapangan (Mobile App)
-]);
-
-// 3. Status Siklus Verifikasi
-export const caterVerificationStatusEnum = pgEnum('cater_verification_status', [
-  'DRAFT',                // Draft offline di ponsel
-  'SUBMITTED',            // Diunggah, menunggu V1
-  'NEED_RESURVEY',        // Perintah cek ulang lapangan
-  'VERIFIED_L1',          // Disetujui Supervisor
-  'VERIFIED_L2',          // Disetujui Manager
-  'APPROVED_FINAL',       // Disahkan Senior Manager / Direksi
-  'CORRECTED_POST_VERIF', // Telah dikoreksi administratif oleh Staff
-  'LOCKED_BILLING',       // Sudah dieksekusi closing ke DRD (Locked permanen)
-]);
-```
-
-### B. Tabel Riwayat & Audit Trail Verifikasi (`cater_verifikasi_log`)
-
-```typescript
-import { pgTable, text, varchar, numeric, timestamp } from 'drizzle-orm/pg-core';
-import { user } from './auth';
-import { caterBacaMeter } from './cater';
-
-export const caterVerifikasiLog = pgTable('cater_verifikasi_log', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  caterId: text('cater_id')
-    .notNull()
-    .references(() => caterBacaMeter.id, { onDelete: 'cascade' }),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id),
-  
-  // Tingkat tindakan: 'V1', 'V2', 'V3', atau 'STAFF_CORRECTION'
-  stage: varchar('stage', { length: 20 }).notNull(),
-  
-  // Aksi: 'APPROVE', 'REQUEST_RESURVEY', 'ADJUST_STAND', 'STAFF_POST_CORRECT'
-  action: varchar('action', { length: 30 }).notNull(),
-  
-  // Pencatatan sebelum & sesudah koreksi
-  stmaSebelum: numeric('stma_sebelum', { precision: 10, scale: 2 }),
-  stmaSesudah: numeric('stma_sesudah', { precision: 10, scale: 2 }),
-  pakaiSebelum: numeric('pakai_sebelum', { precision: 10, scale: 2 }),
-  pakaiSesudah: numeric('pakai_sesudah', { precision: 10, scale: 2 }),
-  
-  // Dasar / Bukti Koreksi
-  nomorTiketKomplain: varchar('nomor_tiket_komplain', { length: 50 }),
-  alasan: text('alasan').notNull(),
-  
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+    Verifikator->>Sistem: Periksa Foto Meter & Indikator Geofence (< 50 meter)
+    Verifikator->>Sistem: Klik "Setujui & Gantikan DK"
+    
+    Sistem->>Sistem: Update cater_baca_meter: Stand terpasang, tmss berubah "2" -> "Z" (STAND-KONSUMEN)
+    Note over Sistem: Kasus DK Berkurang! Tagihan DRD Terbit Akurat!
 ```
 
 ---
 
-## 5. Implementasi Logika Guard Koreksi Staff di Backend ElysiaJS
+## 4. Struktur Database & Model Relasional
 
-Logika penguncian kondisional (*conditional guard*) memastikan Staff tidak dapat mengutak-atik data yang belum pernah masuk alur verifikasi V1-V3:
-
-```typescript
-import { Elysia, t } from 'elysia';
-import { db } from '@elysia/db';
-import { caterBacaMeter, caterVerifikasiLog } from '@elysia/db/schema';
-import { eq, desc } from 'drizzle-orm';
-
-export const staffCorrectionPlugin = new Elysia({ prefix: '/cater/staff' })
-  .post(
-    '/correct-stand/:caterId',
-    async ({ params: { caterId }, body, user, error }) => {
-      // 1. Ambil data cater saat ini
-      const cater = await db.query.caterBacaMeter.findFirst({
-        where: eq(caterBacaMeter.id, caterId),
-      });
-
-      if (!cater) return error(404, { message: 'Data cater tidak ditemukan' });
-
-      // 2. Ambil histori verifikasi data ini
-      const logs = await db
-        .select()
-        .from(caterVerifikasiLog)
-        .where(eq(caterVerifikasiLog.caterId, caterId));
-
-      // 3. ATURAN KRITIS: Jika belum pernah ada histori verifikasi, TOLAK!
-      if (!logs || logs.length === 0) {
-        return error(400, {
-          message: 'Fitur tidak aktif: Data ini belum pernah diverifikasi oleh V1-V3. Koreksi tidak dapat dilakukan.',
-        });
-      }
-
-      // 4. Jika periode sudah closing/terkunci di billing, tolak kecuali ada izin khusus
-      if (cater.statusVerifikasi === 'LOCKED_BILLING') {
-        return error(403, {
-          message: 'Data sudah terkunci dalam Rekening Tagihan (DRD). Gunakan prosedur Berita Acara Khusus.',
-        });
-      }
-
-      // 5. Eksekusi koreksi dan catat audit log
-      await db.transaction(async (tx) => {
-        // Log riwayat koreksi
-        await tx.insert(caterVerifikasiLog).values({
-          caterId,
-          userId: user.id,
-          stage: 'STAFF_CORRECTION',
-          action: 'STAFF_POST_CORRECT',
-          stmaSebelum: cater.stma,
-          stmaSesudah: String(body.stmaBaru),
-          pakaiSebelum: cater.pakaiM3,
-          pakaiSesudah: String(body.pakaiM3Baru),
-          nomorTiketKomplain: body.nomorTiketKomplain,
-          alasan: body.alasan,
-        });
-
-        // Update stand meter & status
-        await tx
-          .update(caterBacaMeter)
-          .set({
-            stma: String(body.stmaBaru),
-            pakaiM3: String(body.pakaiM3Baru),
-            statusVerifikasi: 'CORRECTED_POST_VERIF',
-            catatan: `Koreksi oleh Staff: ${body.alasan}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(caterBacaMeter.id, caterId));
-      });
-
-      return { success: true, message: 'Koreksi administratif berhasil disimpan.' };
-    },
-    {
-      body: t.Object({
-        stmaBaru: t.Numeric(),
-        pakaiM3Baru: t.Numeric(),
-        nomorTiketKomplain: t.Optional(t.String()),
-        alasan: t.String({ minLength: 10 }),
-      }),
-    }
-  );
-```
-
----
-
-## 6. Ringkasan Keuntungan Desain Ini
-
-1. **Mempertahankan Alur Asli & Menjaga Disiplin**: Supervisor (V1), Manager (V2), dan Senior Manager/Direksi (V3) tetap menjadi benteng verifikasi utama.
-2. **Tidak Melanggar *Separation of Duties***: Staff tidak bisa menyusup ke data mentah lapangan. Fitur koreksi hanya menjadi jalan keluar administratif (*exception handling*) untuk kasus komplain atau rekonsiliasi pasca-verifikasi.
-3. **Audit Trail Mutlak**: Setiap desimal angka yang dikoreksi Staff tercatat lengkap bersama identitas staf, nomor pengaduan, dan nilai meter sebelumnya.
+1. **`master_kondisi_catat`**: Kamus 22 kode kondisi catat dan status pemicu baca mandiri.
+2. **`cater_mandiri_pelanggan`**: Menyimpan pengajuan mandiri pelanggan (foto, angka, titik GPS, dan status approval).
+3. **`cater_baca_meter`**: Transaksi utama yang diperkaya kolom:
+   - `tmss`: Merujuk ke `master_kondisi_catat.kode_tmss`.
+   - `sumberCatat`: `'PETUGAS_ONSITE'`, `'PETUGAS_OFFSITE'`, `'MANDIRI_WEB'`, `'MANDIRI_APP'`.
+   - `caterMandiriId`: Relasi ke pengajuan baca mandiri pelanggan yang disetujui.
+4. **`pegawai` & `user_roles`**: Struktur organisasi dan hak akses RBAC multi-tier.
+5. **`cater_verifikasi_log`**: Audit trail lengkap setiap approval, koreksi, dan penggantian DK.
