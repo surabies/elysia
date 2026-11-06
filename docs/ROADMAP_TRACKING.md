@@ -15,6 +15,8 @@ Dokumen ini melacak kemajuan (*progress tracking*), arsitektur keputusan, hasil 
 | **Master Kamus Kondisi Catat (22 Kode)** | ✅ **Selesai** | Tabel `master_kondisi_catat` (`kode_tmss`, `nama`, `kategori`, `trigger_baca_mandiri`). |
 | **Skema Baca Mandiri Pelanggan** | ✅ **Selesai** | Tabel `cater_mandiri_pelanggan` dengan PostGIS Geofencing (`lokasi_gps`, `jarak_dari_rumah_meter`). |
 | **Migrasi Database PostgreSQL** | ✅ **Selesai** | Berkas migrasi `0002_heavy_stature.sql` & `0003_same_leopardon.sql` tervalidasi. |
+| **Audit Backend Hono-Prisma** | ✅ **Selesai** | Analisis mendalam 30+ model Prisma, RBAC, dan 25 sub-modul router di `backend-hono-prisma`. |
+| **Rencana Refactor Hono -> Elysia**| 🚀 **Dalam Proses** | Tersusun di [`REFACTOR_HONO_TO_ELYSIA.md`](file:///C:/Users/DESKTOP/Documents/elysia/docs/REFACTOR_HONO_TO_ELYSIA.md) (5 Fase Pengerjaan). |
 | **Pengembangan Frontend** | ⏸️ **Ditunda** | Sesuai instruksi, fokus diselesaikan pada database dan backend sebelum masuk ke UI. |
 
 ---
