@@ -3,6 +3,7 @@ import { pelanggan } from './pelanggan';
 import { ruteCater, petugasCater } from './wilayah';
 import { masterKondisiCatat } from './kondisi';
 import { caterMandiriPelanggan } from './mandiri';
+import { waterMeterMutasi } from './gwm';
 
 // Transaksi Catat Meter Lapangan (Mobile -> Backend) & Baca Mandiri Terverifikasi
 export const caterBacaMeter = pgTable(
@@ -22,14 +23,19 @@ export const caterBacaMeter = pgTable(
     pakaiM3: numeric('pakai_m3', { precision: 10, scale: 2 }).notNull(), // Pemakaian m3
     pakaiLalu: numeric('pakai_lalu', { precision: 10, scale: 2 }), // Pemakaian bulan lalu
     
+    // Pemakaian Tagihan & Taksasi (Hasil Business Domain Engine)
+    pakaiTagih: numeric('pakai_tagih', { precision: 10, scale: 2 }), // Pemakaian yang ditagihkan setelah taksasi/Perdir
+    alasanTaksir: varchar('alasan_taksir', { length: 50 }),           // MINIMUM_5M3 | TAKSIRAN_BULAN_LALU | NOL_TIDAK_ADA_AIR | OVERRIDE_MANUAL
+
     // Kode Kondisi STI & Keterangan Catat
     tmss: varchar('tmss', { length: 10 }).default(' ').references(() => masterKondisiCatat.kodeTmss),
     ketCatat: varchar('ket_catat', { length: 50 }).notNull().default('Normal'),
     metodeCatat: varchar('metode_catat', { length: 20 }).notNull().default('ONSITE'), // ONSITE / OFFSITE
     
-    // Sumber Pencatatan & Relasi ke Mandiri
+    // Sumber Pencatatan & Relasi ke Mandiri / Ganti Meter
     sumberCatat: varchar('sumber_catat', { length: 30 }).notNull().default('PETUGAS_ONSITE'), // PETUGAS_ONSITE | PETUGAS_OFFSITE | MANDIRI_WEB | MANDIRI_APP
     caterMandiriId: text('cater_mandiri_id').references((): any => caterMandiriPelanggan.id, { onDelete: 'set null' }),
+    waterMeterMutasiId: varchar('water_meter_mutasi_id', { length: 36 }).references((): any => waterMeterMutasi.id, { onDelete: 'set null' }),
 
     tglCatat: timestamp('tgl_catat').notNull().defaultNow(),
     durasiDetik: integer('durasi_detik').default(0),

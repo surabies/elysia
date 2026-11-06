@@ -233,6 +233,9 @@ export interface CaterBacaMeterInput {
   stma: number; // Stand Meter Akhir
   kondisiCatat: KondisiCatat;
   metodeCatat: MetodeCatat;
+  pakaiTagih?: number | null;
+  alasanTaksir?: string | null;
+  waterMeterMutasiId?: string | null;
   fotoMeterUrl?: string;
   fotoRumahUrl?: string;
   longitude?: number;
