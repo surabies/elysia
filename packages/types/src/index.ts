@@ -321,3 +321,66 @@ export interface SubmitMandiriInput {
   latitude?: number;
   channel?: 'WEB_PORTAL' | 'MOBILE_APP';
 }
+
+// --- Tarif Bertingkat & Biaya Tetap ---
+export interface TarifBlok {
+  id: string;
+  tarifKode: string;
+  blok: number;
+  batasAwalM3: number;
+  batasAkhirM3?: number | null;
+  hargaPerM3: number | string;
+  berlakuMulai: Date | string;
+  berlakuSampai?: Date | string | null;
+  catatan?: string | null;
+  createdAt: Date | string;
+}
+
+export interface BiayaTetap {
+  id: string;
+  jenis: 'BEA_BEBAN' | 'BEA_ADMIN' | 'AIR_KOTOR' | string;
+  ukuranMeter?: string | null;
+  nominal: number | string;
+  berlakuMulai: Date | string;
+  berlakuSampai?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+// --- Siklus Periode Penagihan & Closing ---
+export type StatusPeriodePenagihan = 'BERJALAN' | 'TERKUNCI';
+
+export interface PeriodePenagihan {
+  periode: string; // '202601'
+  status: StatusPeriodePenagihan;
+  tanggalJatuhTempo?: Date | string | null;
+  ditutupAt?: Date | string | null;
+  ditutupById?: string | null;
+  dibukaAt?: Date | string | null;
+  dibukaById?: string | null;
+  alasanBuka?: string | null;
+  jumlahSl?: number | null;
+  totalM3?: number | string | null;
+  totalTagihan?: number | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+// --- DPM (Daftar Pelanggan Menjadi) Target Catat Bulanan ---
+export type StatusDaftarCatat = 'BELUM_DICATAT' | 'DICATAT' | 'TIDAK_TERCATAT' | 'DICABUT';
+export type SumberDaftarCatat = 'CARRY_OVER' | 'PBPK' | 'MANUAL';
+
+export interface DaftarCatat {
+  id: string;
+  periode: string;
+  nolg: string;
+  ruteKode?: string | null;
+  petugasId?: string | null;
+  urutan: number;
+  sumber: SumberDaftarCatat;
+  status: StatusDaftarCatat;
+  selesaiAt?: Date | string | null;
+  catatan?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}

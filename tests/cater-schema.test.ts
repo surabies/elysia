@@ -17,6 +17,10 @@ import {
   caterVerifikasiLog,
   masterKondisiCatat,
   caterMandiriPelanggan,
+  tarifBlok,
+  biayaTetap,
+  periodePenagihan,
+  daftarCatat,
   employeeLevelEnum,
   appRoleEnum,
   caterVerificationStatusEnum,
@@ -34,6 +38,44 @@ describe('Modular Cater Drizzle Schema Integrity', () => {
     expect(golonganTarif).toBeDefined();
     expect(waterMeter).toBeDefined();
     expect(rekeningDrd).toBeDefined();
+  });
+
+  it('should export Phase 1 reconciled tables: tarifBlok, biayaTetap, periodePenagihan, daftarCatat', () => {
+    // 1. Tarif Blok (Tiered Tariffs)
+    expect(tarifBlok).toBeDefined();
+    expect(tarifBlok.id).toBeDefined();
+    expect(tarifBlok.tarifKode).toBeDefined();
+    expect(tarifBlok.blok).toBeDefined();
+    expect(tarifBlok.batasAwalM3).toBeDefined();
+    expect(tarifBlok.hargaPerM3).toBeDefined();
+    expect(tarifBlok.berlakuMulai).toBeDefined();
+
+    // 2. Biaya Tetap (Fixed Fee / Meter Size)
+    expect(biayaTetap).toBeDefined();
+    expect(biayaTetap.id).toBeDefined();
+    expect(biayaTetap.jenis).toBeDefined();
+    expect(biayaTetap.nominal).toBeDefined();
+    expect(biayaTetap.ukuranMeter).toBeDefined();
+    expect(biayaTetap.berlakuMulai).toBeDefined();
+
+    // 3. Periode Penagihan (Closing Cycle Lock)
+    expect(periodePenagihan).toBeDefined();
+    expect(periodePenagihan.periode).toBeDefined();
+    expect(periodePenagihan.status).toBeDefined();
+    expect(periodePenagihan.tanggalJatuhTempo).toBeDefined();
+    expect(periodePenagihan.ditutupAt).toBeDefined();
+    expect(periodePenagihan.ditutupById).toBeDefined();
+    expect(periodePenagihan.totalTagihan).toBeDefined();
+
+    // 4. Daftar Catat (DPM - Target Beban Kerja Catat Bulanan)
+    expect(daftarCatat).toBeDefined();
+    expect(daftarCatat.id).toBeDefined();
+    expect(daftarCatat.periode).toBeDefined();
+    expect(daftarCatat.nolg).toBeDefined();
+    expect(daftarCatat.ruteKode).toBeDefined();
+    expect(daftarCatat.petugasId).toBeDefined();
+    expect(daftarCatat.sumber).toBeDefined();
+    expect(daftarCatat.status).toBeDefined();
   });
 
   it('should export masterKondisiCatat and caterMandiriPelanggan tables', () => {

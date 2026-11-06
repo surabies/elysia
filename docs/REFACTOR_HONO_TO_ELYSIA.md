@@ -97,7 +97,7 @@ flowchart TD
 ## 4. Lembar Pelacak Kemajuan (Progress Tracking Checklist)
 
 - [x] **Fase 0**: Audit menyeluruh berkas `backend-hono-prisma` (Dokumentasi, Skema, dan Router).
-- [ ] **Fase 1**: Penambahan skema Drizzle: `tarif_blok`, `biaya_tetap`, `periode_penagihan`, `daftar_catat`.
+- [x] **Fase 1**: Penambahan skema Drizzle: `tarif_blok`, `biaya_tetap`, `periode_penagihan`, `daftar_catat` & pengujian skema (18 test passing).
 - [ ] **Fase 2**: Porting fungsi domain murni (`Tagihan.ts`, `LaporMandiri.ts`, `TaksasiManual.ts`).
 - [ ] **Fase 3**: Konversi Service Layer (Taksasi, Verifikasi V1-V3, Closing, Override DK) ke Drizzle ORM.
 - [ ] **Fase 4**: Pembuatan Route Handler Elysia terintegrasi TypeBox Schema & Macro RBAC.
