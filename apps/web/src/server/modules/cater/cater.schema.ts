@@ -72,3 +72,58 @@ export const staffCorrectionBodySchema = t.Object({
   nomorTiketKomplain: t.Optional(t.String()),
   alasan: t.String({ minLength: 5, description: 'Wajib mencantumkan alasan koreksi data' }),
 });
+
+// 10. Manajemen Rute (Menu 2.6, 2.7, 2.8)
+export const pindahRuteBodySchema = t.Object({
+  nolgList: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),
+  ruteTujuan: t.String({ minLength: 1 }),
+});
+
+export const urutkanRuteBodySchema = t.Object({
+  ruteKode: t.String({ minLength: 1 }),
+  urutanList: t.Array(
+    t.Object({
+      nolg: t.String({ minLength: 1 }),
+      noUrutRute: t.Number({ minimum: 1 }),
+    }),
+    { minItems: 1 }
+  ),
+});
+
+export const gabungRuteBodySchema = t.Object({
+  ruteSumber: t.String({ minLength: 1 }),
+  ruteTujuan: t.String({ minLength: 1 }),
+});
+
+// 11. Administrasi Pelanggan (Menu 3.2, 3.3, 3.4, 3.5)
+export const cariPelangganQuerySchema = t.Object({
+  q: t.String({ minLength: 1, description: 'Kata kunci pencarian (NOLG, NPRS, Nama, Alamat)' }),
+  limit: t.Optional(t.Numeric({ default: 30, minimum: 1, maximum: 100 })),
+});
+
+export const detailPelangganParamsSchema = t.Object({
+  nolg: t.String({ minLength: 1 }),
+});
+
+export const updateKontakPelangganBodySchema = t.Object({
+  noTelp: t.String({ minLength: 6, maxLength: 20 }),
+});
+
+export const updateTarifPelangganBodySchema = t.Object({
+  tarifKode: t.String({ minLength: 1 }),
+});
+
+// 12. Monitoring Progress & Analitik Cater (Menu 5.2, 5.3, 5.5, 5.7)
+export const thblParamsSchema = t.Object({
+  thbl: t.String({ minLength: 6, maxLength: 6 }),
+});
+
+export const ikhtisarQuerySchema = t.Object({
+  limit: t.Optional(t.Numeric({ default: 50, minimum: 1, maximum: 200 })),
+});
+
+// 13. Visualisasi Spasial (Menu 6.1)
+export const mapGeoJsonQuerySchema = t.Object({
+  ruteKode: t.Optional(t.String()),
+  thbl: t.Optional(t.String({ minLength: 6, maxLength: 6 })),
+});

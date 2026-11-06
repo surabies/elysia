@@ -1,7 +1,12 @@
 import { Elysia } from 'elysia';
 import { authPlugin } from '../../plugins/auth';
 import { closingService } from '../../services/closing/closing.service';
-import { pratinjauParamsSchema, eksekusiClosingBodySchema } from './closing.schema';
+import { bulanBaruService } from '../../services/closing/bulan-baru.service';
+import {
+  pratinjauParamsSchema,
+  eksekusiClosingBodySchema,
+  bukaBulanBaruBodySchema,
+} from './closing.schema';
 
 export const closingRouter = new Elysia({ prefix: '/closing' })
   .use(authPlugin)
@@ -49,5 +54,31 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
     {
       requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_2'],
       body: eksekusiClosingBodySchema,
+    }
+  )
+
+  // 3. Buka Bulan Baru (Inisialisasi DPM Periode N+1)
+  .post(
+    '/bulan-baru',
+    async ({ body, user, set }: { body: { periodeLalu: string; periodeBaru: string }; user: any; set: any }) => {
+      try {
+        const result = await bulanBaruService.bukaBulanBaru({
+          periodeLalu: body.periodeLalu,
+          periodeBaru: body.periodeBaru,
+          userId: user!.id,
+        });
+
+        return {
+          success: true,
+          ...result,
+        };
+      } catch (err: any) {
+        set.status = err.message.includes('sudah ada') ? 409 : 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_2'],
+      body: bukaBulanBaruBodySchema,
     }
   );

@@ -16,8 +16,10 @@ Dokumen ini melacak kemajuan (*progress tracking*), arsitektur keputusan, hasil 
 | **Skema Baca Mandiri Pelanggan** | ✅ **Selesai** | Tabel `cater_mandiri_pelanggan` dengan PostGIS Geofencing (`lokasi_gps`, `jarak_dari_rumah_meter`). |
 | **Migrasi Database PostgreSQL** | ✅ **Selesai** | Berkas migrasi `0002_heavy_stature.sql` & `0003_same_leopardon.sql` tervalidasi. |
 | **Audit Backend Hono-Prisma** | ✅ **Selesai** | Analisis mendalam 30+ model Prisma, RBAC, dan 25 sub-modul router di `backend-hono-prisma`. |
-| **Rencana Refactor Hono -> Elysia**| 🚀 **Dalam Proses** | Tersusun di [`REFACTOR_HONO_TO_ELYSIA.md`](file:///C:/Users/DESKTOP/Documents/elysia/docs/REFACTOR_HONO_TO_ELYSIA.md) (5 Fase Pengerjaan). |
-| **Pengembangan Frontend** | ⏸️ **Ditunda** | Sesuai instruksi, fokus diselesaikan pada database dan backend sebelum masuk ke UI. |
+| **Refactor Hono -> Elysia (5 Fase)**| ✅ **Selesai** | 5 Fase pengerjaan tuntas 100% (Domain Engines, Services, Routers, Quality Gate). |
+| **Penyelarasan Modul Aurora Sidebar**| ✅ **Selesai** | 9 Modul sidebar Aurora terpetakan dan terpasang penuh di backend Elysia. |
+| **Pengujian Otomatis (Unit & Integration)**| ✅ **Selesai** | 91 Pengujian lulus 100% (0 error) mencakup 6 kasus bisnis kritis & sidebar. |
+| **Pengembangan Frontend** | 🚀 **Siap Dimulai** | Seluruh API, kontrak data TypeBox, dan pondasi backend telah siap 100%. |
 
 ---
 
@@ -66,52 +68,52 @@ flowchart TD
         F1B["RBAC 6 Level Kepegawaian"]
         F1C["Master Kamus Kondisi Catat (22 Kode)"]
         F1D["Skema Baca Mandiri & PostGIS Geofence"]
-        F1E["Migrasi Database Versioned"]
+        F1E["Skema GWM (Mutasi & Grand Water Meter)"]
+        F1F["Migrasi Database Versioned"]
     end
 
-    subgraph FASE_2["Fase 2: Backend API & Business Logic (BERIKUTNYA)"]
-        F2A["API Ingest Hasil Baca Mandiri (Web/App)"]
-        F2B["Kalkulator PostGIS Geofence (ST_Distance vs Titik Rumah)"]
-        F2C["Endpoint Approval Mandiri (Override DK -> Stand Konsumen)"]
-        F2D["Simulasi / Service Auto-Notifikasi Pelanggan saat DK"]
+    subgraph FASE_2["Fase 2: Domain Engine Murni (SELESAI)"]
+        F2A["Tagihan & Tarif Progresif 4 Blok"]
+        F2B["Taksasi Rata-12B, 3-Tertinggi, Rollover"]
+        F2C["GWM: Pasang/Angkat & Neraca Air NRW"]
+        F2D["Mandiri: Waktu WIB & PostGIS Geofence <= 50m"]
+        F2E["Evaluasi Anomali Meter & 6 Kasus Kritis"]
     end
 
-    subgraph FASE_3["Fase 3: Aplikasi Mobile Petugas Lapangan"]
-        F3A["Download Rute Offline"]
-        F3B["Input Stand + Kamera Foto + GPS Lock"]
-        F3C["Deteksi Kondisi Cepat (Normal, DK, Rusak, dll.)"]
+    subgraph FASE_3["Fase 3: Service Layer SoC (SELESAI)"]
+        F3A["Closing & Buka Bulan Baru DPM"]
+        F3B["Mandiri Service & Dual-Track Approval"]
+        F3C["GWM Service & Mutasi Meter"]
+        F3D["Cater Kueri & Verifikasi V1-V3 Service"]
+        F3E["Rute, Pelanggan, Progress, & Spatial Map Service"]
     end
 
-    subgraph FASE_4["Fase 4: Portal Baca Mandiri Pelanggan"]
-        F4A["Input Nomor Pelanggan (NOLG)"]
-        F4B["Ambil Foto Water Meter & Input Stand"]
-        F4C["Deteksi GPS Browser / Perangkat Pelanggan"]
+    subgraph FASE_4["Fase 4: Elysia Routers & TypeBox (SELESAI)"]
+        F4A["Cater Router: Rute, Pelanggan, Progress, Map"]
+        F4B["Closing Router: Pratinjau, Eksekusi, Bulan-Baru"]
+        F4C["Mandiri Router: Lapor, Riwayat, Verifikasi"]
+        F4D["GWM Router: Mutasi, Debit, Neraca Air"]
+        F4E["RBAC Macro Enforcement di Seluruh Endpoint"]
     end
 
-    subgraph FASE_5["Fase 5: Dashboard Monitoring & Verifikasi Kantor"]
-        F5A["Tab 1: Verifikasi Lapangan (V1, V2, V3)"]
-        F5B["Tab 2: Verifikasi Baca Mandiri (Approval & Override DK)"]
-        F5C["Monitoring Real-Time Penurunan DK & Tingkat Baca"]
+    subgraph FASE_5["Fase 5: Quality Gate & Sidebar Aurora (SELESAI)"]
+        F5A["91 Automated Tests (100% Pass)"]
+        F5B["TypeScript NoEmit (0 Error)"]
+        F5C["Turbo ESLint (0 Error)"]
+        F5D["9 Modul Aurora Sidebar Terpetakan Penuh"]
     end
 
-    FASE_1 --> FASE_2 --> FASE_3 --> FASE_4 --> FASE_5
+    subgraph FASE_NEXT["Tahap Berikutnya: Implementasi UI Frontend"]
+        FN1["Aplikasi Mobile Petugas Lapangan (Android)"]
+        FN2["Portal Publik Baca Mandiri Pelanggan (Web/PWA)"]
+        FN3["Dashboard Web Backoffice (Next.js App Router)"]
+    end
+
+    FASE_1 --> FASE_2 --> FASE_3 --> FASE_4 --> FASE_5 --> FASE_NEXT
 ```
 
 ---
 
-## 4. Rincian Pekerjaan Fase 2 (Backend Service Layer)
+## 4. Status Integrasi 9 Modul Aurora Sidebar
 
-Setelah skema database selesai dan terkunci:
-1. **Service Geofence PostGIS**:
-   - Query otomatis:
-     $$\text{jarak} = \text{ST\_Distance}(\text{cater\_mandiri.lokasi\_gps}, \text{pelanggan.titik\_lokasi})$$
-   - Jika jarak $\le 50\text{ meter}$, tandai `isLokasiValid = true`. Jika $> 50\text{ meter}$, flag `isLokasiValid = false` untuk peringatan verifikator.
-2. **API Verifikasi & Override DK**:
-   - `POST /api/cater/mandiri/verify`:
-     - Tindakan `APPROVE`:
-       1. Update status `cater_mandiri_pelanggan` menjadi `APPROVED`.
-       2. Update transaksi utama `cater_baca_meter`: isi `stma` mandiri, ubah `tmss` dari `'2'` (DK) menjadi `'Z'` (STAND-KONSUMEN), ubah `sumberCatat` menjadi `'MANDIRI_WEB'/'MANDIRI_APP'`.
-       3. Catat di `cater_verifikasi_log`.
-     - Tindakan `REJECT`:
-       1. Simpan alasan penolakan (misal foto buram / bukan meter air).
-       2. Notifikasi ulang pelanggan untuk submit foto yang lebih jelas.
+Seluruh logika bisnis, kalkulasi volume air, agregasi progress, manajemen rute, dan administrasi pelanggan yang berasal dari menu sidebar Aurora telah selesai diimplementasikan ke dalam arsitektur backend modern. Rincian pemetaan endpoint HTTP dan servicenya dapat dilihat pada [`SIDEBAR_REFERENCE.md`](file:///C:/Users/DESKTOP/Documents/elysia/docs/SIDEBAR_REFERENCE.md).
