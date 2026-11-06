@@ -15,5 +15,8 @@
     "ui": "@/components/ui",
     "lib": "@/src/lib",
     "hooks": "@/src/hooks"
+  },
+  "registries": {
+    "@reui": "https://reui.io/r/{style}/{name}.json"
   }
 }

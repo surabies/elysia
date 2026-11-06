@@ -16,10 +16,10 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
-import type { RegionalDailyTrend } from "@/src/server/services/dashboard/analytics.service";
+import type { LegacyRegionalDailyTrend } from "@/src/server/services/dashboard/analytics.service";
 
 interface RegionalTrendsChartProps {
-  data: RegionalDailyTrend[];
+  data: LegacyRegionalDailyTrend[];
 }
 
 const regionalConfig = {
@@ -81,7 +81,10 @@ export function RegionalTrendsChart({ data }: RegionalTrendsChartProps) {
             <h3 className="text-sm font-semibold tracking-tight text-foreground">
               Komparasi Pembacaan per Wilayah Operasional
             </h3>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono text-muted-foreground">
+            <Badge
+              variant="outline"
+              className="text-[10px] px-1.5 py-0 font-mono text-muted-foreground"
+            >
               4 Wilayah
             </Badge>
           </div>
@@ -92,7 +95,10 @@ export function RegionalTrendsChart({ data }: RegionalTrendsChartProps) {
 
         <div className="flex flex-wrap items-center gap-3 text-xs">
           {stats.map((s) => (
-            <div key={s.key} className="flex items-center gap-1.5 font-mono text-[11px]">
+            <div
+              key={s.key}
+              className="flex items-center gap-1.5 font-mono text-[11px]"
+            >
               <span
                 className="size-2 rounded-full inline-block"
                 style={{ backgroundColor: s.color }}
@@ -108,7 +114,10 @@ export function RegionalTrendsChart({ data }: RegionalTrendsChartProps) {
 
       {/* Recharts Multi-Line Container */}
       <div className="h-[200px] w-full pt-1">
-        <ChartContainer config={regionalConfig} className="h-full w-full aspect-auto">
+        <ChartContainer
+          config={regionalConfig}
+          className="h-full w-full aspect-auto"
+        >
           <LineChart
             data={data}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
@@ -138,8 +147,10 @@ export function RegionalTrendsChart({ data }: RegionalTrendsChartProps) {
                 <ChartTooltipContent
                   indicator="line"
                   labelFormatter={(_, p) => {
-                    const row = p?.[0]?.payload as RegionalDailyTrend;
-                    return row ? `Tanggal ${row.hari} (Total: ${row.total} SL)` : "";
+                    const row = p?.[0]?.payload as LegacyRegionalDailyTrend;
+                    return row
+                      ? `Tanggal ${row.hari} (Total: ${row.total} SL)`
+                      : "";
                   }}
                 />
               }
@@ -186,7 +197,9 @@ export function RegionalTrendsChart({ data }: RegionalTrendsChartProps) {
               <th className="pb-1.5 font-normal text-right">Akhir (Tgl 25)</th>
               <th className="pb-1.5 font-normal text-right">Terendah</th>
               <th className="pb-1.5 font-normal text-right">Puncak</th>
-              <th className="pb-1.5 font-normal text-right font-semibold text-foreground">Total SL</th>
+              <th className="pb-1.5 font-normal text-right font-semibold text-foreground">
+                Total SL
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40 font-mono text-[11px]">
@@ -199,10 +212,18 @@ export function RegionalTrendsChart({ data }: RegionalTrendsChartProps) {
                   />
                   {s.label}
                 </td>
-                <td className="py-1.5 text-right text-muted-foreground">{s.start}</td>
-                <td className="py-1.5 text-right text-muted-foreground">{s.end}</td>
-                <td className="py-1.5 text-right text-muted-foreground">{s.low}</td>
-                <td className="py-1.5 text-right text-foreground font-semibold">{s.peak}</td>
+                <td className="py-1.5 text-right text-muted-foreground">
+                  {s.start}
+                </td>
+                <td className="py-1.5 text-right text-muted-foreground">
+                  {s.end}
+                </td>
+                <td className="py-1.5 text-right text-muted-foreground">
+                  {s.low}
+                </td>
+                <td className="py-1.5 text-right text-foreground font-semibold">
+                  {s.peak}
+                </td>
                 <td className="py-1.5 text-right font-bold text-foreground">
                   {s.total.toLocaleString("id-ID")}
                 </td>

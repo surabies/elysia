@@ -15,23 +15,23 @@
 //   NavRow.tsx              isi baris, panah, pemisah
 //   icons.ts / styles.ts / utils.ts / types.ts / Slide.tsx / useIsMac.ts
 
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "@/lib/Utilitas"
-import { GroupDetail } from "./sidebar/GroupDetail"
-import { GroupList } from "./sidebar/GroupList"
-import { PrimaryNav } from "./sidebar/PrimaryNav"
-import { SidebarSearch } from "./sidebar/SidebarSearch"
-import { Slide } from "./sidebar/Slide"
-import { useSidebarDrilldown } from "./sidebar/hooks/UseSidebarDrilldown"
+import * as React from "react";
+import { cn } from "@/lib/Utilitas";
+import { GroupDetail } from "./sidebar/GroupDetail";
+import { GroupList } from "./sidebar/GroupList";
+import { PrimaryNav } from "./sidebar/PrimaryNav";
+import { SidebarSearch } from "./sidebar/SidebarSearch";
+import { Slide } from "./sidebar/Slide";
+import { useSidebarDrilldown } from "./sidebar/hooks/UseSidebarDrilldown";
 
 export function SidebarNav({
   className,
   withSearch = false,
 }: {
-  className?: string
-  withSearch?: boolean
+  className?: string;
+  withSearch?: boolean;
 }) {
   const {
     active,
@@ -40,13 +40,13 @@ export function SidebarNav({
     direction,
     openGroup,
     backToRoot,
-  } = useSidebarDrilldown()
+  } = useSidebarDrilldown();
 
-  const isInitialMount = React.useRef(true)
+  const isInitialMount = React.useRef(true);
 
   React.useEffect(() => {
-    isInitialMount.current = false
-  }, [])
+    isInitialMount.current = false;
+  }, []);
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -71,11 +71,13 @@ export function SidebarNav({
             direction={direction}
             animate={!isInitialMount.current}
           >
-            <PrimaryNav />
-            <GroupList activeGroupId={activeGroupId} onOpen={openGroup} />
+            <div className="flex flex-col gap-px">
+              <PrimaryNav />
+              <GroupList activeGroupId={activeGroupId} onOpen={openGroup} />
+            </div>
           </Slide>
         )}
       </nav>
     </div>
-  )
+  );
 }

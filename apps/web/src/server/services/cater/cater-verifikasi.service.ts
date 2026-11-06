@@ -1,6 +1,6 @@
-import { eq, desc } from 'drizzle-orm';
-import { db, caterBacaMeter, caterVerifikasiLog } from '@cater/db';
-import { evaluasiPemakaianMeter } from '../../domain/cater/cater-anomali.engine';
+import { eq, desc } from "drizzle-orm";
+import { db, caterBacaMeter, caterVerifikasiLog } from "@cater/db";
+import { evaluasiPemakaianMeter } from "../../domain/cater/cater-anomali.engine";
 
 export interface SubmitReadingInput {
   thbl: string;
@@ -11,6 +11,12 @@ export interface SubmitReadingInput {
   stma: number;
   kondisiCatat?: string;
   metodeCatat?: string;
+  sumberCatat?:
+    | "PETUGAS_ONSITE"
+    | "PETUGAS_OFFSITE"
+    | "MANDIRI_WEB"
+    | "MANDIRI_APP"
+    | "MANUAL";
   fotoMeterUrl?: string;
   fotoRumahUrl?: string;
   durasiDetik?: number;
@@ -21,13 +27,13 @@ export interface SubmitReadingInput {
 
 export interface VerifyV1Input {
   caterId: string;
-  action: 'APPROVE' | 'REQUEST_RESURVEY';
+  action: "APPROVE" | "REQUEST_RESURVEY";
   catatan?: string;
 }
 
 export interface VerifyV2Input {
   caterId: string;
-  action: 'APPROVE' | 'ADJUST_STAND' | 'REQUEST_RESURVEY';
+  action: "APPROVE" | "ADJUST_STAND" | "REQUEST_RESURVEY";
   stmaKoreksi?: number;
   catatan?: string;
 }
@@ -60,6 +66,7 @@ export class CaterVerifikasiService {
       stma,
       kondisiCatat,
       metodeCatat,
+      sumberCatat,
       fotoMeterUrl,
       fotoRumahUrl,
       durasiDetik,
@@ -83,13 +90,17 @@ export class CaterVerifikasiService {
         stml: String(stml),
         stma: String(stma),
         pakaiM3: String(evaluasi.pakaiM3),
-        ketCatat: kondisiCatat || 'Normal',
-        metodeCatat: (metodeCatat as any) || 'ONSITE',
+        ketCatat: kondisiCatat || "Normal",
+        metodeCatat: (metodeCatat as any) || "ONSITE",
+        sumberCatat: sumberCatat || "PETUGAS_ONSITE",
         fotoMeterUrl,
         fotoRumahUrl,
         durasiDetik: durasiDetik || 0,
         statusVerifikasi: evaluasi.statusVerifikasi,
-        catatan: evaluasi.isAnomali && evaluasi.pesan ? `[Anomali] ${evaluasi.pesan}` : catatan,
+        catatan:
+          evaluasi.isAnomali && evaluasi.pesan
+            ? `[Anomali] ${evaluasi.pesan}`
+            : catatan,
         lokasiGps: longitude && latitude ? { x: longitude, y: latitude } : null,
       })
       .onConflictDoUpdate({
@@ -97,13 +108,17 @@ export class CaterVerifikasiService {
         set: {
           stma: String(stma),
           pakaiM3: String(evaluasi.pakaiM3),
-          ketCatat: kondisiCatat || 'Normal',
-          metodeCatat: (metodeCatat as any) || 'ONSITE',
+          ketCatat: kondisiCatat || "Normal",
+          metodeCatat: (metodeCatat as any) || "ONSITE",
+          sumberCatat: sumberCatat || "PETUGAS_ONSITE",
           fotoMeterUrl,
           fotoRumahUrl,
           durasiDetik: durasiDetik || 0,
           statusVerifikasi: evaluasi.statusVerifikasi,
-          catatan: evaluasi.isAnomali && evaluasi.pesan ? `[Anomali] ${evaluasi.pesan}` : catatan,
+          catatan:
+            evaluasi.isAnomali && evaluasi.pesan
+              ? `[Anomali] ${evaluasi.pesan}`
+              : catatan,
           updatedAt: new Date(),
         },
       });
@@ -131,22 +146,26 @@ export class CaterVerifikasiService {
       .where(eq(caterBacaMeter.id, caterId));
 
     if (!cater) {
-      throw new Error('Data baca meter tidak ditemukan');
+      throw new Error("Data baca meter tidak ditemukan");
     }
 
-    const nextStatus = action === 'APPROVE' ? 'VERIFIED_L1' : 'NEED_RESURVEY';
+    const nextStatus = action === "APPROVE" ? "VERIFIED_L1" : "NEED_RESURVEY";
 
     await db.transaction(async (tx) => {
       await tx.insert(caterVerifikasiLog).values({
         caterId,
         userId,
-        stage: 'V1',
+        stage: "V1",
         action,
         stmaSebelum: cater.stma,
         stmaSesudah: cater.stma,
         pakaiSebelum: cater.pakaiM3,
         pakaiSesudah: cater.pakaiM3,
-        alasan: catatan || (action === 'APPROVE' ? 'Disetujui oleh Supervisor (V1)' : 'Diminta cek ulang fisik lapangan'),
+        alasan:
+          catatan ||
+          (action === "APPROVE"
+            ? "Disetujui oleh Supervisor (V1)"
+            : "Diminta cek ulang fisik lapangan"),
       });
 
       await tx
@@ -178,18 +197,20 @@ export class CaterVerifikasiService {
       .where(eq(caterBacaMeter.id, caterId));
 
     if (!cater) {
-      throw new Error('Data baca meter tidak ditemukan');
+      throw new Error("Data baca meter tidak ditemukan");
     }
 
     let stmaSesudah = cater.stma;
     let pakaiSesudah = cater.pakaiM3;
-    let nextStatus = 'VERIFIED_L2';
+    let nextStatus = "VERIFIED_L2";
 
-    if (action === 'REQUEST_RESURVEY') {
-      nextStatus = 'NEED_RESURVEY';
-    } else if (action === 'ADJUST_STAND') {
+    if (action === "REQUEST_RESURVEY") {
+      nextStatus = "NEED_RESURVEY";
+    } else if (action === "ADJUST_STAND") {
       if (stmaKoreksi === undefined) {
-        throw new Error('stmaKoreksi wajib diisi untuk penyesuaian angka meter');
+        throw new Error(
+          "stmaKoreksi wajib diisi untuk penyesuaian angka meter",
+        );
       }
       stmaSesudah = String(stmaKoreksi);
       const stmlNum = Number(cater.stml);
@@ -200,7 +221,7 @@ export class CaterVerifikasiService {
       await tx.insert(caterVerifikasiLog).values({
         caterId,
         userId,
-        stage: 'V2',
+        stage: "V2",
         action,
         stmaSebelum: cater.stma,
         stmaSesudah,
@@ -242,22 +263,24 @@ export class CaterVerifikasiService {
       .where(eq(caterBacaMeter.id, caterId));
 
     if (!cater) {
-      throw new Error('Data baca meter tidak ditemukan');
+      throw new Error("Data baca meter tidak ditemukan");
     }
 
-    const nextStatus = 'APPROVED_FINAL';
+    const nextStatus = "APPROVED_FINAL";
 
     await db.transaction(async (tx) => {
       await tx.insert(caterVerifikasiLog).values({
         caterId,
         userId,
-        stage: 'V3',
-        action: 'APPROVE',
+        stage: "V3",
+        action: "APPROVE",
         stmaSebelum: cater.stma,
         stmaSesudah: cater.stma,
         pakaiSebelum: cater.pakaiM3,
         pakaiSesudah: cater.pakaiM3,
-        alasan: catatan || 'Disahkan oleh Senior Manager / Direksi (V3 Final Release)',
+        alasan:
+          catatan ||
+          "Disahkan oleh Senior Manager / Direksi (V3 Final Release)",
       });
 
       await tx
@@ -273,7 +296,7 @@ export class CaterVerifikasiService {
     return {
       caterId,
       statusVerifikasi: nextStatus,
-      message: 'Pengesahan akhir V3 berhasil (APPROVED_FINAL)',
+      message: "Pengesahan akhir V3 berhasil (APPROVED_FINAL)",
     };
   }
 
@@ -282,7 +305,8 @@ export class CaterVerifikasiService {
    * Syarat: Data harus sudah memiliki histori verifikasi sebelumnya dan belum closing DRD
    */
   async koreksiStaff(input: StaffCorrectionInput, userId: string) {
-    const { caterId, stmaBaru, pakaiM3Baru, nomorTiketKomplain, alasan } = input;
+    const { caterId, stmaBaru, pakaiM3Baru, nomorTiketKomplain, alasan } =
+      input;
 
     const [cater] = await db
       .select()
@@ -290,7 +314,7 @@ export class CaterVerifikasiService {
       .where(eq(caterBacaMeter.id, caterId));
 
     if (!cater) {
-      throw new Error('Data baca meter tidak ditemukan');
+      throw new Error("Data baca meter tidak ditemukan");
     }
 
     // Guard: Wajib memiliki minimal 1 histori log verifikasi
@@ -301,20 +325,24 @@ export class CaterVerifikasiService {
       .limit(1);
 
     if (!logs || logs.length === 0) {
-      throw new Error('Fitur tidak aktif: Data belum pernah diverifikasi oleh V1-V3. Koreksi oleh Staff tidak diizinkan sebelum verifikasi reguler.');
+      throw new Error(
+        "Fitur tidak aktif: Data belum pernah diverifikasi oleh V1-V3. Koreksi oleh Staff tidak diizinkan sebelum verifikasi reguler.",
+      );
     }
 
     // Guard: Cegah koreksi jika sudah terkunci tagihan closing DRD
-    if (cater.statusVerifikasi === 'LOCKED_BILLING') {
-      throw new Error('Data sudah terkunci dalam Rekening Tagihan (DRD). Wajib menggunakan prosedur Berita Acara Khusus.');
+    if (cater.statusVerifikasi === "LOCKED_BILLING") {
+      throw new Error(
+        "Data sudah terkunci dalam Rekening Tagihan (DRD). Wajib menggunakan prosedur Berita Acara Khusus.",
+      );
     }
 
     await db.transaction(async (tx) => {
       await tx.insert(caterVerifikasiLog).values({
         caterId,
         userId,
-        stage: 'STAFF_CORRECTION',
-        action: 'STAFF_POST_CORRECT',
+        stage: "STAFF_CORRECTION",
+        action: "STAFF_POST_CORRECT",
         stmaSebelum: cater.stma,
         stmaSesudah: String(stmaBaru),
         pakaiSebelum: cater.pakaiM3,
@@ -328,8 +356,8 @@ export class CaterVerifikasiService {
         .set({
           stma: String(stmaBaru),
           pakaiM3: String(pakaiM3Baru),
-          statusVerifikasi: 'CORRECTED_POST_VERIF',
-          catatan: `[Staff Correction] Tiket: ${nomorTiketKomplain ?? '-'} | ${alasan}`,
+          statusVerifikasi: "CORRECTED_POST_VERIF",
+          catatan: `[Staff Correction] Tiket: ${nomorTiketKomplain ?? "-"} | ${alasan}`,
           updatedAt: new Date(),
         })
         .where(eq(caterBacaMeter.id, caterId));
@@ -339,8 +367,8 @@ export class CaterVerifikasiService {
       caterId,
       stmaBaru,
       pakaiM3Baru,
-      statusVerifikasi: 'CORRECTED_POST_VERIF',
-      message: 'Koreksi administratif pasca-verifikasi berhasil disimpan',
+      statusVerifikasi: "CORRECTED_POST_VERIF",
+      message: "Koreksi administratif pasca-verifikasi berhasil disimpan",
     };
   }
 }

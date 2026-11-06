@@ -2,15 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/index";
 import { PageContainer } from "@/components/layout/index";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import {
-  Calendar,
-  Activity,
-  Droplets,
-  Flame,
-  Gauge,
-} from "lucide-react";
+import { Activity, Droplets, Flame, Gauge } from "lucide-react";
 import { analyticsService } from "@/src/server/services/dashboard/analytics.service";
 import { CdnRequestsChart } from "./components/CdnRequestsChart";
 import { TopRegionsChart } from "./components/TopRegionsChart";
@@ -34,44 +27,49 @@ export default async function AnalyticsPage() {
 
   const now = new Date();
   const tanggalHariIni = now.toLocaleDateString("id-ID", {
-    weekday: "long",
+    day: "2-digit",
+    month: "short",
     year: "numeric",
-    month: "long",
-    day: "numeric",
   });
 
   return (
     <PageContainer className="space-y-6">
-      {/* Header Observabilitas Vercel-Style */}
-      <div className="relative overflow-hidden rounded-[10px] border border-border bg-card p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                Observabilitas & Analitik Operasional
-              </h1>
-              <Badge
-                variant="outline"
-                className="font-mono text-[11px] font-medium uppercase border-border bg-muted/60 text-foreground rounded-full"
-              >
-                Vercel Observability
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Visualisasi time-series real-time, monitoring kubikasi air, dan metrik regional PDAM Tirtawening.
+      <div className="rounded-lg border border-border bg-card px-5 py-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              PDAM Tirtawening
             </p>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">
+              Analitik Operasional
+            </h1>
           </div>
 
-          <div className="flex items-center gap-2 self-start rounded-md border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground md:self-auto">
-            <Calendar className="size-3.5 text-muted-foreground" />
-            <span>{tanggalHariIni}</span>
-            <span className="text-border">|</span>
-            <span className="font-medium text-foreground">
-              Periode {data.periode.label}
-            </span>
-            <Badge variant="secondary" className="font-mono text-[10px] px-1.5 py-0">
-              {data.periode.thbl}
-            </Badge>
+          <div className="grid grid-cols-3 gap-x-4 border-t border-border pt-3 sm:border-t-0 sm:pt-0">
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Periode
+              </p>
+              <p className="truncate text-xs font-medium text-foreground">
+                {data.periode.label}
+              </p>
+            </div>
+            <div className="min-w-0 border-l border-border pl-3">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Kode
+              </p>
+              <p className="font-mono text-xs font-medium text-foreground">
+                {data.periode.thbl}
+              </p>
+            </div>
+            <div className="min-w-0 border-l border-border pl-3">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Hari ini
+              </p>
+              <p className="whitespace-nowrap text-xs font-medium text-foreground">
+                {tanggalHariIni}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -92,7 +90,8 @@ export default async function AnalyticsPage() {
             </span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Dari {data.totalPelanggan.toLocaleString("id-ID")} pelanggan terdaftar
+            Dari {data.totalPelanggan.toLocaleString("id-ID")} pelanggan
+            terdaftar
           </p>
         </Card>
 
@@ -110,7 +109,9 @@ export default async function AnalyticsPage() {
             </span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Rata-rata {(data.totalKubikasi / Math.max(data.totalPelanggan, 1)).toFixed(1)} m³ / SL
+            Rata-rata{" "}
+            {(data.totalKubikasi / Math.max(data.totalPelanggan, 1)).toFixed(1)}{" "}
+            m³ / SL
           </p>
         </Card>
 
@@ -151,15 +152,12 @@ export default async function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* Dua Grafik Observabilitas Vercel Utama (sample-grafik.md & sample-grafik-2.md) */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Sample 1: CDN Requests / Invocations (tirtawening) */}
         <CdnRequestsChart
           data={data.dailyTrends}
           totalInvocations={data.totalBaca}
         />
 
-        {/* Sample 2: Top Regions Observability dengan Sparkline Table */}
         <TopRegionsChart data={data.regionalTrends} />
       </div>
 

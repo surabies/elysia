@@ -3,18 +3,18 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM, Transaksi, & Domain Engine)
  */
 
-import { eq } from 'drizzle-orm';
+import { eq } from "drizzle-orm";
 import {
   db,
   caterMandiriPelanggan,
   caterBacaMeter,
   caterVerifikasiLog,
   pelanggan,
-} from '@cater/db';
+} from "@cater/db";
 import {
   periksaJendelaLaporMandiri,
   evaluasiGeofenceMandiri,
-} from '../../domain/mandiri/mandiri.engine';
+} from "../../domain/mandiri/mandiri.engine";
 
 export interface SubmitLaporanMandiriInput {
   thbl: string;
@@ -24,14 +24,15 @@ export interface SubmitLaporanMandiriInput {
   fotoRumahUrl?: string;
   longitude?: number;
   latitude?: number;
-  channel?: 'WEB_PORTAL' | 'MOBILE_APP';
+  channel?: "WEB_PORTAL" | "MOBILE_APP";
   ipAddress?: string;
   userAgent?: string;
 }
 
 export interface VerifikasiMandiriInput {
   mandiriId: string;
-  action: 'APPROVE' | 'REJECT';
+  action: "APPROVE" | "REJECT";
+  standDilaporkan?: number;
   alasanPenolakan?: string;
   userId: string;
 }
@@ -50,7 +51,7 @@ export class MandiriService {
       fotoRumahUrl,
       longitude,
       latitude,
-      channel = 'WEB_PORTAL',
+      channel = "WEB_PORTAL",
       ipAddress,
       userAgent,
     } = input;
@@ -68,7 +69,9 @@ export class MandiriService {
       .where(eq(pelanggan.nolg, nolg));
 
     if (!cust) {
-      throw new Error(`Nomor Langganan ${nolg} tidak ditemukan dalam database.`);
+      throw new Error(
+        `Nomor Langganan ${nolg} tidak ditemukan dalam database.`,
+      );
     }
 
     // 3. Evaluasi Jarak Spasial Geofence
@@ -110,7 +113,7 @@ export class MandiriService {
         channel,
         ipAddress,
         userAgent,
-        statusVerifikasi: 'PENDING',
+        statusVerifikasi: "PENDING",
       })
       .onConflictDoUpdate({
         target: caterMandiriPelanggan.id,
@@ -118,11 +121,12 @@ export class MandiriService {
           stma: String(stma),
           fotoMeterUrl,
           fotoRumahUrl,
-          lokasiGps: longitude && latitude ? { x: longitude, y: latitude } : null,
+          lokasiGps:
+            longitude && latitude ? { x: longitude, y: latitude } : null,
           jarakDariRumahMeter: String(jarakMeter),
           isLokasiValid,
           channel,
-          statusVerifikasi: 'PENDING',
+          statusVerifikasi: "PENDING",
           updatedAt: new Date(),
         },
       });
@@ -134,8 +138,9 @@ export class MandiriService {
       stma,
       jarakDariRumahMeter: jarakMeter,
       isLokasiValid,
-      statusVerifikasi: 'PENDING',
-      pesan: 'Laporan meter mandiri berhasil diterima dan menunggu verifikasi petugas.',
+      statusVerifikasi: "PENDING",
+      pesan:
+        "Laporan meter mandiri berhasil diterima dan menunggu verifikasi petugas.",
     };
   }
 
@@ -145,7 +150,8 @@ export class MandiriService {
    * REJECT: Menyimpan alasan penolakan
    */
   async verifikasiLaporanMandiri(input: VerifikasiMandiriInput) {
-    const { mandiriId, action, alasanPenolakan, userId } = input;
+    const { mandiriId, action, standDilaporkan, alasanPenolakan, userId } =
+      input;
 
     const [mandiri] = await db
       .select()
@@ -156,14 +162,18 @@ export class MandiriService {
       throw new Error(`Data laporan mandiri ${mandiriId} tidak ditemukan.`);
     }
 
-    if (action === 'REJECT') {
+    const stmaMandiri = standDilaporkan ?? Number(mandiri.stma);
+
+    if (action === "REJECT") {
       if (!alasanPenolakan) {
-        throw new Error('Alasan penolakan wajib disertakan saat menolak laporan mandiri.');
+        throw new Error(
+          "Alasan penolakan wajib disertakan saat menolak laporan mandiri.",
+        );
       }
       await db
         .update(caterMandiriPelanggan)
         .set({
-          statusVerifikasi: 'REJECTED',
+          statusVerifikasi: "REJECTED",
           alasanPenolakan,
           verifiedBy: userId,
           verifiedAt: new Date(),
@@ -173,9 +183,9 @@ export class MandiriService {
 
       return {
         mandiriId,
-        statusVerifikasi: 'REJECTED',
+        statusVerifikasi: "REJECTED",
         alasanPenolakan,
-        message: 'Laporan mandiri telah ditolak.',
+        message: "Laporan mandiri telah ditolak.",
       };
     }
 
@@ -187,7 +197,8 @@ export class MandiriService {
       await tx
         .update(caterMandiriPelanggan)
         .set({
-          statusVerifikasi: 'APPROVED',
+          statusVerifikasi: "APPROVED",
+          stma: String(stmaMandiri),
           verifiedBy: userId,
           verifiedAt: new Date(),
           updatedAt: new Date(),
@@ -201,7 +212,6 @@ export class MandiriService {
         .where(eq(caterBacaMeter.id, caterId));
 
       const stml = Number(existingCater?.stml ?? 0);
-      const stmaMandiri = Number(mandiri.stma);
       const pakaiM3 = Math.max(0, stmaMandiri - stml);
 
       // 3. Simpan / Perbarui transaksi utama baca meter (Override DK -> Stand Konsumen)
@@ -215,15 +225,17 @@ export class MandiriService {
           stma: String(stmaMandiri),
           pakaiM3: String(pakaiM3),
           pakaiTagih: String(pakaiM3),
-          tmss: 'Z',                        // STAND-KONSUMEN
-          ketCatat: 'STAND-KONSUMEN',
-          metodeCatat: 'OFFSITE',
-          sumberCatat: mandiri.channel === 'MOBILE_APP' ? 'MANDIRI_APP' : 'MANDIRI_WEB',
+          tmss: "Z", // STAND-KONSUMEN
+          ketCatat: "STAND-KONSUMEN",
+          metodeCatat: "OFFSITE",
+          sumberCatat:
+            mandiri.channel === "MOBILE_APP" ? "MANDIRI_APP" : "MANDIRI_WEB",
           caterMandiriId: mandiri.id,
           fotoMeterUrl: mandiri.fotoMeterUrl,
           fotoRumahUrl: mandiri.fotoRumahUrl,
-          statusVerifikasi: 'VERIFIED_L1',
-          catatan: '[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan',
+          statusVerifikasi: "VERIFIED_L1",
+          catatan:
+            "[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan",
         })
         .onConflictDoUpdate({
           target: caterBacaMeter.id,
@@ -231,13 +243,15 @@ export class MandiriService {
             stma: String(stmaMandiri),
             pakaiM3: String(pakaiM3),
             pakaiTagih: String(pakaiM3),
-            tmss: 'Z',
-            ketCatat: 'STAND-KONSUMEN',
-            sumberCatat: mandiri.channel === 'MOBILE_APP' ? 'MANDIRI_APP' : 'MANDIRI_WEB',
+            tmss: "Z",
+            ketCatat: "STAND-KONSUMEN",
+            sumberCatat:
+              mandiri.channel === "MOBILE_APP" ? "MANDIRI_APP" : "MANDIRI_WEB",
             caterMandiriId: mandiri.id,
             fotoMeterUrl: mandiri.fotoMeterUrl,
-            statusVerifikasi: 'VERIFIED_L1',
-            catatan: '[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan',
+            statusVerifikasi: "VERIFIED_L1",
+            catatan:
+              "[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan",
             updatedAt: new Date(),
           },
         });
@@ -246,24 +260,26 @@ export class MandiriService {
       await tx.insert(caterVerifikasiLog).values({
         caterId,
         userId,
-        stage: 'V1',
-        action: 'APPROVE',
+        stage: "V1",
+        action: "APPROVE",
         stmaSebelum: existingCater?.stma ?? null,
         stmaSesudah: String(stmaMandiri),
         pakaiSebelum: existingCater?.pakaiM3 ?? null,
         pakaiSesudah: String(pakaiM3),
-        alasan: 'Persetujuan laporan mandiri warga (Override kondisi DK/Kelainan fisik)',
+        alasan:
+          "Persetujuan laporan mandiri warga (Override kondisi DK/Kelainan fisik)",
       });
     });
 
     return {
       mandiriId,
       caterId,
-      statusVerifikasi: 'APPROVED',
+      statusVerifikasi: "APPROVED",
       stma: mandiri.stma,
-      tmss: 'Z',
-      ketCatat: 'STAND-KONSUMEN',
-      message: 'Laporan mandiri berhasil disetujui dan dialihkan ke transaksi baca meter.',
+      tmss: "Z",
+      ketCatat: "STAND-KONSUMEN",
+      message:
+        "Laporan mandiri berhasil disetujui dan dialihkan ke transaksi baca meter.",
     };
   }
 }

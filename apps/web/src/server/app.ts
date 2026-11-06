@@ -1,25 +1,26 @@
-import { Elysia } from 'elysia';
-import { corsPlugin } from './plugins/cors';
-import { errorHandler } from './plugins/error-handler';
-import { healthModule } from './modules/health';
-import { echoModule } from './modules/echo';
-import { authModule } from './modules/auth';
-import { geoModule } from './modules/geo';
-import { caterModule } from './modules/cater';
-import { closingModule } from './modules/closing';
-import { mandiriModule } from './modules/mandiri';
-import { gwmModule } from './modules/gwm';
-import { pengaduanModule } from './modules/pengaduan';
-import { publikModule } from './modules/publik';
+import { Elysia } from "elysia";
+import { corsPlugin } from "./plugins/cors";
+import { errorHandler } from "./plugins/error-handler";
+import { healthModule } from "./modules/health";
+import { echoModule } from "./modules/echo";
+import { authModule } from "./modules/auth";
+import { geoModule } from "./modules/geo";
+import { caterModule } from "./modules/cater";
+import { closingModule } from "./modules/closing";
+import { mandiriModule } from "./modules/mandiri";
+import { gwmModule } from "./modules/gwm";
+import { pengaduanModule } from "./modules/pengaduan";
+import { publikModule } from "./modules/publik";
+import { verifikasiLegacyRouter } from "./modules/verifikasi-legacy.router";
 
-export const app = new Elysia({ prefix: '/api' })
+export const app = new Elysia({ prefix: "/api" })
   .use(corsPlugin)
   .use(errorHandler)
-  .get('/', () => {
+  .get("/", () => {
     return {
       success: true,
-      name: 'Elysia Backend API',
-      version: '1.0.0',
+      name: "Elysia Backend API",
+      version: "1.0.0",
     };
   })
   .use(healthModule)
@@ -31,6 +32,7 @@ export const app = new Elysia({ prefix: '/api' })
   .use(mandiriModule)
   .use(gwmModule)
   .use(pengaduanModule)
-  .use(publikModule);
+  .use(publikModule)
+  .use(verifikasiLegacyRouter);
 
 export type App = typeof app;

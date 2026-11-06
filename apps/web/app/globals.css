@@ -10,8 +10,12 @@
 
 @theme inline {
   /* Fonts */
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Standard shadcn variables mapped to Geist tokens */
   --color-background: var(--background);
@@ -22,6 +26,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -50,12 +55,14 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-table-head: var(--table-head);
+  --color-table-accent: var(--table-accent);
 
   /* Geist Official Radii Scale (Subtle, Restrained, Swiss Geometry) */
   --radius-xs: 2px;
   --radius-sm: 4px;
-  --radius-md: 6px;  /* Geist Base Controls: buttons, inputs, selects */
-  --radius-lg: 8px;  /* Geist Base Containers: cards, panels */
+  --radius-md: 6px; /* Geist Base Controls: buttons, inputs, selects */
+  --radius-lg: 8px; /* Geist Base Containers: cards, panels */
   --radius-xl: 12px; /* Geist Overlays: menus, popovers, modals */
   --radius-2xl: 16px;
   --radius-3xl: 24px;
@@ -172,6 +179,14 @@
   --color-ds-pink-800: var(--ds-pink-800);
   --color-ds-pink-900: var(--ds-pink-900);
   --color-ds-pink-1000: var(--ds-pink-1000);
+  --color-invert-foreground: var(--invert-foreground);
+  --color-invert: var(--invert);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning: var(--warning);
+  --color-info-foreground: var(--info-foreground);
+  --color-info: var(--info);
+  --color-success-foreground: var(--success-foreground);
+  --color-success: var(--success);
 }
 
 /* ==========================================================================
@@ -203,7 +218,7 @@
   /* Gray Alpha */
   --ds-gray-alpha-100: rgba(0, 0, 0, 0.05);
   --ds-gray-alpha-200: rgba(0, 0, 0, 0.08);
-  --ds-gray-alpha-300: rgba(0, 0, 0, 0.10);
+  --ds-gray-alpha-300: rgba(0, 0, 0, 0.1);
   --ds-gray-alpha-400: rgba(0, 0, 0, 0.15);
   --ds-gray-alpha-500: rgba(0, 0, 0, 0.21);
   --ds-gray-alpha-600: rgba(0, 0, 0, 0.35);
@@ -305,6 +320,7 @@
   --popover-foreground: #171717;
   --primary: #171717;
   --primary-foreground: #ffffff;
+  --primary-hover: #383838;
   --secondary: #ffffff;
   --secondary-foreground: #171717;
   --muted: #f2f2f2;
@@ -316,7 +332,7 @@
   /* Border Geist Vercel: sangat tipis & subtle tapi tegas */
   --border: var(--ds-gray-alpha-200);
   --input: var(--ds-gray-alpha-200);
-  --ring: #D1D1D1;
+  --ring: #d1d1d1;
 
   /* Geist Sizing Dimensions */
   --ds-size-small: 24px;
@@ -331,6 +347,33 @@
   --chart-4: var(--ds-purple-700);
   --chart-5: var(--ds-pink-700);
 
+  /* Verification grid surfaces and semantic status accents */
+  --table-head: var(--ds-gray-100);
+  --table-accent: rgba(0, 112, 243, 0.12);
+  --table-hover: var(--ds-gray-alpha-100);
+  --hover-baris: var(--ds-gray-alpha-100);
+  --verif-v1: var(--ds-amber-700);
+  --verif-v1-soft: rgba(194, 113, 0, 0.08);
+  --verif-v1-hover: rgba(194, 113, 0, 0.14);
+  --verif-v1-border: rgba(194, 113, 0, 0.25);
+  --verif-v2: var(--ds-blue-700);
+  --verif-v2-soft: rgba(0, 112, 243, 0.08);
+  --verif-v2-hover: rgba(0, 112, 243, 0.14);
+  --verif-v2-border: rgba(0, 112, 243, 0.25);
+  --verif-v3: var(--ds-green-700);
+  --verif-v3-soft: rgba(0, 158, 82, 0.08);
+  --verif-v3-hover: rgba(0, 158, 82, 0.14);
+  --verif-v3-border: rgba(0, 158, 82, 0.25);
+  --verif-error: var(--ds-red-700);
+  --verif-error-soft: rgba(224, 0, 0, 0.08);
+  --verif-error-hover: rgba(224, 0, 0, 0.14);
+  --verif-error-border: rgba(224, 0, 0, 0.25);
+  --verif-correction: var(--ds-purple-700);
+  --verif-correction-soft: rgba(121, 40, 202, 0.08);
+  --verif-correction-hover: rgba(121, 40, 202, 0.14);
+  --verif-correction-border: rgba(121, 40, 202, 0.25);
+  --verif-info: var(--ds-teal-700);
+
   /* Sidebar */
   --sidebar: #fafafa;
   --sidebar-foreground: #171717;
@@ -339,7 +382,15 @@
   --sidebar-accent: #ebebeb;
   --sidebar-accent-foreground: #171717;
   --sidebar-border: var(--ds-gray-alpha-200);
-  --sidebar-ring: #D1D1D1;
+  --sidebar-ring: #d1d1d1;
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-900);
+  --info: var(--color-violet-500);
+  --info-foreground: var(--color-violet-900);
+  --warning: var(--color-yellow-500);
+  --warning-foreground: var(--color-yellow-900);
+  --invert: var(--color-zinc-900);
+  --invert-foreground: var(--color-zinc-50);
 }
 
 /* ==========================================================================
@@ -366,11 +417,11 @@
   --ds-gray-alpha-100: rgba(255, 255, 255, 0.06);
   --ds-gray-alpha-200: rgba(255, 255, 255, 0.09);
   --ds-gray-alpha-300: rgba(255, 255, 255, 0.13);
-  --ds-gray-alpha-400: rgba(255, 255, 255, 0.20);
+  --ds-gray-alpha-400: rgba(255, 255, 255, 0.2);
   --ds-gray-alpha-500: rgba(255, 255, 255, 0.27);
-  --ds-gray-alpha-600: rgba(255, 255, 255, 0.40);
+  --ds-gray-alpha-600: rgba(255, 255, 255, 0.4);
   --ds-gray-alpha-700: rgba(255, 255, 255, 0.53);
-  --ds-gray-alpha-800: rgba(255, 255, 255, 0.60);
+  --ds-gray-alpha-800: rgba(255, 255, 255, 0.6);
   --ds-gray-alpha-900: rgba(255, 255, 255, 0.92);
   --ds-gray-alpha-1000: rgba(255, 255, 255, 1);
 
@@ -467,6 +518,7 @@
   --popover-foreground: #ededed;
   --primary: #ededed;
   --primary-foreground: #000000;
+  --primary-hover: #cccccc;
   --secondary: #0a0a0a;
   --secondary-foreground: #ededed;
   --muted: #1f1f1f;
@@ -478,7 +530,7 @@
   /* Border Geist Vercel Dark: ultra-subtle tapi tegas */
   --border: var(--ds-gray-alpha-200);
   --input: var(--ds-gray-alpha-200);
-  --ring: #3D3D3D;
+  --ring: #3d3d3d;
 
   /* Geist Sizing Dimensions */
   --ds-size-small: 24px;
@@ -493,6 +545,33 @@
   --chart-4: var(--ds-purple-600);
   --chart-5: var(--ds-pink-600);
 
+  /* Verification grid surfaces and semantic status accents */
+  --table-head: var(--ds-gray-100);
+  --table-accent: rgba(0, 112, 243, 0.22);
+  --table-hover: var(--ds-gray-alpha-100);
+  --hover-baris: var(--ds-gray-alpha-100);
+  --verif-v1: var(--ds-amber-800);
+  --verif-v1-soft: rgba(245, 166, 35, 0.12);
+  --verif-v1-hover: rgba(245, 166, 35, 0.2);
+  --verif-v1-border: rgba(245, 166, 35, 0.32);
+  --verif-v2: var(--ds-blue-800);
+  --verif-v2-soft: rgba(50, 145, 255, 0.12);
+  --verif-v2-hover: rgba(50, 145, 255, 0.2);
+  --verif-v2-border: rgba(50, 145, 255, 0.32);
+  --verif-v3: var(--ds-green-800);
+  --verif-v3-soft: rgba(62, 207, 142, 0.12);
+  --verif-v3-hover: rgba(62, 207, 142, 0.2);
+  --verif-v3-border: rgba(62, 207, 142, 0.32);
+  --verif-error: var(--ds-red-800);
+  --verif-error-soft: rgba(242, 85, 90, 0.12);
+  --verif-error-hover: rgba(242, 85, 90, 0.2);
+  --verif-error-border: rgba(242, 85, 90, 0.32);
+  --verif-correction: var(--ds-purple-800);
+  --verif-correction-soft: rgba(179, 136, 252, 0.12);
+  --verif-correction-hover: rgba(179, 136, 252, 0.2);
+  --verif-correction-border: rgba(179, 136, 252, 0.32);
+  --verif-info: var(--ds-teal-800);
+
   /* Sidebar */
   --sidebar: #000000;
   --sidebar-foreground: #ededed;
@@ -501,7 +580,15 @@
   --sidebar-accent: #1f1f1f;
   --sidebar-accent-foreground: #ededed;
   --sidebar-border: var(--ds-gray-alpha-200);
-  --sidebar-ring: #3D3D3D;
+  --sidebar-ring: #3d3d3d;
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-600);
+  --info: var(--color-violet-500);
+  --info-foreground: var(--color-violet-600);
+  --warning: var(--color-yellow-500);
+  --warning-foreground: var(--color-yellow-600);
+  --invert: var(--color-zinc-700);
+  --invert-foreground: var(--color-zinc-50);
 }
 
 /* ==========================================================================
@@ -718,19 +805,25 @@
 .material-small {
   background-color: var(--ds-background-100);
   border-radius: var(--radius-md);
-  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.06), 0px 0px 0px 1px var(--ds-gray-alpha-400);
+  box-shadow:
+    0px 1px 2px rgba(0, 0, 0, 0.06),
+    0px 0px 0px 1px var(--ds-gray-alpha-400);
 }
 
 .material-medium {
   background-color: var(--ds-background-100);
   border-radius: var(--radius-lg);
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08), 0px 0px 0px 1px var(--ds-gray-alpha-400);
+  box-shadow:
+    0px 4px 12px rgba(0, 0, 0, 0.08),
+    0px 0px 0px 1px var(--ds-gray-alpha-400);
 }
 
 .material-large {
   background-color: var(--ds-background-100);
   border-radius: var(--radius-xl);
-  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12), 0px 0px 0px 1px var(--ds-gray-alpha-400);
+  box-shadow:
+    0px 8px 24px rgba(0, 0, 0, 0.12),
+    0px 0px 0px 1px var(--ds-gray-alpha-400);
 }
 
 /* Floating: Above the page */
@@ -744,20 +837,26 @@
 .material-menu {
   background-color: var(--ds-background-100);
   border-radius: var(--radius-lg);
-  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.12), 0px 0px 0px 1px var(--ds-gray-alpha-400);
+  box-shadow:
+    0px 8px 30px rgba(0, 0, 0, 0.12),
+    0px 0px 0px 1px var(--ds-gray-alpha-400);
   backdrop-filter: blur(16px);
 }
 
 .material-modal {
   background-color: var(--ds-background-100);
   border-radius: var(--radius-xl);
-  box-shadow: 0px 16px 70px rgba(0, 0, 0, 0.20), 0px 0px 0px 1px var(--ds-gray-alpha-400);
+  box-shadow:
+    0px 16px 70px rgba(0, 0, 0, 0.2),
+    0px 0px 0px 1px var(--ds-gray-alpha-400);
 }
 
 .material-fullscreen {
   background-color: var(--ds-background-100);
   border-radius: var(--radius-2xl);
-  box-shadow: 0px 24px 80px rgba(0, 0, 0, 0.25), 0px 0px 0px 1px var(--ds-gray-alpha-400);
+  box-shadow:
+    0px 24px 80px rgba(0, 0, 0, 0.25),
+    0px 0px 0px 1px var(--ds-gray-alpha-400);
 }
 
 /* ==========================================================================
@@ -786,12 +885,17 @@
 
   body {
     @apply bg-background text-foreground font-sans;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  code, kbd, samp, pre {
+  code,
+  kbd,
+  samp,
+  pre {
     font-family: var(--font-geist-mono), monospace;
   }
 }
