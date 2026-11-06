@@ -12,3 +12,4 @@ export * from './rbac';
 export * from './periode';
 export * from './dpm';
 export * from './gwm';
+export * from './pengaduan';

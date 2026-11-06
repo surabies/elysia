@@ -9,6 +9,8 @@ import { caterModule } from './modules/cater';
 import { closingModule } from './modules/closing';
 import { mandiriModule } from './modules/mandiri';
 import { gwmModule } from './modules/gwm';
+import { pengaduanModule } from './modules/pengaduan';
+import { publikModule } from './modules/publik';
 
 export const app = new Elysia({ prefix: '/api' })
   .use(corsPlugin)
@@ -27,6 +29,8 @@ export const app = new Elysia({ prefix: '/api' })
   .use(caterModule)
   .use(closingModule)
   .use(mandiriModule)
-  .use(gwmModule);
+  .use(gwmModule)
+  .use(pengaduanModule)
+  .use(publikModule);
 
 export type App = typeof app;

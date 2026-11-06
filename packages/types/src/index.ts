@@ -454,3 +454,95 @@ export interface GwmBacaMeter {
   createdAt: Date | string;
 }
 
+// --- Modul Pengaduan Air & Layanan Pelanggan ---
+export type KlasifikasiPengaduan =
+  | 'NILAI_TAGIHAN_REKENING'
+  | 'BUKAN_NILAI_TAGIHAN_REKENING';
+
+export type JenisPengaduan =
+  | 'LAPOR_STAND_METER'
+  | 'MUTASI_GOLONGAN_TARIF'
+  | 'TIDAK_MAMPU_BAYAR'
+  | 'PENCATATAN_METER_TIDAK_SESUAI'
+  | 'LONJAKAN_PEMAKAIAN_AIR'
+  | 'GANTI_STOP_KRAN'
+  | 'BOCOR_PIPA_DINAS'
+  | 'PASANGAN_LIAR'
+  | 'TIDAK_ADA_AIR'
+  | 'AIR_KERUH_BAU_BERWARNA'
+  | 'PINDAH_JARINGAN'
+  | 'LAINNYA';
+
+export type PrioritasPengaduan = 'RENDAH' | 'NORMAL' | 'TINGGI' | 'DARURAT';
+
+export type StatusPengaduan =
+  | 'BARU'
+  | 'TERVERIFIKASI'
+  | 'DITUGASKAN'
+  | 'MENUJU_LOKASI'
+  | 'DIPROSES'
+  | 'MENUNGGU_PELANGGAN'
+  | 'SELESAI'
+  | 'DITUTUP'
+  | 'DITOLAK'
+  | 'DIBUKA_KEMBALI';
+
+export type AksiPengaduan =
+  | 'DIBUAT'
+  | 'DITUGASKAN'
+  | 'STATUS_DIUBAH'
+  | 'CATATAN'
+  | 'ESKALASI'
+  | 'DIKONFIRMASI'
+  | 'DIBUKA_KEMBALI'
+  | 'DINILAI'
+  | 'DIVERIFIKASI'
+  | 'CHAT'
+  | 'DITUTUP_OTOMATIS';
+
+export interface Pengaduan {
+  id: string;
+  nomorTiket: string;
+  clientRequestId?: string | null;
+  pelangganId?: string | null;
+  nomorLangganan?: string | null;
+  klasifikasi: KlasifikasiPengaduan;
+  jenis: JenisPengaduan;
+  judul: string;
+  deskripsi: string;
+  koordinat?: { x: number; y: number } | null;
+  alamatKejadian?: string | null;
+  prioritas: PrioritasPengaduan;
+  status: StatusPengaduan;
+  pelapor: string;
+  kontakPelapor?: string | null;
+  fotoUrl?: string | null;
+  fotoPublicId?: string | null;
+  videoUrl?: string | null;
+  ditugaskanKeId?: string | null;
+  ditanganiMulai?: Date | string | null;
+  selesaiAt?: Date | string | null;
+  catatanPenyelesaian?: string | null;
+  fotoPenyelesaianUrl?: string | null;
+  targetResponsAt?: Date | string | null;
+  targetSelesaiAt?: Date | string | null;
+  ratingKepuasan?: number | null;
+  komentarKepuasan?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface RiwayatPengaduan {
+  id: string;
+  pengaduanId: string;
+  aksi: AksiPengaduan;
+  statusDari?: StatusPengaduan | null;
+  statusKe?: StatusPengaduan | null;
+  petugasId?: string | null;
+  catatan?: string | null;
+  fotoUrl?: string | null;
+  isPublik: boolean;
+  createdAt: Date | string;
+}
+
+
