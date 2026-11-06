@@ -102,5 +102,5 @@ flowchart TD
 - [x] **Fase 1**: Penyelarasan skema Drizzle komprehensif: `tarif_blok`, `biaya_tetap`, `periode_penagihan`, `daftar_catat`, serta modul GWM (`water_meter_mutasi`, `grand_water_meter`, `gwm_baca_meter`) & pengujian skema (22 test passing 100%).
 - [x] **Fase 2**: Domain Engine Pure Business Logic (`tagihan.engine.ts`, `mandiri.engine.ts`, `taksasi.engine.ts`, `gwm.engine.ts`, `cater-anomali.engine.ts`) & pengujian unit 100% lulus (56 test passing).
 - [x] **Fase 3**: Konversi Service Layer (`closing.service.ts`, `mandiri.service.ts`, `gwm.service.ts`, `cater-verifikasi.service.ts`, `cater-kueri.service.ts`) ke Drizzle ORM transactions & pengujian integrasi (75 test passing).
-- [ ] **Fase 4**: Pembuatan Route Handler Elysia terintegrasi TypeBox Schema & Macro RBAC.
-- [ ] **Fase 5**: Verifikasi Paritas Data & Quality Assurance (Typecheck, Lint, Test).
+- [x] **Fase 4**: Pembuatan Route Handler Elysia terintegrasi TypeBox Schema & Macro RBAC (`cater.router.ts`, `closing.router.ts`, `mandiri.router.ts`, `gwm.router.ts` ter-mount di `/api`).
+- [x] **Fase 5**: Verifikasi Paritas Data & Quality Assurance (Typecheck 0 errors, ESLint passing, 78 unit & integration tests passing 100%).

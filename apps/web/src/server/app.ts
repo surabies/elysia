@@ -6,6 +6,9 @@ import { echoModule } from './modules/echo';
 import { authModule } from './modules/auth';
 import { geoModule } from './modules/geo';
 import { caterModule } from './modules/cater';
+import { closingModule } from './modules/closing';
+import { mandiriModule } from './modules/mandiri';
+import { gwmModule } from './modules/gwm';
 
 export const app = new Elysia({ prefix: '/api' })
   .use(corsPlugin)
@@ -21,6 +24,9 @@ export const app = new Elysia({ prefix: '/api' })
   .use(echoModule)
   .use(authModule)
   .use(geoModule)
-  .use(caterModule);
+  .use(caterModule)
+  .use(closingModule)
+  .use(mandiriModule)
+  .use(gwmModule);
 
 export type App = typeof app;

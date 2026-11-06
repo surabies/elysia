@@ -75,4 +75,50 @@ describe('Auth & Session Protection', () => {
     expect(body.success).toBe(false);
     expect(body.error.code).toBe('UNAUTHORIZED');
   });
+
+  it('GET /api/closing/pratinjau/:periode should return 401 when unauthenticated', async () => {
+    const res = await app.handle(new Request('http://localhost:3000/api/closing/pratinjau/202601'));
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('POST /api/cater/mandiri/verify should return 401 when unauthenticated', async () => {
+    const res = await app.handle(
+      new Request('http://localhost:3000/api/cater/mandiri/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mandiriId: 'mandiri-123',
+          action: 'APPROVE',
+        }),
+      })
+    );
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('POST /api/cater/gwm/mutasi should return 401 when unauthenticated', async () => {
+    const res = await app.handle(
+      new Request('http://localhost:3000/api/cater/gwm/mutasi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nolg: '01010001',
+          periode: 202601,
+          alasan: 'RUSAK',
+          noMeterLama: 'M-OLD-01',
+          standAngkat: 1500,
+          noMeterBaru: 'M-NEW-01',
+        }),
+      })
+    );
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
 });
