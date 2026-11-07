@@ -22,4 +22,22 @@ describe("tentukanHasilPembacaan", () => {
       pemakaian: 110,
     })
   })
+
+  it("uses stand pasang when calculating MB consumption", () => {
+    expect(
+      tentukanHasilPembacaan({
+        standAwal: 565,
+        standAkhir: 10,
+        standAngkatLama: 600,
+        standMeterBaru: 10,
+        standPasang: 5,
+        kondisi: "MB",
+        pemakaian: 24,
+      }),
+    ).toEqual({
+      standAwal: 565,
+      standAkhir: 10,
+      pemakaian: 40,
+    })
+  })
 })

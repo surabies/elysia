@@ -10,7 +10,15 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { ChevronDown } from "lucide-react";
 import { VercelObservabilityCard } from "./VercelObservabilityCard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { DailyTrendItem } from "@/server/services/dashboard/analytics.service";
 
 interface CdnRequestsChartProps {
@@ -25,14 +33,36 @@ export function CdnRequestsChart({
   const [activeMetric, setActiveMetric] = React.useState<"total" | "kubikasi">(
     "total",
   );
+  const [isMetricMenuOpen, setIsMetricMenuOpen] = React.useState(false);
   const [isMounted, setIsMounted] = React.useState(false);
+  const closeMetricMenuTimer = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const isVolume = activeMetric === "kubikasi";
   const totalKubikasi = data.reduce((sum, item) => sum + item.kubikasi, 0);
   const lineColor = isVolume ? "#0284c7" : "#ec4899";
 
   React.useEffect(() => {
     setIsMounted(true);
+    return () => {
+      if (closeMetricMenuTimer.current) {
+        clearTimeout(closeMetricMenuTimer.current);
+      }
+    };
   }, []);
+
+  const openMetricMenu = () => {
+    if (closeMetricMenuTimer.current) {
+      clearTimeout(closeMetricMenuTimer.current);
+    }
+    setIsMetricMenuOpen(true);
+  };
+  const scheduleMetricMenuClose = () => {
+    closeMetricMenuTimer.current = setTimeout(
+      () => setIsMetricMenuOpen(false),
+      500,
+    );
+  };
 
   const chartData = React.useMemo(() => {
     const lastDay = Number(data.at(-1)?.hari ?? 0);
@@ -59,34 +89,53 @@ export function CdnRequestsChart({
     <VercelObservabilityCard
       id="daily-meter-readings-card"
       title="Pembacaan Meter Harian"
-      legendLabel={isVolume ? "Total m³" : "Total SL"}
+      legendLabel={
+        <DropdownMenu
+          open={isMetricMenuOpen}
+          onOpenChange={setIsMetricMenuOpen}
+        >
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              onPointerEnter={(event) => {
+                if (event.pointerType === "mouse") openMetricMenu();
+              }}
+              onPointerLeave={scheduleMetricMenuClose}
+              className="group inline-flex items-center gap-1 rounded-sm text-[11px] leading-none text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
+              aria-label={`Pilih metrik, saat ini ${isVolume ? "Total m³" : "Total SL"}`}
+            >
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 transition-transform duration-200 group-hover:rotate-180 group-data-[state=open]:rotate-180"
+              />
+              {isVolume ? "Total m³" : "Total SL"}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="min-w-32"
+            onPointerEnter={openMetricMenu}
+            onPointerLeave={scheduleMetricMenuClose}
+          >
+            <DropdownMenuRadioGroup
+              value={activeMetric}
+              onValueChange={(value) => {
+                if (value === "total" || value === "kubikasi") {
+                  setActiveMetric(value);
+                }
+              }}
+            >
+              <DropdownMenuRadioItem value="total">Total SL</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="kubikasi">
+                Total m³
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
       legendValue={(isVolume ? totalKubikasi : totalInvocations).toLocaleString(
         "id-ID",
       )}
-      headerActions={
-        <div
-          className="inline-flex rounded-md border border-border bg-muted/40 p-0.5 text-[10px]"
-          role="group"
-          aria-label="Metrik pembacaan"
-        >
-          <button
-            type="button"
-            aria-pressed={!isVolume}
-            onClick={() => setActiveMetric("total")}
-            className={`rounded-sm px-2 py-1 font-medium transition-colors ${!isVolume ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            Total SL
-          </button>
-          <button
-            type="button"
-            aria-pressed={isVolume}
-            onClick={() => setActiveMetric("kubikasi")}
-            className={`rounded-sm px-2 py-1 font-medium transition-colors ${isVolume ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            Total m³
-          </button>
-        </div>
-      }
     >
       {!isMounted ? (
         <div className="h-46.25 w-full flex items-center justify-center">
@@ -133,12 +182,10 @@ export function CdnRequestsChart({
               }}
             />
             <YAxis
-              width={50}
+              width={1}
               tickLine={false}
               axisLine={false}
-              tickMargin={6}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              tickFormatter={(value) => Number(value).toLocaleString("id-ID")}
+              tick={() => null}
             />
             <Tooltip
               content={({ active, payload }) => {

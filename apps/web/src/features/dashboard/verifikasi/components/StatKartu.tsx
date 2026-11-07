@@ -7,6 +7,8 @@ import {
   HugeiconsIcon,
   type IconSvgElement,
 } from "@/features/dashboard/shared/icons/IconRenderer";
+import { Card } from "@/components/ui/card";
+import { IconTile } from "@/components/reui/icon-tile";
 import { cn } from "@/lib/Utilitas";
 
 type Nada = "netral" | "perhatian" | "peringatan" | "info" | "sukses";
@@ -62,7 +64,7 @@ function Ikon({
 }
 
 // ----------------------------------------------------------------------------
-// StatGrid — kerangka
+// StatGrid — tata letak kartu
 // ----------------------------------------------------------------------------
 // Kelas ditulis lengkap (bukan dirangkai) karena Tailwind hanya mengenali
 // nama kelas utuh.
@@ -76,7 +78,7 @@ export function StatGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4",
+        "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4",
         className,
       )}
     >
@@ -113,7 +115,7 @@ export function StatCard({
     progres === undefined ? undefined : Math.min(100, Math.max(0, progres));
 
   return (
-    <div className="relative flex flex-col gap-2 bg-card px-4 py-4 sm:px-5">
+    <Card className="relative gap-2 overflow-hidden px-4 py-4 sm:px-5">
       {/* Baris atas: [titik status] label ........ ikon netral */}
       <div className="flex items-center justify-between gap-3">
         <p className="flex min-w-0 items-center gap-2 text-label-12 font-medium text-muted-foreground">
@@ -129,10 +131,14 @@ export function StatCard({
           )}
           <span className="truncate">{label}</span>
         </p>
-        <Ikon
-          icon={icon}
-          className="size-4 shrink-0 text-muted-foreground"
-        />
+        <IconTile
+          aria-hidden="true"
+          size="sm"
+          variant="frame"
+          className="text-muted-foreground"
+        >
+          <Ikon icon={icon} className="size-4" />
+        </IconTile>
       </div>
 
       {/* Angka + keterangan */}
@@ -168,6 +174,6 @@ export function StatCard({
           />
         </div>
       )}
-    </div>
+    </Card>
   );
 }

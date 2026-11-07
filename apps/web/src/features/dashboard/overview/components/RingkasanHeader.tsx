@@ -15,7 +15,7 @@ export function RingkasanHeader({
   tanggalHariIni,
 }: RingkasanHeaderProps) {
   return (
-    <Card className="px-5 py-4">
+    <Card className="px-4 py-4 sm:px-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="mb-1 text-label-11 font-medium uppercase tracking-wide text-muted-foreground">
@@ -30,7 +30,7 @@ export function RingkasanHeader({
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-x-4 border-t border-border pt-3 sm:border-t-0 sm:pt-0">
+        <div className="grid grid-cols-3 gap-x-2 border-t border-border pt-3 sm:gap-x-4 sm:border-t-0 sm:pt-0">
           <div className="min-w-0">
             <p className="text-label-11 font-medium uppercase tracking-wide text-muted-foreground">
               Periode
@@ -39,7 +39,7 @@ export function RingkasanHeader({
               {periode.label}
             </p>
           </div>
-          <div className="min-w-0 border-l border-border pl-3">
+          <div className="min-w-0 border-l border-border pl-2 sm:pl-3">
             <p className="text-label-11 font-medium uppercase tracking-wide text-muted-foreground">
               Kode
             </p>
@@ -47,7 +47,7 @@ export function RingkasanHeader({
               {periode.thbl}
             </p>
           </div>
-          <div className="min-w-0 border-l border-border pl-3">
+          <div className="min-w-0 border-l border-border pl-2 sm:pl-3">
             <p className="text-label-11 font-medium uppercase tracking-wide text-muted-foreground">
               Hari ini
             </p>

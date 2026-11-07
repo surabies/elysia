@@ -2,7 +2,7 @@ import { t } from 'elysia';
 
 export const catatMutasiGantiMeterBodySchema = t.Object({
   nolg: t.String({ minLength: 1 }),
-  periode: t.Number({ description: 'THBL e.g. 202601' }),
+  periode: t.Integer({ minimum: 200001, maximum: 209912, description: 'THBL e.g. 202601' }),
   alasan: t.Union([
     t.Literal('RUSAK'),
     t.Literal('MATI'),
@@ -14,12 +14,12 @@ export const catatMutasiGantiMeterBodySchema = t.Object({
   ]),
   keterangan: t.Optional(t.String()),
   noMeterLama: t.String({ minLength: 1 }),
-  standAngkat: t.Number({ minimum: 0 }),
+  standAngkat: t.Integer({ minimum: 0 }),
   fotoStandAngkat: t.Optional(t.String()),
   noMeterBaru: t.String({ minLength: 1 }),
   merkBaru: t.Optional(t.String()),
   ukuranBaru: t.Optional(t.String()),
-  standPasang: t.Optional(t.Number({ minimum: 0 })),
+  standPasang: t.Optional(t.Integer({ minimum: 0 })),
   noSegelBaru: t.Optional(t.String()),
   fotoMeterBaru: t.Optional(t.String()),
   petugasPasang: t.Optional(t.String()),
@@ -28,7 +28,7 @@ export const catatMutasiGantiMeterBodySchema = t.Object({
 export const verifikasiMutasiBodySchema = t.Object({
   mutasiId: t.String({ minLength: 1 }),
   action: t.Union([t.Literal('APPROVE'), t.Literal('REJECT')]),
-  standBacaBaru: t.Optional(t.Number({ minimum: 0 })),
+  standBacaBaru: t.Optional(t.Integer({ minimum: 0 })),
   catatan: t.Optional(t.String()),
 });
 
@@ -45,4 +45,14 @@ export const catatDebitGwmBodySchema = t.Object({
 export const neracaAirParamsSchema = t.Object({
   zonaKode: t.String({ minLength: 1 }),
   periode: t.Numeric({ description: 'THBL e.g. 202601' }),
+});
+
+export const daftarMutasiQuerySchema = t.Object({
+  status: t.Optional(
+    t.Union([
+      t.Literal('PENDING'),
+      t.Literal('APPROVED'),
+      t.Literal('REJECTED'),
+    ]),
+  ),
 });

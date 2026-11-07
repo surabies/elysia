@@ -57,6 +57,20 @@
       "when": 1794036351440,
       "tag": "0007_tough_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794055110911,
+      "tag": "0008_wealthy_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794072252475,
+      "tag": "0009_daily_speed_demon",
+      "breakpoints": true
     }
   ]
 }

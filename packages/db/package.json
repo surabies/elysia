@@ -10,7 +10,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun run src/seed.ts",
     "db:seed:accounts": "bun run src/seed-accounts.ts",
-    "db:seed:kondisi": "bun run src/seed-kondisi.ts"
+    "db:seed:kondisi": "bun run src/seed-kondisi.ts",
+    "db:seed:area-layanan": "bun run src/seed-area-layanan.ts"
   },
   "dependencies": {
     "@cater/types": "workspace:*",

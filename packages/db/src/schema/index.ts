@@ -10,6 +10,7 @@ export * from './cater';
 export * from './billing';
 export * from './rbac';
 export * from './periode';
+export * from './drd';
 export * from './dpm';
 export * from './gwm';
 export * from './pengaduan';

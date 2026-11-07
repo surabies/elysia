@@ -3,22 +3,14 @@
 // features/dashboard/verifikasi/components/modalKoreksi.tsx — "Koreksi Data
 // Pembacaan" (menu Edit dan CHN; keduanya membuka form yang SAMA).
 //
-// Simpan memakai callback halaman; tata letak mengikuti form sistem lama —
-// Form Edit, Data Berjalan | Data Koreksi, Stand Angkat, Riwayat Deposit.
+// Simpan memakai callback halaman; header menampilkan identitas pelanggan dan
+// hasil laporan, lalu isi drawer disusun sebagai Stand Angkat dan Form Edit.
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
 import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
 import { PilihSatu } from "../DialogVerifikasi";
@@ -27,17 +19,8 @@ import { toast } from "sonner";
 import {
   BarisForm,
   JudulBagian,
-  KotakBaca,
 } from "../KerangkaModal";
 import { KerangkaDrawer } from "../KerangkaDrawer";
-
-export interface BarisDeposit {
-  periode: string;
-  stDeposit: number | null;
-  depositResmi: number | null;
-  depositPerubahan: number | null;
-  sisaDeposit: number | null;
-}
 
 export interface DataKoreksi {
   /** Label gabungan untuk modal lain yang masih menampilkan identitas ringkas. */
@@ -57,11 +40,11 @@ export interface DataKoreksi {
   pemakaianTagihVerif?: number | null;
   standAngkatLama?: number | null;
   standMeterBaru?: number | null;
+  standPasang?: number | null;
   pelangganId?: string | null;
   meterVerifId?: string | null;
   /** null = tidak ada stand angkat. */
   standAngkat?: { lama: number | null; baru: number | null } | null;
-  riwayatDeposit?: BarisDeposit[];
 }
 
 /** Bentuk minimum baris tabel (petugas maupun mandiri) yang dibutuhkan konversi. */
@@ -79,6 +62,7 @@ export interface BarisSumberModal {
   pemakaianTagihVerif?: number | null;
   standAngkatLama?: number | null;
   standMeterBaru?: number | null;
+  standPasang?: number | null;
   meterVerifId?: string | null;
   golonganTarif?: string | null;
   alamatPelanggan?: string | null;
@@ -113,6 +97,7 @@ export function dataKoreksiDariBaris(b: BarisSumberModal): DataKoreksi {
     pemakaianTagihVerif: b.pemakaianTagihVerif ?? null,
     standAngkatLama: b.standAngkatLama ?? null,
     standMeterBaru: b.standMeterBaru ?? null,
+    standPasang: b.standPasang ?? null,
     pelangganId: b.pelanggan?.id ?? b.pelangganId ?? null,
     meterVerifId: b.meterVerifId ?? null,
     standAngkat:
@@ -122,7 +107,6 @@ export function dataKoreksiDariBaris(b: BarisSumberModal): DataKoreksi {
             baru: b.standMeterBaru ?? null,
           }
         : null,
-    riwayatDeposit: [],
   };
 }
 
@@ -136,6 +120,7 @@ export interface HasilKoreksi {
 }
 
 interface DetailKoreksiApi {
+  standPasang?: number | null;
   pelanggan?: {
     nomorLangganan?: string;
     nama?: string;
@@ -221,6 +206,7 @@ export function ModalKoreksi({
             standAwalLama: awalNum,
             standAngkatLama: standAngkatNum,
             standMeterBaru: standMeterBaruNum,
+        standPasang: detail?.standPasang ?? data.standPasang ?? 0,
           })
         : null
       : awalNum != null &&
@@ -229,7 +215,12 @@ export function ModalKoreksi({
           Number.isInteger(akhirNum)
         ? akhirNum - awalNum
         : null;
-  const riwayat = data.riwayatDeposit ?? [];
+  const hasilStandAwal = awalNum;
+  const hasilStandAkhir =
+    kelainan === "MB" ? standMeterBaruNum : akhirNum;
+  const hasilKelainan = kelainan
+    ? (LABEL_KONDISI_CATAT[kelainan] ?? kelainan)
+    : "—";
 
   async function simpan() {
     if (!onSimpan) return;
@@ -310,8 +301,92 @@ export function ModalKoreksi({
   return (
     <KerangkaDrawer
       judul="Koreksi Data Pembacaan"
-      subjudul={`${detail?.pelanggan?.nama ?? data.namaPelanggan ?? "Koreksi pembacaan"} · Periode ${data.periode}`}
+      subjudul={`Periode ${data.periode}`}
       onTutup={onTutup}
+      informasi={
+        <div className="min-w-0 space-y-4 text-copy-13">
+          <section aria-label="Informasi pelanggan">
+            <h2 className="mb-2 text-label-12 font-semibold tracking-wide text-muted-foreground uppercase">
+              Informasi Pelanggan
+            </h2>
+            <dl className="rounded-lg border border-sidebar-border bg-muted/60 px-3">
+              <div className="grid min-w-0 grid-cols-[7rem_auto_minmax(0,1fr)] gap-2 border-b border-sidebar-border py-2 last:border-b-0">
+                <dt className="text-muted-foreground">Nama</dt>
+                <span aria-hidden="true" className="text-muted-foreground">:</span>
+                <dd className="min-w-0 truncate font-medium text-foreground">
+                  {detail?.pelanggan?.nama ?? data.namaPelanggan ?? "—"}
+                </dd>
+              </div>
+              <div className="grid min-w-0 grid-cols-[7rem_auto_minmax(0,1fr)] gap-2 border-b border-sidebar-border py-2 last:border-b-0">
+                <dt className="text-muted-foreground">No. Langganan</dt>
+                <span aria-hidden="true" className="text-muted-foreground">:</span>
+                <dd className="min-w-0 truncate font-medium text-foreground">
+                  {detail?.pelanggan?.nomorLangganan ??
+                    data.nomorLangganan ??
+                    "—"}
+                </dd>
+              </div>
+              <div className="grid min-w-0 grid-cols-[7rem_auto_minmax(0,1fr)] gap-2 border-b border-sidebar-border py-2 last:border-b-0">
+                <dt className="text-muted-foreground">Tarif</dt>
+                <span aria-hidden="true" className="text-muted-foreground">:</span>
+                <dd className="min-w-0 truncate font-medium text-foreground">
+                  {detail?.pelanggan?.tarifGolongan?.kodeAsli ??
+                    data.tarif ??
+                    "—"}
+                </dd>
+              </div>
+              <div className="grid min-w-0 grid-cols-[7rem_auto_minmax(0,1fr)] gap-2 py-2">
+                <dt className="text-muted-foreground">Alamat</dt>
+                <span aria-hidden="true" className="text-muted-foreground">:</span>
+                <dd className="min-w-0 font-medium text-foreground">
+                  {detail?.pelanggan?.alamat ?? data.alamat ?? "—"}
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          <section
+            aria-label="Hasil laporan pembacaan"
+            className="rounded-xl border border-dashed border-(--verif-v2-border) bg-(--verif-v2-soft) p-4"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <h3 className="text-label-14 font-semibold text-foreground">
+                Hasil laporan
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="rounded-lg bg-background px-3 py-2.5">
+                <p className="text-label-12 text-muted-foreground">Stand awal</p>
+                <p className="mt-1 text-heading-20 font-semibold tabular-nums text-foreground">
+                  {angka(hasilStandAwal)}
+                </p>
+              </div>
+              <div className="rounded-lg bg-background px-3 py-2.5">
+                <p className="text-label-12 text-muted-foreground">
+                  {kelainan === "MB" ? "Stand akhir (meter baru)" : "Stand akhir"}
+                </p>
+                <p className="mt-1 text-heading-20 font-semibold tabular-nums text-foreground">
+                  {angka(hasilStandAkhir)}
+                </p>
+              </div>
+              <div className="rounded-lg bg-background px-3 py-2.5">
+                <p className="text-label-12 text-muted-foreground">
+                  Pemakaian
+                </p>
+                <p className="mt-1 text-heading-20 font-semibold tabular-nums text-foreground">
+                  {angka(pakai)}
+                </p>
+              </div>
+              <div className="rounded-lg bg-background px-3 py-2.5">
+                <p className="text-label-12 text-muted-foreground">Kelainan</p>
+                <p className="mt-1 truncate font-semibold text-foreground">
+                  {hasilKelainan}
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      }
       footer={
         <>
           {!onSimpan && (
@@ -333,201 +408,22 @@ export function ModalKoreksi({
         </>
       }
     >
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.9fr)_minmax(12rem,0.8fr)_minmax(0,1.4fr)]">
-        {/* ── Kiri: form edit + data berjalan/koreksi ───────────────────── */}
-        <section className="flex min-w-0 flex-col gap-4">
-          <div className="flex flex-col gap-2.5">
-            <JudulBagian>Form Edit</JudulBagian>
-            <BarisForm label="No. Langganan">
-              <KotakBaca
-                nilai={detail?.pelanggan?.nomorLangganan ?? data.nomorLangganan}
-              />
-            </BarisForm>
-            <BarisForm label="Pelanggan">
-              <KotakBaca
-                nilai={detail?.pelanggan?.nama ?? data.namaPelanggan}
-              />
-            </BarisForm>
-            <BarisForm label="Tarif">
-              <KotakBaca
-                nilai={detail?.pelanggan?.tarifGolongan?.kodeAsli ?? data.tarif}
-              />
-            </BarisForm>
-            <BarisForm label="Alamat">
-              <KotakBaca nilai={detail?.pelanggan?.alamat ?? data.alamat} />
-            </BarisForm>
-            <BarisForm label="Periode">
-              <KotakBaca nilai={data.periode} />
-            </BarisForm>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex min-w-0 flex-col gap-2.5">
-              <JudulBagian>Data Berjalan</JudulBagian>
-              <BarisForm label="Stand Awal">
-                <KotakBaca nilai={data.standAwal} />
-              </BarisForm>
-              <BarisForm label="Stand Akhir">
-                <KotakBaca nilai={data.standAkhir} />
-              </BarisForm>
-              <BarisForm label="Pemakaian">
-                <KotakBaca nilai={data.pemakaian} />
-              </BarisForm>
-              <BarisForm label="Kelainan">
-                <KotakBaca
-                  nilai={
-                    data.kelainan
-                      ? (LABEL_KONDISI_CATAT[data.kelainan] ?? data.kelainan)
-                      : null
-                  }
-                />
-              </BarisForm>
-              <BarisForm label="Stand Angkat" tone="destruktif">
-                <KotakBaca nilai={data.standAngkat?.lama} />
-              </BarisForm>
-            </div>
-
-            <div className="flex min-w-0 flex-col gap-2.5">
-              <JudulBagian>Data Koreksi</JudulBagian>
-              {kelainan === "REV_PENCATAT" ? (
-                <BarisForm label="ST Awal revisi" htmlFor="koreksi-awal">
-                  <Input
-                    id="koreksi-awal"
-                    type="number"
-                    density="compact"
-                    min={0}
-                    value={standAwal}
-                    onChange={(e) => setStandAwal(e.target.value)}
-                  />
-                </BarisForm>
-              ) : (
-                <BarisForm label="Stand Awal">
-                  <KotakBaca nilai={awalNum} />
-                </BarisForm>
-              )}
-              {kelainan === "MB" ? (
-                <BarisForm label="Stand akhir meter lama">
-                  <KotakBaca nilai={standAngkatNum} />
-                </BarisForm>
-              ) : (
-                <BarisForm label="Stand Akhir" htmlFor="koreksi-akhir">
-                  <Input
-                    id="koreksi-akhir"
-                    type="number"
-                    density="compact"
-                    min={0}
-                    value={standAkhir}
-                    onChange={(e) => setStandAkhir(e.target.value)}
-                  />
-                </BarisForm>
-              )}
-              <BarisForm label="Pakai">
-                <KotakBaca nilai={pakai} />
-              </BarisForm>
-
-              {bolehAturTagihan ? (
-                <div className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-3">
-                  <Label
-                    htmlFor="koreksi-taksasi"
-                    className="flex items-center gap-2 font-normal text-muted-foreground"
-                  >
-                    <Checkbox
-                      id="koreksi-taksasi"
-                      checked={taksasi}
-                      onCheckedChange={(v) => setTaksasi(v === true)}
-                    />
-                    Tagihan
-                  </Label>
-                  <div className="flex min-w-0 items-center gap-2">
-                    <Input
-                      type="number"
-                      density="compact"
-                      min={0}
-                      disabled={!taksasi}
-                      value={nilaiTaksasi}
-                      onChange={(e) => setNilaiTaksasi(e.target.value)}
-                      aria-label="Pemakaian Tagihan dalam m3"
-                      className="disabled:border-transparent disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
-                    />
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="default"
-                      className="shrink-0 text-(--verif-info)"
-                      onClick={onRata3}
-                      disabled={!onRata3}
-                    >
-                      Rata3
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-copy-13 text-muted-foreground">
-                  Nilai Tagihan hanya dapat ditetapkan oleh V3.
-                </p>
-              )}
-
-              <BarisForm label="Kelainan">
-                <PilihSatu
-                  ariaLabel="Kelainan"
-                  value={kelainan}
-                  onChange={setKelainan}
-                  placeholder="- Kelainan -"
-                  size="sm"
-                  opsi={Object.entries(LABEL_KONDISI_CATAT).map(
-                    ([kode, nama]) => ({
-                      value: kode,
-                      label: nama,
-                    }),
-                  )}
-                />
-              </BarisForm>
-              {kelainan === "MB" && (
-                <>
-                  <BarisForm
-                    label="Stand angkat meter lama"
-                    htmlFor="koreksi-angkat-lama"
-                  >
-                    <Input
-                      id="koreksi-angkat-lama"
-                      type="number"
-                      density="compact"
-                      min={0}
-                      value={standAngkatLama}
-                      onChange={(e) => setStandAngkatLama(e.target.value)}
-                    />
-                  </BarisForm>
-                  <BarisForm
-                    label="Stand meter baru"
-                    htmlFor="koreksi-meter-baru"
-                  >
-                    <Input
-                      id="koreksi-meter-baru"
-                      type="number"
-                      density="compact"
-                      min={0}
-                      value={standMeterBaru}
-                      onChange={(e) => setStandMeterBaru(e.target.value)}
-                    />
-                  </BarisForm>
-                </>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Tengah: stand angkat ─────────────────────────────────────── */}
-        <section className="flex min-w-0 flex-col gap-2.5 2xl:border-l 2xl:border-border 2xl:pl-5">
+      <div className="flex min-w-0 flex-col gap-6">
+        <section className="flex min-w-0 flex-col gap-2.5 border-b border-border pb-6">
           <JudulBagian>Stand Angkat</JudulBagian>
           {data.standAngkat ? (
-            <>
+            <div className="grid gap-3 sm:grid-cols-2">
               <BarisForm label="Meter lama">
-                <KotakBaca nilai={data.standAngkat.lama} />
+                <p className="rounded-md bg-muted/50 px-3 py-2 text-copy-13 font-medium tabular-nums">
+                  {angka(data.standAngkat.lama)}
+                </p>
               </BarisForm>
               <BarisForm label="Meter baru">
-                <KotakBaca nilai={data.standAngkat.baru} />
+                <p className="rounded-md bg-muted/50 px-3 py-2 text-copy-13 font-medium tabular-nums">
+                  {angka(data.standAngkat.baru)}
+                </p>
               </BarisForm>
-            </>
+            </div>
           ) : (
             <p className="text-copy-13 text-muted-foreground">
               Tidak ada stand angkat.
@@ -535,66 +431,129 @@ export function ModalKoreksi({
           )}
         </section>
 
-        {/* ── Kanan: riwayat deposit ───────────────────────────────────── */}
-        <section className="flex min-w-0 flex-col gap-2.5 2xl:border-l 2xl:border-border 2xl:pl-5">
-          <JudulBagian>Riwayat Deposit</JudulBagian>
-          <div className="min-w-0 overflow-x-auto rounded-lg border border-border">
-            <Table className="min-w-[36rem]">
-              <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="w-8">No</TableHead>
-                  <TableHead>Periode</TableHead>
-                  <TableHead className="text-right">
-                    St Deposit
-                  </TableHead>
-                  <TableHead className="text-right">
-                    Deposit Resmi
-                  </TableHead>
-                  <TableHead className="text-right">
-                    Deposit Perubahan
-                  </TableHead>
-                  <TableHead className="text-right">
-                    Sisa Deposit
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {riwayat.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="py-6 text-center text-copy-13 text-muted-foreground"
-                    >
-                      Belum ada riwayat deposit.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  riwayat.map((r, i) => (
-                    <TableRow key={`${r.periode}-${i}`}>
-                      <TableCell className="py-2 text-copy-13 tabular-nums">
-                        {i + 1}
-                      </TableCell>
-                      <TableCell className="py-2 text-copy-13">
-                        {r.periode}
-                      </TableCell>
-                      <TableCell className="py-2 text-right text-copy-13 tabular-nums">
-                        {angka(r.stDeposit)}
-                      </TableCell>
-                      <TableCell className="py-2 text-right text-copy-13 tabular-nums">
-                        {angka(r.depositResmi)}
-                      </TableCell>
-                      <TableCell className="py-2 text-right text-copy-13 tabular-nums">
-                        {angka(r.depositPerubahan)}
-                      </TableCell>
-                      <TableCell className="py-2 text-right text-copy-13 tabular-nums">
-                        {angka(r.sisaDeposit)}
-                      </TableCell>
-                    </TableRow>
-                  ))
+        <section className="flex min-w-0 flex-col gap-3">
+          <JudulBagian>Form Edit</JudulBagian>
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            {kelainan === "REV_PENCATAT" && (
+              <BarisForm label="ST Awal revisi" htmlFor="koreksi-awal">
+                <Input
+                  id="koreksi-awal"
+                  type="number"
+                  density="compact"
+                  min={0}
+                  value={standAwal}
+                  onChange={(e) => setStandAwal(e.target.value)}
+                />
+              </BarisForm>
+            )}
+            {kelainan !== "MB" && (
+              <BarisForm label="Stand Akhir" htmlFor="koreksi-akhir">
+                <Input
+                  id="koreksi-akhir"
+                  type="number"
+                  density="compact"
+                  min={0}
+                  value={standAkhir}
+                  onChange={(e) => setStandAkhir(e.target.value)}
+                />
+              </BarisForm>
+            )}
+
+            {bolehAturTagihan && (
+              <div className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-3">
+                <Label
+                  htmlFor="koreksi-taksasi"
+                  className="flex items-center gap-2 font-normal text-muted-foreground"
+                >
+                  <Checkbox
+                    id="koreksi-taksasi"
+                    checked={taksasi}
+                    onCheckedChange={(v) => setTaksasi(v === true)}
+                  />
+                  Tagihan
+                </Label>
+                <div className="flex min-w-0 items-center gap-2">
+                  <Input
+                    type="number"
+                    density="compact"
+                    min={0}
+                    disabled={!taksasi}
+                    value={nilaiTaksasi}
+                    onChange={(e) => setNilaiTaksasi(e.target.value)}
+                    aria-label="Pemakaian Tagihan dalam m3"
+                    className="disabled:border-transparent disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
+                  />
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="default"
+                    className="shrink-0 text-(--verif-info)"
+                    onClick={onRata3}
+                    disabled={!onRata3}
+                  >
+                    Rata3
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <BarisForm label="Kelainan">
+              <PilihSatu
+                ariaLabel="Kelainan"
+                value={kelainan}
+                onChange={setKelainan}
+                placeholder="- Kelainan -"
+                size="sm"
+                opsi={Object.entries(LABEL_KONDISI_CATAT).map(
+                  ([kode, nama]) => ({
+                    value: kode,
+                    label: nama,
+                  }),
                 )}
-              </TableBody>
-            </Table>
+              />
+            </BarisForm>
+            {kelainan === "MB" && (
+              <>
+                <BarisForm
+                  label="Stand angkat meter lama"
+                  htmlFor="koreksi-angkat-lama"
+                >
+                  <Input
+                    id="koreksi-angkat-lama"
+                    type="number"
+                    density="compact"
+                    min={0}
+                    value={standAngkatLama}
+                    onChange={(e) => setStandAngkatLama(e.target.value)}
+                  />
+                </BarisForm>
+                <BarisForm
+                  label="Stand meter baru"
+                  htmlFor="koreksi-meter-baru"
+                >
+                  <Input
+                    id="koreksi-meter-baru"
+                    type="number"
+                    density="compact"
+                    min={0}
+                    value={standMeterBaru}
+                    onChange={(e) => setStandMeterBaru(e.target.value)}
+                  />
+                </BarisForm>
+              </>
+            )}
           </div>
+          <p className="text-copy-13 text-muted-foreground">
+            Pemakaian hasil koreksi:{" "}
+            <span className="font-medium text-foreground">
+              {angka(pakai)}
+            </span>
+          </p>
+          {!bolehAturTagihan && (
+            <p className="text-copy-13 text-muted-foreground">
+              Nilai Tagihan hanya dapat ditetapkan oleh V3.
+            </p>
+          )}
         </section>
       </div>
     </KerangkaDrawer>

@@ -9,7 +9,7 @@ interface VercelObservabilityCardProps {
   title: string;
   subtitle?: string;
   href?: string;
-  legendLabel?: string;
+  legendLabel?: React.ReactNode;
   legendValue?: string | number;
   headerActions?: React.ReactNode;
   className?: string;
@@ -95,7 +95,7 @@ export function VercelObservabilityCard({
           <div className="-mt-0.5 h-46.25 relative">
             {/* Top Right In-Chart Legend (Vercel Style) */}
             {legendLabel && legendValue !== undefined && (
-              <div className="absolute right-2 top-0 z-10 flex flex-col items-end min-w-16.25 px-1 pt-0.75 font-sans text-xs pointer-events-none">
+              <div className="absolute right-2 top-0 z-10 flex flex-col items-end min-w-16.25 px-1 pt-0.75 font-sans text-xs pointer-events-auto">
                 <span className="text-[11px] text-muted-foreground leading-none">
                   {legendLabel}
                 </span>

@@ -235,6 +235,28 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
+        title: "Ganti Water Meter",
+        href: "/cater/ganti-meter",
+        description:
+          "Catat berita acara penggantian meter, stand angkat/pasang, dan verifikasi tautannya ke laporan pembacaan.",
+        keywords: [
+          "ganti meter",
+          "gwm",
+          "stand angkat",
+          "stand pasang",
+          "meter lama",
+          "meter baru",
+          "mutasi meter",
+        ],
+        roles: [
+          "SUPERADMIN",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "PENCATAT",
+        ],
+      },
+      {
         title: "Simulator Baca Meter",
         href: "/cater/simulasi",
         description:

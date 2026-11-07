@@ -12,6 +12,7 @@ import { gwmModule } from "./modules/gwm";
 import { pengaduanModule } from "./modules/pengaduan";
 import { publikModule } from "./modules/publik";
 import { verifikasiLegacyRouter } from "./modules/verifikasi-legacy.router";
+import { drdModule } from "./modules/drd";
 
 export const app = new Elysia({ prefix: "/api" })
   .use(corsPlugin)
@@ -33,6 +34,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(gwmModule)
   .use(pengaduanModule)
   .use(publikModule)
+  .use(drdModule)
   .use(verifikasiLegacyRouter);
 
 export type App = typeof app;

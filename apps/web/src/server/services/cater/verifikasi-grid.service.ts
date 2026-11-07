@@ -270,6 +270,7 @@ export class VerifikasiGridService {
         standAngkatRevisi: caterBacaMeter.standAngkatRevisi,
         standMeterBaruRevisi: caterBacaMeter.standMeterBaruRevisi,
         standAngkatLama: waterMeterMutasi.standAngkat,
+        standPasang: waterMeterMutasi.standPasang,
         pakaiM3: caterBacaMeter.pakaiM3,
         pakaiTagih: caterBacaMeter.pakaiTagih,
         pakaiLalu: caterBacaMeter.pakaiLalu,
@@ -361,6 +362,7 @@ export class VerifikasiGridService {
             (row.ketCatatRevisi === "MB" || row.ketCatat === "MB"
               ? asNumber(row.stmaRevisi) ?? asNumber(row.stma)
               : null),
+          standPasang: asNumber(row.standPasang),
           pemakaian: asNumber(row.pakaiM3Revisi) ?? asNumber(row.pakaiM3),
           pemakaianTagihVerif: asNumber(row.pakaiTagih),
           kondisiRevisi: row.ketCatatRevisi,

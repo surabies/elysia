@@ -10,7 +10,15 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { ChevronDown } from "lucide-react";
 import { VercelObservabilityCard } from "./VercelObservabilityCard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type {
   RegionalAreaTrend,
   RegionalDailyTrend,
@@ -34,10 +42,32 @@ const SERIES_COLORS = ["#2563eb", "#059669", "#db2777", "#d97706"];
 export function TopRegionsChart({ data }: TopRegionsChartProps) {
   const [isMounted, setIsMounted] = React.useState(false);
   const [activeLevel, setActiveLevel] = React.useState<AreaLevel>("kecamatan");
+  const [isLevelMenuOpen, setIsLevelMenuOpen] = React.useState(false);
+  const closeLevelMenuTimer = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   React.useEffect(() => {
     setIsMounted(true);
+    return () => {
+      if (closeLevelMenuTimer.current) {
+        clearTimeout(closeLevelMenuTimer.current);
+      }
+    };
   }, []);
+
+  const openLevelMenu = () => {
+    if (closeLevelMenuTimer.current) {
+      clearTimeout(closeLevelMenuTimer.current);
+    }
+    setIsLevelMenuOpen(true);
+  };
+  const scheduleLevelMenuClose = () => {
+    closeLevelMenuTimer.current = setTimeout(
+      () => setIsLevelMenuOpen(false),
+      500,
+    );
+  };
 
   const topAreas = React.useMemo(() => {
     const totals = new Map<string, RegionalAreaTrend>();
@@ -105,27 +135,50 @@ export function TopRegionsChart({ data }: TopRegionsChartProps) {
     <VercelObservabilityCard
       id="regional-meter-readings-card"
       title="Pembacaan Wilayah"
-      legendLabel={activeLevel === "kecamatan" ? "Kecamatan" : "Kelurahan"}
-      legendValue={`${seriesConfig.length} Teratas`}
-      headerActions={
-        <div
-          className="inline-flex rounded-md border border-border bg-muted/40 p-0.5 text-[10px]"
-          role="group"
-          aria-label="Tingkat wilayah"
-        >
-          {(["kecamatan", "kelurahan"] as const).map((level) => (
+      legendLabel={
+        <DropdownMenu open={isLevelMenuOpen} onOpenChange={setIsLevelMenuOpen}>
+          <DropdownMenuTrigger asChild>
             <button
-              key={level}
               type="button"
-              aria-pressed={activeLevel === level}
-              onClick={() => setActiveLevel(level)}
-              className={`rounded-sm px-2 py-1 font-medium capitalize transition-colors ${activeLevel === level ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"}`}
+              onPointerEnter={(event) => {
+                if (event.pointerType === "mouse") openLevelMenu();
+              }}
+              onPointerLeave={scheduleLevelMenuClose}
+              className="group inline-flex items-center gap-1 rounded-sm text-[11px] capitalize leading-none text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
+              aria-label={`Pilih tingkat wilayah, saat ini ${activeLevel}`}
             >
-              {level}
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 transition-transform duration-200 group-hover:rotate-180 group-data-[state=open]:rotate-180"
+              />
+              {activeLevel}
             </button>
-          ))}
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="min-w-32"
+            onPointerEnter={openLevelMenu}
+            onPointerLeave={scheduleLevelMenuClose}
+          >
+            <DropdownMenuRadioGroup
+              value={activeLevel}
+              onValueChange={(value) => {
+                if (value === "kecamatan" || value === "kelurahan") {
+                  setActiveLevel(value);
+                }
+              }}
+            >
+              <DropdownMenuRadioItem value="kecamatan">
+                Kecamatan
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="kelurahan">
+                Kelurahan
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       }
+      legendValue={`${seriesConfig.length} Teratas`}
     >
       {!isMounted ? (
         <div className="h-46.25 w-full flex items-center justify-center">
@@ -172,12 +225,10 @@ export function TopRegionsChart({ data }: TopRegionsChartProps) {
               }}
             />
             <YAxis
-              width={50}
+              width={1}
               tickLine={false}
               axisLine={false}
-              tickMargin={6}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              tickFormatter={(value) => Number(value).toLocaleString("id-ID")}
+              tick={() => null}
             />
             <Tooltip
               content={({ active, payload }) => {

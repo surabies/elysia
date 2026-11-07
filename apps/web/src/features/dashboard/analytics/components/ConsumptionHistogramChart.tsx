@@ -1,117 +1,89 @@
 "use client";
 
-import * as React from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import type { ConsumptionBucket } from "@/server/services/dashboard/analytics.service";
 
 interface ConsumptionHistogramChartProps {
   data: ConsumptionBucket[];
 }
 
-const histogramConfig = {
-  jumlahSL: {
-    label: "Pelanggan",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig;
-
-const histogramColors = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--ds-gray-600)",
-];
-
 export function ConsumptionHistogramChart({
   data,
 }: ConsumptionHistogramChartProps) {
+  const totalCustomers = data.reduce((sum, bucket) => sum + bucket.jumlahSL, 0);
+  const totalConsumption = data.reduce(
+    (sum, bucket) => sum + bucket.totalM3,
+    0,
+  );
+  const maxCustomers = Math.max(1, ...data.map((bucket) => bucket.jumlahSL));
+
   return (
-    <div className="relative w-full rounded-[10px] border border-border bg-card p-4 transition-all">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3">
-        <h3 className="text-sm font-semibold tracking-tight text-foreground">
+    <section className="relative flex h-full min-w-0 flex-col rounded-[10px] border border-border bg-card p-4">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="min-w-0 text-sm font-semibold tracking-tight text-foreground">
           Distribusi Rentang Kubikasi Air
         </h3>
+        <div className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+          <p>{totalCustomers.toLocaleString("id-ID")} pelanggan</p>
+          <p>{totalConsumption.toLocaleString("id-ID")} m³</p>
+        </div>
       </div>
 
-      {/* Bar Chart Container */}
-      <div className="h-70 w-full pt-1">
-        <ChartContainer
-          config={histogramConfig}
-          className="h-full w-full aspect-auto"
-        >
-          <BarChart
-            data={data}
-            margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+      {data.length > 0 ? (
+        <div className="mt-3 flex flex-1 flex-col overflow-x-auto">
+          <div
+            className="flex min-w-[19rem] flex-1 flex-col"
+            aria-label="Distribusi pelanggan berdasarkan rentang kubikasi"
           >
-            <CartesianGrid
-              horizontal
-              strokeDasharray="3 4"
-              vertical={false}
-              stroke="var(--ds-gray-alpha-300)"
-              strokeWidth={1}
-            />
-            <XAxis
-              dataKey="kategori"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              tickFormatter={(v) => `${v} m³`}
-            />
-            <YAxis
-              width={50}
-              tickLine={false}
-              axisLine={false}
-              tickMargin={6}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              tickFormatter={(value) => Number(value).toLocaleString("id-ID")}
-            />
-            <ChartTooltip
-              cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
-              content={
-                <ChartTooltipContent
-                  indicator="dot"
-                  labelFormatter={(_, p) => {
-                    const row = p?.[0]?.payload as ConsumptionBucket;
-                    return row ? row.label : "";
-                  }}
-                  formatter={(value, _, item) => {
-                    const row = item.payload as ConsumptionBucket;
-                    return [
-                      `${Number(value).toLocaleString("id-ID")} SL (${row.persentase}%) &bull; ${row.totalM3.toLocaleString("id-ID")} m³`,
-                      "Pelanggan",
-                    ];
-                  }}
-                />
-              }
-            />
-            <Bar dataKey="jumlahSL" radius={[4, 4, 0, 0]} maxBarSize={48}>
-              {data.map((bucket, index) => (
-                <Cell
+            <div
+              className="grid grid-cols-[minmax(0,1fr)_5.5rem_3.5rem] border-b border-border px-2 py-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+              aria-hidden="true"
+            >
+              <span>Rentang</span>
+              <span className="text-right">Pelanggan</span>
+              <span className="text-right">Porsi</span>
+            </div>
+            {data.map((bucket) => {
+              const width = Math.min(
+                100,
+                (bucket.jumlahSL / maxCustomers) * 100,
+              );
+
+              return (
+                <div
                   key={bucket.kategori}
-                  fill={histogramColors[index % histogramColors.length]}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ChartContainer>
-      </div>
-    </div>
+                  className="grid min-h-10 flex-1 grid-cols-[minmax(0,1fr)_5.5rem_3.5rem] border-b border-border/70 last:border-0"
+                  aria-label={`${bucket.label}: ${bucket.jumlahSL.toLocaleString("id-ID")} pelanggan, ${bucket.persentase}%`}
+                >
+                  <div className="relative flex min-w-0 items-center overflow-hidden px-2 py-1.5">
+                    <span
+                      className="absolute inset-y-0 left-0"
+                      style={{
+                        width: `${width}%`,
+                        backgroundColor:
+                          "color-mix(in srgb, var(--ds-blue-500) 18%, var(--card))",
+                      }}
+                      aria-hidden="true"
+                    />
+                    <span className="relative z-10 truncate text-xs font-medium text-foreground">
+                      {bucket.label}
+                    </span>
+                  </div>
+                  <span className="flex items-center justify-end px-2 py-1.5 font-mono text-xs tabular-nums text-foreground">
+                    {bucket.jumlahSL.toLocaleString("id-ID")}
+                  </span>
+                  <span className="flex items-center justify-end px-2 py-1.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+                    {bucket.persentase}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 flex h-48 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
+          Belum ada data kubikasi pada periode ini.
+        </div>
+      )}
+    </section>
   );
 }

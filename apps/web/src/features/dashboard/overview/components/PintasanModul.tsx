@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { IconTile } from "@/components/reui/icon-tile";
 
 const shortcuts = [
   {
@@ -58,22 +59,29 @@ export function PintasanModul() {
           Akses cepat ke modul operasional harian PDAM Tirtawening.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid grid-cols-2 gap-2.5 p-5 pt-0">
+      <CardContent className="grid grid-cols-1 gap-2.5 p-4 pt-0 sm:grid-cols-2 sm:p-5 sm:pt-0">
         {shortcuts.map(({ href, title, description, Icon }) => (
           <Button
             key={href}
             asChild
             variant="outline"
-            className="h-auto flex-col items-start rounded-md border-border p-3 hover:bg-accent/60"
+            className="h-auto w-full min-w-0 flex-col items-start whitespace-normal rounded-md border-border p-3 hover:bg-accent/60"
           >
             <Link href={href}>
-              <div className="mb-1 flex items-center gap-2">
-                <Icon className="size-3.5 text-muted-foreground" />
-                <span className="text-label-13 text-foreground">
+              <div className="mb-1 flex min-w-0 items-center gap-2">
+                <IconTile
+                  aria-hidden="true"
+                  size="sm"
+                  variant="frame"
+                  className="text-muted-foreground"
+                >
+                  <Icon />
+                </IconTile>
+                <span className="min-w-0 text-left text-label-13 text-foreground">
                   {title}
                 </span>
               </div>
-              <span className="text-left text-copy-13 text-muted-foreground">
+              <span className="min-w-0 text-left text-copy-13 text-muted-foreground">
                 {description}
               </span>
             </Link>

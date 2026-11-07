@@ -4,7 +4,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { db } from "@cater/db";
+import { db, type MultiPolygonGeometry } from "@cater/db";
 import { dashboardService } from "./dashboard.service";
 
 export interface DailyTrendItem {
@@ -70,6 +70,20 @@ export interface AnomalyCategory {
   persentase: number;
 }
 
+export interface ServiceAreaRisk {
+  kodeDesa: string;
+  kelurahan: string;
+  kecamatan: string;
+  geometry: MultiPolygonGeometry | null;
+  jumlahBaca: number;
+  catatanNonNormal: number;
+  lonjakanPemakaian: number;
+  standMenurun: number;
+  persentaseNonNormal: number | null;
+  persentaseLonjakan: number | null;
+  persentaseStandMenurun: number | null;
+}
+
 export interface AnalyticsPageData {
   periode: {
     thbl: string;
@@ -81,6 +95,7 @@ export interface AnalyticsPageData {
   consumptionBuckets: ConsumptionBucket[];
   officers: OfficerProductivity[];
   regionalTrends: RegionalDailyTrend[];
+  serviceAreaRisks: ServiceAreaRisk[];
   anomalies: AnomalyCategory[];
   totalPelanggan: number;
   totalBaca: number;
@@ -90,6 +105,17 @@ export interface AnalyticsPageData {
     hari: string;
     total: number;
   };
+}
+
+interface ServiceAreaRiskQueryRow extends Record<string, unknown> {
+  kode_desa: string;
+  kelurahan: string;
+  kecamatan: string;
+  geometry: MultiPolygonGeometry | null;
+  jumlah_baca: number;
+  catatan_non_normal: number;
+  lonjakan_pemakaian: number;
+  stand_menurun: number;
 }
 
 export class AnalyticsService {
@@ -325,39 +351,127 @@ export class AnalyticsService {
     }));
   }
 
+  /** Menghitung indikator tinjauan pembacaan untuk tiap poligon area layanan. */
+  async getServiceAreaRisks(thbl: string): Promise<ServiceAreaRisk[]> {
+    const raw = await db.execute<ServiceAreaRiskQueryRow>(sql`
+      WITH reading_metrics AS (
+        SELECT
+          upper(trim(k.nama)) AS kelurahan_key,
+          count(*)::int AS jumlah_baca,
+          count(*) FILTER (
+            WHERE upper(trim(c.ket_catat)) <> 'NORMAL'
+          )::int AS catatan_non_normal,
+          count(*) FILTER (
+            WHERE c.pakai_lalu >= 5
+              AND c.pakai_m3 >= c.pakai_lalu * 2
+              AND c.pakai_m3 - c.pakai_lalu >= 10
+          )::int AS lonjakan_pemakaian,
+          count(*) FILTER (
+            WHERE c.stma < c.stml
+          )::int AS stand_menurun
+        FROM cater_baca_meter c
+        INNER JOIN pelanggan p ON p.nolg = c.nolg
+        INNER JOIN kelurahan k ON k.kode = p.kelurahan_kode
+        WHERE c.thbl = ${thbl}
+        GROUP BY upper(trim(k.nama))
+      )
+      SELECT
+        a.kode_desa,
+        a.kelurahan,
+        a.kecamatan,
+        a.geometry,
+        coalesce(r.jumlah_baca, 0)::int AS jumlah_baca,
+        coalesce(r.catatan_non_normal, 0)::int AS catatan_non_normal,
+        coalesce(r.lonjakan_pemakaian, 0)::int AS lonjakan_pemakaian,
+        coalesce(r.stand_menurun, 0)::int AS stand_menurun
+      FROM area_layanan a
+      LEFT JOIN reading_metrics r
+        ON upper(trim(a.kelurahan)) = r.kelurahan_key
+      ORDER BY a.kecamatan, a.kelurahan
+    `);
+
+    return raw.map((row) => {
+      const jumlahBaca = Number(row.jumlah_baca);
+      const catatanNonNormal = Number(row.catatan_non_normal);
+      const lonjakanPemakaian = Number(row.lonjakan_pemakaian);
+      const standMenurun = Number(row.stand_menurun);
+      const rate = (count: number) =>
+        jumlahBaca > 0
+          ? Math.round((count / jumlahBaca) * 1000) / 10
+          : null;
+
+      return {
+        kodeDesa: row.kode_desa,
+        kelurahan: row.kelurahan,
+        kecamatan: row.kecamatan,
+        geometry: row.geometry,
+        jumlahBaca,
+        catatanNonNormal,
+        lonjakanPemakaian,
+        standMenurun,
+        persentaseNonNormal: rate(catatanNonNormal),
+        persentaseLonjakan: rate(lonjakanPemakaian),
+        persentaseStandMenurun: rate(standMenurun),
+      };
+    });
+  }
+
   /**
    * Mengambil breakdown anomali & kelainan meter
    */
   async getAnomalyBreakdown(thbl: string): Promise<AnomalyCategory[]> {
     const raw = await db.execute(sql`
-      SELECT 
-        coalesce(nullif(trim(tmss), ''), '01') as kode,
-        count(*)::int as jumlah
-      FROM cater_baca_meter
-      WHERE thbl = ${thbl}
-      GROUP BY coalesce(nullif(trim(tmss), ''), '01')
-      ORDER BY jumlah DESC
+      WITH reading_status AS (
+        SELECT
+          CASE
+            WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
+              AND upper(trim(c.ket_catat)) <> 'NORMAL'
+              THEN 'CATATAN:' || upper(trim(c.ket_catat))
+            WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
+              THEN '01'
+            ELSE trim(c.tmss)
+          END AS kode,
+          CASE
+            WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
+              AND upper(trim(c.ket_catat)) <> 'NORMAL'
+              THEN trim(c.ket_catat)
+            ELSE NULL
+          END AS keterangan_catatan,
+          count(*)::int AS jumlah
+        FROM cater_baca_meter AS c
+        WHERE c.thbl = ${thbl}
+        GROUP BY 1, 2
+      )
+      SELECT
+        status.kode,
+        coalesce(
+          kondisi.nama,
+          status.keterangan_catatan,
+          CASE status.kode
+            WHEN '01' THEN 'Normal'
+            WHEN '02' THEN 'Pagar Dikunci (DK / Stand Taksir)'
+            WHEN '03' THEN 'Rumah Kosong (RK)'
+            WHEN '07' THEN 'Meter Mati / Rusak (GWM)'
+            WHEN '08' THEN 'Air Mati / Tidak Mengalir'
+            WHEN 'ANOMALY_NEGATIVE' THEN 'Stand Minus / Rollover'
+            ELSE 'Kode ' || status.kode
+          END
+        ) AS keterangan,
+        status.jumlah
+      FROM reading_status AS status
+      LEFT JOIN master_kondisi_catat AS kondisi
+        ON trim(kondisi.kode_tmss) = status.kode
+      ORDER BY status.jumlah DESC, status.kode
     `);
 
     const rows = raw as any[];
     const total = rows.reduce((s, r) => s + Number(r.jumlah || 0), 0);
 
-    const labelMap: Record<string, string> = {
-      "01": "Stand Normal (Dapat Dibaca)",
-      "02": "Pagar Dikunci (DK / Stand Taksir)",
-      DK: "Pagar Dikunci (DK)",
-      "03": "Rumah Kosong (RK)",
-      RK: "Rumah Kosong (RK)",
-      "07": "Meter Mati / Rusak (GWM)",
-      "08": "Air Mati / Tidak Mengalir",
-      ANOMALY_NEGATIVE: "Stand Minus / Rollover",
-    };
-
     return rows.map((r) => {
       const jml = Number(r.jumlah || 0);
       return {
         kode: r.kode,
-        keterangan: labelMap[r.kode] || `Kelainan Kode ${r.kode}`,
+        keterangan: r.keterangan,
         jumlah: jml,
         persentase: total > 0 ? Math.round((jml / total) * 1000) / 10 : 0,
       };
@@ -376,12 +490,14 @@ export class AnalyticsService {
       consumptionBuckets,
       officers,
       regionalTrends,
+      serviceAreaRisks,
       anomalies,
     ] = await Promise.all([
       this.getDailyTrends(periode.thbl, summary.totalPelanggan),
       this.getConsumptionBuckets(periode.thbl),
       this.getOfficersProductivity(periode.thbl),
       this.getRegionalTrends(periode.thbl),
+      this.getServiceAreaRisks(periode.thbl),
       this.getAnomalyBreakdown(periode.thbl),
     ]);
 
@@ -401,6 +517,7 @@ export class AnalyticsService {
       consumptionBuckets,
       officers,
       regionalTrends,
+      serviceAreaRisks,
       anomalies,
       totalPelanggan: summary.totalPelanggan,
       totalBaca: summary.totalCater,

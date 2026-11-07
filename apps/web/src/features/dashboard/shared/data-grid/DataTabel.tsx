@@ -5,10 +5,11 @@
 // Semua halaman memakai ini supaya tema, toolbar, dan perilaku pagination
 // konsisten — jangan merender <AgGridReact> langsung di tempat lain.
 //
-// Model baris: INFINITE. Tabel terbesar (pelanggan/tagihan/pembacaan) berisi
+// Model bawaan: INFINITE. Tabel terbesar (pelanggan/tagihan/pembacaan) berisi
 // >22.000 baris — memuat semuanya ke browser berarti ~MB JSON per kunjungan.
 // Infinite model meminta per blok 50 baris ke /api/v1 (yang paginasinya
-// memang berbentuk page/pageSize, lihat server/lib/pagination.ts).
+// memang berbentuk page/pageSize, lihat server/lib/pagination.ts). Untuk hasil
+// kecil yang sudah dipaginasi server, `rowData` memakai model client-side.
 //
 // SORTING: server-side. Kolom yang diberi `sortable: true` di colDef HARUS
 // ada di whitelist `sortQuery([...])` endpoint-nya (colId/field = nama kolom
@@ -56,6 +57,7 @@ import {
   type GridApi,
   type IDatasource,
   type IRowNode,
+  type RowStyle,
 } from "ag-grid-community";
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import {
@@ -123,7 +125,7 @@ function HeaderKolom({
 
   if (!enableSorting) {
     return (
-      <span className="block min-w-0 truncate text-xs leading-4 font-medium tracking-wide text-muted-foreground">
+      <span className="block min-w-0 truncate text-xs leading-4 font-semibold tracking-wide text-foreground">
         {displayName}
       </span>
     );
@@ -132,7 +134,7 @@ function HeaderKolom({
   return (
     <button
       type="button"
-      className="flex w-full min-w-0 items-center gap-1 text-left text-xs leading-4 font-medium tracking-wide text-muted-foreground"
+      className="flex w-full min-w-0 items-center gap-1 text-left text-xs leading-4 font-semibold tracking-wide text-foreground"
       aria-label={`Urutkan ${displayName}`}
       aria-pressed={Boolean(sort)}
       title={`Urutkan ${displayName}`}
@@ -220,7 +222,12 @@ type PropTambahan = {
 export function DataGrid({
   judul,
   endpoint,
+  rowData,
   columnDefs,
+  columnGroupDefs,
+  pinnedBottomRowData,
+  rowHeight,
+  onCellValueChanged,
   searchParam,
   searchPlaceholder = "Cari…",
   initialSearch = "",
@@ -237,11 +244,17 @@ export function DataGrid({
   toolbarStart,
   contentBeforeGrid,
   sesuaikanTinggiDenganBaris = false,
+  showToolbar = true,
   toolbarModal = false,
   checkbox = true,
   onSelectionChanged,
 }: DataGridProps & PropTambahan) {
-  const mobil = useIsMobile();
+  const dataLokal = rowData !== undefined;
+  if (!dataLokal && !endpoint) {
+    throw new Error("DataGrid membutuhkan endpoint atau rowData.");
+  }
+  const endpointAktif = endpoint ?? "";
+  const mobil = useIsMobile() && !dataLokal;
   const idPanelFilter = React.useId();
   const apiRef = React.useRef<GridApi | null>(null);
   const [filterBuka, setFilterBuka] = React.useState(false);
@@ -309,7 +322,7 @@ export function DataGrid({
   // --- daftar kartu (ponsel) ------------------------------------------------
   const daftarKartu = useDaftarKartu({
     aktif: mobil,
-    endpoint,
+    endpoint: endpointAktif,
     searchParam,
     cari,
     filterNilai: filterNilaiAktif,
@@ -320,7 +333,11 @@ export function DataGrid({
   const galatTampil = mobil
     ? (daftarKartu.galat ?? galatEkspor)
     : (galat ?? galatEkspor);
-  const totalTampil = mobil ? daftarKartu.total : total;
+  const totalTampil = dataLokal
+    ? rowData.length
+    : mobil
+      ? daftarKartu.total
+      : total;
   const sesuaikanGridDesktop = sesuaikanTinggiDenganBaris && !mobil;
   const tinggiGrid = sesuaikanGridDesktop
     ? Math.min(tinggiTersedia, Math.max(84, 40 + (totalTampil ?? 0) * 44))
@@ -383,7 +400,7 @@ export function DataGrid({
           : paramUrut(urutKartuRef.current);
         try {
           setGalat(null);
-          const { rows, total } = await ambilList<BarisData>(endpoint, {
+          const { rows, total } = await ambilList<BarisData>(endpointAktif, {
             page: Math.floor(params.startRow / PAGE_SIZE) + 1,
             pageSize: PAGE_SIZE,
             ...paramCari(searchParam, cari),
@@ -401,7 +418,7 @@ export function DataGrid({
         }
       },
     }),
-    [endpoint, searchParam],
+    [endpointAktif, searchParam],
   );
 
   // Sinkronkan ref lalu purge cache (debounce): purge membuang seluruh blok
@@ -416,6 +433,7 @@ export function DataGrid({
     // kolom, dan sisa pilihan dropdown ponsel akan jadi urutan "hantu" —
     // datanya terurut tanpa satu pun penanda di layar yang menjelaskannya.
     urutKartuRef.current = mobil ? urutKartu : "";
+    if (dataLokal) return;
     if (pertama.current) {
       pertama.current = false;
       return;
@@ -430,7 +448,7 @@ export function DataGrid({
     // extraSerial mewakili isi extraParams di deps (identitas objeknya
     // berubah tiap render parent — pakai objeknya langsung akan purge
     // terus-menerus, karena itu extraParams sengaja tidak masuk deps).
-  }, [cari, filterNilaiAktif, extraSerial, refreshKey, urutKartu, mobil]);
+  }, [cari, filterNilaiAktif, extraSerial, refreshKey, urutKartu, mobil, dataLokal]);
 
   // Sorot baris terpilih: nilai dibaca getRowClass lewat ref, redraw saat
   // pilihan berubah (infinite model tidak merender ulang sendiri).
@@ -481,7 +499,7 @@ export function DataGrid({
     setGalat(null);
     setGalatEkspor(null);
     try {
-      const baris = await ambilSemuaBaris(endpoint, {
+      const baris = await ambilSemuaBaris(endpointAktif, {
         ...paramCari(searchParam, cari),
         ...filterNilaiAktif,
         ...(mobil ? paramUrut(urutKartu) : sortRef.current),
@@ -512,12 +530,13 @@ export function DataGrid({
       aria-label={judul}
       className="flex h-full w-full max-w-full min-w-0 flex-col gap-2 overflow-hidden"
     >
-      <div
-        ref={toolbarRef}
-        role="group"
-        aria-label="Penyaring dan aksi tabel"
-        className="flex min-w-0 shrink-0 flex-wrap items-center gap-1"
-      >
+      {showToolbar && (
+        <div
+          ref={toolbarRef}
+          role="group"
+          aria-label="Penyaring dan aksi tabel"
+          className="flex min-w-0 shrink-0 flex-wrap items-center gap-1"
+        >
         {searchParam && (
           <KotakCari
             nilai={cari}
@@ -627,7 +646,7 @@ export function DataGrid({
           </span>
         )}
 
-        {totalTampil !== null && (
+        {totalTampil !== null && !dataLokal && (
           // <output> = hasil yang berubah mengikuti masukan; role status
           // implisit, jadi pembaca layar ikut mengumumkan jumlah baru.
           <output className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
@@ -652,14 +671,17 @@ export function DataGrid({
             sembunyi={kolomSembunyi}
             onUbah={ubahKolom}
           />
-          <TombolEkspor
-            mengekspor={mengekspor}
-            nonaktif={totalTampil === 0}
-            onKlik={eksporExcel}
-          />
+          {!dataLokal && (
+            <TombolEkspor
+              mengekspor={mengekspor}
+              nonaktif={totalTampil === 0}
+              onKlik={eksporExcel}
+            />
+          )}
           {toolbarActions}
         </ToggleGroup>
-      </div>
+        </div>
+      )}
 
       {contentBeforeGrid && (
         <div ref={contentBeforeGridRef} className="shrink-0">
@@ -731,7 +753,9 @@ export function DataGrid({
           >
             <AgGridReact
               theme={temaGrid}
-              columnDefs={defsTampil}
+              columnDefs={columnGroupDefs ?? defsTampil}
+              rowHeight={rowHeight}
+              onCellValueChanged={onCellValueChanged}
               defaultColDef={{
                 sortable: false,
                 resizable: true,
@@ -760,11 +784,13 @@ export function DataGrid({
               }}
               tooltipShowMode="whenTruncated"
               tooltipShowDelay={500}
-              headerHeight={40}
-              rowModelType="infinite"
+              headerHeight={38}
+              rowModelType={dataLokal ? "clientSide" : "infinite"}
               cacheBlockSize={PAGE_SIZE}
               maxBlocksInCache={10}
-              datasource={datasource}
+              rowData={rowData}
+              pinnedBottomRowData={pinnedBottomRowData}
+              datasource={dataLokal ? undefined : datasource}
               // --- checkbox sticky (v33+) ---------------------------------
               // undefined = perilaku lama (tanpa seleksi) kalau dimatikan.
               rowSelection={
@@ -844,17 +870,28 @@ export function DataGrid({
               }
               preventDefaultOnContextMenu={!!onRowContextMenu}
               getRowClass={(p) =>
+                idTerpilihRef.current != null &&
                 (p.data as { id?: string } | undefined)?.id ===
-                idTerpilihRef.current
+                  idTerpilihRef.current
                   ? "baris-terpilih"
                   : undefined
               }
-              getRowStyle={(p) =>
-                (p.data as { id?: string } | undefined)?.id ===
-                idTerpilihRef.current
-                  ? { backgroundColor: "var(--table-accent)" }
-                  : undefined
-              }
+              getRowStyle={(p): RowStyle => {
+                if (p.node.rowPinned === "bottom") {
+                  return {
+                    backgroundColor: "var(--table-head)",
+                    fontWeight: 700,
+                  };
+                }
+                if (
+                  idTerpilihRef.current != null &&
+                  (p.data as { id?: string } | undefined)?.id ===
+                    idTerpilihRef.current
+                ) {
+                  return { backgroundColor: "var(--table-accent)" };
+                }
+                return {};
+              }}
               overlayNoRowsTemplate='<span style="color: var(--muted-foreground); font-size: 13px">Tidak ada data untuk ditampilkan.</span>'
               suppressCellFocus
             />

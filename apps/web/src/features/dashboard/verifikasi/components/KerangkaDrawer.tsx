@@ -3,6 +3,7 @@
 import * as React from "react";
 import { PencilLine, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { IconStack } from "@/components/reui/icon-stack";
 import {
   Drawer,
   DrawerClose,
@@ -18,31 +19,32 @@ export function KerangkaDrawer({
   subjudul,
   onTutup,
   footer,
+  informasi,
   children,
 }: {
   judul: string;
   subjudul: string;
   onTutup: () => void;
   footer?: React.ReactNode;
+  informasi?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <Drawer
-      open
-      direction="right"
-      onOpenChange={(v) => !v && onTutup()}
-    >
-      <DrawerContent className="!h-dvh !w-[min(100vw,64rem)] !max-w-none gap-0 overflow-hidden rounded-none border-l border-border bg-background p-0 shadow-2xl">
+    <Drawer open direction="right" onOpenChange={(v) => !v && onTutup()}>
+      <DrawerContent className="inset-y-3! right-3! left-auto! h-auto! w-[min(64rem,calc(100vw-1.5rem))]! max-w-none! gap-0 overflow-hidden rounded-2xl border border-border bg-background p-0 shadow-2xl">
         <DrawerHeader className="shrink-0 border-b border-border bg-card/80 px-6 py-5 text-left">
           <div className="flex items-start gap-4 pr-8">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary">
+            <IconStack
+              aria-hidden="true"
+              className="h-14 w-12 shrink-0 text-primary"
+            >
               <PencilLine className="size-5" aria-hidden="true" />
-            </div>
-            <div className="min-w-0 flex-1">
+            </IconStack>
+            <div className="min-w-0 flex-1 self-center">
               <p className="text-label-12 font-semibold tracking-[0.14em] text-primary uppercase">
                 Edit data
               </p>
-              <DrawerTitle className="mt-1 text-heading-20">
+              <DrawerTitle className="mt-0.5 text-heading-20">
                 {judul}
               </DrawerTitle>
               <DrawerDescription className="mt-1 truncate text-copy-13">
@@ -61,6 +63,11 @@ export function KerangkaDrawer({
               </Button>
             </DrawerClose>
           </div>
+          {informasi && (
+            <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
+              {informasi}
+            </div>
+          )}
         </DrawerHeader>
 
         <ScrollArea className="min-h-0 flex-1">

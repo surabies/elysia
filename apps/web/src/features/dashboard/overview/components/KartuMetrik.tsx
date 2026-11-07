@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { IconTile } from "@/components/reui/icon-tile";
 import type {
   DashboardMetricSummary,
   PeriodeInfo,
@@ -26,25 +27,32 @@ interface KartuMetrikProps {
 export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-label-12 font-medium uppercase tracking-wider text-muted-foreground">
           Metrik Operasional Utama (Data Riil Database)
         </h2>
-        <span className="font-mono text-label-12 text-muted-foreground">
+        <span className="font-mono text-label-12 text-muted-foreground sm:text-right">
           {formatAngka(summary.totalRute)} Rute &bull; {summary.totalPetugas}{" "}
           Petugas Aktif
         </span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 sm:p-5 sm:pb-2">
             <CardTitle className="text-label-12 font-medium uppercase tracking-wider text-muted-foreground">
               Total Pelanggan Aktif
             </CardTitle>
-            <UsersIcon className="size-4 text-muted-foreground" />
+            <IconTile
+              aria-hidden="true"
+              size="sm"
+              variant="frame"
+              className="text-muted-foreground"
+            >
+              <UsersIcon />
+            </IconTile>
           </CardHeader>
-          <CardContent className="p-5 pt-0">
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <div className="text-heading-24 text-foreground">
               {formatAngka(summary.totalPelanggan)}
             </div>
@@ -52,13 +60,13 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
               Sambungan Langganan (SL) Terdaftar
             </p>
             <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-copy-13">
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">Rute Terpetakan</span>
                 <span className="font-medium text-foreground">
                   {summary.totalRute} Rute
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">Zona Wilayah</span>
                 <span className="font-medium text-foreground">4 Wilayah</span>
               </div>
@@ -77,13 +85,20 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 sm:p-5 sm:pb-2">
             <CardTitle className="text-label-12 font-medium uppercase tracking-wider text-muted-foreground">
               Capaian Catat Meter (Cater)
             </CardTitle>
-            <Gauge className="size-4 text-muted-foreground" />
+            <IconTile
+              aria-hidden="true"
+              size="sm"
+              variant="frame"
+              className="text-muted-foreground"
+            >
+              <Gauge />
+            </IconTile>
           </CardHeader>
-          <CardContent className="p-5 pt-0">
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <div className="text-heading-24 text-foreground">
               {formatAngka(summary.totalCater)}
             </div>
@@ -91,7 +106,7 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
               Progres {summary.persenSelesai}% Terbaca
             </p>
             <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-copy-13">
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">Stand Normal</span>
                 <span className="font-medium text-emerald-600 dark:text-emerald-400">
                   {formatAngka(summary.totalNormal)} (
@@ -103,7 +118,7 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
                   %)
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">
                   Anomali / Kendala
                 </span>
@@ -126,13 +141,20 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 sm:p-5 sm:pb-2">
             <CardTitle className="text-label-12 font-medium uppercase tracking-wider text-muted-foreground">
               Volume Air Terdistribusi
             </CardTitle>
-            <Droplets className="size-4 text-muted-foreground" />
+            <IconTile
+              aria-hidden="true"
+              size="sm"
+              variant="frame"
+              className="text-muted-foreground"
+            >
+              <Droplets />
+            </IconTile>
           </CardHeader>
-          <CardContent className="p-5 pt-0">
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <div className="text-heading-24 text-foreground">
               {formatAngka(summary.totalKubikasiM3)} m³
             </div>
@@ -140,7 +162,7 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
               Total Pemakaian Air Terbaca
             </p>
             <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-copy-13">
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">
                   Rata-rata Konsumsi
                 </span>
@@ -153,7 +175,7 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
                   m³ / SL
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">
                   Petugas Lapangan
                 </span>
@@ -176,13 +198,20 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 sm:p-5 sm:pb-2">
             <CardTitle className="text-label-12 font-medium uppercase tracking-wider text-muted-foreground">
               Rekening Tagihan (DRD)
             </CardTitle>
-            <Receipt className="size-4 text-muted-foreground" />
+            <IconTile
+              aria-hidden="true"
+              size="sm"
+              variant="frame"
+              className="text-muted-foreground"
+            >
+              <Receipt />
+            </IconTile>
           </CardHeader>
-          <CardContent className="p-5 pt-0">
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <div className="text-heading-24 text-foreground">
               {formatRupiah(summary.totalRupiahDrd)}
             </div>
@@ -190,7 +219,7 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
               Nilai Tagihan Periode {periode.label}
             </p>
             <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-copy-13">
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">
                   Rata-rata Rekening
                 </span>
@@ -204,7 +233,7 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
                     : "Rp 0"}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">Lembar Terbit</span>
                 <span className="font-medium text-foreground">
                   {formatAngka(summary.totalCater)} Lembar

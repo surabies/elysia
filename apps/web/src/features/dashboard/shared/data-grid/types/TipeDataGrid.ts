@@ -1,6 +1,10 @@
 // Tipe publik dan internal DataGrid.
 import type { ReactNode } from "react"
-import type { ColDef } from "ag-grid-community"
+import type {
+  CellValueChangedEvent,
+  ColDef,
+  ColGroupDef,
+} from "ag-grid-community"
 
 export type BarisData = Record<string, unknown>
 
@@ -36,12 +40,18 @@ export interface FilterLanjutanField {
   placeholder?: string
 }
 
-export interface DataGridProps {
+interface DataGridBaseProps {
   /** Nama tabel: label aksesibilitas panel + dasar nama file ekspor. */
   judul: string
-  /** Path list di bawah /api/v1, mis. "/pelanggan". */
-  endpoint: string
   columnDefs: ColDef[]
+  /** Definisi berkelompok khusus untuk AG Grid; `columnDefs` tetap menjadi daftar kolom daun. */
+  columnGroupDefs?: (ColDef | ColGroupDef)[]
+  /** Baris ringkasan yang selalu ditampilkan di bagian bawah grid lokal. */
+  pinnedBottomRowData?: BarisData[]
+  /** Tinggi baris khusus untuk grid yang menampilkan daftar pendek. */
+  rowHeight?: number
+  /** Callback setelah nilai sel lokal berubah melalui editor grid. */
+  onCellValueChanged?: (event: CellValueChangedEvent<BarisData>) => void
   /** Nama param pencarian bila endpoint mendukung (biasanya "q"). Tanpa ini kotak cari disembunyikan. */
   searchParam?: string
   searchPlaceholder?: string
@@ -70,7 +80,23 @@ export interface DataGridProps {
   contentBeforeGrid?: ReactNode
   /** Pendekkan bingkai grid mengikuti jumlah baris, maksimal setinggi slotnya. */
   sesuaikanTinggiDenganBaris?: boolean
+  /** Sembunyikan toolbar bawaan bila kontrol disediakan oleh halaman. */
+  showToolbar?: boolean
 }
+
+export type DataGridProps = DataGridBaseProps &
+  (
+    | {
+        /** Path list di bawah /api/v1, mis. "/pelanggan". */
+        endpoint: string
+        rowData?: never
+      }
+    | {
+        /** Baris yang sudah dimuat pemanggil untuk model client-side. */
+        endpoint?: never
+        rowData: BarisData[]
+      }
+  )
 
 export type BarisFilterLanjutan = {
   id: number

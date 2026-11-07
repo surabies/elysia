@@ -6,10 +6,28 @@ import {
   verifikasiMutasiBodySchema,
   catatDebitGwmBodySchema,
   neracaAirParamsSchema,
+  daftarMutasiQuerySchema,
 } from './gwm.schema';
 
 export const gwmRouter = new Elysia({ prefix: '/cater/gwm' })
   .use(authPlugin)
+
+  .get(
+    '/mutasi',
+    async ({ query }) => ({
+      success: true,
+      data: await gwmService.daftarMutasiGantiMeter(query.status),
+    }),
+    {
+      requireRole: [
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'STAFF_ADMIN_BILLING',
+        'PENCATAT',
+      ],
+      query: daftarMutasiQuerySchema,
+    },
+  )
 
   // 1. Input Berita Acara Penggantian Meter Air (Ganti Water Meter)
   .post(
@@ -39,7 +57,7 @@ export const gwmRouter = new Elysia({ prefix: '/cater/gwm' })
           ...body,
           userId: user!.id,
         });
-        return { success: true, ...result };
+        return { success: true, data: result };
       } catch (err: any) {
         set.status = err.message.includes('tidak ditemukan') ? 404 : 400;
         return { success: false, error: err.message };

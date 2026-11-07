@@ -79,16 +79,10 @@ export function KerangkaModal({
   );
 }
 
-/// Judul kelompok isian dengan aksen biru tipis (pengganti judul bergaris-bawah sistem lama).
+/// Judul netral untuk kelompok isian.
 export function JudulBagian({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="flex items-center gap-2 text-label-14 font-semibold text-foreground">
-      <span
-        className="h-3.5 w-0.5 rounded-full bg-(--verif-info)"
-        aria-hidden
-      />
-      {children}
-    </h3>
+    <h3 className="text-label-14 font-semibold text-foreground">{children}</h3>
   );
 }
 

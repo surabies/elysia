@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { IconTile } from "@/components/reui/icon-tile";
 
 const systemStatuses = [
   {
@@ -41,11 +42,18 @@ export function StatusSistem() {
         {systemStatuses.map((item) => (
           <div
             key={item.title}
-            className="flex items-center justify-between rounded-md border border-border bg-muted/30 p-2.5"
+            className="flex flex-col items-start gap-2 rounded-md border border-border bg-muted/30 p-2.5 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="size-4 text-emerald-500" />
-              <div>
+            <div className="flex min-w-0 items-start gap-2.5">
+              <IconTile
+                aria-hidden="true"
+                size="xs"
+                variant="frame"
+                className="text-muted-foreground"
+              >
+                <CheckCircle2 />
+              </IconTile>
+              <div className="min-w-0">
                 <p className="text-label-13 text-foreground">
                   {item.title}
                 </p>
@@ -56,7 +64,7 @@ export function StatusSistem() {
             </div>
             <Badge
               variant="outline"
-              className="border-border text-emerald-600 dark:text-emerald-400"
+              className="ml-6 shrink-0 border-border text-emerald-600 dark:text-emerald-400 sm:ml-0"
             >
               {item.status}
             </Badge>

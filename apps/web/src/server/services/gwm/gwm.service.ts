@@ -3,7 +3,7 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM, Transaksi, & Domain Engine)
  */
 
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import {
   db,
   waterMeterMutasi,
@@ -56,6 +56,45 @@ export interface CatatDebitGwmInput {
 }
 
 export class GwmService {
+  async daftarMutasiGantiMeter(status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
+    const rows = await db
+      .select({
+        id: waterMeterMutasi.id,
+        nolg: waterMeterMutasi.nolg,
+        namaPelanggan: pelanggan.nama,
+        alamatPelanggan: pelanggan.alamat,
+        noMeterAktif: pelanggan.noMeter,
+        periode: waterMeterMutasi.periode,
+        alasan: waterMeterMutasi.alasan,
+        keterangan: waterMeterMutasi.keterangan,
+        noMeterLama: waterMeterMutasi.noMeterLama,
+        standAngkat: waterMeterMutasi.standAngkat,
+        noMeterBaru: waterMeterMutasi.noMeterBaru,
+        merkBaru: waterMeterMutasi.merkBaru,
+        ukuranBaru: waterMeterMutasi.ukuranBaru,
+        standPasang: waterMeterMutasi.standPasang,
+        statusVerifikasi: waterMeterMutasi.statusVerifikasi,
+        catatanVerifikasi: waterMeterMutasi.catatanVerifikasi,
+        standLaluLaporan: caterBacaMeter.stml,
+        standAkhirLaporan: caterBacaMeter.stma,
+      })
+      .from(waterMeterMutasi)
+      .innerJoin(pelanggan, eq(waterMeterMutasi.nolg, pelanggan.nolg))
+      .leftJoin(
+        caterBacaMeter,
+        sql`${caterBacaMeter.id} = 'cater-' || ${waterMeterMutasi.periode}::text || '-' || ${waterMeterMutasi.nolg}`,
+      )
+      .where(
+        status
+          ? eq(waterMeterMutasi.statusVerifikasi, status)
+          : undefined,
+      )
+      .orderBy(desc(waterMeterMutasi.updatedAt))
+      .limit(100);
+
+    return rows;
+  }
+
   /**
    * Mencatat data berita acara penggantian meter air pelanggan (Ganti Water Meter)
    */
@@ -87,6 +126,16 @@ export class GwmService {
     }
 
     const id = `mutasi-${periode}-${nolg}`;
+    const [mutasiTersimpan] = await db
+      .select({ statusVerifikasi: waterMeterMutasi.statusVerifikasi })
+      .from(waterMeterMutasi)
+      .where(eq(waterMeterMutasi.id, id));
+
+    if (mutasiTersimpan?.statusVerifikasi === 'APPROVED') {
+      throw new Error(
+        'Mutasi ganti meter untuk pelanggan dan periode ini sudah disetujui.',
+      );
+    }
 
     await db
       .insert(waterMeterMutasi)
@@ -184,8 +233,19 @@ export class GwmService {
       .from(caterBacaMeter)
       .where(eq(caterBacaMeter.id, caterId));
 
-    const standLalu = Number(existingCater?.stml ?? 0);
-    const bacaBaru = standBacaBaru !== undefined ? standBacaBaru : mutasi.standPasang;
+    if (!existingCater) {
+      throw new Error(
+        `Laporan pembacaan pelanggan ${mutasi.nolg} periode ${periodeStr} belum ditemukan.`,
+      );
+    }
+    if (standBacaBaru === undefined) {
+      throw new Error(
+        'Stand baca meter baru wajib diisi sebelum mutasi disetujui.',
+      );
+    }
+
+    const standLalu = Number(existingCater.stml);
+    const bacaBaru = standBacaBaru;
 
     const kalkulasi = hitungKubikasiGantiMeter({
       standLalu,
@@ -218,7 +278,7 @@ export class GwmService {
           id: caterId,
           thbl: periodeStr,
           nolg: mutasi.nolg,
-          stml: String(mutasi.standPasang), // Referensi stand awal meter baru
+          stml: existingCater.stml,
           stma: String(bacaBaru),
           pakaiM3: String(kalkulasi.totalPemakaianM3),
           pakaiTagih: String(kalkulasi.totalPemakaianM3),
@@ -231,7 +291,7 @@ export class GwmService {
         .onConflictDoUpdate({
           target: caterBacaMeter.id,
           set: {
-            stml: String(mutasi.standPasang),
+            stml: existingCater.stml,
             stma: String(bacaBaru),
             pakaiM3: String(kalkulasi.totalPemakaianM3),
             pakaiTagih: String(kalkulasi.totalPemakaianM3),

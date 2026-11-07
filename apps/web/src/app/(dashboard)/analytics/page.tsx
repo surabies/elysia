@@ -5,10 +5,13 @@ import { PageContainer } from "@/components/layout/index";
 import { Card } from "@/components/ui/card";
 import { Activity, Droplets, Flame, Gauge } from "lucide-react";
 import { analyticsService } from "@/server/services/dashboard/analytics.service";
+import { IconTile } from "@/components/reui/icon-tile";
 import { CdnRequestsChart } from "@/features/dashboard/analytics/components/CdnRequestsChart";
 import { TopRegionsChart } from "@/features/dashboard/analytics/components/TopRegionsChart";
 import { ConsumptionHistogramChart } from "@/features/dashboard/analytics/components/ConsumptionHistogramChart";
 import { OfficerProductivityTable } from "@/features/dashboard/analytics/components/OfficerProductivityTable";
+import { ServiceAreaRiskMap } from "@/features/dashboard/analytics/components/ServiceAreaRiskMap";
+import { ReadingStatusChart } from "@/features/dashboard/analytics/components/ReadingStatusChart";
 
 export const metadata: Metadata = {
   title: "Analytics & Observabilitas Operasional — PDAM Tirtawening",
@@ -34,7 +37,7 @@ export default async function AnalyticsPage() {
 
   return (
     <PageContainer className="space-y-6">
-      <div className="rounded-lg border border-border bg-card px-5 py-4">
+      <div className="rounded-lg border border-border bg-card px-4 py-4 sm:px-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -45,7 +48,7 @@ export default async function AnalyticsPage() {
             </h1>
           </div>
 
-          <div className="grid grid-cols-3 gap-x-4 border-t border-border pt-3 sm:border-t-0 sm:pt-0">
+          <div className="grid grid-cols-3 gap-x-2 border-t border-border pt-3 sm:gap-x-4 sm:border-t-0 sm:pt-0">
             <div className="min-w-0">
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 Periode
@@ -54,7 +57,7 @@ export default async function AnalyticsPage() {
                 {data.periode.label}
               </p>
             </div>
-            <div className="min-w-0 border-l border-border pl-3">
+            <div className="min-w-0 border-l border-border pl-2 sm:pl-3">
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 Kode
               </p>
@@ -62,7 +65,7 @@ export default async function AnalyticsPage() {
                 {data.periode.thbl}
               </p>
             </div>
-            <div className="min-w-0 border-l border-border pl-3">
+            <div className="min-w-0 border-l border-border pl-2 sm:pl-3">
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 Hari ini
               </p>
@@ -75,15 +78,22 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* 4 KPI Top Counters (Gaya Vercel Metrics Card) */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4 border-border/80 rounded-[10px]">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
+        <Card className="min-w-0 rounded-[10px] border-border/80 p-3 sm:p-4">
           <div className="flex items-center justify-between pb-1">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="min-w-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[11px] sm:tracking-wider">
               Total Invocations
             </span>
-            <Activity className="size-4 text-muted-foreground" />
+            <IconTile
+              aria-hidden="true"
+              size="sm"
+              variant="frame"
+              className="text-muted-foreground"
+            >
+              <Activity />
+            </IconTile>
           </div>
-          <div className="text-2xl font-semibold font-mono tracking-tight text-foreground">
+          <div className="whitespace-nowrap font-mono text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {data.totalBaca.toLocaleString("id-ID")}
             <span className="text-xs font-sans font-normal text-muted-foreground ml-1.5">
               SL (100%)
@@ -95,14 +105,21 @@ export default async function AnalyticsPage() {
           </p>
         </Card>
 
-        <Card className="p-4 border-border/80 rounded-[10px]">
+        <Card className="min-w-0 rounded-[10px] border-border/80 p-3 sm:p-4">
           <div className="flex items-center justify-between pb-1">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="min-w-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[11px] sm:tracking-wider">
               Kubikasi Air Terdistribusi
             </span>
-            <Droplets className="size-4 text-muted-foreground" />
+            <IconTile
+              aria-hidden="true"
+              size="sm"
+              variant="frame"
+              className="text-muted-foreground"
+            >
+              <Droplets />
+            </IconTile>
           </div>
-          <div className="text-2xl font-semibold font-mono tracking-tight text-foreground">
+          <div className="whitespace-nowrap font-mono text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {data.totalKubikasi.toLocaleString("id-ID")}
             <span className="text-xs font-sans font-normal text-muted-foreground ml-1.5">
               m³
@@ -115,14 +132,21 @@ export default async function AnalyticsPage() {
           </p>
         </Card>
 
-        <Card className="p-4 border-border/80 rounded-[10px]">
+        <Card className="min-w-0 rounded-[10px] border-border/80 p-3 sm:p-4">
           <div className="flex items-center justify-between pb-1">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="min-w-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[11px] sm:tracking-wider">
               Rata-rata Laju Harian
             </span>
-            <Gauge className="size-4 text-muted-foreground" />
+            <IconTile
+              aria-hidden="true"
+              size="sm"
+              variant="frame"
+              className="text-muted-foreground"
+            >
+              <Gauge />
+            </IconTile>
           </div>
-          <div className="text-2xl font-semibold font-mono tracking-tight text-foreground">
+          <div className="whitespace-nowrap font-mono text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {data.rataRataHarian.toLocaleString("id-ID")}
             <span className="text-xs font-sans font-normal text-muted-foreground ml-1.5">
               SL / hari
@@ -133,14 +157,21 @@ export default async function AnalyticsPage() {
           </p>
         </Card>
 
-        <Card className="p-4 border-border/80 rounded-[10px]">
+        <Card className="min-w-0 rounded-[10px] border-border/80 p-3 sm:p-4">
           <div className="flex items-center justify-between pb-1">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="min-w-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[11px] sm:tracking-wider">
               Puncak Aktivitas
             </span>
-            <Flame className="size-4 text-amber-500" />
+            <IconTile
+              aria-hidden="true"
+              size="sm"
+              variant="frame"
+              className="text-muted-foreground"
+            >
+              <Flame />
+            </IconTile>
           </div>
-          <div className="text-2xl font-semibold font-mono tracking-tight text-foreground">
+          <div className="whitespace-nowrap font-mono text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {data.puncakHarian.total.toLocaleString("id-ID")}
             <span className="text-xs font-sans font-normal text-muted-foreground ml-1.5">
               SL
@@ -152,7 +183,7 @@ export default async function AnalyticsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <CdnRequestsChart
           data={data.dailyTrends}
           totalInvocations={data.totalBaca}
@@ -161,11 +192,14 @@ export default async function AnalyticsPage() {
         <TopRegionsChart data={data.regionalTrends} />
       </div>
 
-      {/* Dua Komponen Pendukung: Histogram Sebaran Kubikasi & Produktivitas Petugas */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <ServiceAreaRiskMap data={data.serviceAreaRisks} />
+
+      <div className="grid gap-4 xl:grid-cols-2">
         <ConsumptionHistogramChart data={data.consumptionBuckets} />
-        <OfficerProductivityTable data={data.officers} />
+        <ReadingStatusChart data={data.anomalies} />
       </div>
+
+      <OfficerProductivityTable data={data.officers} />
     </PageContainer>
   );
 }

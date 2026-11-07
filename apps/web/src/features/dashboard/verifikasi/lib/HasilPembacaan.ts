@@ -12,6 +12,7 @@ type DataPembacaan = Pick<
   | "kondisiRevisi"
   | "standAngkatLama"
   | "standMeterBaru"
+  | "standPasang"
   | "pembacaan"
 >
 
@@ -56,7 +57,8 @@ export function tentukanHasilPembacaan(row: DataPembacaan) {
             standAwalLama: standAwal,
             standAngkatLama: row.standAngkatLama,
             standMeterBaru: row.standMeterBaru,
-          })
+              standPasang: row.standPasang ?? 0,
+            })
         : standAkhir != null
           ? standAkhir - standAwal
           : null
