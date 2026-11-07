@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { authPlugin } from '@/src/server/plugins/auth';
+import { authPlugin } from '@/server/plugins/auth';
 
 export const authModule = new Elysia({ prefix: '/me' })
   .use(authPlugin)

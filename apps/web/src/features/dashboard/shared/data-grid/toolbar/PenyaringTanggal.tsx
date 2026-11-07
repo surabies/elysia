@@ -1,8 +1,8 @@
 import * as React from "react"
 import type { DateRange } from "react-day-picker"
 import { id as localeId } from "react-day-picker/locale"
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer"
-import { CalendarDaysIcon } from "@/features/dashboard/verifikasi/lib/IkonLucide"
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
+import { CalendarDaysIcon } from "@/features/dashboard/shared/icons/IkonLucide"
 import { useIsMobile } from "@/hooks/UseSeluler"
 import { cn } from "@/lib/Utilitas"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ import {
   tanggalDariTeks,
   teksDariTanggal,
 } from "../Tanggal"
-import { KELAS_KONTROL, KELAS_KONTROL_AKTIF } from "../Tema"
+import { KELAS_KONTROL_AKTIF } from "../Tema"
 
 /** Penyaring rentang tanggal: satu tombol ringkas -> Popover berisi Calendar
  *  shadcn (mode range) + pintasan. Klik pertama = tanggal awal, klik kedua =
@@ -81,9 +81,8 @@ export function PenyaringTanggal({
         aktif ? `${label}: ${ringkasRentang(tglDari, tglSampai)}` : label
       }
       className={cn(
-        KELAS_KONTROL,
         aktif && KELAS_KONTROL_AKTIF,
-        ringkas && "relative size-8 justify-center p-0"
+        ringkas && "relative"
       )}
     >
       <HugeiconsIcon

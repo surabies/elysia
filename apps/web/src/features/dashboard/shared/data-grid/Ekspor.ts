@@ -1,6 +1,6 @@
 // Ekspor Excel: tarik seluruh baris per blok, tulis .xlsx di browser.
 import type { ColDef } from "ag-grid-community"
-import { ambilList } from "@/features/dashboard/api/ApiDashboard"
+import { ambilList } from "@/features/dashboard/shared/api/ApiDashboard"
 import { EKSPOR_BLOK, EKSPOR_MAKS_BLOK } from "./lib/KonstantaDataGrid"
 import { nilaiEkspor } from "./NilaiSel"
 import type { BarisData } from "./types/TipeDataGrid"

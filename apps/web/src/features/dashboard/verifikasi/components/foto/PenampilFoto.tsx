@@ -11,14 +11,13 @@ import * as React from "react";
 import {
   Add01Icon,
   ArrowReloadHorizontalIcon,
-  Cancel01Icon,
   ImageNotFound01Icon,
   MinusSignIcon,
   RotateLeft01Icon,
   RotateRight01Icon,
   Search01Icon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
+} from "@/features/dashboard/shared/icons/IkonLucide";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { cn } from "@/lib/Utilitas";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -78,7 +77,7 @@ export function PenampilFoto({
 }: {
   url: string;
   label: string;
-  /** Bila diisi, tombol "Tutup · Esc" muncul di pojok kanan atas. */
+  /** Bila diisi, tombol Esc muncul di pojok kanan atas. */
   onTutup?: () => void;
   className?: string;
 }) {
@@ -165,7 +164,7 @@ export function PenampilFoto({
             className="size-5 text-muted-foreground"
             aria-hidden
           />
-          <p className="text-xs text-muted-foreground">Foto gagal dimuat.</p>
+          <p className="text-copy-13 text-muted-foreground">Foto gagal dimuat.</p>
         </div>
       ) : (
         <img
@@ -185,20 +184,15 @@ export function PenampilFoto({
         <Button
           type="button"
           variant="outline"
-          size="default"
-          className="absolute top-2 right-2 gap-1.5 bg-background/90 backdrop-blur"
+          size="sm"
+          aria-label="Tutup foto (Escape)"
+          className="absolute top-2 right-2 z-10 bg-background/90 backdrop-blur"
+          onPointerDown={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
           onClick={onTutup}
         >
-          <HugeiconsIcon
-            icon={Cancel01Icon}
-            strokeWidth={2}
-            className="size-3.5"
-            aria-hidden
-          />
-          Tutup
-          <kbd className="rounded bg-muted px-1 text-[10px] text-muted-foreground">
-            Esc
-          </kbd>
+          <kbd>Esc</kbd>
         </Button>
       )}
 
@@ -220,7 +214,7 @@ export function PenampilFoto({
             aria-hidden
           />
         </TombolAlat>
-        <span className="w-11 text-center text-[11px] font-medium text-muted-foreground tabular-nums">
+        <span className="w-11 text-center text-label-12 font-medium text-muted-foreground tabular-nums">
           {Math.round(skala * 100)}%
         </span>
         <TombolAlat
@@ -343,7 +337,7 @@ export function BingkaiPotret({ url, alt }: { url: string; alt: string }) {
               className="size-5 text-muted-foreground"
               aria-hidden
             />
-            <span className="text-xs text-muted-foreground">
+            <span className="text-label-12 text-muted-foreground">
               Foto gagal dimuat.
             </span>
           </span>

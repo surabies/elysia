@@ -11,9 +11,9 @@ The original concept was a standalone ElysiaJS server running directly on Bun. T
 ### Decision
 1. **Single Next.js App / Single Vercel Project**:
    - The entire application lives within a unified Next.js App Router repository.
-   - API endpoints managed by ElysiaJS are mounted via a catch-all route handler at `app/api/[[...slugs]]/route.ts` with prefix `/api`.
+   - API endpoints managed by ElysiaJS are mounted via a catch-all route handler at `apps/web/src/app/api/[[...slugs]]/route.ts` with prefix `/api`.
    - The Elysia instance exports its type definition (`type App = typeof app`) for Eden Treaty end-to-end type safety on the client.
-   - Better Auth is mounted at `app/api/auth/[...all]/route.ts` using its dedicated Next.js route handler. In Next.js App Router, more specific folder routes take precedence over root-level catch-alls (`[[...slugs]]`), ensuring `/api/auth/*` routes are handled cleanly without collision.
+   - Better Auth is mounted at `apps/web/src/app/api/auth/[...all]/route.ts` using its dedicated Next.js route handler. In Next.js App Router, more specific folder routes take precedence over root-level catch-alls (`[[...slugs]]`), ensuring `/api/auth/*` routes are handled cleanly without collision.
 
 2. **Runtime Policy**:
    - Local development and scripts use **Bun** (`bun dev`, `bun test`, `bun run build`, etc.).

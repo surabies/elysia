@@ -14,20 +14,20 @@ import * as React from "react";
 import {
   Task01Icon,
   ViewOffIcon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
+} from "@/features/dashboard/shared/icons/IkonLucide";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { cn } from "@/lib/Utilitas";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 import {
   TEMA_TAB_AKTIF,
   TEMA_TAB_TIDAK_AKTIF,
-} from "../../lib/TemaGridVerifikasi";
+} from "../../lib/TemaVerifikasi";
 import {
   ambilList,
   kirimJson,
   ApiError,
-} from "@/features/dashboard/api/ApiDashboard";
+} from "@/features/dashboard/shared/api/ApiDashboard";
 import {
   ToolbarVerifikasi,
   FILTER_AWAL,
@@ -37,7 +37,7 @@ import { KontrolKolomVerifikasi, TabelVerifikasi } from "../TabelVerifikasi";
 import type { BarisVerifikasi, Kerapatan } from "../../types/TipeVerifikasi";
 import { usePreferensiKolom } from "../../hooks/GunakanPreferensiKolom";
 import { AksiMassal, type Ring } from "../AksiMassal";
-import { usePeriodeKerja } from "@/features/dashboard/hooks/UsePeriodeKerja";
+import { usePeriodeKerja } from "@/features/dashboard/shared/hooks/UsePeriodeKerja";
 import { formatPeriode } from "@/features/public/lib/Format";
 import { KontrolTampilan } from "../KontrolTampilan";
 import { RingkasanSebaris } from "../RingkasanVerifikasi";
@@ -62,7 +62,6 @@ export function PanelTabel({
   rutes,
   penugasanRute,
   opsiPencarian,
-  galatOpsiPencarian,
   ambangAnomali,
   bolehRing,
   idTerpilih,
@@ -73,6 +72,7 @@ export function PanelTabel({
   onPeriodeBerubah,
   sisaKerja,
   onTabBerubah,
+  onRowsLoaded,
   anomali,
   ringkasanTerbuka,
   onRingkasan,
@@ -83,7 +83,6 @@ export function PanelTabel({
   rutes: { id: string; kode: string }[];
   penugasanRute: PenugasanFilter[];
   opsiPencarian: OpsiPencarian;
-  galatOpsiPencarian: string | null;
   ambangAnomali: number;
   bolehRing: (r: Ring) => boolean;
   idTerpilih: string | null;
@@ -98,6 +97,7 @@ export function PanelTabel({
   sisaKerja: number | null;
   /// Tab aktif diteruskan ke induk supaya panel detail tahu baris apa yang dipilih.
   onTabBerubah?: (tab: "laporan" | "belum") => void;
+  onRowsLoaded: (hasRows: boolean) => void;
   anomali?: number;
   /// Kartu ringkasan dilipat/dibuka dari kelompok tombol di toolbar.
   ringkasanTerbuka: boolean;
@@ -111,15 +111,13 @@ export function PanelTabel({
   const [rows, setRows] = React.useState<BarisVerifikasi[]>([]);
   const [total, setTotal] = React.useState(0);
   const [memuat, setMemuat] = React.useState(false);
-  const [galat, setGalat] = React.useState<string | null>(null);
-
+  const sedangMemuatRef = React.useRef(false);
   const [terpilih, setTerpilih] = React.useState<Set<string>>(new Set());
   const [sedangJalan, setSedangJalan] = React.useState(false);
   const [kemajuan, setKemajuan] = React.useState<{
     selesai: number;
     total: number;
   } | null>(null);
-  const [hasil, setHasil] = React.useState<HasilMassal | null>(null);
   const jangkarRef = React.useRef<number | null>(null);
 
   /// Daftar periode untuk dropdown diambil dari PERIODE KERJA, bukan dari
@@ -149,8 +147,8 @@ export function PanelTabel({
   React.useEffect(() => {
     let batal = false;
     // Penanda "memuat" harus dinyalakan tepat sebelum permintaan berangkat.
+    sedangMemuatRef.current = true;
     setMemuat(true);
-    setGalat(null);
     const params: Record<string, string | number | undefined> = {
       pageSize: filter.pageSize,
       periode: filter.periode ?? undefined,
@@ -180,18 +178,31 @@ export function PanelTabel({
         setRows(r);
         setTotal(t);
         setTerpilih(new Set());
+        if (tab === "laporan") onRowsLoaded(r.length > 0);
       })
       .catch((e) => {
-        if (!batal)
-          setGalat(e instanceof ApiError ? e.message : "Gagal memuat data.");
+        if (!batal) {
+          const pesan = e instanceof ApiError ? e.message : "Gagal memuat data.";
+          toast.error(pesan);
+          if (tab === "laporan") onRowsLoaded(false);
+        }
       })
       .finally(() => {
-        if (!batal) setMemuat(false);
+        if (!batal) {
+          sedangMemuatRef.current = false;
+          setMemuat(false);
+        }
       });
     return () => {
       batal = true;
     };
-  }, [tab, filter, refreshKey]);
+  }, [tab, filter, refreshKey, onRowsLoaded]);
+
+  React.useEffect(() => {
+    if (tab !== "laporan" || sedangMemuatRef.current || rows.length === 0)
+      return;
+    if (!rows.some((row) => row.id === idTerpilih)) onKlikBaris(rows[0]);
+  }, [tab, rows, idTerpilih, onKlikBaris]);
 
   // Papan ketik: Ctrl+A pilih semua, panah pindah baris aktif, Space menandai.
   // Navigasi panah inilah yang membuat 22 ribu baris bisa dikerjakan tanpa
@@ -250,7 +261,6 @@ export function PanelTabel({
   async function jalankanMassal(ring: Ring, sertakanAnomali: boolean) {
     const ids = [...terpilih];
     setSedangJalan(true);
-    setHasil(null);
     setKemajuan({ selesai: 0, total: ids.length });
     const gabung: HasilMassal = {
       diproses: 0,
@@ -281,11 +291,31 @@ export function PanelTabel({
           total: ids.length,
         });
       }
-      setHasil(gabung);
+      const ringkasan = [
+        `${gabung.berhasil.toLocaleString("id-ID")} berhasil`,
+        gabung.dilewati > 0
+          ? `${gabung.dilewati.toLocaleString("id-ID")} dilewati`
+          : null,
+        gabung.gagal > 0
+          ? `${gabung.gagal.toLocaleString("id-ID")} gagal`
+          : null,
+        gabung.masalah.length > 0
+          ? `Contoh: ${gabung.masalah
+              .slice(0, 3)
+              .map((m) => `${m.nomorLangganan} — ${m.pesan}`)
+              .join(" · ")}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      if (gabung.gagal > 0) toast.warning("Verifikasi massal selesai", { description: ringkasan });
+      else toast.success("Verifikasi massal selesai", { description: ringkasan });
       setTerpilih(new Set());
       onBerubah();
     } catch (e) {
-      setGalat(e instanceof ApiError ? e.message : "Verifikasi massal gagal.");
+      toast.error(
+        e instanceof ApiError ? e.message : "Verifikasi massal gagal.",
+      );
     } finally {
       setSedangJalan(false);
       setKemajuan(null);
@@ -362,7 +392,7 @@ export function PanelTabel({
   // pesan ini tabel kosong terbaca seperti aplikasi berhenti.
   const tanpaSaringan =
     filter.q === "" &&
-    (filter.statusVerif === "" || filter.statusVerif === "MENUNGGU") &&
+    (filter.statusVerif === "" || filter.statusVerif === "SUBMITTED") &&
     filter.jenisInput === "" &&
     filter.pencatatId === "" &&
     filter.ruteId === "" &&
@@ -392,10 +422,10 @@ export function PanelTabel({
           return (
             <Button
               key={id}
-              size="sm"
+              size="default"
               variant="ghost"
               className={cn(
-                "h-8 text-xs transition-all",
+                "transition-all",
                 aktif ? TEMA_TAB_AKTIF : TEMA_TAB_TIDAK_AKTIF,
               )}
               onClick={() => {
@@ -415,7 +445,7 @@ export function PanelTabel({
           );
         })}
         {tab === "belum" && (
-          <span className="ml-2 text-[11px] text-muted-foreground">
+          <span className="ml-2 text-label-12 text-muted-foreground">
             Sambungan di daftar catat yang belum ada setorannya — bahan menagih
             pekerjaan ke petugas.
           </span>
@@ -426,7 +456,7 @@ export function PanelTabel({
           {!ringkasanTerbuka && <RingkasanSebaris stats={stats} />}
           {/* Sisa pekerjaan selalu terlihat. */}
           {tab === "laporan" && sisaKerja !== null && (
-            <span className="text-xs text-muted-foreground tabular-nums">
+            <span className="text-label-12 text-muted-foreground tabular-nums">
               sisa{" "}
               <strong className="text-foreground">
                 {sisaKerja.toLocaleString("id-ID")}
@@ -446,7 +476,6 @@ export function PanelTabel({
           rutes={rutes}
           penugasanRute={penugasanRute}
           opsiPencarian={opsiPencarian}
-          galatOpsiPencarian={galatOpsiPencarian}
           jumlahTampil={rows.length}
           jumlahTotal={total}
           memuat={memuat}
@@ -476,34 +505,6 @@ export function PanelTabel({
           }
         />
       </div>
-
-      {galat && (
-        <Alert variant="destructive" className="shrink-0">
-          <AlertDescription className="text-xs">{galat}</AlertDescription>
-        </Alert>
-      )}
-
-      {hasil && (
-        <Alert className="shrink-0">
-          <AlertDescription className="text-xs">
-            Selesai:{" "}
-            <strong>{hasil.berhasil.toLocaleString("id-ID")} berhasil</strong>
-            {hasil.dilewati > 0 &&
-              ` · ${hasil.dilewati.toLocaleString("id-ID")} dilewati`}
-            {hasil.gagal > 0 &&
-              ` · ${hasil.gagal.toLocaleString("id-ID")} gagal`}
-            {hasil.masalah.length > 0 && (
-              <span className="block text-muted-foreground">
-                Contoh:{" "}
-                {hasil.masalah
-                  .slice(0, 3)
-                  .map((m) => `${m.nomorLangganan} — ${m.pesan}`)
-                  .join(" · ")}
-              </span>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="min-h-0 flex-1">
         <TabelVerifikasi

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { navGroups } from "../apps/web/src/config/Navigasi";
-import { getItemIcon, FALLBACK_GROUP_ICON } from "../apps/web/components/layout/navigation/sidebar/lib/Icons";
+import { getItemIcon, FALLBACK_GROUP_ICON } from "../apps/web/src/components/layout/navigation/sidebar/lib/Icons";
 
 describe("Sidebar Navigation Icons - Semantics, Relevancy, and Zero Duplication", () => {
   const allNavItems = navGroups.flatMap((group) =>

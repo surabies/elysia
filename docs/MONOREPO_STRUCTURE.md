@@ -10,17 +10,28 @@ Proyek ini menggunakan arsitektur **Monorepo modern berbasis Bun Workspaces** (`
 elysiajs/ (Root Monorepo)
 ├── apps/
 │   ├── web/                     # @cater/web: Aplikasi Web Fullstack (Next.js 16 + Elysia)
-│   │   ├── app/                 # Next.js App Router (home, cater, dashboard, places, auth)
-│   │   │   ├── (auth)/          # Halaman Sign-in & Sign-up
-│   │   │   ├── api/             # Catch-all Route Handler untuk Elysia & Better Auth
-│   │   │   ├── cater/           # Dashboard monitoring Cater & rute petugas
-│   │   │   ├── dashboard/       # Protected dashboard Better Auth
-│   │   │   ├── places/          # Peta spasial GIS & proximity search demo
-│   │   │   ├── globals.css      # Vercel Geist Design System Tokens
-│   │   │   └── layout.tsx       # Root layout dengan Geist Sans & Mono
-│   │   ├── components/ui/       # Komponen antarmuka (shadcn/ui + Geist Material)
-│   │   ├── src/                 # Server Elysia, library, utils, dan hooks
-│   │   │   ├── hooks/           # Custom React hooks (useMobile, dll.)
+│   │   ├── src/                 # Seluruh source code aplikasi web
+│   │   │   ├── app/             # Next.js App Router
+│   │   │   │   ├── (auth)/      # Halaman autentikasi
+│   │   │   │   ├── (dashboard)/ # Halaman dashboard
+│   │   │   │   ├── api/         # Route Handler Elysia & Better Auth
+│   │   │   │   └── globals.css  # Vercel Geist Design System Tokens
+│   │   │   ├── components/      # UI bersama, layout, shared, dan shadcn/reui
+│   │   │   ├── features/        # UI domain dan kode per fitur
+│   │   │   │   └── dashboard/
+│   │   │   │       ├── overview/components/       # Ringkasan dashboard
+│   │   │   │       ├── analytics/components/      # Grafik dan tabel analitik
+│   │   │   │       ├── verifikasi/
+│   │   │   │       │   ├── components/
+│   │   │   │       │   ├── hooks/
+│   │   │   │       │   ├── lib/
+│   │   │   │       │   └── types/
+│   │   │   │       └── shared/                    # Utilitas yang dipakai lintas modul
+│   │   │   │           ├── api/
+│   │   │   │           ├── data-grid/
+│   │   │   │           ├── hooks/
+│   │   │   │           └── icons/
+│   │   │   ├── hooks/           # Custom React hooks
 │   │   │   ├── lib/             # Client utils, auth, env validation
 │   │   │   └── server/          # Backend Elysia Engine
 │   │   │       ├── app.ts       # Main Elysia app instance (/api prefix)
@@ -93,6 +104,15 @@ elysiajs/ (Root Monorepo)
 └── tsconfig.json                # Base TypeScript configuration
 ```
 
+### Konvensi penempatan UI
+
+- `src/app/` hanya berisi route, layout, dan file konvensi Next.js.
+- `src/components/` berisi komponen lintas fitur seperti `ui/`, `layout/`, dan `shared/`.
+- `src/features/<fitur>/components/` berisi UI yang hanya dimiliki fitur tersebut.
+- Area dashboard dipisah menurut modul: `src/features/dashboard/overview/`, `analytics/`, dan `verifikasi/`; komponen umum dashboard berada di `shared/`.
+- Komponen route ditempatkan pada modul pemiliknya (`overview/` atau `analytics/`), bukan di dalam `app/`.
+- Jalankan shadcn dari `apps/web`; alias `@/components` sekarang secara eksplisit diarahkan ke `src/components`. Jika suatu item registry memilih target lain, `--path src/components/reui` dapat dipakai sebagai override.
+
 ---
 
 ## 2. Keuntungan Restrukturisasi Ini
@@ -101,7 +121,7 @@ elysiajs/ (Root Monorepo)
 2. **Eliminasi Duplikasi**:
    - `src/db/` dihapus secara permanen; seluruh database terpusat di `packages/db`.
    - `drizzle.config.ts` di root dihapus; konfigurasi tunggal berada di `packages/db/drizzle.config.ts`.
-   - `src/vercel.css` dihapus; seluruh styling Geist terpusat di `apps/web/app/globals.css`.
+   - Seluruh source code web, termasuk `app`, `components`, dan `features`, berada di `apps/web/src/`; konfigurasi, `.env`, dan `public/` tetap di root `apps/web/`.
    - File dataset CSV dipindahkan dari `src/db/jan` ke `packages/db/data/jan/`.
 3. **Workspace Isolation**:
    - `@cater/web` dapat di-build atau di-deploy secara mandiri ke Vercel.

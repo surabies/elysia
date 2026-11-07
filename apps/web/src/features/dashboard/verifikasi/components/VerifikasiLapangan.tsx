@@ -14,7 +14,7 @@
 //   Batal Baca Ulang → kembalikan baris DITOLAK ke antrean
 // Pembacaan resmi baru dibuat saat V3 — lihat laporan-harian.router.ts.
 import * as React from "react"
-import { ViewOffIcon } from "@/features/dashboard/verifikasi/lib/IkonLucide"
+import { ViewOffIcon } from "@/features/dashboard/shared/icons/IkonLucide"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +37,7 @@ import {
   ambilList,
   kirimJson,
   ApiError,
-} from "@/features/dashboard/api/ApiDashboard"
+} from "@/features/dashboard/shared/api/ApiDashboard"
 import type {
   StatsVerifikasi,
   RingLaporanHarian,
@@ -45,7 +45,7 @@ import type {
 import { tahapLaporanHarian } from "../types/TipeVerifikasi"
 import { RingkasanVerifikasi } from "./RingkasanVerifikasi"
 import { PanelTabel } from "./panel/PanelTabel"
-import { PanelKosong } from "./panel/KomponenPanel"
+import { PanelKosong, PanelMemuat } from "./panel/KomponenPanel"
 import { PanelLapangan } from "./panel/PanelLapangan"
 import { MenuKonteks, type AksiKonteks } from "./MenuKonteks"
 import {
@@ -54,6 +54,10 @@ import {
   type KunciMenu,
   type ProfilMenu,
 } from "../lib/MenuAksi"
+import {
+  KELAS_JUDUL_PANEL,
+  KELAS_PANEL_DETAIL,
+} from "../lib/TemaVerifikasi"
 import type { PenugasanFilter } from "../lib/PenyaringanRelasi"
 import { sertakanPenugasanPadaOpsiRute } from "../lib/PenyaringanRelasi"
 import {
@@ -138,6 +142,7 @@ type BarisLaporan = RingLaporanHarian & {
   verif2By?: { name: string | null } | null
   verif3By?: { name: string | null } | null
   verifiedBy?: { name: string | null } | null
+  isCorrected?: boolean
 }
 
 type Konfirmasi = {
@@ -168,13 +173,23 @@ export function VerifikasiLapangan({ role }: { role: string }) {
     undefined
   )
   const [stats, setStats] = React.useState<StatsVerifikasi | null>(null)
-  const [galatStats, setGalatStats] = React.useState<string | null>(null)
   const [idTerpilih, setIdTerpilih] = React.useState<string | null>(null)
+  const [detailMemuat, setDetailMemuat] = React.useState(false)
+  const [barisDimuat, setBarisDimuat] = React.useState(false)
+  const [adaBaris, setAdaBaris] = React.useState(false)
   const [refreshKey, setRefreshKey] = React.useState(0)
   // Tab aktif diangkat ke sini: baris "belum dibaca" adalah DaftarCatat, bukan
   // laporan, jadi id-nya TIDAK ADA di /laporan-harian/:id.
   const [tab, setTab] = React.useState<"laporan" | "belum">("laporan")
   const [ringkasanTerbuka, setRingkasanTerbuka] = React.useState(true)
+  const onBarisDimuat = React.useCallback((ada: boolean) => {
+    setBarisDimuat(true)
+    setAdaBaris(ada)
+    if (!ada) setIdTerpilih(null)
+  }, [])
+  const onDetailMemuat = React.useCallback((memuat: boolean) => {
+    setDetailMemuat(memuat)
+  }, [])
 
   const [menu, setMenu] = React.useState<{
     posisi: { x: number; y: number }
@@ -184,7 +199,6 @@ export function VerifikasiLapangan({ role }: { role: string }) {
   const [modalLain, setModalLain] = React.useState<ModalLain | null>(null)
   const [konfirmasi, setKonfirmasi] = React.useState<Konfirmasi | null>(null)
   const [mengirim, setMengirim] = React.useState(false)
-  const [galatAksi, setGalatAksi] = React.useState<string | null>(null)
 
   const [pencatats, setPencatats] = React.useState<
     { id: string; namaLapangan: string }[]
@@ -204,9 +218,6 @@ export function VerifikasiLapangan({ role }: { role: string }) {
       ),
     [opsiPencarian, penugasanRute, penugasanRuteDimuat]
   )
-  const [galatOpsiPencarian, setGalatOpsiPencarian] = React.useState<
-    string | null
-  >(null)
 
   React.useEffect(() => {
     const muatUlang = () => setRefreshKey((k) => k + 1)
@@ -297,12 +308,11 @@ export function VerifikasiLapangan({ role }: { role: string }) {
               })
             ),
           })
-          setGalatOpsiPencarian(null)
         }
       )
       .catch((err) => {
         if (!batal) {
-          setGalatOpsiPencarian(
+          toast.error(
             err instanceof ApiError ? err.message : "Gagal memuat data pilihan."
           )
         }
@@ -323,14 +333,13 @@ export function VerifikasiLapangan({ role }: { role: string }) {
         if (!batal) {
           setPenugasanRute(pasangan)
           setPenugasanRuteDimuat(true)
-          setGalatOpsiPencarian(null)
         }
       })
       .catch((err) => {
         if (!batal) {
           setPenugasanRute([])
           setPenugasanRuteDimuat(true)
-          setGalatOpsiPencarian(
+          toast.error(
             err instanceof ApiError
               ? err.message
               : "Gagal memuat relasi Petugas dan Rute."
@@ -350,14 +359,13 @@ export function VerifikasiLapangan({ role }: { role: string }) {
       .then((s) => {
         if (batal) return
         setStats(s)
-        setGalatStats(null)
         setPeriode((lama) =>
           lama === undefined ? (s.periodes[0] ?? null) : lama
         )
       })
       .catch((err) => {
         if (!batal)
-          setGalatStats(
+          toast.error(
             err instanceof ApiError ? err.message : "Gagal memuat ringkasan."
           )
       })
@@ -371,7 +379,6 @@ export function VerifikasiLapangan({ role }: { role: string }) {
   async function jalankanKonfirmasi() {
     if (!konfirmasi) return
     setMengirim(true)
-    setGalatAksi(null)
     try {
       await kirimJson(
         `/laporan-harian/${konfirmasi.id}/${konfirmasi.endpoint}`,
@@ -381,7 +388,7 @@ export function VerifikasiLapangan({ role }: { role: string }) {
       setKonfirmasi(null)
       setRefreshKey((k) => k + 1)
     } catch (err) {
-      setGalatAksi(
+      toast.error(
         err instanceof ApiError ? err.message : "Aksi gagal dijalankan."
       )
     } finally {
@@ -453,7 +460,6 @@ export function VerifikasiLapangan({ role }: { role: string }) {
 
     const bukaKonfirmasi = (k: Omit<Konfirmasi, "id" | "endpoint">) => {
       setMenu(null)
-      setGalatAksi(null)
       setKonfirmasi({ id, endpoint: "unverify", ...k })
     }
     const bukaModal = (jenis: ModalLain["jenis"]) => {
@@ -564,7 +570,6 @@ export function VerifikasiLapangan({ role }: { role: string }) {
             : undefined,
         onPilih: () => {
           setMenu(null)
-          setGalatAksi(null)
           setCekUlangId(id)
         },
       },
@@ -601,24 +606,39 @@ export function VerifikasiLapangan({ role }: { role: string }) {
             className="flex min-w-0 flex-col"
           >
             {/* Judul DI LUAR wadah bergulir supaya garis atasnya tidak terpotong. */}
-            <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card">
-              <div className="shrink-0 border-b border-border/70 px-4 py-2.5">
-                <h2 className="text-center text-sm font-medium">
+            <aside className={KELAS_PANEL_DETAIL}>
+              <div className="relative shrink-0 border-b border-border px-4 py-2.5">
+                <h2 className={`text-center ${KELAS_JUDUL_PANEL}`}>
                   Detail laporan
                 </h2>
+                {tab === "laporan" && detailMemuat && (
+                  <Spinner
+                    className="absolute top-1/2 right-3 size-3.5 -translate-y-1/2 text-muted-foreground"
+                    aria-label="Memuat detail laporan"
+                  />
+                )}
               </div>
               <div className="scrollbar-tipis min-h-0 flex-1 overflow-y-auto">
-                {/* key: ganti baris = remount panel, state mulai bersih. */}
                 {tab === "belum" ? (
                   <PanelKosong
                     icon={ViewOffIcon}
                     pesan="Sambungan ini belum punya setoran, jadi belum ada detail laporan. Tagih pencatatannya ke petugas rute."
                   />
-                ) : (
-                  <PanelLapangan
-                    key={`${idTerpilih ?? "kosong"}-${refreshKey}`}
-                    id={idTerpilih}
+                ) : !barisDimuat ? (
+                  <PanelMemuat />
+                ) : !adaBaris ? (
+                  <PanelKosong
+                    icon={ViewOffIcon}
+                    pesan="Tidak ada laporan yang cocok dengan filter saat ini."
                   />
+                ) : idTerpilih ? (
+                  <PanelLapangan
+                    id={idTerpilih}
+                    refreshKey={refreshKey}
+                    onLoadingChange={onDetailMemuat}
+                  />
+                ) : (
+                  <PanelMemuat />
                 )}
               </div>
             </aside>
@@ -630,12 +650,6 @@ export function VerifikasiLapangan({ role }: { role: string }) {
             className="flex min-w-0 flex-col"
           >
             <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 pl-3">
-              {galatStats && (
-                <p className="shrink-0 text-xs text-destructive">
-                  {galatStats}
-                </p>
-              )}
-
               <RingkasanVerifikasi
                 stats={stats}
                 periode={periode ?? null}
@@ -649,12 +663,12 @@ export function VerifikasiLapangan({ role }: { role: string }) {
                   rutes={rutes}
                   penugasanRute={penugasanRute}
                   opsiPencarian={opsiPencarianDenganPenugasan}
-                  galatOpsiPencarian={galatOpsiPencarian}
                   ambangAnomali={ambang}
                   bolehRing={(r) =>
                     r === 1 ? bisaV1 : r === 2 ? bisaV2 : bisaV3
                   }
                   idTerpilih={idTerpilih}
+                  onRowsLoaded={onBarisDimuat}
                   onPeriodeBerubah={setPeriode}
                   onKlikBaris={(row) => setIdTerpilih(row.id)}
                   onKlikKanan={(row, posisi) => {
@@ -668,6 +682,8 @@ export function VerifikasiLapangan({ role }: { role: string }) {
                   onTabBerubah={(t) => {
                     setTab(t)
                     setIdTerpilih(null)
+                    setBarisDimuat(false)
+                    setAdaBaris(false)
                     setCekUlangId(null)
                   }}
                   anomali={stats?.anomali ?? 0}
@@ -749,7 +765,6 @@ export function VerifikasiLapangan({ role }: { role: string }) {
               {konfirmasi?.deskripsi}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {galatAksi && <p className="text-xs text-destructive">{galatAksi}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={mengirim}>Batal</AlertDialogCancel>
             {/* onClick tanpa auto-close: dialog baru ditutup setelah server

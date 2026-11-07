@@ -127,7 +127,7 @@ export type NadaStatus = Omit<StatusTagihanTampilan, "label">
 /// Warna status tiket — DIPAKAI BERSAMA warga dan petugas.
 ///
 /// Yang berbeda antara kedua sisi hanya TEKS-nya (LABEL_STATUS_PENGADUAN_WARGA
-/// di bawah vs LABEL_STATUS_PENGADUAN_STAF di features/dashboard/lib/Label.ts);
+/// di bawah vs LABEL_STATUS_PENGADUAN_STAF di features/dashboard/verifikasi/lib/Label.ts);
 /// warnanya tidak — "selesai" tetap hijau bagi siapa pun yang membacanya.
 ///
 /// Skala warna Tailwind + varian `dark:` eksplisit, mengikuti pola
@@ -212,7 +212,7 @@ export function kodeStatusPengaduan(status: string): StatusPengaduan {
 /// "Anda" berubah arti jadi operator yang sedang membaca layar — persis salah
 /// orang, karena yang ditunggu justru konfirmasi si pelapor. Sisi petugas
 /// punya petanya sendiri: LABEL_STATUS_PENGADUAN_STAF di
-/// features/dashboard/lib/Label.ts.
+/// features/dashboard/verifikasi/lib/Label.ts.
 export const LABEL_STATUS_PENGADUAN_WARGA: Record<StatusPengaduan, string> = {
   BARU: "Diterima",
   TERVERIFIKASI: "Terverifikasi operator",

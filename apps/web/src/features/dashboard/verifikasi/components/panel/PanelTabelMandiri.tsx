@@ -15,9 +15,8 @@ import {
   Cancel01Icon,
   Download01Icon,
   Task01Icon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+} from "@/features/dashboard/shared/icons/IkonLucide";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,9 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatPeriode } from "@/features/public/lib/Format";
-import { ambilList, ApiError } from "@/features/dashboard/api/ApiDashboard";
-import { OPSI_STATUS_LAPORAN_MANDIRI } from "../../../lib/LabelLaporanMandiri";
-import { KELAS_KONTROL } from "../../../shared/data-grid/KelasKontrol";
+import { ambilList, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
+import { OPSI_STATUS_LAPORAN_MANDIRI } from "@/features/dashboard/verifikasi/lib/LabelLaporanMandiri";
 import { KotakCari } from "../../../shared/data-grid/toolbar/KotakCari";
 import { FilterPilihan } from "../../../shared/data-grid/toolbar/PenyaringPilihan";
 import { PILIHAN_UKURAN, TombolIkonVerifikasi } from "../BilahVerifikasi";
@@ -40,6 +38,7 @@ import { usePreferensiKolom } from "../../hooks/GunakanPreferensiKolom";
 import { KontrolTampilan } from "../KontrolTampilan";
 import { RingkasanSebaris } from "../RingkasanVerifikasi";
 import type { StatsVerifikasi } from "../../types/TipeVerifikasi";
+import { toast } from "sonner";
 
 export type StatusMandiri =
   | "MENUNGGU"
@@ -153,6 +152,7 @@ export function PanelTabelMandiri({
   onKlikKanan,
   ringkasanTerbuka,
   onRingkasan,
+  onRowsLoaded,
   stats,
 }: {
   periodes: number[];
@@ -168,6 +168,7 @@ export function PanelTabelMandiri({
   ) => void;
   ringkasanTerbuka: boolean;
   onRingkasan: (buka: boolean) => void;
+  onRowsLoaded: (hasRows: boolean, error?: string) => void;
   stats: StatsVerifikasi | null;
 }) {
   const [filter, setFilter] = React.useState<FilterMandiri>({
@@ -181,7 +182,7 @@ export function PanelTabelMandiri({
   const [rows, setRows] = React.useState<BarisMandiriTabel[]>([]);
   const [total, setTotal] = React.useState(0);
   const [memuat, setMemuat] = React.useState(false);
-  const [galat, setGalat] = React.useState<string | null>(null);
+  const sedangMemuatRef = React.useRef(false);
   const [terpilih, setTerpilih] = React.useState<Set<string>>(new Set());
   const jangkarRef = React.useRef<number | null>(null);
 
@@ -197,8 +198,8 @@ export function PanelTabelMandiri({
     if (periode === undefined) return;
     let batal = false;
     // Penanda "memuat" harus dinyalakan tepat sebelum permintaan berangkat.
+    sedangMemuatRef.current = true;
     setMemuat(true);
-    setGalat(null);
     ambilList<BarisApi>("/laporan-mandiri", {
       pageSize: filter.pageSize,
       periode: periode ?? undefined,
@@ -210,18 +211,31 @@ export function PanelTabelMandiri({
         setRows(r.map(petaBaris));
         setTotal(t);
         setTerpilih(new Set());
+        onRowsLoaded(r.length > 0);
       })
       .catch((e) => {
-        if (!batal)
-          setGalat(e instanceof ApiError ? e.message : "Gagal memuat data.");
+        if (!batal) {
+          const pesan =
+            e instanceof ApiError ? e.message : "Gagal memuat data.";
+          toast.error(pesan);
+          onRowsLoaded(false);
+        }
       })
       .finally(() => {
-        if (!batal) setMemuat(false);
+        if (!batal) {
+          sedangMemuatRef.current = false;
+          setMemuat(false);
+        }
       });
     return () => {
       batal = true;
     };
-  }, [periode, filter, refreshKey]);
+  }, [periode, filter, refreshKey, onRowsLoaded]);
+
+  React.useEffect(() => {
+    if (sedangMemuatRef.current || rows.length === 0) return;
+    if (!rows.some((row) => row.id === idTerpilih)) onKlikBaris(rows[0]);
+  }, [rows, idTerpilih, onKlikBaris]);
 
   // Papan ketik: Ctrl+A pilih semua, Esc batal pilih.
   React.useEffect(() => {
@@ -379,7 +393,7 @@ export function PanelTabelMandiri({
         <div className="ml-auto flex items-center gap-2">
           {/* Terlipat = angka ringkasan pindah ke sini, tidak hilang. */}
           {!ringkasanTerbuka && <RingkasanSebaris stats={stats} />}
-          <span className="text-xs text-muted-foreground tabular-nums">
+          <span className="text-label-12 text-muted-foreground tabular-nums">
             {memuat
               ? "Memuat…"
               : `${rows.length.toLocaleString("id-ID")} dari ${total.toLocaleString("id-ID")}`}
@@ -393,7 +407,6 @@ export function PanelTabelMandiri({
             <SelectTrigger
               size="default"
               aria-label="Baris per halaman"
-              className={KELAS_KONTROL}
             >
               <SelectValue />
             </SelectTrigger>
@@ -422,12 +435,6 @@ export function PanelTabelMandiri({
         </div>
       </div>
 
-      {galat && (
-        <Alert variant="destructive" className="shrink-0">
-          <AlertDescription className="text-xs">{galat}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="min-h-0 flex-1">
         <TabelVerifikasi
           rows={rows}
@@ -450,14 +457,13 @@ export function PanelTabelMandiri({
       </div>
 
       {terpilih.size > 0 && (
-        <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-card p-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
           <Badge className="tabular-nums">
             {terpilih.size.toLocaleString("id-ID")} baris dipilih
           </Badge>
           <Button
             size="default"
             variant="outline"
-            className="text-xs"
             onClick={ekspor}
           >
             <HugeiconsIcon
@@ -469,9 +475,8 @@ export function PanelTabelMandiri({
             Ekspor terpilih
           </Button>
           <Button
-            size="default"
+            size="sm"
             variant="ghost"
-            className="text-xs"
             onClick={() => setTerpilih(new Set())}
           >
             <HugeiconsIcon
@@ -481,11 +486,11 @@ export function PanelTabelMandiri({
               aria-hidden
             />
             Batal pilih
-            <kbd className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+            <kbd className="ml-1 rounded bg-muted px-1 text-label-12 text-muted-foreground">
               Esc
             </kbd>
           </Button>
-          <span className="ml-auto hidden text-[11px] text-muted-foreground lg:inline">
+          <span className="ml-auto hidden text-label-12 text-muted-foreground lg:inline">
             Ctrl+A pilih semua · Shift+klik pilih rentang
           </span>
         </div>

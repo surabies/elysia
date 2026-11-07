@@ -15,9 +15,11 @@ import {
   ruteCater,
   user,
   waterMeter,
+  waterMeterMutasi,
   wilayahAdministrasi,
   zonaDistribusi,
 } from "@cater/db";
+import { hitungDeviasiPersentase } from "../../domain/cater/cater-anomali.engine";
 
 type GridQuery = {
   id?: string;
@@ -43,7 +45,19 @@ const FINAL_STATUSES = [
   "CORRECTED_POST_VERIF",
   "LOCKED_BILLING",
 ] as const;
-const WAITING_STATUSES = ["SUBMITTED", "VERIFIED_L1", "VERIFIED_L2"] as const;
+const MENUNGGU_V1_STATUSES = [
+  "VERIFIED",
+  "SUBMITTED",
+  "ANOMALY",
+  "ANOMALY_NEGATIVE",
+  "ANOMALY_HIGH",
+  "ANOMALY_LOW",
+] as const;
+const WAITING_STATUSES = [
+  ...MENUNGGU_V1_STATUSES,
+  "VERIFIED_L1",
+  "VERIFIED_L2",
+] as const;
 
 const asNumber = (value: string | number | null | undefined) =>
   value == null ? null : Number(value);
@@ -52,16 +66,22 @@ const toIso = (value: Date | null | undefined) => value?.toISOString() ?? null;
 
 function whereStatus(value?: string) {
   switch (value?.toUpperCase()) {
-    case "MENUNGGU":
-      return inArray(caterBacaMeter.statusVerifikasi, [...WAITING_STATUSES]);
-    case "DITOLAK":
+    case "SUBMITTED":
+      return inArray(caterBacaMeter.statusVerifikasi, [
+        ...MENUNGGU_V1_STATUSES,
+      ]);
+    case "VERIFIED_L1":
+      return eq(caterBacaMeter.statusVerifikasi, "VERIFIED_L1");
+    case "VERIFIED_L2":
+      return eq(caterBacaMeter.statusVerifikasi, "VERIFIED_L2");
+    case "APPROVED_FINAL":
+      return inArray(caterBacaMeter.statusVerifikasi, [...FINAL_STATUSES]);
     case "NEED_RESURVEY":
       return eq(caterBacaMeter.statusVerifikasi, "NEED_RESURVEY");
-    case "DIVERIFIKASI":
-    case "RESMI":
-      return inArray(caterBacaMeter.statusVerifikasi, [...FINAL_STATUSES]);
     default:
-      return value ? eq(caterBacaMeter.statusVerifikasi, value) : undefined;
+      return value
+        ? eq(caterBacaMeter.statusVerifikasi, value)
+        : undefined;
   }
 }
 
@@ -171,7 +191,7 @@ export class VerifikasiGridService {
 
   async getLaporanRows(query: GridQuery) {
     const period = query.periode ? String(query.periode) : undefined;
-    const pageSize = Math.max(1, Math.min(Number(query.pageSize ?? 100), 500));
+    const pageSize = Math.max(1, Math.min(Number(query.pageSize ?? 100), 5000));
     const offset = Math.max(
       0,
       Number(query.offset ?? Number(query.page ?? 0) * pageSize),
@@ -243,7 +263,15 @@ export class VerifikasiGridService {
         titikLokasi: pelanggan.titikLokasi,
         stml: caterBacaMeter.stml,
         stma: caterBacaMeter.stma,
+        stmlRevisi: caterBacaMeter.stmlRevisi,
+        stmaRevisi: caterBacaMeter.stmaRevisi,
+        pakaiM3Revisi: caterBacaMeter.pakaiM3Revisi,
+        ketCatatRevisi: caterBacaMeter.ketCatatRevisi,
+        standAngkatRevisi: caterBacaMeter.standAngkatRevisi,
+        standMeterBaruRevisi: caterBacaMeter.standMeterBaruRevisi,
+        standAngkatLama: waterMeterMutasi.standAngkat,
         pakaiM3: caterBacaMeter.pakaiM3,
+        pakaiTagih: caterBacaMeter.pakaiTagih,
         pakaiLalu: caterBacaMeter.pakaiLalu,
         ketCatat: caterBacaMeter.ketCatat,
         sumberCatat: caterBacaMeter.sumberCatat,
@@ -258,6 +286,10 @@ export class VerifikasiGridService {
       })
       .from(caterBacaMeter)
       .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+      .leftJoin(
+        waterMeterMutasi,
+        eq(caterBacaMeter.waterMeterMutasiId, waterMeterMutasi.id),
+      )
       .leftJoin(petugasCater, eq(caterBacaMeter.petugasId, petugasCater.id))
       .leftJoin(golonganTarif, eq(pelanggan.tarifKode, golonganTarif.kode))
       .leftJoin(ruteCater, eq(caterBacaMeter.ruteKode, ruteCater.kode));
@@ -320,8 +352,23 @@ export class VerifikasiGridService {
           periode: Number(row.thbl),
           standAwal: asNumber(row.stml),
           standAkhir: asNumber(row.stma),
-          pemakaian: asNumber(row.pakaiM3),
+          standAwalRevisi: asNumber(row.stmlRevisi),
+          standAkhirRevisi: asNumber(row.stmaRevisi),
+          standAngkatLama:
+            asNumber(row.standAngkatRevisi) ?? asNumber(row.standAngkatLama),
+          standMeterBaru:
+            asNumber(row.standMeterBaruRevisi) ??
+            (row.ketCatatRevisi === "MB" || row.ketCatat === "MB"
+              ? asNumber(row.stmaRevisi) ?? asNumber(row.stma)
+              : null),
+          pemakaian: asNumber(row.pakaiM3Revisi) ?? asNumber(row.pakaiM3),
+          pemakaianTagihVerif: asNumber(row.pakaiTagih),
+          kondisiRevisi: row.ketCatatRevisi,
           pemakaianLalu: asNumber(row.pakaiLalu),
+          persentase: hitungDeviasiPersentase(
+            asNumber(row.pakaiM3Revisi) ?? asNumber(row.pakaiM3),
+            asNumber(row.pakaiLalu),
+          ),
           kondisi: row.ketCatat,
           jenisInput: row.sumberCatat.startsWith("MANDIRI")
             ? "KONSUMEN"
@@ -329,6 +376,11 @@ export class VerifikasiGridService {
           tanggalCatat: toIso(row.tglCatat),
           status: mapStatus(row.statusVerifikasi),
           isVerified: final,
+          isCorrected: rowLogs.some(
+            (log) =>
+              log.stage === "FORM_CORRECTION" &&
+              log.action === "ADJUST_STAND",
+          ),
           verifiedAt: rejected ? toIso(latestV1?.createdAt) : null,
           catatanVerif: rejected
             ? (latestV1?.alasan ?? row.catatan)
@@ -365,13 +417,16 @@ export class VerifikasiGridService {
             ? {
                 id: row.id,
                 standLalu: asNumber(row.stml) ?? 0,
-                standAkhir: asNumber(row.stma) ?? 0,
-                pemakaianM3: asNumber(row.pakaiM3) ?? 0,
-                pemakaianRiil: asNumber(row.pakaiM3),
+                standAkhir: asNumber(row.stmaRevisi ?? row.stma) ?? 0,
+                pemakaianM3:
+                  asNumber(row.pakaiTagih) ??
+                  asNumber(row.pakaiM3Revisi ?? row.pakaiM3) ??
+                  0,
+                pemakaianRiil: asNumber(row.pakaiM3Revisi ?? row.pakaiM3),
                 pemakaianLalu: asNumber(row.pakaiLalu),
                 periode: `${row.thbl.slice(0, 4)}-${row.thbl.slice(4)}-01T00:00:00.000Z`,
                 blokTarif: 1,
-                kondisi: row.ketCatat,
+                kondisi: row.ketCatatRevisi ?? row.ketCatat,
                 fotoBukti: row.fotoMeterUrl,
                 sumberLaporan: row.sumberCatat.startsWith("MANDIRI")
                   ? "KONSUMEN"
@@ -386,7 +441,7 @@ export class VerifikasiGridService {
 
   async getBelumDibaca(query: GridQuery) {
     const period = query.periode ? String(query.periode) : undefined;
-    const pageSize = Math.max(1, Math.min(Number(query.pageSize ?? 100), 500));
+    const pageSize = Math.max(1, Math.min(Number(query.pageSize ?? 100), 5000));
     const offset = Math.max(0, Number(query.offset ?? 0));
     const conditions = [eq(daftarCatat.status, "BELUM_DICATAT")];
     conditions.push(
@@ -469,7 +524,7 @@ export class VerifikasiGridService {
 
   async getMandiriRows(query: GridQuery) {
     const period = query.periode ? String(query.periode) : undefined;
-    const pageSize = Math.max(1, Math.min(Number(query.pageSize ?? 100), 500));
+    const pageSize = Math.max(1, Math.min(Number(query.pageSize ?? 100), 5000));
     const offset = Math.max(
       0,
       Number(query.offset ?? Number(query.page ?? 0) * pageSize),

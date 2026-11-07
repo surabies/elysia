@@ -64,7 +64,34 @@ Untuk mencegah ketidakkonsistenan dan kode yang campur aduk, gunakan aturan pena
 
 ---
 
-## 3. Tata Letak Direktori Backend (`apps/web/src/server/`)
+## 3. Tata Letak Direktori Frontend (`apps/web/src/`)
+
+Source code Next.js dipusatkan di `src/`, sedangkan konfigurasi proyek, `.env`, dan `public/` tetap di root `apps/web/`.
+
+```text
+apps/web/src/
+├── app/                           # Route, layout, dan file konvensi Next.js saja
+├── components/                    # Komponen lintas fitur
+│   ├── ui/                        # Primitive shadcn/ui dan ReUI
+│   ├── layout/                    # Shell, navigasi, dan layout bersama
+│   └── shared/                    # Komponen visual generik
+├── features/                      # UI dan kode yang dimiliki domain/fitur
+│   ├── auth/components/
+│   └── dashboard/
+│       ├── overview/components/   # Ringkasan dashboard
+│       ├── analytics/components/  # Analitik
+│       ├── verifikasi/            # Modul mandiri: components, hooks, lib, types
+│       └── shared/                # API, hooks, ikon, dan data-grid lintas modul
+├── hooks/                         # Hook lintas fitur
+├── lib/                           # Utilitas lintas fitur
+└── server/                        # Backend Elysia
+```
+
+Komponen khusus halaman yang dimiliki satu domain ditempatkan pada `features/<domain>/components`, bukan di dalam `app/`. Route Next hanya mengimpor dan merangkai fitur. Jalankan shadcn dari `apps/web`; alias `@/components` mengarah ke `src/components`. Opsi `--path src/components/reui` tersedia untuk meng-override target registry bila diperlukan.
+
+Subfolder di dalam modul dibuat sesuai kebutuhan, bukan diseragamkan dengan folder kosong. Kode yang hanya digunakan satu modul tinggal di modul tersebut; utilitas yang digunakan beberapa modul dashboard berada di `features/dashboard/shared/`.
+
+## 4. Tata Letak Direktori Backend (`apps/web/src/server/`)
 
 Setiap fitur dikelompokkan secara modular berdasarkan fungsinya:
 
@@ -123,7 +150,7 @@ apps/web/src/server/
 
 ---
 
-## 4. Relevansi & Alasan Penempatan Fungsi
+## 5. Relevansi & Alasan Penempatan Fungsi
 
 Mengapa struktur ini diterapkan dan apa keuntungannya?
 
@@ -147,7 +174,7 @@ Mengapa struktur ini diterapkan dan apa keuntungannya?
 
 ---
 
-## 5. Pedoman Menulis Kode Semantik & Idiomatik
+## 6. Pedoman Menulis Kode Semantik & Idiomatik
 
 1. **Gunakan TypeBox `t` untuk Validasi Elysia**:
    ```typescript

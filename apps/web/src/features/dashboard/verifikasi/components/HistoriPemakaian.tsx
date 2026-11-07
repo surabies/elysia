@@ -1,93 +1,130 @@
-"use client"
+"use client";
 
-// features/dashboard/verifikasi/components/HistoriPemakaian.tsx — bar
-// mini histori pemakaian (m³) beberapa periode terakhir dari PembacaanMeter
-// resmi. Div berproporsi, bukan Recharts: dengan ≤3 titik, chart library
-// merender kotak kosong yang terlihat rusak (lihat FRONTEND.md), sementara
-// bar sederhana tetap terbaca bahkan dengan satu titik.
-import * as React from "react"
-import { formatBulanSingkat } from "@/features/public/lib/Format"
-import { ambilList, ApiError } from "@/features/dashboard/api/ApiDashboard"
-import type { PembacaanRingkas } from "../types/TipeVerifikasi"
+import * as React from "react";
+import { formatBulanSingkat } from "@/features/public/lib/Format";
+import { ambilList, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
+import type {
+  PembacaanPanelRingkas,
+  PembacaanRingkas,
+} from "../types/TipeVerifikasi";
 
-/// Komponen ini dirender di dalam panel yang di-remount lewat `key` tiap
-/// ganti baris terpilih — state selalu mulai bersih, tidak perlu reset
-/// sinkron di effect (react-hooks/set-state-in-effect melarangnya).
+function angka(nilai: number | null | undefined) {
+  return nilai == null ? "—" : nilai.toLocaleString("id-ID");
+}
+
 export function HistoriPemakaian({
   pelangganId,
+  terkini,
+  catatan,
 }: {
-  pelangganId: string | null | undefined
+  pelangganId: string | null | undefined;
+  terkini: PembacaanPanelRingkas;
+  catatan?: string;
 }) {
-  const [rows, setRows] = React.useState<PembacaanRingkas[] | null>(null)
-  const [galat, setGalat] = React.useState<string | null>(null)
+  const [rows, setRows] = React.useState<PembacaanRingkas[] | null>(null);
+  const [galat, setGalat] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!pelangganId) return
-    let batal = false
-    ambilList<PembacaanRingkas>("/pembacaan", { pelangganId, pageSize: 3 })
+    if (!pelangganId) return;
+    let batal = false;
+    ambilList<PembacaanRingkas>("/pembacaan", {
+      pelangganId,
+      periodeSebelum: terkini.periode,
+      pageSize: 3,
+    })
       .then(({ rows }) => {
-        if (!batal) setRows(rows)
+        if (!batal) setRows(rows);
       })
       .catch((err) => {
-        if (!batal)
+        if (!batal) {
           setGalat(
-            err instanceof ApiError ? err.message : "Gagal memuat histori."
-          )
-      })
+            err instanceof ApiError ? err.message : "Gagal memuat histori.",
+          );
+        }
+      });
     return () => {
-      batal = true
-    }
-  }, [pelangganId])
+      batal = true;
+    };
+  }, [pelangganId, terkini.periode]);
 
-  if (!pelangganId) {
-    return (
-      <p className="text-[11px] text-muted-foreground">
-        Belum ada pembacaan resmi untuk pelanggan ini.
-      </p>
-    )
-  }
-  if (galat) return <p className="text-[11px] text-destructive">{galat}</p>
-  if (rows === null)
-    return <p className="text-[11px] text-muted-foreground">Memuat histori…</p>
-  if (rows.length === 0) {
-    return (
-      <p className="text-[11px] text-muted-foreground">
-        Belum ada pembacaan resmi untuk pelanggan ini.
-      </p>
-    )
-  }
-
-  // API mengurut periode desc; tampilkan kronologis (lama -> baru).
-  const urut = [...rows].reverse()
-  const maks = Math.max(...urut.map((r) => r.pemakaianM3), 1)
+  const histori = rows ? [...rows].reverse() : [];
 
   return (
-    <div className="flex flex-col gap-1.5">
-      {urut.map((r) => {
-        const d = new Date(r.periode)
-        const thbl = d.getUTCFullYear() * 100 + (d.getUTCMonth() + 1)
-        return (
-          <div key={r.id} className="flex items-center gap-2">
-            <span className="w-8 shrink-0 text-[10px] font-medium text-muted-foreground uppercase">
-              {formatBulanSingkat(thbl)}
-            </span>
-            <div className="h-3 flex-1 bg-muted/50">
-              <div
-                className="h-full bg-primary/70"
-                style={{
-                  width: `${Math.max(4, (r.pemakaianM3 / maks) * 100)}%`,
-                }}
-              />
-            </div>
-            <span className="w-12 shrink-0 text-right font-mono text-[11px] text-foreground tabular-nums">
-              {r.pemakaianM3.toLocaleString("id-ID")}
-            </span>
-          </div>
-        )
-      })}
-      <p className="mt-0.5 text-[10px] text-muted-foreground">
-        Pemakaian m³ per periode (pembacaan resmi terakhir)
-      </p>
+    <div className="flex min-w-0 flex-col gap-1">
+      <table className="w-full table-fixed border-collapse text-copy-13 tabular-nums">
+          <thead className="text-muted-foreground">
+            <tr>
+              <th scope="col" className="w-[4.25rem] px-1.5 py-1 text-left text-label-12 font-medium">
+                Periode
+              </th>
+              <th scope="col" className="whitespace-normal px-1 py-1 text-center text-label-12 leading-tight font-medium">
+                Stand Awal
+              </th>
+              <th scope="col" className="whitespace-normal px-1 py-1 text-center text-label-12 leading-tight font-medium">
+                Stand Akhir
+              </th>
+              <th scope="col" className="w-12 px-1 py-1 text-center text-label-12 font-medium">
+                Pakai
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/60">
+            <tr className="bg-accent/40 font-medium text-foreground">
+              <th scope="row" className="px-1.5 py-1 text-left font-medium">
+                {formatPeriodeRingkas(terkini.periode)}
+              </th>
+              <td className="px-1 py-1 text-center">
+                {angka(terkini.standAwal)}
+              </td>
+              <td className="px-1 py-1 text-center">
+                {angka(terkini.standAkhir)}
+              </td>
+              <td className="px-1 py-1 text-center">{angka(terkini.pakai)}</td>
+            </tr>
+            {histori.map((row) => {
+              const periode = new Date(row.periode);
+              const thbl =
+                periode.getUTCFullYear() * 100 + periode.getUTCMonth() + 1;
+              return (
+                <tr key={row.id} className="text-muted-foreground">
+                  <th scope="row" className="px-1.5 py-1 text-left font-normal">
+                    {formatPeriodeRingkas(thbl)}
+                  </th>
+                  <td className="px-1 py-1 text-center">{angka(row.standLalu)}</td>
+                  <td className="px-1 py-1 text-center">
+                    {angka(row.standAkhir)}
+                  </td>
+                  <td className="px-1 py-1 text-center">
+                    {angka(row.pemakaianM3)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+      </table>
+      {catatan && (
+        <p className="text-label-11 text-muted-foreground">{catatan}</p>
+      )}
+      {!pelangganId && (
+        <p className="text-label-12 text-muted-foreground">
+          Belum ada histori pembacaan resmi.
+        </p>
+      )}
+      {pelangganId && rows === null && !galat && (
+        <p className="text-label-12 text-muted-foreground">
+          Memuat histori pembacaan…
+        </p>
+      )}
+      {galat && <p className="text-label-12 text-destructive">{galat}</p>}
+      {pelangganId && rows?.length === 0 && (
+        <p className="text-label-12 text-muted-foreground">
+          Belum ada histori pembacaan resmi.
+        </p>
+      )}
     </div>
-  )
+  );
+}
+
+function formatPeriodeRingkas(thbl: number) {
+  return `${formatBulanSingkat(thbl)} '${String(Math.floor(thbl / 100)).slice(-2)}`;
 }

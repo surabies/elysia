@@ -1,6 +1,6 @@
 import type { ColDef } from "ag-grid-community"
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer"
-import { Columns3CogIcon } from "@/features/dashboard/verifikasi/lib/IkonLucide"
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
+import { Columns3CogIcon } from "@/features/dashboard/shared/icons/IkonLucide"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

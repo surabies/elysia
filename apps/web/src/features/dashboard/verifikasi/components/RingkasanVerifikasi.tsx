@@ -11,11 +11,11 @@ import {
   HourglassIcon,
   PercentCircleIcon,
   Task01Icon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
+} from "@/features/dashboard/shared/icons/IkonLucide";
 import { cn } from "@/lib/Utilitas";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatPeriode } from "@/features/public/lib/Format";
-import { StatCard } from "./StatKartu";
+import { StatCard, StatGrid } from "./StatKartu";
 import type { StatsVerifikasi } from "../types/TipeVerifikasi";
 
 export function PilihPeriode({
@@ -30,11 +30,12 @@ export function PilihPeriode({
   return (
     <NativeSelect
       aria-label="Filter periode"
+      size="sm"
       value={nilai ?? ""}
       onChange={(e) =>
         onGanti(e.currentTarget.value ? Number(e.currentTarget.value) : null)
       }
-      className="h-8 w-auto min-w-36 text-xs"
+      className="w-auto min-w-36"
     >
       <option value="">Semua periode</option>
       {periodes.map((p) => (
@@ -88,7 +89,7 @@ export function RingkasanVerifikasi({
       )}
     >
       <div className="min-h-0 overflow-hidden">
-        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 sm:grid-cols-2 lg:grid-cols-4">
+        <StatGrid>
           <StatCard
             label="Total laporan"
             nilai={id(h.total)}
@@ -118,7 +119,7 @@ export function RingkasanVerifikasi({
             nada="info"
             progres={h.progres}
           />
-        </div>
+        </StatGrid>
       </div>
     </div>
   );
@@ -128,7 +129,7 @@ export function RingkasanVerifikasi({
 export function RingkasanSebaris({ stats }: { stats: StatsVerifikasi | null }) {
   const h = hitung(stats);
   return (
-    <p className="hidden items-center gap-3 text-xs text-muted-foreground tabular-nums lg:flex">
+    <p className="hidden items-center gap-3 text-label-12 text-muted-foreground tabular-nums lg:flex">
       <span>
         Total{" "}
         <strong className="font-medium text-foreground">{id(h.total)}</strong>

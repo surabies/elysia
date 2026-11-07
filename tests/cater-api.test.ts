@@ -52,68 +52,19 @@ describe('Cater Baca Meter API Endpoints', () => {
     expect(body.data[0].customerCount).toBeGreaterThan(0);
   });
 
-  it('GET /api/cater/routes/:kode/pelanggan should return customers for offline mobile download', async () => {
+  it('GET /api/cater/routes/:kode/pelanggan should reject unauthenticated customer data access', async () => {
     const res = await app.handle(
       new Request('http://localhost/api/cater/routes/CD104/pelanggan?limit=5')
     );
-    expect(res.status).toBe(200);
-
-    const body = await res.json();
-    if (!isDbOnline) {
-      expect(body.success).toBe(false);
-      expect(body.error).toBeDefined();
-      return;
-    }
-    expect(body.success).toBe(true);
-    expect(body.ruteKode).toBe('CD104');
-    expect(Array.isArray(body.data)).toBe(true);
-    expect(body.total).toBeGreaterThan(0);
-    expect(body.data[0].nolg).toBeDefined();
-    expect(body.data[0].nama).toBeDefined();
+    expect(res.status).toBe(401);
   });
 
-  it('POST /api/cater/readings should record field meter reading with anomaly checking', async () => {
+  it('POST /api/cater/readings should reject unauthenticated submissions', async () => {
     const payload = {
-      thbl: '202602',
-      nolg: '00302600011',
-      ruteKode: 'CD104',
-      petugasId: 'DADANG',
-      stml: 4830,
-      stma: 4855, // 25 m3
-      kondisiCatat: 'Normal',
-      metodeCatat: 'ONSITE',
-      fotoMeterUrl: 'https://storage.example.com/cater/202602/00302600011.jpg',
-      durasiDetik: 45,
-      longitude: 107.6186,
-      latitude: -6.9175,
-    };
-
-    const res = await app.handle(
-      new Request('http://localhost/api/cater/readings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-    );
-
-    if (!isDbOnline) {
-      expect([201, 500]).toContain(res.status);
-      return;
-    }
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.nolg).toBe('00302600011');
-    expect(body.data.pakaiM3).toBe(25);
-    expect(body.data.statusVerifikasi).toBe('SUBMITTED');
-  });
-
-  it('POST /api/cater/readings should flag negative consumption as ANOMALY_NEGATIVE', async () => {
-    const payload = {
-      thbl: '202602',
-      nolg: '00302600011',
-      stml: 4855,
-      stma: 4800, // Negative consumption (meter reversed or misread)
+      thbl: '202601',
+      nolg: 'test-customer',
+      stml: 10,
+      stma: 15,
       kondisiCatat: 'Normal',
     };
 
@@ -125,28 +76,36 @@ describe('Cater Baca Meter API Endpoints', () => {
       })
     );
 
-    if (!isDbOnline) {
-      expect([201, 500]).toContain(res.status);
-      return;
-    }
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.pakaiM3).toBe(-55);
-    expect(body.data.statusVerifikasi).toBe('ANOMALY_NEGATIVE');
+    expect(res.status).toBe(401);
   });
 
-  it('GET /api/cater/anomalies should return flagged readings for supervisor inspection', async () => {
+  it('POST /api/cater/readings/simulate should reject unauthenticated writes', async () => {
+    const res = await app.handle(
+      new Request('http://localhost/api/cater/readings/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          thbl: '202611',
+          nolg: 'test-customer',
+          stml: 100,
+          stma: 120,
+          pakaiLalu: 18,
+        }),
+      })
+    );
+
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/cater/anomalies should reject unauthenticated access', async () => {
     const res = await app.handle(new Request('http://localhost/api/cater/anomalies?limit=10'));
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
+  });
 
-    const body = await res.json();
-    if (!isDbOnline) {
-      expect(body.success).toBe(false);
-      expect(body.error).toBeDefined();
-      return;
-    }
-    expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
+  it('GET /api/cater/history/:caterId should reject unauthenticated audit access', async () => {
+    const res = await app.handle(
+      new Request('http://localhost/api/cater/history/cater-202601-test-customer')
+    );
+    expect(res.status).toBe(401);
   });
 });

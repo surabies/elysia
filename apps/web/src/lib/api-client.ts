@@ -1,5 +1,5 @@
 import { treaty } from '@elysiajs/eden';
-import type { App } from '@/src/server/app';
+import type { App } from '@/server/app';
 
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') {

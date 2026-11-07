@@ -1,14 +1,10 @@
 // Tema AG Grid (token CSS proyek, gaya Geist).
 import { themeQuartz } from "ag-grid-community"
 
-// Kelas kontrol toolbar dipindah ke ./kelas-kontrol (tanpa impor AG Grid) dan
-// diekspor ulang di sini supaya impor lama dari "../tema" tidak perlu diubah.
+// Kelas status filter dan panel diterbitkan ulang di sini bersama tema AG Grid.
 export {
-  KELAS_DASAR_KONTROL,
-  KELAS_KONTROL,
   KELAS_KONTROL_AKTIF,
   KELAS_KONTROL_PANEL,
-  KELAS_INPUT_TOOLBAR,
 } from "./KelasKontrol"
 
 const garisTabel = () => ({

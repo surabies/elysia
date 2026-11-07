@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { sql, eq, desc, count } from 'drizzle-orm';
 import { db, places } from '@cater/db';
-import { authPlugin } from '@/src/server/plugins/auth';
+import { authPlugin } from '@/server/plugins/auth';
 
 export const geoModule = new Elysia({ prefix: '/places' })
   .use(authPlugin)

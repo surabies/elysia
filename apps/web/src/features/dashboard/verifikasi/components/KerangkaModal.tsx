@@ -54,23 +54,23 @@ export function KerangkaModal({
     <Dialog open={buka} onOpenChange={onBuka}>
       <DialogContent
         className={cn(
-          "flex max-h-[92dvh] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0",
+          "flex max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden rounded-xl p-0",
           LEBAR[lebar],
         )}
       >
-        <DialogHeader className="shrink-0 border-b border-border/70 px-4 py-3 text-left">
-          <DialogTitle className="text-sm">{judul}</DialogTitle>
-          <DialogDescription className={cn("text-xs", !subjudul && "sr-only")}>
+        <DialogHeader className="shrink-0 border-b border-border px-4 py-3 text-left">
+          <DialogTitle>{judul}</DialogTitle>
+          <DialogDescription className={cn(!subjudul && "sr-only")}>
             {subjudul ?? judul}
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="min-h-0 *:data-radix-scroll-area-viewport:max-h-[calc(92dvh-9.5rem)]">
+        <ScrollArea className="min-h-0 *:data-radix-scroll-area-viewport:max-h-[calc(100dvh-12rem)]">
           <div className="p-4">{children}</div>
         </ScrollArea>
 
         {footer && (
-          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border/70 bg-card px-4 py-3">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border bg-card px-4 py-3">
             {footer}
           </div>
         )}
@@ -82,7 +82,7 @@ export function KerangkaModal({
 /// Judul kelompok isian dengan aksen biru tipis (pengganti judul bergaris-bawah sistem lama).
 export function JudulBagian({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+    <h3 className="flex items-center gap-2 text-label-14 font-semibold text-foreground">
       <span
         className="h-3.5 w-0.5 rounded-full bg-(--verif-info)"
         aria-hidden
@@ -105,11 +105,11 @@ export function BarisForm({
   tone?: "destruktif";
 }) {
   return (
-    <div className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-2">
+    <div className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-3">
       <Label
         htmlFor={htmlFor}
         className={cn(
-          "text-xs font-normal text-muted-foreground",
+          "font-normal text-muted-foreground",
           tone === "destruktif" && "font-medium text-destructive",
         )}
       >
@@ -132,7 +132,10 @@ export function BarisTumpuk({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={htmlFor} className="text-xs font-medium text-foreground">
+      <Label
+        htmlFor={htmlFor}
+        className="text-foreground"
+      >
         {label}
       </Label>
       {children}
@@ -140,7 +143,7 @@ export function BarisTumpuk({
   );
 }
 
-/// Kotak baca-saja — tinggi dan sudutnya sama dengan Input (h-9, rounded-lg).
+/// Nilai baca-saja, bukan kontrol input: tidak dapat difokuskan atau diedit.
 export function KotakBaca({
   nilai,
 }: {
@@ -153,10 +156,12 @@ export function KotakBaca({
         ? nilai.toLocaleString("id-ID")
         : nilai;
   return (
-    <div className="flex h-9 items-center rounded-lg border border-border/70 bg-muted/40 px-3 text-sm text-foreground tabular-nums">
-      <span className="truncate" title={teks}>
-        {teks}
-      </span>
+    <div
+      aria-label={`Data baca-saja: ${teks}`}
+      title={teks}
+      className="flex h-8 w-full min-w-0 cursor-default select-none items-center overflow-hidden rounded-md border border-transparent bg-muted px-3 text-copy-13 text-muted-foreground"
+    >
+      <span className="truncate">{teks}</span>
     </div>
   );
 }

@@ -14,12 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/lib/LabelPencatatan";
-import {
-  KELAS_KONTROL_MODAL,
-  PilihSatu,
-  type OpsiPilihan,
-} from "../DialogVerifikasi";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
+import { PilihSatu, type OpsiPilihan } from "../DialogVerifikasi";
 import { KerangkaModal } from "../KerangkaModal";
 import {
   saringOpsiFilterPencarian,
@@ -168,6 +164,9 @@ function Kontrol({
 }) {
   const mati = !aktif;
   const v = (k: string) => nilai[k] ?? "";
+  const kelasNonaktif = mati
+    ? "disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-100"
+    : undefined;
 
   switch (b.jenis) {
     case "pilih": {
@@ -186,16 +185,18 @@ function Kontrol({
           opsi={daftar}
           placeholder={`- ${b.label} -`}
           disabled={mati || daftar.length === 0}
+          size="sm"
         />
       );
     }
     case "teks":
       return (
         <Input
+          density="compact"
+          className={kelasNonaktif}
           value={v(b.kunci)}
           onChange={(e) => ubah(b.kunci, e.target.value)}
           disabled={mati}
-          className={KELAS_KONTROL_MODAL}
           aria-label={b.label}
         />
       );
@@ -205,22 +206,24 @@ function Kontrol({
       return (
         <div className="flex items-center gap-1.5">
           <Input
+            density="compact"
+            className={kelasNonaktif}
             type={tipe}
             value={v(`${b.kunci}Dari`)}
             onChange={(e) => ubah(`${b.kunci}Dari`, e.target.value)}
             disabled={mati}
-            className={KELAS_KONTROL_MODAL}
             aria-label={`${b.label} dari`}
           />
-          <span className="shrink-0 rounded-md bg-muted px-1.5 py-1 text-[11px] text-muted-foreground">
+          <span className="shrink-0 rounded-md bg-muted px-1.5 py-1 text-label-12 text-muted-foreground">
             s/d
           </span>
           <Input
+            density="compact"
+            className={kelasNonaktif}
             type={tipe}
             value={v(`${b.kunci}Sampai`)}
             onChange={(e) => ubah(`${b.kunci}Sampai`, e.target.value)}
             disabled={mati}
-            className={KELAS_KONTROL_MODAL}
             aria-label={`${b.label} sampai`}
           />
         </div>
@@ -236,14 +239,16 @@ function Kontrol({
               onChange={(x) => ubah(`${b.kunci}Operator`, x)}
               opsi={OPERATOR}
               disabled={mati}
+              size="sm"
             />
           </div>
           <Input
+            density="compact"
+            className={kelasNonaktif}
             type="number"
             value={v(b.kunci)}
             onChange={(e) => ubah(b.kunci, e.target.value)}
             disabled={mati}
-            className={KELAS_KONTROL_MODAL}
             aria-label={b.label}
           />
         </div>
@@ -273,7 +278,9 @@ function BarisBidang({
     <div
       className={cn(
         "grid items-center gap-x-3 gap-y-1.5",
-        tumpuk ? "grid-cols-1" : "grid-cols-[9.5rem_minmax(0,1fr)]",
+        tumpuk
+          ? "grid-cols-1"
+          : "grid-cols-1 sm:grid-cols-[7rem_minmax(0,1fr)]",
       )}
     >
       <div className="flex items-center gap-2">
@@ -285,7 +292,7 @@ function BarisBidang({
         <Label
           htmlFor={`cari-${b.kunci}`}
           className={cn(
-            "text-sm font-normal",
+            "font-normal",
             !aktif && "text-muted-foreground",
           )}
         >
@@ -401,7 +408,7 @@ export function ModalPencarian({
       footer={
         <>
           {galat && (
-            <span role="alert" className="mr-auto text-xs text-destructive">
+            <span role="alert" className="mr-auto text-copy-13 text-destructive">
               {galat}
             </span>
           )}
@@ -421,7 +428,7 @@ export function ModalPencarian({
         </>
       }
     >
-      <div className="grid gap-x-8 gap-y-4 md:grid-cols-2">
+      <div className="grid gap-x-8 gap-y-4 lg:grid-cols-2">
         <div className="flex flex-col gap-3">
           {KIRI.map((b) => (
             <BarisBidang key={b.kunci} b={b} {...bagi} />
@@ -433,7 +440,7 @@ export function ModalPencarian({
           ))}
         </div>
 
-        <div className="grid gap-3 border-t border-border/70 pt-4 md:col-span-2 md:grid-cols-3">
+        <div className="grid gap-3 border-t border-border pt-4 lg:col-span-2 lg:grid-cols-3">
           {BAWAH.map((b) => (
             <BarisBidang key={b.kunci} b={b} tumpuk {...bagi} />
           ))}

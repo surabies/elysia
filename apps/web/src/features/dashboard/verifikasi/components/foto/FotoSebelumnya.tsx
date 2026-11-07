@@ -7,7 +7,7 @@
 // bersebelahan tanpa membuka halaman lain.
 import * as React from "react"
 import { formatPeriode } from "@/features/public/lib/Format"
-import { ambilList, ApiError } from "@/features/dashboard/api/ApiDashboard"
+import { ambilList, ApiError } from "@/features/dashboard/shared/api/ApiDashboard"
 import type { PembacaanRingkas } from "../../types/TipeVerifikasi"
 import { FotoBukti, FotoKosong } from "./FotoBukti"
 
@@ -62,10 +62,10 @@ export function FotoSebelumnya({
       />
     )
   }
-  if (galat) return <p className="text-[11px] text-destructive">{galat}</p>
+  if (galat) return <p className="text-copy-13 text-destructive">{galat}</p>
   if (row === undefined)
     return (
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-copy-13 text-muted-foreground">
         Memuat foto pembanding…
       </p>
     )

@@ -21,8 +21,8 @@ export function tentukanHasilPembacaan(row: DataPembacaan) {
   const standAkhir =
     kondisi === "MB" && row.standMeterBaru != null
       ? row.standMeterBaru
-      : (row.pembacaan?.standAkhir ??
-        row.standAkhirRevisi ??
+      : (row.standAkhirRevisi ??
+        row.pembacaan?.standAkhir ??
         row.standAkhir ??
         row.standAngkatLama ??
         null)
@@ -33,9 +33,19 @@ export function tentukanHasilPembacaan(row: DataPembacaan) {
     row.standAngkatLama != null ||
     row.standMeterBaru != null
 
-  let pemakaian = row.pemakaian ?? row.pembacaan?.pemakaianRiil ?? null
+  let pemakaian =
+    row.pemakaian ??
+    row.pembacaan?.pemakaianRiil ??
+    null
 
-  if (row.pembacaan?.pemakaianRiil != null) {
+  if (
+    row.pembacaan?.pemakaianRiil != null &&
+    row.standAwalRevisi == null &&
+    row.standAkhirRevisi == null &&
+    row.kondisiRevisi == null &&
+    row.standAngkatLama == null &&
+    row.standMeterBaru == null
+  ) {
     pemakaian = row.pembacaan.pemakaianRiil
   } else if (adaKoreksi && standAwal != null) {
     pemakaian =

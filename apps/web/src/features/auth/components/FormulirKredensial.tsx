@@ -3,7 +3,7 @@
 // features/auth/components/FormulirKredensial.tsx — form masuk email/username +
 // password.
 //
-// Memakai signIn dari "@/src/lib/auth-client" (Better Auth) dengan
+// Memakai signIn dari "@/lib/auth-client" (Better Auth) dengan
 // `redirect: false`. Dua alasan:
 //  1. Endpoint /api/auth/* dilayani Better Auth Next.js handler, dan
 //     jalur HTTP inilah yang sudah terbukti bekerja end-to-end.
@@ -11,7 +11,7 @@
 //     tanpa memuat ulang halaman dan tanpa membuang isi form.
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { signIn } from "@/src/lib/auth-client"
+import { signIn } from "@/lib/auth-client"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

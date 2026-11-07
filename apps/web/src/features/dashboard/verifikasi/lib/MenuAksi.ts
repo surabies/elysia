@@ -20,8 +20,8 @@ import {
   Edit02Icon,
   RotateLeft01Icon,
   SecurityCheckIcon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide"
-import type { IconSvgElement } from "@/features/dashboard/verifikasi/lib/IconRenderer"
+} from "@/features/dashboard/shared/icons/IkonLucide"
+import type { IconSvgElement } from "@/features/dashboard/shared/icons/IconRenderer"
 import type { AksiKonteks } from "../components/MenuKonteks"
 
 export type ProfilMenu = "penilai" | "chn"

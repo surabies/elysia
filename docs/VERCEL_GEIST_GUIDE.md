@@ -1,6 +1,6 @@
 # Panduan Lengkap Vercel Geist Design System
 
-Desain sistem Vercel Geist diimplementasikan secara penuh pada proyek ini sesuai spesifikasi resmi [vercel.com/geist](https://vercel.com/geist). Konfigurasi terpusat pada [`app/globals.css`](file:///E:/Coding/elysiajs/app/globals.css) dan [`src/vercel.css`](file:///E:/Coding/elysiajs/src/vercel.css), serta dihubungkan ke font resmi via [`app/layout.tsx`](file:///E:/Coding/elysiajs/app/layout.tsx).
+Desain sistem Vercel Geist diimplementasikan pada proyek ini sesuai spesifikasi resmi [vercel.com/geist](https://vercel.com/geist). Token tema berada di [globals.css](../apps/web/src/app/globals.css), dan font serta provider dipasang melalui [layout.tsx](../apps/web/src/app/layout.tsx).
 
 ---
 
@@ -49,11 +49,30 @@ Token dipetakan secara akurat sesuai hasil inspeksi langsung dashboard Vercel ([
 - **Field Input & Box Search (Sidebar)**: Tinggi `40px` (`h-10` / `--geist-form-height`), padding `px-3`, icon `16px` (`size-4`), radius `6px` (`rounded-md`), teks `text-sm`, bg `#FFFFFF` (light) / `#0A0A0A` (dark).
 - **Navbar Search Trigger**: Tinggi `36px` (`h-9`), padding `px-3`, icon `16px` (`size-4`), teks `text-sm`.
 - **Avatar Button (Navbar Trigger)**: Ukuran `36px` (`size-9`), `rounded-full`, ring `ring-1 ring-border`.
-- **Dropdown Menu Item & Menu Button**: Tinggi `40px` (`h-10` / `h-(--ds-size-medium)`), padding `px-2.5`, radius `6px` (`rounded-md`), teks `text-sm font-normal`, hover `#F2F2F2` (light) / `#1F1F1F` (dark).
+- **Dropdown / Context Menu Item**: Tinggi minimum `32px` (`h-8`), padding `px-2`, radius `6px` (`rounded-md`), teks token `text-label-13`, hover mengikuti token `accent`.
 - **Select Trigger**: Default tinggi `40px` (`h-10` / `--ds-size-medium`), compact `32px` (`h-8`), padding `px-3`, radius `6px` (`rounded-md`), hover `#F2F2F2` (light) / `#1F1F1F` (dark).
-- **Select Item (Menu Select)**: Tinggi `40px` (`h-10`), padding `px-2.5`, radius `6px` (`rounded-md`), teks `text-sm font-normal`, check indicator `16px` (`size-4`).
-- **Card**: Radius `8px` (`rounded-lg`), border hairline 1px, padding `p-6`, bg `#FFFFFF` (light) / `#0A0A0A` (dark), hover border highlight.
+- **Select Item (Menu Select)**: Mengikuti teks `14px` dan padding `py-1.5`; ukuran item menu tidak bergantung pada ukuran trigger.
+- **Card**: Radius `8px` (`rounded-lg`), border hairline 1px, no default shadow, bg `#FFFFFF` (light) / `#0A0A0A` (dark). `CardHeader`, `CardContent`, and `CardFooter` use padding `p-5` by default.
 - **Sidebar Nav Row**: Tinggi `36px` (`h-9`), radius `6px` (`rounded-md`), icon container `size-9 place-content-center`.
+
+### Penerapan pada Modul Verifikasi
+- Toolbar tabel memakai varian ringkas shadcn `32px` (`Button`/`SelectTrigger` ukuran ringkas dan `Input density="compact"`).
+- Field input/select dialog memakai komponen shadcn standar (`40px`, teks `14px`); textarea memakai tinggi minimum `96px` dan tipografi `14px`. Untuk form Pencarian Data yang padat, input dan Select trigger sama-sama memakai tinggi ringkas `32px`; opsi di dalam menu Select tetap menggunakan ukuran standar.
+- Field nonaktif pada Pencarian Data mempertahankan kontras permukaan menggunakan token `secondary`, teks `muted-foreground`, dan opacity penuh; status nonaktif tetap disampaikan melalui checkbox serta atribut disabled, bukan dengan memudarkan seluruh kotak kontrol.
+- Komponen formulir, badge, dialog, dan menu aksi memakai ukuran bawaan primitive shadcn; ukuran tidak ditimpa masing-masing halaman. Tata letak serta skala tabel Verifikasi dipusatkan di `features/dashboard/verifikasi/lib/TemaVerifikasi.ts`.
+- Tipografi dalam Verifikasi memakai utility semantik dari `globals.css`: `text-copy-13` untuk teks bantuan/pesan, `text-label-12` untuk metadata dan label ringkas, serta `text-label-11` hanya untuk indikator sangat kecil seperti angka badge. Jangan menambah `text-xs`, ukuran arbitrer, atau ukuran font langsung pada halaman; jika ukuran perlu berubah, ubah primitive atau token pusat.
+- Panel detail kiri menyatukan informasi pelanggan, stand meter, dan histori dalam satu seksi ringkasan; subjudul memakai `text-label-11`, nilai dan metadata memakai token label/copy Geist, dan jarak/padding diringkas tanpa mengecilkan teks di bawah token minimum.
+- Stand terkini dan tiga periode histori ditampilkan dalam satu tabel ringkas berkolom periode, stand awal, stand akhir, dan pakai. Status verifikasi tetap ditampilkan pada tabel laporan dan tidak dicampurkan ke ringkasan informasi pelanggan.
+- Panel master-detail otomatis memilih baris pertama yang tersedia. Pergantian baris mempertahankan panel detail tetap ter-mount; data sebelumnya bertahan selama pemuatan detail baru dan indikator kecil menandai transisi agar panel tidak berkedip atau mengubah tata letak.
+- Tombol aksi Verifikasi memakai tinggi standar `32px` (`size="default"`). `size="sm"` hanya untuk kontrol non-tombol ringkas yang memang disediakan shadcn, seperti select toolbar; jangan menggunakannya pada tombol aksi karena menghasilkan tinggi `28px` dan menyimpang dari standar halaman.
+- Dialog aksi Verifikasi memakai satu kerangka `KerangkaModal`: batas tinggi mengikuti viewport, header/body/footer memakai padding `16px`, tombol aksi `32px`, dan lebar hanya berbeda lewat preset `sm`/`md`/`lg`/`xl` sesuai isi. Form berpindah dari label di atas kontrol pada layar sempit ke baris label-kontrol pada layar yang cukup lebar; form multi-kolom hanya aktif saat ruang horizontal memadai.
+- Item menu/dropdown dan menu klik-kanan memakai tinggi minimum `32px` (`h-8`) dan teks token `text-label-13`; label menu memakai `text-label-12`. Radius surface menu mengikuti overlay Geist (`rounded-xl`); ukuran item tidak ditentukan ulang pada setiap pemanggil.
+
+### Default Primitive shadcn
+- Primitive di `apps/web/src/components/ui` adalah sumber default komponen; aturan permukaan kartu, tombol, input, select, label, dan tipografi ditempatkan di sana, bukan ditambal per halaman.
+- `Card` memakai radius, border, latar, dan elevasi sesuai token Geist. Gunakan komponen `Card` biasa untuk permukaan standar; tambahkan kelas layout hanya bila komposisi konten memang memerlukan pengecualian.
+- Typography primitive memakai utility semantik (`text-copy-*`, `text-label-*`, `text-button-*`) dari `globals.css`. Hindari ukuran font Tailwind/arbitrer pada primitive dan halaman jika token semantik tersedia.
+- Variasi yang memang dibutuhkan tetap diekspos sebagai prop resmi (contohnya `Button size`, `SelectTrigger size`, dan `Input density`) agar perubahan ukuran tidak bergantung pada override kelas ad hoc.
 
 ---
 
@@ -109,7 +128,7 @@ Sesuai [Geist Typography](https://vercel.com/geist/typography), tersedia utility
 ## 3. Font (Geist Sans & Geist Mono)
 
 - Paket resmi `geist` terpasang.
-- Dikonfigurasi di [`app/layout.tsx`](file:///E:/Coding/elysiajs/app/layout.tsx):
+- Dikonfigurasi di [layout.tsx](../apps/web/src/app/layout.tsx):
   ```tsx
   import { GeistSans } from 'geist/font/sans';
   import { GeistMono } from 'geist/font/mono';

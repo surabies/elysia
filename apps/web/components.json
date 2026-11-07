@@ -5,16 +5,16 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "app/globals.css",
+    "css": "src/app/globals.css",
     "baseColor": "zinc",
     "cssVariables": true
   },
   "aliases": {
     "components": "@/components",
-    "utils": "@/src/lib/utils",
+    "utils": "@/lib/utils",
     "ui": "@/components/ui",
-    "lib": "@/src/lib",
-    "hooks": "@/src/hooks"
+    "lib": "@/lib",
+    "hooks": "@/hooks"
   },
   "registries": {
     "@reui": "https://reui.io/r/{style}/{name}.json"

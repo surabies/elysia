@@ -63,7 +63,11 @@ export const SEED_PENCATAT_ACCOUNTS: SeedAccountDef[] = [
   { id: 'user-pencatat-edi', name: 'Edi (Pencatat)', email: 'edi@cater.pdam.co.id', roles: ['PENCATAT'], petugasId: 'EDI' },
 ];
 
-export async function seedAccounts(defaultPassword = 'Password123!') {
+export async function seedAccounts(defaultPassword: string) {
+  if (defaultPassword.length < 12) {
+    throw new Error('The seed password must be at least 12 characters long.');
+  }
+
   console.log('Seeding official accounts (5 Management/Roles + 9 Pencatat Lapangan)...');
   const allAccounts = [...SEED_MANAGEMENT_ACCOUNTS, ...SEED_PENCATAT_ACCOUNTS];
   const hashedPassword = await hashPassword(defaultPassword);
@@ -117,11 +121,19 @@ export async function seedAccounts(defaultPassword = 'Password123!') {
     }
   }
 
-  console.log(`Successfully seeded ${allAccounts.length} user accounts with password: "${defaultPassword}"`);
+  console.log(`Successfully seeded ${allAccounts.length} user accounts.`);
 }
 
 if (import.meta.main) {
-  seedAccounts()
+  const seedPassword = process.env.SEED_DEFAULT_PASSWORD;
+  if (!seedPassword || seedPassword.length < 12) {
+    console.error(
+      'Set SEED_DEFAULT_PASSWORD to a unique password of at least 12 characters before seeding accounts.'
+    );
+    process.exit(1);
+  }
+
+  seedAccounts(seedPassword)
     .then(() => {
       console.log('Finished seeding accounts.');
       process.exit(0);

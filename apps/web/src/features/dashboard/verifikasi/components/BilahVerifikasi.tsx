@@ -21,8 +21,8 @@ import {
   Search01Icon,
   Task01Icon,
   UserGroupIcon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
+} from "@/features/dashboard/shared/icons/IkonLucide";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { cn } from "@/lib/Utilitas";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,10 +40,9 @@ import {
 } from "@/components/ui/tooltip";
 import { formatPeriode } from "@/features/public/lib/Format";
 import {
-  KELAS_KONTROL,
   KELAS_KONTROL_AKTIF,
 } from "../../shared/data-grid/KelasKontrol";
-import { TEMA_TOGGLE_ITEM } from "../lib/TemaGridVerifikasi";
+import { TEMA_TOGGLE_ITEM } from "../lib/TemaVerifikasi";
 import { KotakCari } from "../../shared/data-grid/toolbar/KotakCari";
 import { FilterPilihan } from "../../shared/data-grid/toolbar/PenyaringPilihan";
 import { PenyaringTanggal } from "../../shared/data-grid/toolbar/PenyaringTanggal";
@@ -58,7 +57,7 @@ import {
   saringOpsiPetugasRute,
   type PenugasanFilter,
 } from "../lib/PenyaringanRelasi";
-import { LABEL_KONDISI_CATAT } from "../../lib/LabelPencatatan";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
 
 export interface FilterVerifikasi {
   q: string;
@@ -130,14 +129,13 @@ export function TombolIkonVerifikasi({
           aria-controls={controls}
           onClick={onClick}
           className={cn(
-            KELAS_KONTROL,
-            "relative size-8 justify-center p-0",
+            "relative",
             aktif && KELAS_KONTROL_AKTIF,
           )}
         >
           {ikon}
           {jumlah !== undefined && jumlah > 0 && (
-            <span className="absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-semibold text-background tabular-nums">
+            <span className="absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-label-11 font-semibold text-background tabular-nums">
               {jumlah}
             </span>
           )}
@@ -164,7 +162,6 @@ export function ToolbarVerifikasi({
   aksiKanan,
   opsiPencarian,
   onPencarianLanjutan,
-  galatOpsiPencarian,
 }: {
   filter: FilterVerifikasi;
   onGanti: (f: FilterVerifikasi) => void;
@@ -185,7 +182,6 @@ export function ToolbarVerifikasi({
   opsiPencarian?: OpsiPencarian;
   /** Dipanggil saat kriteria Cari Lanjutan diterapkan. */
   onPencarianLanjutan: (kriteria: KriteriaPencarian) => void;
-  galatOpsiPencarian?: string | null;
 }) {
   const [cari, setCari] = React.useState(filter.q);
   const [panelBuka, setPanelBuka] = React.useState(false);
@@ -386,21 +382,11 @@ export function ToolbarVerifikasi({
                     param: "statusVerif",
                     label: "Status",
                     opsi: [
-                      { value: "MENUNGGU", label: "Menunggu" },
-                      {
-                        value: "MENUNGGU_V2",
-                        label: "Tervalidasi V1 (Antrean V2)",
-                      },
-                      {
-                        value: "MENUNGGU_V3",
-                        label: "Tervalidasi V2 (Antrean V3)",
-                      },
-                      { value: "DIVERIFIKASI", label: "Disetujui (Resmi V3)" },
-                      { value: "DITOLAK", label: "Perlu Review" },
-                      {
-                        value: "SEMUA_MENUNGGU",
-                        label: "Semua Belum Selesai (V1/V2/V3)",
-                      },
+                      { value: "SUBMITTED", label: "Menunggu" },
+                      { value: "VERIFIED_L1", label: "V1" },
+                      { value: "VERIFIED_L2", label: "V2" },
+                      { value: "APPROVED_FINAL", label: "V3" },
+                      { value: "NEED_RESURVEY", label: "Cek ulang" },
                     ],
                   }}
                   nilai={filter.statusVerif}
@@ -510,7 +496,7 @@ export function ToolbarVerifikasi({
                           aria-hidden
                         />
                         {anomali > 0 && (
-                          <span className="absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-(--verif-error) px-1 text-[10px] font-semibold text-background tabular-nums">
+                          <span className="absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-(--verif-error) px-1 text-label-11 font-semibold text-background tabular-nums">
                             {anomali}
                           </span>
                         )}
@@ -548,7 +534,7 @@ export function ToolbarVerifikasi({
         </div>
 
         <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
-          <span className="text-xs text-muted-foreground tabular-nums">
+          <span className="text-label-12 text-muted-foreground tabular-nums">
             {memuat
               ? "Memuat…"
               : `${jumlahTampil.toLocaleString("id-ID")} dari ${jumlahTotal.toLocaleString("id-ID")}`}
@@ -560,9 +546,8 @@ export function ToolbarVerifikasi({
             onValueChange={(v) => set("pageSize", Number(v))}
           >
             <SelectTrigger
-              size="default"
+              size="sm"
               aria-label="Baris per halaman"
-              className={KELAS_KONTROL}
             >
               <SelectValue />
             </SelectTrigger>
@@ -587,11 +572,6 @@ export function ToolbarVerifikasi({
           nilaiAwal={filter.kriteriaLanjutan}
           onCari={(kriteria) => onPencarianLanjutan(kriteria)}
         />
-      )}
-      {galatOpsiPencarian && (
-        <p role="status" className="text-xs text-muted-foreground">
-          Beberapa pilihan Cari Lanjutan gagal dimuat: {galatOpsiPencarian}
-        </p>
       )}
     </div>
   );

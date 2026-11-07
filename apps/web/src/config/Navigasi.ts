@@ -235,6 +235,22 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
+        title: "Simulator Baca Meter",
+        href: "/cater/simulasi",
+        description:
+          "Uji alur pencatatan mobile, deteksi anomali, verifikasi berjenjang, koreksi, dan audit dengan menyimpan data simulasi.",
+        keywords: ["simulasi", "simulator", "mobile", "cater", "baca meter", "uji"],
+        roles: [
+          "SUPERADMIN",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+          "EXECUTIVE",
+          "PENCATAT",
+        ],
+      },
+      {
         title: "Info Pelanggan",
         href: "/pelanggan",
         description:

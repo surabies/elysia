@@ -57,20 +57,20 @@ import {
   type IDatasource,
   type IRowNode,
 } from "ag-grid-community";
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import {
   ArrowDown01Icon,
   ArrowUp01Icon,
   ArrowUpDownIcon,
   FilterHorizontalIcon,
   RotateLeft01Icon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
+} from "@/features/dashboard/shared/icons/IkonLucide";
 import { useIsMobile } from "@/hooks/UseSeluler";
 import { cn } from "@/lib/Utilitas";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ToggleGroup } from "@/components/ui/toggle-group";
-import { ambilList, ApiError } from "@/features/dashboard/api/ApiDashboard";
+import { ambilList, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
 import {
   PAGE_SIZE,
   TANPA_FILTER,

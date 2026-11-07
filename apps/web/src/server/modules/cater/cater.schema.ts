@@ -13,13 +13,13 @@ export const routePelangganParamsSchema = t.Object({
 
 export const routePelangganQuerySchema = t.Object({
   limit: t.Optional(t.Numeric({ default: 500, minimum: 1, maximum: 2000 })),
+  thbl: t.Optional(t.String({ pattern: "^\\d{4}(0[1-9]|1[0-2])$" })),
 });
 
 // 3. Submit Pembacaan Meter (Mobile Petugas)
 export const submitReadingBodySchema = t.Object({
   thbl: t.String({
-    minLength: 6,
-    maxLength: 6,
+    pattern: "^\\d{4}(0[1-9]|1[0-2])$",
     description: "Tahun Bulan e.g. 202601",
   }),
   nolg: t.String({ minLength: 1, description: "Nomor Langganan" }),
@@ -27,6 +27,7 @@ export const submitReadingBodySchema = t.Object({
   petugasId: t.Optional(t.String()),
   stml: t.Number({ minimum: 0, description: "Stand Meter Lalu" }),
   stma: t.Number({ minimum: 0, description: "Stand Meter Akhir" }),
+  pakaiLalu: t.Optional(t.Number({ minimum: 0, description: "Pemakaian periode lalu" })),
   kondisiCatat: t.Optional(t.String()),
   metodeCatat: t.Optional(t.String()),
   sumberCatat: t.Optional(

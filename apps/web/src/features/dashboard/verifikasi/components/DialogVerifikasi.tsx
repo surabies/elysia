@@ -28,10 +28,6 @@ import {
 import { FotoKosong, FotoZoom } from "./foto/FotoBukti";
 import { TabFoto, type ItemTabFoto } from "./foto/TabFoto";
 
-/// Satu kelas untuk SEMUA kontrol isian modal (Input, Select, Textarea-nya
-/// punya tinggi sendiri) — lebar penuh, tinggi sama, tidak ada yang panjang-pendek.
-export const KELAS_KONTROL_MODAL = "w-full";
-
 export interface OpsiPilihan {
   value: string;
   label: string;
@@ -46,6 +42,7 @@ export function PilihSatu({
   placeholder,
   disabled,
   ariaLabel,
+  size = "default",
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -53,19 +50,28 @@ export function PilihSatu({
   placeholder?: string;
   disabled?: boolean;
   ariaLabel: string;
+  size?: "default" | "sm";
 }) {
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger
-        size="default"
-        className={`${KELAS_KONTROL_MODAL} h-10`}
+        size={size}
         aria-label={ariaLabel}
+        className={
+          size === "sm"
+            ? "w-full text-copy-13 disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-100"
+            : undefined
+        }
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent position="popper">
         {opsi.map((o) => (
-          <SelectItem key={o.value} value={o.value} disabled={o.disabled}>
+          <SelectItem
+            key={o.value}
+            value={o.value}
+            disabled={o.disabled}
+          >
             {o.label}
           </SelectItem>
         ))}
@@ -106,12 +112,10 @@ export function DialogVerifikasi({
       {/* sm:max-w-5xl (bukan max-w-5xl): kelas dasar DialogContent memuat
           sm:max-w-sm — override tanpa prefix sm: kalah spesifik. */}
       <DialogContent className="flex h-[min(92dvh,46rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
-        <DialogHeader className="shrink-0 border-b border-border/70 px-4 py-3 text-left">
-          <DialogTitle className="text-sm">{judul}</DialogTitle>
+        <DialogHeader className="shrink-0 border-b border-border px-4 py-3 text-left">
+          <DialogTitle>{judul}</DialogTitle>
           {subjudul && (
-            <DialogDescription className="text-xs">
-              {subjudul}
-            </DialogDescription>
+            <DialogDescription>{subjudul}</DialogDescription>
           )}
         </DialogHeader>
 
@@ -128,12 +132,12 @@ export function DialogVerifikasi({
             )}
           </div>
 
-          <div className="flex min-h-0 min-w-0 flex-col border-t border-border/70 md:border-t-0 md:border-l">
+          <div className="flex min-h-0 min-w-0 flex-col border-t border-border md:border-t-0 md:border-l">
             <ScrollArea className="min-h-0 flex-1">
               <div className="flex flex-col gap-3 p-4">{children}</div>
             </ScrollArea>
             {footer && (
-              <div className="shrink-0 border-t border-border/70 bg-card p-4">
+              <div className="shrink-0 border-t border-border bg-card p-4">
                 {footer}
               </div>
             )}

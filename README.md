@@ -8,8 +8,8 @@ A modern, production-ready full-stack application deployed on Vercel. It embeds 
 
 This repository adopts a **single-application, single-project** architecture:
 - **Frontend**: Next.js App Router (React 19, Server & Client Components) styled with shadcn/ui and Tailwind CSS v4.
-- **API Engine**: ElysiaJS mounted via a Next.js catch-all Route Handler at `app/api/[[...slugs]]/route.ts` with prefix `/api`.
-- **Authentication**: Better Auth mounted at `app/api/auth/[...all]/route.ts`. More specific Next.js folder routes take precedence over root catch-all handlers without shadowing.
+- **API Engine**: ElysiaJS mounted via a Next.js catch-all Route Handler at `apps/web/src/app/api/[[...slugs]]/route.ts` with prefix `/api`.
+- **Authentication**: Better Auth mounted at `apps/web/src/app/api/auth/[...all]/route.ts`. More specific Next.js folder routes take precedence over root catch-all handlers without shadowing.
 - **Client Type Safety**: Eden Treaty (`@elysiajs/eden`) provides end-to-end typed API calls directly from React components.
 - **Spatial GIS**: PostgreSQL PostGIS stores spatial coordinates in `geometry(Point, 4326)` with GiST indexes, enabling `ST_DWithin` proximity queries and distance sorting.
 
@@ -32,14 +32,15 @@ This repository adopts a **single-application, single-project** architecture:
 
 ## 3. Monorepo Structure
 
-The repository is organized as a **Bun Monorepo** (`apps/*` and `packages/*`). See [`docs/MONOREPO_STRUCTURE.md`](file:///E:/Coding/elysiajs/docs/MONOREPO_STRUCTURE.md) for full details.
+The repository is organized as a **Bun Monorepo** (`apps/*` and `packages/*`). See [docs/MONOREPO_STRUCTURE.md](docs/MONOREPO_STRUCTURE.md) for full details.
 
 ```text
 elysiajs/ (Root Monorepo)
 ├── apps/
 │   ├── web/                     # @cater/web: Next.js 16 + Elysia App Router + Geist UI
-│   │   ├── app/                 # Next.js App Router (home, cater, dashboard, places, auth)
-│   │   ├── components/ui/       # shadcn/ui components with Geist materials
+│   │   ├── src/app/             # Next.js App Router
+│   │   ├── src/components/      # Shared UI, layout, and shadcn/ui components
+│   │   ├── src/features/        # Feature-owned UI and application code
 │   │   ├── src/server/          # Elysia API engine (mounted at /api/*)
 │   │   └── package.json         # Web dependencies
 │   │

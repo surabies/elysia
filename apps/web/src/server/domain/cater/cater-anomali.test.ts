@@ -1,5 +1,23 @@
 import { describe, it, expect } from 'bun:test';
-import { evaluasiPemakaianMeter } from './cater-anomali.engine';
+import {
+  evaluasiPemakaianMeter,
+  hitungDeviasiPersentase,
+} from './cater-anomali.engine';
+
+describe('Domain Engine: hitungDeviasiPersentase', () => {
+  it('menghitung perubahan konsumsi relatif terhadap periode sebelumnya', () => {
+    expect(hitungDeviasiPersentase(30, 20)).toBe(50);
+    expect(hitungDeviasiPersentase(10, 20)).toBe(-50);
+    expect(hitungDeviasiPersentase(20, 20)).toBe(0);
+    expect(hitungDeviasiPersentase(0, 20)).toBe(-100);
+  });
+
+  it('menghasilkan null jika data sebelumnya tidak ada atau nol', () => {
+    expect(hitungDeviasiPersentase(20, null)).toBeNull();
+    expect(hitungDeviasiPersentase(null, 20)).toBeNull();
+    expect(hitungDeviasiPersentase(20, 0)).toBeNull();
+  });
+});
 
 describe('Domain Engine: evaluasiPemakaianMeter', () => {
   it('harus menghitung pemakaian normal secara presisi', () => {

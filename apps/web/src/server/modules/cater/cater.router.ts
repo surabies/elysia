@@ -67,13 +67,25 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/routes/:kode/pelanggan',
     async ({ params, query }) => {
       try {
-        const result = await caterKueriService.getRoutePelanggan(params.kode, query.limit);
+        const result = await caterKueriService.getRoutePelanggan(
+          params.kode,
+          query.limit,
+          query.thbl
+        );
         return { success: true, ...result, data: result.list };
       } catch (err: any) {
         return { success: false, error: err.message };
       }
     },
     {
+      requireRole: [
+        'PENCATAT',
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'EXECUTIVE',
+      ],
       params: routePelangganParamsSchema,
       query: routePelangganQuerySchema,
     }
@@ -97,6 +109,46 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
+      requireRole: ['PENCATAT'],
+      body: submitReadingBodySchema,
+    }
+  )
+
+  .post(
+    '/readings/simulate',
+    async ({ body, set }) => {
+      try {
+        const note = body.catatan?.trim();
+        const result = await caterVerifikasiService.submitReading({
+          ...body,
+          catatan: note?.startsWith('[SIMULASI]')
+            ? note
+            : `[SIMULASI] ${note || 'Pembacaan uji melalui simulator'}`,
+        });
+        set.status = 201;
+        return {
+          success: true,
+          message: 'Simulasi tersimpan ke database operasional',
+          data: result,
+          simulation: { saved: true, mode: 'WRITE' as const },
+        };
+      } catch (err) {
+        set.status = 500;
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : 'Gagal menyimpan pembacaan simulasi.',
+        };
+      }
+    },
+    {
+      requireRole: [
+        'PENCATAT',
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'EXECUTIVE',
+      ],
       body: submitReadingBodySchema,
     }
   )
@@ -113,6 +165,13 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
+      requireRole: [
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'EXECUTIVE',
+      ],
       query: anomaliesQuerySchema,
     }
   )
@@ -130,6 +189,13 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
+      requireRole: [
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'EXECUTIVE',
+      ],
       params: historyParamsSchema,
     }
   )

@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { auth, type User, type Session } from '@/src/lib/auth';
+import { auth, type User, type Session } from '@/lib/auth';
 import { db, userRoles, type AppRole } from '@cater/db';
 import { eq } from 'drizzle-orm';
 

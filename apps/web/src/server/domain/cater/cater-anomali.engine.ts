@@ -17,6 +17,23 @@ export interface EvaluasiPemakaianResult {
   pesan?: string;
 }
 
+export function hitungDeviasiPersentase(
+  pemakaianSekarang: number | null,
+  pemakaianSebelumnya: number | null,
+): number | null {
+  if (
+    pemakaianSekarang === null ||
+    pemakaianSebelumnya === null ||
+    pemakaianSebelumnya <= 0
+  ) {
+    return null;
+  }
+
+  return Math.round(
+    ((pemakaianSekarang - pemakaianSebelumnya) / pemakaianSebelumnya) * 100,
+  );
+}
+
 /**
  * Menghitung selisih angka stand meter dan mengevaluasi indikasi anomali
  * @param input stml (lalu), stma (akhir), dan riwayat pemakaian lalu

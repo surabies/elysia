@@ -45,8 +45,10 @@ Data awal diimpor langsung dari arsip riil PDAM STI: `packages/db/data/jan/Progr
 
 ## 3. Daftar Akun Pengguna & Kredensial Resmi (15 Akun)
 
-Semua akun menggunakan password standar untuk lingkungan pengembangan:
-> **Password Default**: `Password123!`
+Saat menjalankan seed, semua akun dibuat dengan password bootstrap yang sama dari
+variabel `SEED_DEFAULT_PASSWORD`. Gunakan password unik minimal 12 karakter melalui
+environment lokal atau secret manager; jangan simpan nilainya di repository. Ganti
+password tiap akun setelah bootstrap, terutama pada database non-development.
 
 ### A. 5 Akun Manajemen, Administrasi & Verifikasi
 
@@ -84,6 +86,9 @@ Menjalankan seluruh tahapan seed sekaligus: Akun Pengguna (15 akun) -> Tempat Ge
 ```bash
 bun run db:seed
 ```
+Sebelum menjalankan perintah, atur `SEED_DEFAULT_PASSWORD` di environment lokal
+dengan password unik minimal 12 karakter. Seed tidak menghapus database dan tidak
+menimpa dataset yang sudah ada; impor CSV berjalan hanya saat tabel pelanggan kosong.
 
 ### 2. Seeding Akun Pengguna Saja
 Jika Anda hanya ingin memperbarui atau me-reset 15 akun pengguna tanpa menyentuh data pelanggan/meter:

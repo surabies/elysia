@@ -33,9 +33,9 @@ export function TabFoto({
 
   return (
     <Tabs defaultValue={awal} className="gap-1.5">
-      <TabsList className="h-7 w-full">
+      <TabsList className="w-full">
         {item.map((t) => (
-          <TabsTrigger key={t.kunci} value={t.kunci} className="text-[11px]">
+          <TabsTrigger key={t.kunci} value={t.kunci}>
             {t.label}
             {!t.url && <span className="text-muted-foreground/60">·</span>}
           </TabsTrigger>

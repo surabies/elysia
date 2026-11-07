@@ -7,7 +7,7 @@
 // mungkin dengan interaktivitasnya (di daun), bukan di page/layout, supaya
 // sisa halaman tetap server component.
 import * as React from "react"
-import { signIn } from "@/src/lib/auth-client"
+import { signIn } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 

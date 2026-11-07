@@ -1,8 +1,8 @@
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer"
-import { FilterIcon } from "@/features/dashboard/verifikasi/lib/IkonLucide"
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
+import { FilterIcon } from "@/features/dashboard/shared/icons/IkonLucide"
 import { cn } from "@/lib/Utilitas"
 import { Button } from "@/components/ui/button"
-import { KELAS_KONTROL, KELAS_KONTROL_AKTIF } from "../Tema"
+import { KELAS_KONTROL_AKTIF } from "../Tema"
 import {
   Tooltip,
   TooltipContent,
@@ -32,8 +32,7 @@ export function TombolFilterLanjutan({
       aria-controls={idPanel}
       onClick={onKlik}
       className={cn(
-        KELAS_KONTROL,
-        ringkas && "relative size-8 justify-center p-0",
+        ringkas && "relative",
         (terbuka || jumlah > 0) && KELAS_KONTROL_AKTIF
       )}
     >

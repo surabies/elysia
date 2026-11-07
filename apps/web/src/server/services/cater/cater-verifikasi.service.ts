@@ -9,6 +9,7 @@ export interface SubmitReadingInput {
   petugasId?: string;
   stml: number;
   stma: number;
+  pakaiLalu?: number;
   kondisiCatat?: string;
   metodeCatat?: string;
   sumberCatat?:
@@ -64,6 +65,7 @@ export class CaterVerifikasiService {
       petugasId,
       stml,
       stma,
+      pakaiLalu,
       kondisiCatat,
       metodeCatat,
       sumberCatat,
@@ -76,8 +78,18 @@ export class CaterVerifikasiService {
     } = input;
 
     // Evaluasi bisnis via Domain Engine murni
-    const evaluasi = evaluasiPemakaianMeter({ stml, stma });
+    const evaluasi = evaluasiPemakaianMeter({ stml, stma, pakaiLalu });
     const id = `cater-${thbl}-${nolg}`;
+    const lokasiGps =
+      longitude !== undefined && latitude !== undefined
+        ? { x: longitude, y: latitude }
+        : null;
+    const catatanBaca = [
+      catatan,
+      evaluasi.isAnomali && evaluasi.pesan ? `[Anomali] ${evaluasi.pesan}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ') || null;
 
     await db
       .insert(caterBacaMeter)
@@ -89,6 +101,7 @@ export class CaterVerifikasiService {
         petugasId,
         stml: String(stml),
         stma: String(stma),
+        pakaiLalu: pakaiLalu === undefined ? null : String(pakaiLalu),
         pakaiM3: String(evaluasi.pakaiM3),
         ketCatat: kondisiCatat || "Normal",
         metodeCatat: (metodeCatat as any) || "ONSITE",
@@ -97,28 +110,27 @@ export class CaterVerifikasiService {
         fotoRumahUrl,
         durasiDetik: durasiDetik || 0,
         statusVerifikasi: evaluasi.statusVerifikasi,
-        catatan:
-          evaluasi.isAnomali && evaluasi.pesan
-            ? `[Anomali] ${evaluasi.pesan}`
-            : catatan,
-        lokasiGps: longitude && latitude ? { x: longitude, y: latitude } : null,
+        catatan: catatanBaca,
+        lokasiGps,
       })
       .onConflictDoUpdate({
         target: caterBacaMeter.id,
         set: {
+          ruteKode,
+          petugasId,
+          stml: String(stml),
           stma: String(stma),
+          pakaiLalu: pakaiLalu === undefined ? null : String(pakaiLalu),
           pakaiM3: String(evaluasi.pakaiM3),
           ketCatat: kondisiCatat || "Normal",
           metodeCatat: (metodeCatat as any) || "ONSITE",
           sumberCatat: sumberCatat || "PETUGAS_ONSITE",
           fotoMeterUrl,
           fotoRumahUrl,
+          lokasiGps,
           durasiDetik: durasiDetik || 0,
           statusVerifikasi: evaluasi.statusVerifikasi,
-          catatan:
-            evaluasi.isAnomali && evaluasi.pesan
-              ? `[Anomali] ${evaluasi.pesan}`
-              : catatan,
+          catatan: catatanBaca,
           updatedAt: new Date(),
         },
       });

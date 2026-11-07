@@ -4,9 +4,8 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { ambilSatu } from "@/features/dashboard/api/ApiDashboard";
+import { ambilSatu } from "@/features/dashboard/shared/api/ApiDashboard";
 import { ALASAN_MANUAL } from "../../../tambah-manual/lib/AlasanManual";
-import { KELAS_KONTROL_MODAL } from "../DialogVerifikasi";
 import { BarisTumpuk, KerangkaModal } from "../KerangkaModal";
 import type { DataKoreksi } from "./ModalKoreksi";
 
@@ -224,7 +223,7 @@ export function ModalBacaManual({
         {galat && (
           <p
             role="alert"
-            className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+            className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-copy-13 text-destructive"
           >
             {galat}
           </p>
@@ -232,7 +231,7 @@ export function ModalBacaManual({
         {memuat && (
           <p
             role="status"
-            className="flex items-center gap-2 text-sm text-muted-foreground"
+            className="flex items-center gap-2 text-copy-13 text-muted-foreground"
           >
             <Spinner className="size-4" />
             Memuat data pelanggan dan stand terakhir…
@@ -240,69 +239,69 @@ export function ModalBacaManual({
         )}
         {pelanggan && (
           <>
-            <section className="grid gap-3 rounded-xl border border-border/70 bg-muted/20 p-4 sm:grid-cols-3">
+            <section className="grid gap-3 rounded-lg border border-border bg-muted/20 p-4 sm:grid-cols-3">
               <div className="min-w-0 sm:col-span-3">
-                <p className="text-xs font-medium text-muted-foreground">
+                <p className="text-label-12 font-medium text-muted-foreground">
                   Pelanggan
                 </p>
                 <p
-                  className="mt-1 truncate font-semibold text-foreground"
+                  className="mt-1 truncate text-label-13 font-semibold text-foreground"
                   title={pelanggan.nama}
                 >
                   {pelanggan.nomorLangganan} · {pelanggan.nama}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground">
+                <p className="text-label-12 font-medium text-muted-foreground">
                   Tarif
                 </p>
-                <p className="mt-1 text-sm font-medium">
+                <p className="mt-1 text-label-13 font-medium">
                   {pelanggan.tarifGolongan?.kodeAsli ?? data.tarif ?? "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground">
+                <p className="text-label-12 font-medium text-muted-foreground">
                   Periode
                 </p>
-                <p className="mt-1 text-sm font-medium">
+                <p className="mt-1 text-label-13 font-medium">
                   {data.periode || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground">
+                <p className="text-label-12 font-medium text-muted-foreground">
                   Nomor meter
                 </p>
-                <p className="mt-1 text-sm font-medium">
+                <p className="mt-1 text-label-13 font-medium">
                   {pelanggan.nomorMeter || "—"}
                 </p>
               </div>
             </section>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-copy-13 text-muted-foreground">
               ST Awal terisi dari pembacaan resmi terakhir sebelum periode ini.
               Sesuaikan bila hasil pencatatan berbeda.
             </p>
             {!dataMeterValid && (
-              <p role="alert" className="text-sm text-destructive">
+              <p role="alert" className="text-copy-13 text-destructive">
                 Pelanggan harus memiliki tepat satu meter aktif.
               </p>
             )}
             {!laporanBolehDitimpa && (
-              <p role="alert" className="text-sm text-destructive">
+              <p role="alert" className="text-copy-13 text-destructive">
                 Laporan periode ini masih menunggu verifikasi, sudah dipakai
                 tagihan, atau memiliki pembacaan lain sehingga tidak dapat
                 ditimpa melalui Manual Add.
               </p>
             )}
             {pelanggan.sudahAdaLaporan && laporanBolehDitimpa && (
-              <p className="rounded-md border border-(--verif-v1-border) bg-(--verif-v1-soft) px-3 py-2 text-sm">
+              <p className="rounded-md border border-(--verif-v1-border) bg-(--verif-v1-soft) px-3 py-2 text-copy-13">
                 Hasil lama akan diganti dan laporan kembali ke antrean
                 verifikasi.
               </p>
             )}
-            <section className="grid gap-4 rounded-xl border border-border/70 p-4 sm:grid-cols-3">
+            <section className="grid gap-4 rounded-lg border border-border p-4 sm:grid-cols-3">
               <div className="sm:col-span-3">
-                <h3 className="text-sm font-semibold">Hasil pencatatan</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <h3 className="text-label-14">Hasil pencatatan</h3>
+                <p className="mt-1 text-copy-13 text-muted-foreground">
                   Masukkan angka sesuai pencatatan. Pemakaian dapat disesuaikan
                   dari hasil selisih stand.
                 </p>
@@ -315,7 +314,6 @@ export function ModalBacaManual({
                   step={1}
                   value={standAwal}
                   onChange={(event) => setStandAwal(event.target.value)}
-                  className={KELAS_KONTROL_MODAL}
                 />
               </BarisTumpuk>
               <BarisTumpuk label="ST Akhir" htmlFor="manual-akhir">
@@ -326,7 +324,6 @@ export function ModalBacaManual({
                   step={1}
                   value={standAkhir}
                   onChange={(event) => setStandAkhir(event.target.value)}
-                  className={KELAS_KONTROL_MODAL}
                 />
               </BarisTumpuk>
               <BarisTumpuk label="Pemakaian (m³)" htmlFor="manual-pemakaian">
@@ -338,15 +335,14 @@ export function ModalBacaManual({
                   step={1}
                   value={pemakaian}
                   onChange={(event) => setPemakaianInput(event.target.value)}
-                  className={KELAS_KONTROL_MODAL}
                 />
               </BarisTumpuk>
             </section>
             <div className="grid gap-1.5">
-              <p className="text-xs font-medium text-foreground">
+              <p className="text-label-12 font-medium text-foreground">
                 Catatan audit
               </p>
-              <p className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+              <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-copy-13 text-muted-foreground">
                 {alasanManual}
               </p>
             </div>

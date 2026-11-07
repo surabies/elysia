@@ -50,6 +50,13 @@
       "when": 1793938463630,
       "tag": "0006_jittery_ken_ellis",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794036351440,
+      "tag": "0007_tough_abomination",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,7 +10,7 @@ import {
   ambilSatu,
   kirimJson,
   ApiError,
-} from "@/features/dashboard/api/ApiDashboard"
+} from "@/features/dashboard/shared/api/ApiDashboard"
 import type { LaporanHarianDetail } from "../../types/TipeVerifikasi"
 import { DialogVerifikasi } from "../DialogVerifikasi"
 
@@ -26,7 +25,7 @@ export function ModalCekUlang({
 }) {
   const [detail, setDetail] = React.useState<LaporanHarianDetail | null>(null)
   const [alasan, setAlasan] = React.useState("")
-  const [galat, setGalat] = React.useState<string | null>(null)
+  const [detailGagal, setDetailGagal] = React.useState(false)
   const [mengirim, setMengirim] = React.useState(false)
 
   React.useEffect(() => {
@@ -36,22 +35,34 @@ export function ModalCekUlang({
         if (!batal) setDetail(row)
       })
       .catch((err) => {
-        if (!batal)
-          setGalat(
+        if (!batal) {
+          setDetailGagal(true)
+          toast.error(
             err instanceof ApiError
               ? err.message
               : "Gagal memuat detail laporan."
           )
+        }
       })
     return () => {
       batal = true
     }
   }, [id])
 
+  React.useEffect(() => {
+    if (detail) {
+      toast.info("Perhatian sebelum kirim baca ulang", {
+        description:
+          "Laporan dikembalikan ke petugas. Tahap V1–V3 dan nilai koreksi periode ini akan dikosongkan; alasan serta nilai sebelum/sesudah dicatat pada audit. Pembacaan resmi yang sudah terbentuk tidak dapat dikirim melalui tindakan ini.",
+        duration: 10000,
+      })
+    }
+  }, [detail])
+
   async function kirim() {
     const alasanBersih = alasan.trim()
     if (!alasanBersih) {
-      setGalat("Alasan baca ulang wajib diisi.")
+      toast.error("Alasan baca ulang wajib diisi.")
       return
     }
     if (
@@ -60,14 +71,13 @@ export function ModalCekUlang({
       detail.pembacaanId ||
       detail.verifiedAt
     ) {
-      setGalat(
+      toast.error(
         "Laporan sudah diproses atau tidak lagi dapat dikirim untuk baca ulang."
       )
       return
     }
 
     setMengirim(true)
-    setGalat(null)
     try {
       await kirimJson(`/laporan-harian/${id}/reject`, "PATCH", {
         catatanVerif: alasanBersih,
@@ -75,7 +85,7 @@ export function ModalCekUlang({
       toast.success("Laporan dikembalikan untuk dibaca ulang.")
       onSelesai()
     } catch (err) {
-      setGalat(
+      toast.error(
         err instanceof ApiError
           ? err.message
           : "Gagal mengirim laporan untuk baca ulang."
@@ -126,11 +136,6 @@ export function ModalCekUlang({
       }
       footer={
         <div className="flex flex-col gap-2">
-          {galat && (
-            <Alert variant="destructive" className="py-2">
-              <AlertDescription className="text-xs">{galat}</AlertDescription>
-            </Alert>
-          )}
           <Button
             variant="destructive"
             size="default"
@@ -160,23 +165,17 @@ export function ModalCekUlang({
         </div>
       }
     >
-      {!detail && !galat && (
-        <p className="text-sm text-muted-foreground" role="status">
+      {!detail && !detailGagal && (
+        <p className="text-copy-13 text-muted-foreground" role="status">
           Memuat foto dan detail laporan…
         </p>
       )}
       {detail && (
-        <>
-          <Alert>
-            <AlertDescription className="text-xs">
-              Laporan dikembalikan ke petugas. Tahap V1–V3 dan nilai koreksi
-              periode ini akan dikosongkan; alasan serta nilai sebelum/sesudah
-              dicatat pada audit. Pembacaan resmi yang sudah terbentuk tidak
-              dapat dikirim melalui tindakan ini.
-            </AlertDescription>
-          </Alert>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="alasan-baca-ulang" className="text-xs font-medium">
+        <div className="flex flex-col gap-2">
+            <label
+              htmlFor="alasan-baca-ulang"
+              className="text-label-13 font-medium"
+            >
               Alasan baca ulang
             </label>
             <Textarea
@@ -187,11 +186,10 @@ export function ModalCekUlang({
               placeholder="Jelaskan apa yang perlu diperiksa atau dicatat ulang oleh petugas."
               aria-required="true"
             />
-            <p className="text-right text-[11px] text-muted-foreground">
+            <p className="text-right text-label-12 text-muted-foreground">
               {alasan.length}/500
             </p>
-          </div>
-        </>
+        </div>
       )}
     </DialogVerifikasi>
   )

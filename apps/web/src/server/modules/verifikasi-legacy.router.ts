@@ -7,12 +7,14 @@ import {
   db,
   periodePenagihan,
   rekeningDrd,
+  waterMeterMutasi,
   type AppRole,
 } from "@cater/db";
 import { authPlugin } from "../plugins/auth";
 import { caterVerifikasiService } from "../services/cater/cater-verifikasi.service";
 import { mandiriService } from "../services/mandiri/mandiri.service";
 import { verifikasiGridService } from "../services/cater/verifikasi-grid.service";
+import { hitungKubikasiGantiMeter } from "../domain/gwm/gwm.engine";
 
 const READ_ROLES: AppRole[] = [
   "STAFF_ADMIN_BILLING",
@@ -32,7 +34,7 @@ const VERIFY_ROLES: AppRole[] = [
 const gridQuerySchema = t.Object({
   id: t.Optional(t.String()),
   periode: t.Optional(t.Numeric()),
-  pageSize: t.Optional(t.Numeric({ minimum: 1, maximum: 500 })),
+  pageSize: t.Optional(t.Numeric({ minimum: 1, maximum: 5000 })),
   page: t.Optional(t.Numeric({ minimum: 0 })),
   offset: t.Optional(t.Numeric({ minimum: 0 })),
   q: t.Optional(t.String()),
@@ -802,19 +804,98 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
           },
         };
       }
-      const stml = body.standAwalRevisi ?? Number(row.stml);
-      const stma = body.standAkhirRevisi ?? Number(row.stma);
-      const pakaiM3 = body.pemakaianTagihVerif ?? Math.max(0, stma - stml);
-      if (stml < 0 || stma < 0 || pakaiM3 < 0) {
+      const stmlRevisi = body.standAwalRevisi ?? null;
+      const stmaRevisi = body.standAkhirRevisi ?? null;
+      const stml = stmlRevisi ?? Number(row.stml);
+      const stma = stmaRevisi ?? Number(row.stma);
+      const kondisiRevisi = body.kondisiRevisi ?? null;
+      const kondisi = kondisiRevisi ?? row.ketCatat;
+      const angkaTidakValid = [stml, stma].some(
+        (nilai) => !Number.isInteger(nilai) || nilai < 0,
+      );
+      const tagihanTidakValid =
+        body.pemakaianTagihVerif != null &&
+        (!Number.isInteger(body.pemakaianTagihVerif) ||
+          body.pemakaianTagihVerif < 0);
+      if (angkaTidakValid || tagihanTidakValid) {
         set.status = 400;
         return {
           success: false,
           error: {
             code: "INVALID_STAND",
-            message: "Angka stand dan pemakaian harus bernilai nol atau lebih.",
+            message:
+              "Angka stand dan tagihan harus bilangan bulat nol atau lebih.",
           },
         };
       }
+      const mutasi = row.waterMeterMutasiId
+        ? await db
+            .select({
+              id: waterMeterMutasi.id,
+              standAngkat: waterMeterMutasi.standAngkat,
+              standPasang: waterMeterMutasi.standPasang,
+            })
+            .from(waterMeterMutasi)
+            .where(eq(waterMeterMutasi.id, row.waterMeterMutasiId))
+            .then((rows) => rows[0])
+        : undefined;
+      if (
+        body.standAngkatLama != null &&
+        (!mutasi ||
+          !Number.isInteger(body.standAngkatLama) ||
+          body.standAngkatLama < 0)
+      ) {
+        set.status = 400;
+        return {
+          success: false,
+          error: {
+            code: "METER_MUTASI_REQUIRED",
+            message:
+              "Stand angkat hanya dapat disimpan jika laporan terhubung ke data mutasi meter.",
+          },
+        };
+      }
+      let pakaiM3 = Math.max(0, stma - stml);
+      if (kondisi === "MB") {
+        if (!mutasi) {
+          set.status = 400;
+          return {
+            success: false,
+            error: {
+              code: "METER_MUTASI_REQUIRED",
+              message:
+                "Data ganti meter belum terhubung. Koreksi meter baru tidak dapat disimpan.",
+            },
+          };
+        }
+        const hasilGantiMeter = hitungKubikasiGantiMeter({
+          standLalu: stml,
+          standAngkat: body.standAngkatLama ?? mutasi.standAngkat,
+          standPasang: mutasi.standPasang,
+          standBacaBaru: stma,
+        });
+        if (!hasilGantiMeter.isValid) {
+          set.status = 400;
+          return {
+            success: false,
+            error: {
+              code: "INVALID_STAND",
+              message:
+                hasilGantiMeter.pesanError ??
+                "Stand ganti meter tidak valid.",
+            },
+          };
+        }
+        pakaiM3 = hasilGantiMeter.totalPemakaianM3;
+      }
+      const pakaiM3Revisi =
+        stmlRevisi != null ||
+        stmaRevisi != null ||
+        kondisiRevisi != null ||
+        body.standAngkatLama != null ||
+        body.standMeterBaru != null
+          ? String(pakaiM3)
+          : null;
       await db.transaction(async (tx) => {
         await tx.insert(caterVerifikasiLog).values({
           caterId: row.id,
@@ -830,14 +911,24 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
         await tx
           .update(caterBacaMeter)
           .set({
-            stml: String(stml),
-            stma: String(stma),
-            pakaiM3: String(pakaiM3),
-            pakaiTagih:
-              body.pemakaianTagihVerif == null
-                ? row.pakaiTagih
-                : String(body.pemakaianTagihVerif),
-            ketCatat: body.kondisiRevisi ?? row.ketCatat,
+            stmlRevisi: stmlRevisi == null ? null : String(stmlRevisi),
+            stmaRevisi: stmaRevisi == null ? null : String(stmaRevisi),
+            pakaiM3Revisi,
+            ketCatatRevisi: kondisiRevisi,
+            standAngkatRevisi:
+              body.standAngkatLama == null
+                ? null
+                : String(body.standAngkatLama),
+            standMeterBaruRevisi:
+              body.standMeterBaru == null
+                ? null
+                : String(body.standMeterBaru),
+            ...(body.pemakaianTagihVerif !== undefined && {
+              pakaiTagih:
+                body.pemakaianTagihVerif == null
+                  ? null
+                  : String(body.pemakaianTagihVerif),
+            }),
             updatedAt: new Date(),
           })
           .where(eq(caterBacaMeter.id, row.id));

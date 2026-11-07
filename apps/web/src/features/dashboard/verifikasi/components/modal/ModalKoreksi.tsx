@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -20,16 +19,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LABEL_KONDISI_CATAT } from "../../../lib/LabelPencatatan";
-import { ambilSatu, ApiError } from "@/features/dashboard/api/ApiDashboard";
-import { KELAS_KONTROL_MODAL, PilihSatu } from "../DialogVerifikasi";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
+import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
+import { PilihSatu } from "../DialogVerifikasi";
 import { hitungPemakaianGantiMeter } from "@/lib/domain/PerhitunganMeter";
+import { toast } from "sonner";
 import {
   BarisForm,
   JudulBagian,
-  KerangkaModal,
   KotakBaca,
 } from "../KerangkaModal";
+import { KerangkaDrawer } from "../KerangkaDrawer";
 
 export interface BarisDeposit {
   periode: string;
@@ -181,7 +181,6 @@ export function ModalKoreksi({
   const [standMeterBaru, setStandMeterBaru] = React.useState(
     data.standMeterBaru == null ? "" : String(data.standMeterBaru),
   );
-  const [galat, setGalat] = React.useState<string | null>(null);
   const [menyimpan, setMenyimpan] = React.useState(false);
   const [detail, setDetail] = React.useState<DetailKoreksiApi | null>(null);
 
@@ -193,7 +192,7 @@ export function ModalKoreksi({
       })
       .catch((err) => {
         if (!batal)
-          setGalat(
+          toast.error(
             err instanceof ApiError
               ? err.message
               : "Gagal memuat detail laporan.",
@@ -273,11 +272,10 @@ export function ModalKoreksi({
     if (pemakaianNegatif) kesalahan.push("Pemakaian tidak boleh negatif.");
 
     if (kesalahan.length > 0) {
-      setGalat(kesalahan.join(" "));
+      toast.error(kesalahan.join(" "));
       return;
     }
     setMenyimpan(true);
-    setGalat(null);
     try {
       const hasil: HasilKoreksi = {
         standAwalRevisi: kelainan === "REV_PENCATAT" ? awalNum : null,
@@ -301,23 +299,23 @@ export function ModalKoreksi({
       await onSimpan(hasil);
       onTutup();
     } catch (err) {
-      setGalat(err instanceof Error ? err.message : "Koreksi gagal disimpan.");
+      toast.error(
+        err instanceof Error ? err.message : "Koreksi gagal disimpan.",
+      );
     } finally {
       setMenyimpan(false);
     }
   }
 
   return (
-    <KerangkaModal
-      buka
-      onBuka={(v) => !v && onTutup()}
+    <KerangkaDrawer
       judul="Koreksi Data Pembacaan"
-      subjudul={`${detail?.pelanggan?.nama ?? data.namaPelanggan ?? "Koreksi pembacaan"} · periode ${data.periode}`}
-      lebar="xl"
+      subjudul={`${detail?.pelanggan?.nama ?? data.namaPelanggan ?? "Koreksi pembacaan"} · Periode ${data.periode}`}
+      onTutup={onTutup}
       footer={
         <>
           {!onSimpan && (
-            <span className="mr-auto text-[11px] text-muted-foreground">
+            <span className="mr-auto text-copy-13 text-muted-foreground">
               Tampilan saja — Simpan belum tersambung ke server.
             </span>
           )}
@@ -335,7 +333,7 @@ export function ModalKoreksi({
         </>
       }
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,0.8fr)_minmax(0,1.4fr)]">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.9fr)_minmax(12rem,0.8fr)_minmax(0,1.4fr)]">
         {/* ── Kiri: form edit + data berjalan/koreksi ───────────────────── */}
         <section className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-col gap-2.5">
@@ -396,10 +394,10 @@ export function ModalKoreksi({
                   <Input
                     id="koreksi-awal"
                     type="number"
+                    density="compact"
                     min={0}
                     value={standAwal}
                     onChange={(e) => setStandAwal(e.target.value)}
-                    className={KELAS_KONTROL_MODAL}
                   />
                 </BarisForm>
               ) : (
@@ -416,10 +414,10 @@ export function ModalKoreksi({
                   <Input
                     id="koreksi-akhir"
                     type="number"
+                    density="compact"
                     min={0}
                     value={standAkhir}
                     onChange={(e) => setStandAkhir(e.target.value)}
-                    className={KELAS_KONTROL_MODAL}
                   />
                 </BarisForm>
               )}
@@ -428,10 +426,10 @@ export function ModalKoreksi({
               </BarisForm>
 
               {bolehAturTagihan ? (
-                <div className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-2">
+                <div className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-3">
                   <Label
                     htmlFor="koreksi-taksasi"
-                    className="flex items-center gap-2 text-xs font-normal text-muted-foreground"
+                    className="flex items-center gap-2 font-normal text-muted-foreground"
                   >
                     <Checkbox
                       id="koreksi-taksasi"
@@ -443,17 +441,19 @@ export function ModalKoreksi({
                   <div className="flex min-w-0 items-center gap-2">
                     <Input
                       type="number"
+                      density="compact"
                       min={0}
                       disabled={!taksasi}
                       value={nilaiTaksasi}
                       onChange={(e) => setNilaiTaksasi(e.target.value)}
-                      className={KELAS_KONTROL_MODAL}
                       aria-label="Pemakaian Tagihan dalam m3"
+                      className="disabled:border-transparent disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
                     />
                     <Button
                       type="button"
                       variant="link"
-                      className="h-auto shrink-0 p-0 text-xs text-(--verif-info)"
+                      size="default"
+                      className="shrink-0 text-(--verif-info)"
                       onClick={onRata3}
                       disabled={!onRata3}
                     >
@@ -462,7 +462,7 @@ export function ModalKoreksi({
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-copy-13 text-muted-foreground">
                   Nilai Tagihan hanya dapat ditetapkan oleh V3.
                 </p>
               )}
@@ -473,6 +473,7 @@ export function ModalKoreksi({
                   value={kelainan}
                   onChange={setKelainan}
                   placeholder="- Kelainan -"
+                  size="sm"
                   opsi={Object.entries(LABEL_KONDISI_CATAT).map(
                     ([kode, nama]) => ({
                       value: kode,
@@ -490,10 +491,10 @@ export function ModalKoreksi({
                     <Input
                       id="koreksi-angkat-lama"
                       type="number"
+                      density="compact"
                       min={0}
                       value={standAngkatLama}
                       onChange={(e) => setStandAngkatLama(e.target.value)}
-                      className={KELAS_KONTROL_MODAL}
                     />
                   </BarisForm>
                   <BarisForm
@@ -503,25 +504,20 @@ export function ModalKoreksi({
                     <Input
                       id="koreksi-meter-baru"
                       type="number"
+                      density="compact"
                       min={0}
                       value={standMeterBaru}
                       onChange={(e) => setStandMeterBaru(e.target.value)}
-                      className={KELAS_KONTROL_MODAL}
                     />
                   </BarisForm>
                 </>
               )}
             </div>
-            {galat && (
-              <Alert variant="destructive">
-                <AlertDescription>{galat}</AlertDescription>
-              </Alert>
-            )}
           </div>
         </section>
 
         {/* ── Tengah: stand angkat ─────────────────────────────────────── */}
-        <section className="flex min-w-0 flex-col gap-2.5 lg:border-l lg:border-border/70 lg:pl-6">
+        <section className="flex min-w-0 flex-col gap-2.5 2xl:border-l 2xl:border-border 2xl:pl-5">
           <JudulBagian>Stand Angkat</JudulBagian>
           {data.standAngkat ? (
             <>
@@ -533,31 +529,31 @@ export function ModalKoreksi({
               </BarisForm>
             </>
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-copy-13 text-muted-foreground">
               Tidak ada stand angkat.
             </p>
           )}
         </section>
 
         {/* ── Kanan: riwayat deposit ───────────────────────────────────── */}
-        <section className="flex min-w-0 flex-col gap-2.5 lg:border-l lg:border-border/70 lg:pl-6">
+        <section className="flex min-w-0 flex-col gap-2.5 2xl:border-l 2xl:border-border 2xl:pl-5">
           <JudulBagian>Riwayat Deposit</JudulBagian>
-          <div className="overflow-hidden rounded-lg border border-border/70">
-            <Table>
+          <div className="min-w-0 overflow-x-auto rounded-lg border border-border">
+            <Table className="min-w-[36rem]">
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="h-9 w-8 text-[11px]">No</TableHead>
-                  <TableHead className="h-9 text-[11px]">Periode</TableHead>
-                  <TableHead className="h-9 text-right text-[11px]">
+                  <TableHead className="w-8">No</TableHead>
+                  <TableHead>Periode</TableHead>
+                  <TableHead className="text-right">
                     St Deposit
                   </TableHead>
-                  <TableHead className="h-9 text-right text-[11px]">
+                  <TableHead className="text-right">
                     Deposit Resmi
                   </TableHead>
-                  <TableHead className="h-9 text-right text-[11px]">
+                  <TableHead className="text-right">
                     Deposit Perubahan
                   </TableHead>
-                  <TableHead className="h-9 text-right text-[11px]">
+                  <TableHead className="text-right">
                     Sisa Deposit
                   </TableHead>
                 </TableRow>
@@ -567,7 +563,7 @@ export function ModalKoreksi({
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="py-6 text-center text-xs text-muted-foreground"
+                      className="py-6 text-center text-copy-13 text-muted-foreground"
                     >
                       Belum ada riwayat deposit.
                     </TableCell>
@@ -575,22 +571,22 @@ export function ModalKoreksi({
                 ) : (
                   riwayat.map((r, i) => (
                     <TableRow key={`${r.periode}-${i}`}>
-                      <TableCell className="py-2 text-xs tabular-nums">
+                      <TableCell className="py-2 text-copy-13 tabular-nums">
                         {i + 1}
                       </TableCell>
-                      <TableCell className="py-2 text-xs">
+                      <TableCell className="py-2 text-copy-13">
                         {r.periode}
                       </TableCell>
-                      <TableCell className="py-2 text-right text-xs tabular-nums">
+                      <TableCell className="py-2 text-right text-copy-13 tabular-nums">
                         {angka(r.stDeposit)}
                       </TableCell>
-                      <TableCell className="py-2 text-right text-xs tabular-nums">
+                      <TableCell className="py-2 text-right text-copy-13 tabular-nums">
                         {angka(r.depositResmi)}
                       </TableCell>
-                      <TableCell className="py-2 text-right text-xs tabular-nums">
+                      <TableCell className="py-2 text-right text-copy-13 tabular-nums">
                         {angka(r.depositPerubahan)}
                       </TableCell>
-                      <TableCell className="py-2 text-right text-xs tabular-nums">
+                      <TableCell className="py-2 text-right text-copy-13 tabular-nums">
                         {angka(r.sisaDeposit)}
                       </TableCell>
                     </TableRow>
@@ -601,6 +597,6 @@ export function ModalKoreksi({
           </div>
         </section>
       </div>
-    </KerangkaModal>
+    </KerangkaDrawer>
   );
 }

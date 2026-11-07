@@ -1,29 +1,12 @@
-// features/dashboard/verifikasi/components/StatKartu.tsx — sel angka ringkasan + kerangkanya.
+// features/dashboard/verifikasi/components/StatKartu.tsx — kerangka dan sel KPI.
 //
-// Server component (tanpa hooks). Dua bagian:
-//   <StatGrid>  kerangka: bingkai tipis + garis pemisah antar sel. Pakai ini di
-//               SEMUA halaman supaya bingkai, radius, dan garisnya seragam.
-//   <StatCard>  satu sel angka. Tidak punya border sendiri (garis dari StatGrid),
-//               jadi tetap cocok juga di kerangka lama `grid gap-px bg-border/70`.
-//
-// PALET PER HALAMAN: warna latar, garis, label, dan ikon dibaca dari variabel
-// `--stat-*` dengan cadangan ke token global (`--card`, `--border`, ...).
-//   - Tanpa `varian` (atau tanpa `data-stat` di pembungkus) tampilannya SAMA
-//     seperti sebelumnya, jadi halaman yang belum memilih tidak berubah.
-//   - <StatGrid varian="geist"> memasang `data-stat="geist"`; nilainya
-//     didefinisikan di globals.css (blok "Kartu statistik") dan hanya berlaku
-//     di dalam grid itu. Kerangka lama (mis. ringkasan-verifikasi.tsx) cukup
-//     menaruh `data-stat="geist"` di elemen pembungkusnya.
-//
-// Prinsip tampilan: warna HANYA untuk status. Ikon selalu netral; status
-// ditandai titik kecil di samping label (+ bilah progres dan, untuk `perhatian`,
-// angka merah). Angka memakai `num-display` dari globals.css (KPI: bobot 500,
-// tabular, tracking rapat).
+// Warna permukaan, garis, dan tipografi menggunakan token global; warna status
+// hanya dipakai untuk penanda progres.
 import type { LucideIcon } from "lucide-react";
 import {
   HugeiconsIcon,
   type IconSvgElement,
-} from "@/features/dashboard/verifikasi/lib/IconRenderer";
+} from "@/features/dashboard/shared/icons/IconRenderer";
 import { cn } from "@/lib/Utilitas";
 
 type Nada = "netral" | "perhatian" | "peringatan" | "info" | "sukses";
@@ -83,46 +66,21 @@ function Ikon({
 // ----------------------------------------------------------------------------
 // Kelas ditulis lengkap (bukan dirangkai) karena Tailwind hanya mengenali
 // nama kelas utuh.
-const KOLOM = {
-  2: "grid-cols-1 sm:grid-cols-2",
-  3: "grid-cols-1 sm:grid-cols-3",
-  4: "grid-cols-2 lg:grid-cols-4",
-} as const;
-
-/** Palet kartu. `bawaan` = token global; nama lain harus ada di globals.css. */
-export type VarianStat = "bawaan" | "geist";
-
 export function StatGrid({
   children,
-  kolom = 4,
-  varian = "bawaan",
   className,
 }: {
   children: React.ReactNode;
-  kolom?: keyof typeof KOLOM;
-  varian?: VarianStat;
   className?: string;
 }) {
   return (
     <div
-      data-stat={varian === "bawaan" ? undefined : varian}
       className={cn(
-        "overflow-hidden rounded-lg border border-(--stat-border,var(--border)) bg-(--stat-bg,var(--card))",
+        "grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4",
         className,
       )}
     >
-      {/* Tiap sel menggambar garis atas & kiri sendiri (`*:border-t *:border-l`).
-          -mt-px / -ml-px menggeser grid 1px sehingga garis baris & kolom
-          pertama tersembunyi di balik bingkai: tidak ada garis ganda, dan
-          jumlah sel ganjil tidak meninggalkan kotak abu-abu kosong. */}
-      <div
-        className={cn(
-          "-mt-px -ml-px grid *:border-t *:border-l *:border-(--stat-border,var(--border))",
-          KOLOM[kolom],
-        )}
-      >
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
@@ -155,10 +113,10 @@ export function StatCard({
     progres === undefined ? undefined : Math.min(100, Math.max(0, progres));
 
   return (
-    <div className="relative flex flex-col gap-2 bg-(--stat-bg,var(--card)) px-4 py-4 sm:px-5">
+    <div className="relative flex flex-col gap-2 bg-card px-4 py-4 sm:px-5">
       {/* Baris atas: [titik status] label ........ ikon netral */}
       <div className="flex items-center justify-between gap-3">
-        <p className="flex min-w-0 items-center gap-2 text-xs font-medium text-(--stat-label,var(--muted-foreground))">
+        <p className="flex min-w-0 items-center gap-2 text-label-12 font-medium text-muted-foreground">
           {n.titik && (
             <>
               <span
@@ -173,7 +131,7 @@ export function StatCard({
         </p>
         <Ikon
           icon={icon}
-          className="size-4 shrink-0 text-(--stat-icon,color-mix(in_oklab,var(--muted-foreground)_70%,transparent))"
+          className="size-4 shrink-0 text-muted-foreground"
         />
       </div>
 
@@ -182,14 +140,14 @@ export function StatCard({
         <p
           title={judulLengkap}
           className={cn(
-            "truncate text-xl leading-8 num-display sm:text-2xl",
+            "num-display truncate text-xl leading-8",
             n.angka,
           )}
         >
           {nilai}
         </p>
         {keterangan && (
-          <p className="mt-0.5 truncate text-xs text-(--stat-label,var(--muted-foreground))">
+          <p className="mt-0.5 truncate text-copy-13 text-muted-foreground">
             {keterangan}
           </p>
         )}

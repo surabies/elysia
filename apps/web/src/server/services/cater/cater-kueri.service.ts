@@ -30,6 +30,7 @@ export class CaterKueriService {
       .select({
         totalTercatat: sql<number>`count(*)::int`,
         totalPakaiM3: sql<number>`COALESCE(SUM(pakai_m3), 0)::float`,
+        periodeTerakhir: sql<string | null>`MAX(${caterBacaMeter.thbl})`,
       })
       .from(caterBacaMeter);
 
@@ -54,6 +55,7 @@ export class CaterKueriService {
       totalPetugas: petugasCount?.count ?? 0,
       totalTercatat: caterStats?.totalTercatat ?? 0,
       totalPakaiM3: caterStats?.totalPakaiM3 ?? 0,
+      periodeTerakhir: caterStats?.periodeTerakhir ?? null,
       totalTagihan: drdStats?.totalTagihan ?? 0,
       totalTunggakan: drdStats?.totalTunggakan ?? 0,
       kondisiBreakdown,
@@ -82,7 +84,11 @@ export class CaterKueriService {
   /**
    * Mengunduh daftar pelanggan per rute untuk pembacaan offline mobile
    */
-  async getRoutePelanggan(ruteKode: string, limit: number = 500) {
+  async getRoutePelanggan(
+    ruteKode: string,
+    limit: number = 500,
+    thbl: string = '202601'
+  ) {
     const list = await db
       .select({
         nolg: pelanggan.nolg,
@@ -96,17 +102,35 @@ export class CaterKueriService {
         status: pelanggan.status,
         tarifKode: pelanggan.tarifKode,
         noMeter: pelanggan.noMeter,
+        readingId: caterBacaMeter.id,
         stml: caterBacaMeter.stml,
         pakaiLalu: caterBacaMeter.pakaiLalu,
         stmaTerakhir: caterBacaMeter.stma,
         ketCatatTerakhir: caterBacaMeter.ketCatat,
+        statusVerifikasi: caterBacaMeter.statusVerifikasi,
+        standSebelumnya: sql<string | null>`(
+          select previous.stma
+          from cater_baca_meter previous
+          where previous.nolg = ${pelanggan.nolg}
+            and previous.thbl < ${thbl}
+          order by previous.thbl desc
+          limit 1
+        )`,
+        pakaiSebelumnya: sql<string | null>`(
+          select previous.pakai_m3
+          from cater_baca_meter previous
+          where previous.nolg = ${pelanggan.nolg}
+            and previous.thbl < ${thbl}
+          order by previous.thbl desc
+          limit 1
+        )`,
       })
       .from(pelanggan)
       .leftJoin(
         caterBacaMeter,
         and(
           eq(pelanggan.nolg, caterBacaMeter.nolg),
-          eq(caterBacaMeter.thbl, '202601')
+          eq(caterBacaMeter.thbl, thbl)
         )
       )
       .where(eq(pelanggan.ruteKode, ruteKode))

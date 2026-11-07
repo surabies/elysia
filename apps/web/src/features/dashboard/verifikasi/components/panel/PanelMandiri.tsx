@@ -10,24 +10,27 @@
 // Data meter/riwayat hanya dipakai untuk informasi panel; verifikasi mandiri
 // tidak menerbitkan pembacaan resmi.
 import * as React from "react";
-import { CursorPointer01Icon } from "@/features/dashboard/verifikasi/lib/IkonLucide";
+import { CursorPointer01Icon } from "@/features/dashboard/shared/icons/IkonLucide";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPeriode, formatTanggal } from "@/features/public/lib/Format";
 import {
   ambilSatu,
   ambilList,
   ApiError,
-} from "@/features/dashboard/api/ApiDashboard";
-import { LABEL_KONDISI_CATAT } from "../../../lib/LabelPencatatan";
+} from "@/features/dashboard/shared/api/ApiDashboard";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
 import type {
   LaporanMandiriDetail,
   MeterRingkas,
   PembacaanRingkas,
 } from "../../types/TipeVerifikasi";
-import { GridStand, InfoPelanggan, PanelKosong, Seksi } from "./KomponenPanel";
+import {
+  PanelKosong,
+  RingkasanPelanggan,
+  Seksi,
+} from "./KomponenPanel";
 import { FotoBukti } from "../foto/FotoBukti";
 import { FotoSebelumnya } from "../foto/FotoSebelumnya";
-import { HistoriPemakaian } from "../HistoriPemakaian";
 import { PetaLokasi } from "../PetaLokasi";
 import { ModalMandiri } from "../modal/ModalMandiri";
 
@@ -35,18 +38,24 @@ export type AksiMandiri = "verify" | "tolak";
 
 export function PanelMandiri({
   id,
+  refreshKey,
+  onLoadingChange,
   aksi,
   onTutupAksi,
   onSelesai,
 }: {
   id: string | null;
+  refreshKey: number;
+  onLoadingChange: (loading: boolean) => void;
   /** Aksi dari menu klik kanan yang butuh modal; null = tidak ada modal. */
   aksi: AksiMandiri | null;
   onTutupAksi: () => void;
   onSelesai: () => void;
 }) {
   const [detail, setDetail] = React.useState<LaporanMandiriDetail | null>(null);
+  const [detailId, setDetailId] = React.useState<string | null>(null);
   const [galat, setGalat] = React.useState<string | null>(null);
+  const [memuatDetail, setMemuatDetail] = React.useState(false);
   const [muatKe, setMuatKe] = React.useState(0);
 
   const [dataMeter, setDataMeter] = React.useState<{
@@ -65,8 +74,14 @@ export function PanelMandiri({
   } | null>(null);
 
   React.useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      onLoadingChange(false);
+      return;
+    }
     let batal = false;
+    setMemuatDetail(true);
+    onLoadingChange(true);
+    setGalat(null);
     (async () => {
       let detailDimuat = false;
       try {
@@ -75,6 +90,7 @@ export function PanelMandiri({
         );
         if (batal) return;
         setDetail(row);
+        setDetailId(id);
         setGalat(null);
         detailDimuat = true;
         const { rows } = await ambilList<MeterRingkas>("/meter", {
@@ -97,12 +113,17 @@ export function PanelMandiri({
         if (detailDimuat)
           setDataMeter({ laporanId: id, meterId: "", galat: pesan });
         else setGalat(pesan);
+      } finally {
+        if (!batal) {
+          setMemuatDetail(false);
+          onLoadingChange(false);
+        }
       }
     })();
     return () => {
       batal = true;
     };
-  }, [id, muatKe]);
+  }, [id, muatKe, refreshKey, onLoadingChange]);
 
   const dataMeterAktif = id && dataMeter?.laporanId === id ? dataMeter : null;
   const meterId = dataMeterAktif?.meterId ?? "";
@@ -151,7 +172,7 @@ export function PanelMandiri({
   }
   if (!detail && !galat) {
     return (
-      <div className="flex flex-col gap-2 p-3">
+      <div className="flex flex-col gap-2 px-2 py-2">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-9 w-full" />
@@ -161,7 +182,7 @@ export function PanelMandiri({
   }
   if (!detail) {
     return (
-      <p className="p-4 text-center text-xs text-destructive">
+      <p className="p-4 text-center text-copy-13 text-destructive">
         {galat ?? "Detail tidak ditemukan."}
       </p>
     );
@@ -184,53 +205,48 @@ export function PanelMandiri({
   const pakai = pemakaianCatat ?? detail.pembacaan?.pemakaianRiil ?? null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-2 p-3">
-      <Seksi judul="Informasi pelanggan">
-        <InfoPelanggan
-          nama={detail.pelanggan?.nama ?? "—"}
-          status={detail.status}
-          nomor={detail.nomorLangganan}
-          kondisi={
-            LABEL_KONDISI_CATAT[
-              detail.kondisi ?? detail.pembacaan?.kondisi ?? "STAND_KONSUMEN"
-            ] ??
-            detail.kondisi ??
-            detail.pembacaan?.kondisi ??
-            "Stand konsumen"
-          }
-          alamat={detail.pelanggan?.alamat}
-        />
-      </Seksi>
+    <div className="flex min-w-0 flex-col gap-2 px-2 py-2" aria-busy={memuatDetail}>
+      {galat && (
+        <p role="alert" className="text-label-12 text-destructive">
+          {galat}
+        </p>
+      )}
+      <RingkasanPelanggan
+        nama={detail.pelanggan?.nama ?? "—"}
+        nomor={detail.nomorLangganan}
+        kondisi={
+          LABEL_KONDISI_CATAT[
+            detail.kondisi ?? detail.pembacaan?.kondisi ?? "STAND_KONSUMEN"
+          ] ??
+          detail.kondisi ??
+          detail.pembacaan?.kondisi ??
+          "Stand konsumen"
+        }
+        alamat={detail.pelanggan?.alamat}
+        pelangganId={detail.pelangganId}
+        pembacaan={{
+          periode: detail.periode,
+          standAwal,
+          standAkhir: stAkhir,
+          pakai,
+        }}
+      />
 
-      <Seksi judul="Stand meter">
-        <GridStand
-          sel={[
-            { label: "ST awal", nilai: standAwal },
-            { label: "ST akhir", nilai: stAkhir, nada: "info" },
-            { label: "Pakai", nilai: pakai, nada: "sukses" },
-          ]}
-        />
-      </Seksi>
-
-      <Seksi judul="Histori pemakaian (3 bulan)">
-        <HistoriPemakaian pelangganId={detail.pelangganId} />
-      </Seksi>
-
-      <Seksi judul="Foto periode berjalan">
+      <Seksi judul="Foto laporan periode ini">
         <FotoBukti
           url={detail.fotoUrl}
           label={`Foto meter — ${formatPeriode(detail.periode)}`}
         />
       </Seksi>
 
-      <Seksi judul="Foto periode sebelumnya">
+      <Seksi judul="Foto pembanding periode sebelumnya">
         <FotoSebelumnya
           pelangganId={detail.pelangganId}
           periode={detail.periode}
         />
       </Seksi>
 
-      <Seksi judul="Lokasi">
+      <Seksi judul="Lokasi pelanggan">
         <PetaLokasi
           langsung
           lat={detail.pelanggan?.geoLat}
@@ -239,7 +255,7 @@ export function PanelMandiri({
       </Seksi>
 
       {detail.status === "DIVERIFIKASI" && (
-        <p className="text-[11px] text-(--verif-v2)">
+        <p className="text-copy-13 text-(--verif-v2)">
           Laporan sudah diverifikasi; proses ini hanya menyimpan koreksi stand
           dan tidak menerbitkan pembacaan resmi.
           {detail.verifiedBy?.name
@@ -249,7 +265,7 @@ export function PanelMandiri({
         </p>
       )}
       {detail.status === "DIGUNAKAN" && (
-        <p className="text-[11px] text-(--verif-v3)">
+        <p className="text-copy-13 text-(--verif-v3)">
           Sudah menjadi pembacaan resmi
           {detail.verifiedBy?.name
             ? ` — diverifikasi ${detail.verifiedBy.name}`
@@ -258,14 +274,14 @@ export function PanelMandiri({
         </p>
       )}
       {detail.status === "DITOLAK" && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-copy-13 text-muted-foreground">
           Ditolak
           {detail.verifiedBy?.name ? ` oleh ${detail.verifiedBy.name}` : ""}
           {detail.alasanDitolak ? ` — “${detail.alasanDitolak}”` : ""}.
         </p>
       )}
 
-      {aksi && bisaModal && (
+      {aksi && bisaModal && detailId === id && (
         <ModalMandiri
           detail={detail}
           tolakAwal={aksi === "tolak"}

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ambilList, ApiError } from "@/features/dashboard/api/ApiDashboard"
+import { ambilList, ApiError } from "@/features/dashboard/shared/api/ApiDashboard"
 import { UKURAN_HALAMAN_MOBILE } from "../lib/KonstantaDataGrid"
 import { paramDaftar } from "../Param"
 import type { BarisData, KeadaanDaftar } from "../types/TipeDataGrid"

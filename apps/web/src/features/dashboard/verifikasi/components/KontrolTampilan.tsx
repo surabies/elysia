@@ -7,15 +7,15 @@
 //
 // Dipakai halaman petugas (ringkasan + kerapatan) dan pelanggan (ringkasan).
 import type { ReactNode } from "react"
-import { DashboardSquare01Icon, Menu01Icon } from "@/features/dashboard/verifikasi/lib/IkonLucide"
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer"
+import { DashboardSquare01Icon, Menu01Icon } from "@/features/dashboard/shared/icons/IkonLucide"
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { TEMA_TOGGLE_ITEM } from "../lib/TemaGridVerifikasi"
+import { TEMA_TOGGLE_ITEM } from "../lib/TemaVerifikasi"
 
 export function KontrolTampilan({
   ringkasanTerbuka,

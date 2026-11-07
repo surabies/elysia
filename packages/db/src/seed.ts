@@ -13,11 +13,18 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 async function seed() {
   console.log('=== STARTING UNIFIED DATABASE SEED ===');
   try {
+    const seedPassword = process.env.SEED_DEFAULT_PASSWORD;
+    if (!seedPassword || seedPassword.length < 12) {
+      throw new Error(
+        'Set SEED_DEFAULT_PASSWORD to a unique password of at least 12 characters before seeding accounts.'
+      );
+    }
+
     const userId = 'seed-user-1';
 
     // 1. Seed Official Accounts (5 Management Roles + 9 Pencatat Lapangan + Demo)
     console.log('1. Seeding User Accounts & RBAC Roles...');
-    await seedAccounts('Password123!');
+    await seedAccounts(seedPassword);
 
     // 2. Insert sample places
     console.log('2. Seeding Sample Places...');
@@ -57,7 +64,7 @@ async function seed() {
     const [existing] = await db.select({ total: count() }).from(pelanggan);
     if (!existing || existing.total === 0) {
       console.log('Populating initial pelanggan & cater records from CSV...');
-      await importProgresCater({ limit: 2000 });
+      await importProgresCater();
     } else {
       console.log(`Pelanggan already populated (${existing.total} records). Skipping ETL.`);
     }

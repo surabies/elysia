@@ -15,6 +15,7 @@
 // BARIS YANG SUDAH DIVERIFIKASI TIDAK DIHAPUS dari tabel: statusnya berubah
 // menjadi DIVERIFIKASI, tetapi stand resmi tetap dibuat lewat alur Petugas.
 import * as React from "react"
+import { ViewOffIcon } from "@/features/dashboard/shared/icons/IkonLucide"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
+import { toast } from "sonner"
 import {
   ResizableHandle,
   ResizablePanel,
@@ -35,9 +37,10 @@ import {
   ambilSatu,
   kirimJson,
   ApiError,
-} from "@/features/dashboard/api/ApiDashboard"
+} from "@/features/dashboard/shared/api/ApiDashboard"
 import type { StatsVerifikasi } from "../types/TipeVerifikasi"
 import { RingkasanVerifikasi } from "./RingkasanVerifikasi"
+import { PanelKosong, PanelMemuat } from "./panel/KomponenPanel"
 import {
   PanelTabelMandiri,
   type BarisMandiriTabel,
@@ -50,6 +53,10 @@ import {
   type KunciMenu,
   type ProfilMenu,
 } from "../lib/MenuAksi"
+import {
+  KELAS_JUDUL_PANEL,
+  KELAS_PANEL_DETAIL,
+} from "../lib/TemaVerifikasi"
 
 function bobotRole(role: string | null | undefined): number {
   switch (role) {
@@ -83,10 +90,20 @@ export function VerifikasiMandiri({
     undefined
   )
   const [stats, setStats] = React.useState<StatsVerifikasi | null>(null)
-  const [galatStats, setGalatStats] = React.useState<string | null>(null)
   const [idTerpilih, setIdTerpilih] = React.useState<string | null>(null)
+  const [detailMemuat, setDetailMemuat] = React.useState(false)
+  const [barisDimuat, setBarisDimuat] = React.useState(false)
+  const [adaBaris, setAdaBaris] = React.useState(false)
   const [refreshKey, setRefreshKey] = React.useState(0)
   const [ringkasanTerbuka, setRingkasanTerbuka] = React.useState(true)
+  const onBarisDimuat = React.useCallback((ada: boolean) => {
+    setBarisDimuat(true)
+    setAdaBaris(ada)
+    if (!ada) setIdTerpilih(null)
+  }, [])
+  const onDetailMemuat = React.useCallback((memuat: boolean) => {
+    setDetailMemuat(memuat)
+  }, [])
 
   const [menu, setMenu] = React.useState<{
     posisi: { x: number; y: number }
@@ -99,7 +116,6 @@ export function VerifikasiMandiri({
     deskripsi: string
   } | null>(null)
   const [mengirim, setMengirim] = React.useState(false)
-  const [galatAksi, setGalatAksi] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     const muatUlang = () => setRefreshKey((k) => k + 1)
@@ -115,14 +131,13 @@ export function VerifikasiMandiri({
       .then((s) => {
         if (batal) return
         setStats(s)
-        setGalatStats(null)
         setPeriode((lama) =>
           lama === undefined ? (s.periodes[0] ?? null) : lama
         )
       })
       .catch((err) => {
         if (!batal)
-          setGalatStats(
+          toast.error(
             err instanceof ApiError ? err.message : "Gagal memuat ringkasan."
           )
       })
@@ -134,13 +149,12 @@ export function VerifikasiMandiri({
   async function jalankanUnverify() {
     if (!konfirmasi) return
     setMengirim(true)
-    setGalatAksi(null)
     try {
       await kirimJson(`/laporan-mandiri/${konfirmasi.id}/unverify`, "PATCH", {})
       setKonfirmasi(null)
       setRefreshKey((k) => k + 1)
     } catch (err) {
-      setGalatAksi(
+      toast.error(
         err instanceof ApiError ? err.message : "Aksi gagal dijalankan."
       )
     } finally {
@@ -176,7 +190,6 @@ export function VerifikasiMandiri({
 
     const bukaKonfirmasi = (judul: string, deskripsi: string) => {
       setMenu(null)
-      setGalatAksi(null)
       setKonfirmasi({ id, judul, deskripsi })
     }
     const tidakBerlaku: KeadaanMenu = {
@@ -272,21 +285,38 @@ export function VerifikasiMandiri({
             className="flex min-w-0 flex-col"
           >
             {/* Judul DI LUAR wadah bergulir supaya garis atasnya tidak terpotong. */}
-            <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card">
-              <div className="shrink-0 border-b border-border/70 px-4 py-2.5">
-                <h2 className="text-center text-sm font-medium">
+            <aside className={KELAS_PANEL_DETAIL}>
+              <div className="relative shrink-0 border-b border-border px-4 py-2.5">
+                <h2 className={`text-center ${KELAS_JUDUL_PANEL}`}>
                   Detail laporan
                 </h2>
+                {detailMemuat && (
+                  <Spinner
+                    className="absolute top-1/2 right-3 size-3.5 -translate-y-1/2 text-muted-foreground"
+                    aria-label="Memuat detail laporan"
+                  />
+                )}
               </div>
               <div className="scrollbar-tipis min-h-0 flex-1 overflow-y-auto">
-                {/* key: ganti baris = remount panel, state mulai bersih. */}
-                <PanelMandiri
-                  key={`${idTerpilih ?? "kosong"}-${refreshKey}`}
-                  id={idTerpilih}
-                  aksi={aksi}
-                  onTutupAksi={() => setAksi(null)}
-                  onSelesai={() => setRefreshKey((k) => k + 1)}
-                />
+                {!barisDimuat ? (
+                  <PanelMemuat />
+                ) : !adaBaris ? (
+                  <PanelKosong
+                    icon={ViewOffIcon}
+                    pesan="Tidak ada laporan yang cocok dengan filter saat ini."
+                  />
+                ) : idTerpilih ? (
+                  <PanelMandiri
+                    id={idTerpilih}
+                    refreshKey={refreshKey}
+                    onLoadingChange={onDetailMemuat}
+                    aksi={aksi}
+                    onTutupAksi={() => setAksi(null)}
+                    onSelesai={() => setRefreshKey((k) => k + 1)}
+                  />
+                ) : (
+                  <PanelMemuat />
+                )}
               </div>
             </aside>
           </ResizablePanel>
@@ -303,12 +333,6 @@ export function VerifikasiMandiri({
                 terbuka={ringkasanTerbuka}
               />
 
-              {galatStats && (
-                <p className="shrink-0 text-xs text-destructive">
-                  {galatStats}
-                </p>
-              )}
-
               <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                 <PanelTabelMandiri
                   periodes={stats?.periodes ?? []}
@@ -316,6 +340,7 @@ export function VerifikasiMandiri({
                   onPeriode={setPeriode}
                   refreshKey={refreshKey}
                   idTerpilih={idTerpilih}
+                  onRowsLoaded={onBarisDimuat}
                   onKlikBaris={(row) => setIdTerpilih(row.id)}
                   onKlikKanan={(row, posisi) => {
                     setIdTerpilih(row.id)
@@ -354,7 +379,6 @@ export function VerifikasiMandiri({
               {konfirmasi?.deskripsi}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {galatAksi && <p className="text-xs text-destructive">{galatAksi}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={mengirim}>Batal</AlertDialogCancel>
             {/* onClick tanpa auto-close: dialog baru ditutup setelah server

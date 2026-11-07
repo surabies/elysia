@@ -1,5 +1,5 @@
 import { cors } from '@elysiajs/cors';
-import { env } from '@/src/lib/env';
+import { env } from '@/lib/env';
 
 const allowedOrigins = env.CORS_ALLOWED_ORIGINS
   ? env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim())

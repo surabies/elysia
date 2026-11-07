@@ -21,6 +21,12 @@ export const caterBacaMeter = pgTable(
     stml: numeric('stml', { precision: 10, scale: 2 }).notNull(), // Stand Meter Lalu
     stma: numeric('stma', { precision: 10, scale: 2 }).notNull(), // Stand Meter Akhir
     pakaiM3: numeric('pakai_m3', { precision: 10, scale: 2 }).notNull(), // Pemakaian m3
+    stmlRevisi: numeric('stml_revisi', { precision: 10, scale: 2 }),
+    stmaRevisi: numeric('stma_revisi', { precision: 10, scale: 2 }),
+    pakaiM3Revisi: numeric('pakai_m3_revisi', { precision: 10, scale: 2 }),
+    ketCatatRevisi: varchar('ket_catat_revisi', { length: 50 }),
+    standAngkatRevisi: numeric('stand_angkat_revisi', { precision: 10, scale: 2 }),
+    standMeterBaruRevisi: numeric('stand_meter_baru_revisi', { precision: 10, scale: 2 }),
     pakaiLalu: numeric('pakai_lalu', { precision: 10, scale: 2 }), // Pemakaian bulan lalu
     
     // Pemakaian Tagihan & Taksasi (Hasil Business Domain Engine)

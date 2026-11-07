@@ -11,19 +11,22 @@ import * as React from "react";
 import {
   CheckmarkCircle02Icon,
   CursorPointer01Icon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
+} from "@/features/dashboard/shared/icons/IkonLucide";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatTanggal } from "@/features/public/lib/Format";
-import { ambilSatu, ApiError } from "@/features/dashboard/api/ApiDashboard";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/lib/LabelPencatatan";
-import { label } from "@/features/dashboard/lib/Label";
+import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
+import { label } from "@/features/dashboard/verifikasi/lib/Label";
 import type { LaporanHarianDetail } from "../../types/TipeVerifikasi";
 import { tahapLaporanHarian, ringVerif } from "../../types/TipeVerifikasi";
-import { GridStand, InfoPelanggan, PanelKosong, Seksi } from "./KomponenPanel";
+import {
+  PanelKosong,
+  RingkasanPelanggan,
+  Seksi,
+} from "./KomponenPanel";
 import { FotoSebelumnya } from "../foto/FotoSebelumnya";
 import { TabFoto } from "../foto/TabFoto";
-import { HistoriPemakaian } from "../HistoriPemakaian";
 import { PetaLokasi } from "../PetaLokasi";
 import { TEKS_RING } from "../../types/WarnaTahap";
 import { tentukanHasilPembacaan } from "../../lib/HasilPembacaan";
@@ -64,12 +67,12 @@ function ProgresRing({ detail }: { detail: LaporanHarianDetail }) {
           key={b.label}
           className="flex flex-col gap-0.5 py-1.5 first:pt-0 last:pb-0"
         >
-          <span className="text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
+          <span className="text-label-12 font-semibold tracking-wide text-muted-foreground uppercase">
             {b.label}
           </span>
           {b.nama ? (
             <span
-              className={`inline-flex items-center gap-1 text-[11px] font-medium ${b.warna}`}
+              className={`inline-flex items-center gap-1 text-label-12 font-medium ${b.warna}`}
             >
               <HugeiconsIcon
                 icon={CheckmarkCircle02Icon}
@@ -81,7 +84,7 @@ function ProgresRing({ detail }: { detail: LaporanHarianDetail }) {
               {b.tanggal ? ` · ${formatTanggal(b.tanggal)}` : ""}
             </span>
           ) : (
-            <span className="text-[11px] text-muted-foreground">—</span>
+            <span className="text-copy-13 text-muted-foreground">—</span>
           )}
         </div>
       ))}
@@ -89,14 +92,27 @@ function ProgresRing({ detail }: { detail: LaporanHarianDetail }) {
   );
 }
 
-export function PanelLapangan({ id }: { id: string | null }) {
+export function PanelLapangan({
+  id,
+  refreshKey,
+  onLoadingChange,
+}: {
+  id: string | null;
+  refreshKey: number;
+  onLoadingChange: (loading: boolean) => void;
+}) {
   const [detail, setDetail] = React.useState<LaporanHarianDetail | null>(null);
   const [galat, setGalat] = React.useState<string | null>(null);
-  // Pemicu muat ulang setelah aksi. State awal selalu bersih tiap ganti baris
-  // karena parent me-remount panel lewat `key`.
+  const [memuat, setMemuat] = React.useState(false);
   React.useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      onLoadingChange(false);
+      return;
+    }
     let batal = false;
+    setMemuat(true);
+    onLoadingChange(true);
+    setGalat(null);
     (async () => {
       try {
         const row = await ambilSatu<LaporanHarianDetail>(
@@ -113,11 +129,17 @@ export function PanelLapangan({ id }: { id: string | null }) {
               : "Gagal memuat detail laporan.",
           );
       }
+      finally {
+        if (!batal) {
+          setMemuat(false);
+          onLoadingChange(false);
+        }
+      }
     })();
     return () => {
       batal = true;
     };
-  }, [id]);
+  }, [id, refreshKey, onLoadingChange]);
 
   if (!id) {
     return (
@@ -129,7 +151,7 @@ export function PanelLapangan({ id }: { id: string | null }) {
   }
   if (!detail && !galat) {
     return (
-      <div className="flex flex-col gap-2 p-3">
+      <div className="flex flex-col gap-2 px-2 py-2">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-9 w-full" />
@@ -139,7 +161,7 @@ export function PanelLapangan({ id }: { id: string | null }) {
   }
   if (!detail) {
     return (
-      <p className="p-4 text-center text-xs text-destructive">
+      <p className="p-4 text-center text-copy-13 text-destructive">
         {galat ?? "Detail tidak ditemukan."}
       </p>
     );
@@ -151,58 +173,44 @@ export function PanelLapangan({ id }: { id: string | null }) {
   const kondisiAktif = detail.kondisiRevisi ?? detail.kondisi;
   const isMB = kondisiAktif === "MB";
   // Tiga angka yang sama di panel Petugas dan Pelanggan.
-  const {
-    standAwal,
-    standAkhir: stAkhir,
-    pemakaian: pakai,
-  } = tentukanHasilPembacaan(detail);
+  const pembacaan = tentukanHasilPembacaan(detail);
 
   return (
-    <div className="flex min-w-0 flex-col gap-2 p-3">
-      <Seksi judul="Informasi pelanggan">
-        <InfoPelanggan
-          nama={nama}
-          status={tahap}
-          nomor={detail.nomorLangganan}
-          kondisi={label(LABEL_KONDISI_CATAT, kondisiAktif)}
-          alamat={alamat}
-        />
-        {!detail.pelanggan && (
-          <p className="text-[11px] text-(--verif-v1)">
-            Nomor langganan ini belum terhubung ke data pelanggan — verifikasi
-            belum bisa dijalankan sebelum pelanggannya ter-import.
-          </p>
-        )}
-      </Seksi>
+    <div className="flex min-w-0 flex-col gap-2 px-2 py-2" aria-busy={memuat}>
+      {galat && (
+        <p role="alert" className="text-label-12 text-destructive">
+          {galat}
+        </p>
+      )}
+      <RingkasanPelanggan
+        nama={nama}
+        nomor={detail.nomorLangganan}
+        kondisi={label(LABEL_KONDISI_CATAT, kondisiAktif)}
+        alamat={alamat}
+        pelangganId={detail.pelanggan?.id}
+        catatanPembacaan={
+          isMB && detail.standAngkatLama != null
+            ? `Stand angkat lama: ${detail.standAngkatLama.toLocaleString("id-ID")}`
+            : undefined
+        }
+        peringatan={
+          !detail.pelanggan && (
+            <p className="text-copy-13 text-(--verif-v1)">
+              Nomor langganan ini belum terhubung ke data pelanggan —
+              verifikasi belum bisa dijalankan sebelum pelanggannya
+              ter-import.
+            </p>
+          )
+        }
+        pembacaan={{
+          periode: detail.periode,
+          standAwal: pembacaan.standAwal,
+          standAkhir: pembacaan.standAkhir,
+          pakai: pembacaan.pemakaian,
+        }}
+      />
 
-      <Seksi judul="Stand meter">
-        <GridStand
-          sel={[
-            { label: "ST awal", nilai: standAwal },
-            ...(isMB && detail.standAngkatLama != null
-              ? [
-                  {
-                    label: "ST angkat",
-                    nilai: detail.standAngkatLama,
-                    nada: "netral" as const,
-                  },
-                ]
-              : []),
-            {
-              label: isMB ? "ST baru" : "ST akhir",
-              nilai: stAkhir,
-              nada: "info",
-            },
-            { label: "Pakai", nilai: pakai, nada: "sukses" },
-          ]}
-        />
-      </Seksi>
-
-      <Seksi judul="Histori pemakaian (3 bulan)">
-        <HistoriPemakaian pelangganId={detail.pelanggan?.id} />
-      </Seksi>
-
-      <Seksi judul="Foto periode berjalan">
+      <Seksi judul="Foto laporan periode ini">
         <TabFoto
           varian="panel"
           item={[
@@ -229,7 +237,7 @@ export function PanelLapangan({ id }: { id: string | null }) {
         />
       </Seksi>
 
-      <Seksi judul="Foto periode sebelumnya">
+      <Seksi judul="Foto pembanding periode sebelumnya">
         <FotoSebelumnya
           pelangganId={detail.pelanggan?.id}
           periode={detail.periode}
@@ -240,7 +248,7 @@ export function PanelLapangan({ id }: { id: string | null }) {
         <ProgresRing detail={detail} />
       </Seksi>
 
-      <Seksi judul="Lokasi">
+      <Seksi judul="Lokasi pelanggan">
         <PetaLokasi
           langsung
           lat={detail.pelanggan?.geoLat}
@@ -249,7 +257,7 @@ export function PanelLapangan({ id }: { id: string | null }) {
       </Seksi>
 
       {tahap === "RESMI" && (
-        <p className="text-[11px] text-(--verif-v3)">
+        <p className="text-copy-13 text-(--verif-v3)">
           Sudah menjadi pembacaan resmi
           {detail.verifiedBy?.name
             ? ` — approve final ${detail.verifiedBy.name}`
@@ -258,7 +266,7 @@ export function PanelLapangan({ id }: { id: string | null }) {
         </p>
       )}
       {tahap === "DITOLAK" && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-copy-13 text-muted-foreground">
           Dikembalikan untuk cek ulang
           {detail.verifiedBy?.name ? ` oleh ${detail.verifiedBy.name}` : ""}
           {detail.catatanVerif ? ` — “${detail.catatanVerif}”` : ""}. Klik kanan
@@ -266,7 +274,7 @@ export function PanelLapangan({ id }: { id: string | null }) {
         </p>
       )}
       {detail.catatanVerif && tahap !== "DITOLAK" && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-copy-13 text-muted-foreground">
           Catatan verifikasi: “{detail.catatanVerif}”
         </p>
       )}

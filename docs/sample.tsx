@@ -1,4 +1,4 @@
-import { Badge } from "@/src/components/reui/badge";
+import { Badge } from "@/components/reui/badge";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {

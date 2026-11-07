@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { NILAI_KOSONG } from "../lib/KonstantaDataGrid"
-import { KELAS_KONTROL, KELAS_KONTROL_AKTIF } from "../Tema"
+import { KELAS_KONTROL_AKTIF } from "../Tema"
 import type { FilterSelect } from "../types/TipeDataGrid"
 
 /** Select satu penyaring. Labelnya jadi awalan di dalam tombol ("Status Semua")
@@ -55,8 +55,7 @@ export function FilterPilihan({
                 aria-label={`${filter.label}: ${pilihanAktif ?? "Semua"}`}
                 aria-expanded={terbuka}
                 className={cn(
-                  KELAS_KONTROL,
-                  "relative size-8 justify-center p-0",
+                  "relative",
                   nilai && KELAS_KONTROL_AKTIF
                 )}
               >
@@ -105,9 +104,8 @@ export function FilterPilihan({
   const pemicu = (
     <SelectTrigger
       aria-label={filter.label}
-      size="default"
+      size="sm"
       className={cn(
-        KELAS_KONTROL,
         "max-w-48 data-[state=open]:border-ring/60",
         nilai && KELAS_KONTROL_AKTIF
       )}

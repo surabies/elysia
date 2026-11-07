@@ -3,24 +3,31 @@
 // features/dashboard/verifikasi/components/KomponenPanel.tsx — potongan kecil
 // yang dipakai panel verifikasi (lapangan & mandiri) dan modalnya: judul
 // bagian (modal), seksi lipat (panel), kartu informasi pelanggan, grid stand
-// 3 kolom, badge status, dan empty state panel.
+// tabel stand/histori dan empty state panel.
 //
 // SEKSI LIPAT memakai Collapsible, bukan Accordion: tanpa animasi tinggi yang
 // diukur lewat JS, dan isi seksi yang tertutup TIDAK dirender — histori dan
 // foto pembanding baru mengambil data setelah seksinya dibuka.
 import * as React from "react";
-import { ArrowDown01Icon } from "@/features/dashboard/verifikasi/lib/IkonLucide";
+import { ArrowDown01Icon } from "@/features/dashboard/shared/icons/IkonLucide";
 import {
   HugeiconsIcon,
   type IconSvgElement,
-} from "@/features/dashboard/verifikasi/lib/IconRenderer";
+} from "@/features/dashboard/shared/icons/IconRenderer";
 import { cn } from "@/lib/Utilitas";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { GAYA_TAHAP } from "../../types/WarnaTahap";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  KELAS_JUDUL_PANEL,
+  KELAS_TEKS_BANTUAN,
+  KELAS_TEKS_META,
+} from "../../lib/TemaVerifikasi";
+import { HistoriPemakaian } from "../HistoriPemakaian";
+import type { PembacaanPanelRingkas } from "../../types/TipeVerifikasi";
 
 /// Judul bagian untuk modal (bukan seksi lipat).
 export function Bagian({
@@ -32,7 +39,12 @@ export function Bagian({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-center text-xs font-medium text-muted-foreground">
+      <p
+        className={cn(
+          "text-center text-muted-foreground",
+          KELAS_JUDUL_PANEL,
+        )}
+      >
         {judul}
       </p>
       {children}
@@ -56,9 +68,14 @@ export function Seksi({
     <Collapsible
       open={buka}
       onOpenChange={setBuka}
-      className="min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card"
+      className="min-w-0 border-b border-border/60 last:border-b-0"
     >
-      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 bg-muted/30 px-3 py-2 text-left text-xs font-medium text-foreground transition-colors hover:bg-accent data-[state=open]:border-b data-[state=open]:border-border/70">
+      <CollapsibleTrigger
+        className={cn(
+          "group flex w-full items-center justify-between gap-2 py-2.5 text-left text-foreground transition-colors hover:text-muted-foreground",
+          KELAS_JUDUL_PANEL,
+        )}
+      >
         {judul}
         <HugeiconsIcon
           icon={ArrowDown01Icon}
@@ -67,9 +84,7 @@ export function Seksi({
           aria-hidden
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="min-w-0 p-3">
-        <div className="flex min-w-0 flex-col gap-2.5">{children}</div>
-      </CollapsibleContent>
+      <CollapsibleContent className="min-w-0 pb-2.5">{children}</CollapsibleContent>
     </Collapsible>
   );
 }
@@ -78,13 +93,11 @@ export function Seksi({
 /// lalu baris label–nilai ala tabel. Baris tanpa nilai dilewati.
 export function InfoPelanggan({
   nama,
-  status,
   nomor,
   kondisi,
   alamat,
 }: {
   nama: string;
-  status: string;
   nomor: string;
   kondisi?: string | null;
   alamat?: string | null;
@@ -99,22 +112,19 @@ export function InfoPelanggan({
     { label: "Alamat", nilai: alamat },
   ];
   return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-sm leading-snug font-semibold wrap-break-word text-foreground">
-          {nama}
-        </p>
-        <BadgeStatusVerif status={status} />
-      </div>
-      <dl className="divide-y divide-border/60 border-t border-border/60 text-xs">
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <p className="min-w-0 text-copy-14 leading-snug font-semibold wrap-break-word text-foreground">
+        {nama}
+      </p>
+      <dl className="divide-y divide-border/60 border-t border-border/60 text-copy-13">
         {baris
           .filter((b) => b.nilai)
           .map((b) => (
             <div
               key={b.label}
-              className="grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-2 py-1.5"
+              className="grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-2 py-1"
             >
-              <dt className="text-muted-foreground">{b.label}</dt>
+              <dt className={KELAS_TEKS_META}>{b.label}</dt>
               <dd
                 className={cn(
                   "min-w-0 wrap-break-word text-foreground",
@@ -138,88 +148,44 @@ const KOLOM_GRID: Record<number, string> = {
   4: "grid-cols-4",
 };
 
-export type NadaStand = "netral" | "info" | "sukses";
-
-/// Aksen warna per sel: netral = nilai awal, biru = angka akhir, hijau = pemakaian.
-const NADA: Record<NadaStand, { kotak: string; nilai: string }> = {
-  netral: { kotak: "bg-muted/30", nilai: "text-foreground" },
-  info: {
-    kotak: "bg-(--verif-v2-soft)",
-    nilai: "text-(--verif-v2)",
-  },
-  sukses: {
-    kotak: "bg-(--verif-v3-soft)",
-    nilai: "text-(--verif-v3)",
-  },
-};
-
-export interface SelStand {
-  label: string;
-  nilai: number | null;
-  nada?: NadaStand;
-}
-
-/// Murni penampil angka. Tiga sel (ST awal / ST akhir / Pakai) muat di panel tersempit.
-export function GridStand({ sel }: { sel: SelStand[] }) {
+export function RingkasanPelanggan({
+  nama,
+  nomor,
+  kondisi,
+  alamat,
+  pembacaan,
+  pelangganId,
+  peringatan,
+  catatanPembacaan,
+}: {
+  nama: string;
+  nomor: string;
+  kondisi?: string | null;
+  alamat?: string | null;
+  pembacaan: PembacaanPanelRingkas;
+  pelangganId: string | null | undefined;
+  peringatan?: React.ReactNode;
+  catatanPembacaan?: string;
+}) {
   return (
-    <div
-      className={cn(
-        "grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70",
-        KOLOM_GRID[sel.length] ?? "grid-cols-3",
-      )}
-    >
-      {sel.map((s) => {
-        const nada = NADA[s.nada ?? "netral"];
-        return (
-          <div
-            key={s.label}
-            className={cn("min-w-0 px-1.5 py-2 text-center", nada.kotak)}
-            title={s.nilai?.toLocaleString("id-ID")}
-          >
-            <p className="truncate text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
-              {s.label}
-            </p>
-            <p
-              className={cn(
-                "mt-0.5 truncate text-[13px] font-semibold tabular-nums",
-                nada.nilai,
-              )}
-            >
-              {s.nilai?.toLocaleString("id-ID") ?? "—"}
-            </p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/// Nada warna sama dengan tabel supaya panel dan tabel membaca status identik.
-const BADGE_STATUS: Record<string, { label: string; kelas: string }> = {
-  MENUNGGU: { label: "Menunggu", kelas: GAYA_TAHAP.MENUNGGU.lencana },
-  MENUNGGU_V1: { label: "Menunggu V1", kelas: GAYA_TAHAP.MENUNGGU.lencana },
-  MENUNGGU_V2: { label: "Menunggu V2", kelas: GAYA_TAHAP.V1.lencana },
-  MENUNGGU_V3: { label: "Menunggu V3", kelas: GAYA_TAHAP.V2.lencana },
-  RESMI: { label: "Resmi", kelas: GAYA_TAHAP.V3.lencana },
-  DIVERIFIKASI: { label: "Terverifikasi", kelas: GAYA_TAHAP.V2.lencana },
-  DIGUNAKAN: { label: "Digunakan", kelas: GAYA_TAHAP.V3.lencana },
-  DITOLAK: { label: "Cek ulang", kelas: GAYA_TAHAP.DITOLAK.lencana },
-};
-
-export function BadgeStatusVerif({ status }: { status: string }) {
-  const cfg = BADGE_STATUS[status] ?? {
-    label: status,
-    kelas: "border-border bg-muted text-muted-foreground",
-  };
-  return (
-    <span
-      className={cn(
-        "inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
-        cfg.kelas,
-      )}
-    >
-      {cfg.label}
-    </span>
+    <Seksi judul="Informasi pelanggan">
+      <>
+        <InfoPelanggan
+          nama={nama}
+          nomor={nomor}
+          kondisi={kondisi}
+          alamat={alamat}
+        />
+        {peringatan}
+        <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2.5">
+          <HistoriPemakaian
+            pelangganId={pelangganId}
+            terkini={pembacaan}
+            catatan={catatanPembacaan}
+          />
+        </div>
+      </>
+    </Seksi>
   );
 }
 
@@ -238,7 +204,17 @@ export function PanelKosong({
         className="size-5 text-muted-foreground"
         aria-hidden
       />
-      <p className="text-xs text-muted-foreground">{pesan}</p>
+      <p className={KELAS_TEKS_BANTUAN}>{pesan}</p>
+    </div>
+  );
+}
+
+export function PanelMemuat() {
+  return (
+    <div className="flex flex-col gap-2 p-3" aria-label="Memuat laporan pertama">
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-16 w-full" />
     </div>
   );
 }

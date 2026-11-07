@@ -29,9 +29,10 @@ import {
   Drag01Icon,
   PencilEdit01Icon,
   UserCircleIcon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
+} from "@/features/dashboard/shared/icons/IkonLucide";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
@@ -55,9 +56,8 @@ import {
   TEMA_GRID_TH_BEKU,
   TEMA_TOGGLE_ITEM,
   tentukanLatarBaris,
-  tentukanLatarSelBeku,
-} from "../lib/TemaGridVerifikasi";
-import { LABEL_KONDISI_CATAT } from "../../lib/LabelPencatatan";
+} from "../lib/TemaVerifikasi";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
 import {
   GAYA_TAHAP,
   GAYA_BELUM_DIBACA,
@@ -97,11 +97,9 @@ const tanggal = (s: string | null | undefined) => {
 
 function Lencana({ kelas, anak }: { kelas: string; anak: React.ReactNode }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${kelas}`}
-    >
+    <Badge className={cn("rounded-full", kelas)}>
       {anak}
-    </span>
+    </Badge>
   );
 }
 
@@ -127,7 +125,7 @@ function ProgresBarRingBerjenjang({
             <span className="h-4 w-1 rounded-xs bg-(--verif-error) shadow-xs" />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs">
+        <TooltipContent side="top">
           <p className="font-semibold text-(--verif-error)">
             Perlu Review / Cek Ulang
           </p>
@@ -166,7 +164,7 @@ function ProgresBarRingBerjenjang({
           />
         </div>
       </TooltipTrigger>
-      <TooltipContent side="top" className="text-xs space-y-1">
+      <TooltipContent side="top" className="space-y-1">
         <div className="font-semibold text-foreground border-b border-border/60 pb-1">
           Progres Verifikasi Petugas
         </div>
@@ -258,7 +256,7 @@ function ProgresBarRingMandiri({
             <span className="h-4 w-1 rounded-xs bg-(--verif-error) shadow-xs" />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs">
+        <TooltipContent side="top">
           <p className="font-semibold text-(--verif-error)">
             Perlu Review / Ditolak
           </p>
@@ -289,7 +287,7 @@ function ProgresBarRingMandiri({
           />
         </div>
       </TooltipTrigger>
-      <TooltipContent side="top" className="text-xs space-y-1">
+      <TooltipContent side="top" className="space-y-1">
         <div className="font-semibold text-foreground border-b border-border/60 pb-1">
           Progres Verifikasi Pelanggan
         </div>
@@ -510,7 +508,7 @@ export function KontrolKolomVerifikasi({
                 />
                 <label
                   htmlFor={`kolom-verifikasi-${id}`}
-                  className="min-w-0 flex-1 cursor-pointer text-sm"
+                  className="min-w-0 flex-1 cursor-pointer"
                 >
                   {kolom.label}
                 </label>
@@ -518,9 +516,8 @@ export function KontrolKolomVerifikasi({
                   <TooltipTrigger asChild>
                     <Button
                       type="button"
-                      size="sm"
+                      size="icon-sm"
                       variant="ghost"
-                      className="size-7 p-0"
                       aria-label={`Pindahkan ${kolom.label} ke atas`}
                       disabled={index === 0}
                       onClick={() =>
@@ -541,9 +538,8 @@ export function KontrolKolomVerifikasi({
                   <TooltipTrigger asChild>
                     <Button
                       type="button"
-                      size="sm"
+                      size="icon-sm"
                       variant="ghost"
-                      className="size-7 p-0"
                       aria-label={`Pindahkan ${kolom.label} ke bawah`}
                       disabled={index === preferensi.urutan.length - 1}
                       onClick={() =>
@@ -566,7 +562,7 @@ export function KontrolKolomVerifikasi({
         </div>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="button" variant="outline" size="sm" onClick={onReset}>
+            <Button type="button" variant="outline" size="default" onClick={onReset}>
               Kembalikan pengaturan awal
             </Button>
           </TooltipTrigger>
@@ -892,7 +888,7 @@ export function TabelVerifikasi({
           </colgroup>
           <thead className="sticky top-0 z-20">
             <tr
-              className={`${TEMA_GRID_HEADER_ROW} [&>th]:border-r [&>th]:border-b [&>th]:border-border [&>th]:px-3 [&>th]:text-left [&>th]:text-xs [&>th]:leading-4 [&>th]:font-semibold [&>th]:tracking-wide [&>th]:whitespace-nowrap [&>th:last-child]:border-r-0 ${padHeader}`}
+              className={`${TEMA_GRID_HEADER_ROW} [&>th]:border-r [&>th]:border-b [&>th]:border-border [&>th]:px-3 [&>th]:text-left [&>th]:text-label-12 [&>th]:leading-4 [&>th]:font-semibold [&>th]:tracking-wide [&>th]:whitespace-nowrap [&>th:last-child]:border-r-0 ${padHeader}`}
             >
               <th
                 className={`${thBeku} left-0`}
@@ -1033,14 +1029,13 @@ export function TabelVerifikasi({
                 gantiMeterDikoreksi ||
                 pemakaianTagih != null;
               const barisDikoreksi =
+                row.isCorrected === true ||
                 pemakaianDikoreksi ||
                 kondisiDikoreksi ||
                 row.pemakaianTagihVerif != null;
               const barisKoreksiAktif =
                 barisDikoreksi &&
-                !modeBelumDibaca &&
-                tahap !== "V3" &&
-                tahap !== "DITOLAK";
+                !modeBelumDibaca;
 
               const labelStatus = statusLabel(
                 row,
@@ -1053,24 +1048,24 @@ export function TabelVerifikasi({
                 ? (pemakaianTagih ?? hasilPemakaian)
                 : null;
 
-              // Sel beku dan latar baris diatur terpusat oleh TemaGridVerifikasi
               const latarBaris = tentukanLatarBaris({
                 aktif,
                 dipilih,
                 tahap,
                 koreksi: barisKoreksiAktif,
               });
-              const latarBeku = [
-                tentukanLatarSelBeku({ aktif, dipilih }),
-                !aktif && !dipilih
-                  ? "group-hover:bg-(--hover-baris) group-hover:after:bg-transparent"
-                  : "",
-                "sticky z-10",
-                tahap !== "MENUNGGU" ||
-                (!barisKoreksiAktif && !aktif && !dipilih)
-                  ? gaya.lapis
-                  : "",
-              ].join(" ");
+              const penandaBeku = barisKoreksiAktif
+                ? "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-(--verif-correction)"
+                : gaya.garis;
+              const styleBaris: React.CSSProperties & {
+                "--latar-baris": string;
+                "--latar-baris-hover": string;
+              } = {
+                contentVisibility: "auto",
+                containIntrinsicSize: tinggiBaris,
+                "--latar-baris": latarBaris.normal,
+                "--latar-baris-hover": latarBaris.hover,
+              };
 
               return (
                 <tr
@@ -1084,20 +1079,16 @@ export function TabelVerifikasi({
                     e.preventDefault();
                     onKlikKanan(row, { x: e.clientX, y: e.clientY });
                   }}
-                  style={{
-                    contentVisibility: "auto",
-                    containIntrinsicSize: tinggiBaris,
-                  }}
+                  style={styleBaris}
                   className={[
                     "cursor-pointer",
                     "group",
-                    latarBaris,
-                    !aktif && !dipilih ? "hover:bg-(--hover-baris)" : "",
+                    "text-foreground",
                     "[&>td]:border-r [&>td]:border-b [&>td]:border-border [&>td]:px-3 [&>td]:whitespace-nowrap [&>td:last-child]:border-r-0",
                   ].join(" ")}
                 >
                   <td
-                    className={`${latarBeku} left-0 ${gaya.garis}`}
+                    className={`sticky z-10 left-0 border-r border-b border-border/60 ${penandaBeku}`}
                     style={{ width: L_CEKLIS }}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -1131,7 +1122,7 @@ export function TabelVerifikasi({
                         );
                       case "status":
                         return (
-                          <td key={kolom} className="text-xs">
+                          <td key={kolom} className="text-copy-13">
                             <Lencana
                               kelas={statusKelas(labelStatus)}
                               anak={labelStatus}
@@ -1239,7 +1230,7 @@ export function TabelVerifikasi({
                                 </TooltipTrigger>
                                 <TooltipContent
                                   side="top"
-                                  className="text-left text-xs"
+                                  className="text-left text-copy-13"
                                 >
                                   <p className="font-semibold text-(--verif-info)">
                                     Kondisi Meter Baru (MB)
@@ -1393,7 +1384,7 @@ export function TabelVerifikasi({
         </table>
 
         {rows.length === 0 && !memuat && (
-          <p className="p-8 text-center text-sm text-muted-foreground">
+          <p className="p-8 text-center text-copy-13 text-muted-foreground">
             {pesanKosong ??
               (modeBelumDibaca
                 ? "Semua sambungan di daftar catat sudah punya setoran — tidak ada yang tertinggal."
@@ -1401,7 +1392,7 @@ export function TabelVerifikasi({
           </p>
         )}
         {memuat && (
-          <p className="p-8 text-center text-sm text-muted-foreground">
+          <p className="p-8 text-center text-copy-13 text-muted-foreground">
             Memuat…
           </p>
         )}

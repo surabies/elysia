@@ -1,8 +1,8 @@
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import {
   Add01Icon,
   Cancel01Icon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
+} from "@/features/dashboard/shared/icons/IkonLucide";
 import { cn } from "@/lib/Utilitas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { NILAI_KOSONG, OPERATOR_TEKS } from "./lib/KonstantaDataGrid";
-import { KELAS_KONTROL, KELAS_KONTROL_PANEL } from "./Tema";
+import { KELAS_KONTROL_PANEL } from "./Tema";
 import type {
   BarisFilterLanjutan,
   FilterLanjutanField,
@@ -159,6 +159,7 @@ export function PanelFilterLanjutan({
                 </Select>
               ) : (
                 <Input
+                  density="compact"
                   value={row.value}
                   onChange={(event) =>
                     onUbah(row.id, { value: event.currentTarget.value })

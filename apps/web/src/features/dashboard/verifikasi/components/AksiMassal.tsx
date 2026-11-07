@@ -110,13 +110,13 @@ export function AksiMassal({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-card p-2">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
         <Badge className="tabular-nums">
           {jumlah.toLocaleString("id-ID")} baris dipilih
         </Badge>
 
         {sedangJalan && kemajuan ? (
-          <span className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
+          <span className="flex items-center gap-2 text-label-12 text-muted-foreground tabular-nums">
             <Loader2 className="size-3.5 animate-spin" aria-hidden />
             {kemajuan.selesai.toLocaleString("id-ID")} /{" "}
             {kemajuan.total.toLocaleString("id-ID")} diproses…
@@ -139,13 +139,13 @@ export function AksiMassal({
                         <CheckCheck className="size-3.5" aria-hidden />
                       )}
                       {RING_INFO[r].label}
-                      <kbd className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                      <kbd className="ml-1 rounded bg-muted px-1 text-label-12 text-muted-foreground">
                         {RING_INFO[r].pintasan}
                       </kbd>
                     </Button>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-64 text-xs">
+                <TooltipContent className="max-w-64">
                   {bolehRing(r)
                     ? RING_INFO[r].jelas
                     : "Role Anda tidak berwenang untuk ring ini."}
@@ -166,14 +166,14 @@ export function AksiMassal({
               onClick={onBersihkan}
             >
               <X className="size-3.5" aria-hidden /> Batal pilih
-              <kbd className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+              <kbd className="ml-1 rounded bg-muted px-1 text-label-12 text-muted-foreground">
                 Esc
               </kbd>
             </Button>
           </>
         )}
 
-        <span className="ml-auto hidden items-center gap-1 text-[11px] text-muted-foreground lg:flex">
+        <span className="ml-auto hidden items-center gap-1 text-label-12 text-muted-foreground lg:flex">
           <Keyboard className="size-3.5" aria-hidden /> Ctrl+A pilih semua ·
           Shift+klik pilih rentang
         </span>
@@ -205,7 +205,7 @@ export function AksiMassal({
 
           {/* Anomali: bawaannya DILEWATI. Pengguna harus menyatakan niatnya
               secara sadar — kotak ini sengaja tidak tercentang. */}
-          <label className="flex items-start gap-2 text-xs">
+          <label className="flex items-start gap-2 text-copy-13">
             <Checkbox
               checked={sertakanAnomali}
               onCheckedChange={(v) => setSertakanAnomali(v === true)}

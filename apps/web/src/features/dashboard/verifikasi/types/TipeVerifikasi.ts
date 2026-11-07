@@ -54,6 +54,8 @@ export interface BarisVerifikasi {
   verif3By?: { name: string | null } | null
   verifiedBy?: { name: string | null } | null
   isVerified?: boolean | null
+  /** Memiliki log koreksi form baca meter. */
+  isCorrected?: boolean
   laporanMandiriTerverifikasi?: boolean
   status?: string | null
   pencatat?: { id: string; namaLapangan: string } | null
@@ -101,6 +103,13 @@ export interface PembacaanRingkas {
   kondisi?: string | null
   fotoBukti?: string | null
   sumberLaporan?: "PETUGAS" | "KONSUMEN" | null
+}
+
+export interface PembacaanPanelRingkas {
+  periode: number;
+  standAwal: number | null;
+  standAkhir: number | null;
+  pakai: number | null;
 }
 
 export interface LaporanHarianDetail {

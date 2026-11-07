@@ -15,13 +15,14 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import {
   ArrowDown01Icon,
   Location01Icon,
-} from "@/features/dashboard/verifikasi/lib/IkonLucide";
-import { HugeiconsIcon } from "@/features/dashboard/verifikasi/lib/IconRenderer";
+} from "@/features/dashboard/shared/icons/IkonLucide";
+import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { KELAS_JUDUL_PANEL } from "../lib/TemaVerifikasi";
 
 function PetaMini({ lat, lng }: { lat: number; lng: number }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -62,7 +63,7 @@ function PetaMini({ lat, lng }: { lat: number; lng: number }) {
   return (
     <div
       ref={containerRef}
-      className="h-36 w-full overflow-hidden rounded-lg border border-border"
+      className="h-36 w-full overflow-hidden"
     />
   );
 }
@@ -73,7 +74,7 @@ function TautanPetaPenuh({ lat, lng }: { lat: number; lng: number }) {
       href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
       target="_blank"
       rel="noreferrer"
-      className="mt-1.5 inline-block text-[11px] font-medium text-(--verif-info) underline-offset-4 hover:underline"
+      className="mt-1.5 inline-block text-label-12 font-medium text-(--verif-info) underline-offset-4 hover:underline"
     >
       Buka di peta penuh ↗
     </a>
@@ -101,14 +102,14 @@ export function PetaLokasi({
 
   if (!valid) {
     return (
-      <div className="flex items-center gap-2.5 rounded-lg border border-dashed border-border px-3 py-2.5">
+      <div className="flex items-center gap-2.5 py-1">
         <HugeiconsIcon
           icon={Location01Icon}
           strokeWidth={2}
           className="size-4 shrink-0 text-muted-foreground"
           aria-hidden
         />
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-copy-13 text-muted-foreground">
           Koordinat rumah pelanggan belum tersedia.
         </p>
       </div>
@@ -127,7 +128,9 @@ export function PetaLokasi({
   return (
     <Collapsible>
       <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-left transition-colors hover:bg-accent">
-        <span className="inline-flex items-center gap-2 text-xs font-medium text-foreground">
+        <span
+          className={`inline-flex items-center gap-2 font-medium text-foreground ${KELAS_JUDUL_PANEL}`}
+        >
           <HugeiconsIcon
             icon={Location01Icon}
             strokeWidth={2}

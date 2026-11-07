@@ -1,6 +1,6 @@
 "use client"
 
-import { HugeiconsIcon, type IconSvgElement } from "@/features/dashboard/verifikasi/lib/IconRenderer"
+import { HugeiconsIcon, type IconSvgElement } from "@/features/dashboard/shared/icons/IconRenderer"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +52,7 @@ export function MenuKonteks({
       >
         {judul && (
           <>
-            <DropdownMenuLabel className="font-mono text-[11px] text-muted-foreground">
+            <DropdownMenuLabel className="font-mono text-muted-foreground">
               {judul}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -66,7 +66,7 @@ export function MenuKonteks({
               variant={a.destruktif ? "destructive" : "default"}
               onSelect={a.onPilih}
               title={a.keterangan}
-              className="justify-between gap-3 py-1.5 text-[13px]"
+              className="justify-between gap-3"
             >
               <span className="truncate">{a.label}</span>
               {a.icon && (

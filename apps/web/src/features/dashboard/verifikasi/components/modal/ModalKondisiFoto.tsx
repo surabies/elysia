@@ -4,7 +4,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
-import { ambilSatu, ApiError } from "@/features/dashboard/api/ApiDashboard"
+import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/ApiDashboard"
 import { PilihSatu } from "../DialogVerifikasi"
 import { BarisTumpuk, KerangkaModal, KotakBaca } from "../KerangkaModal"
 import { TabFoto } from "../foto/TabFoto"
@@ -114,7 +114,7 @@ export function ModalKondisiFoto({
         {galat && (
           <p
             role="alert"
-            className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+            className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-copy-13 text-destructive"
           >
             {galat}
           </p>
@@ -126,7 +126,7 @@ export function ModalKondisiFoto({
           <KotakBaca nilai={data.periode} />
         </BarisTumpuk>
         {galatMuat ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-copy-13 text-destructive">
             {galatMuat}
           </p>
         ) : detail ? (
@@ -154,12 +154,12 @@ export function ModalKondisiFoto({
             ]}
           />
         ) : (
-          <p role="status" className="text-sm text-muted-foreground">
+          <p role="status" className="text-copy-13 text-muted-foreground">
             <Spinner className="mr-2 inline size-4" />
             Memuat foto dan detail laporan…
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-copy-13 text-muted-foreground">
           Penilaian disimpan ke riwayat audit dan tidak mengubah stand atau
           status verifikasi.
         </p>
@@ -180,7 +180,6 @@ export function ModalKondisiFoto({
             rows={3}
             value={keterangan}
             onChange={(e) => setKeterangan(e.target.value)}
-            className="text-sm"
             placeholder="Mis. foto buram, segel rusak, meter tertutup"
             maxLength={500}
           />
