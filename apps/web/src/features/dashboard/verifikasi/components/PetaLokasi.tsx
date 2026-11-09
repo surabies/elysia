@@ -12,6 +12,10 @@
 import * as React from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+
+if (typeof window !== "undefined" && typeof (maplibregl as any).setWorkerUrl === "function") {
+  (maplibregl as any).setWorkerUrl("/maplibre-gl-worker.js");
+}
 import {
   ArrowDown01Icon,
   Location01Icon,

@@ -88,9 +88,23 @@ export function ModalBacaManual({
     })
       .then((hasil) => {
         if (batal) return;
-        const ditemukan = data.pelangganId
-          ? hasil.find((item) => item.id === data.pelangganId)
-          : hasil.find((item) => item.nomorLangganan === data.nomorLangganan);
+        const targetId = (data.pelangganId ?? "").trim().toLowerCase();
+        const targetNomor = (data.nomorLangganan ?? "").trim().toLowerCase();
+        const ditemukan =
+          (targetId
+            ? hasil.find((item) => item.id.toLowerCase() === targetId)
+            : undefined) ??
+          (targetNomor
+            ? hasil.find(
+                (item) => item.nomorLangganan.toLowerCase() === targetNomor,
+              )
+            : undefined) ??
+          hasil.find(
+            (item) =>
+              item.id.toLowerCase() === targetNomor ||
+              item.nomorLangganan.toLowerCase() === targetId,
+          ) ??
+          hasil[0];
         if (!ditemukan) {
           setGalat(
             "Pelanggan tidak ditemukan, belum tertaut, atau sudah tidak aktif.",

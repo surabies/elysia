@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { MonitoringCekFoto } from '@/features/dashboard/meter/components/MonitoringCekFoto';
 
-export const metadata = { title: "Cek Foto Petugas" }
+export const metadata: Metadata = {
+  title: 'Audit & Cek Foto Petugas | Cater PDAM',
+  description: 'Galeri foto angka meter dan rumah pelanggan hasil perekaman petugas lapangan',
+};
 
-export default function Page() {
-  return <MenuPage href="/meter/cek-foto" />
+export default function CekFotoPage() {
+  return <MonitoringCekFoto />;
 }

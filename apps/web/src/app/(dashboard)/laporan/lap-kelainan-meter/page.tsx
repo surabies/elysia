@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { LaporanKelainanMeter } from '@/features/dashboard/laporan/components/LaporanKelainanMeter';
 
-export const metadata = { title: "Lap. Kelainan Meter" }
+export const metadata: Metadata = {
+  title: 'Laporan Rekapitulasi Kelainan Meter | PDAM Tirtawening',
+  description: 'Rekapitulasi 17 jenis kelainan meter, kendala akses, dan anomali fisik',
+};
 
-export default function Page() {
-  return <MenuPage href="/laporan/lap-kelainan-meter" />
+export default function LapKelainanMeterPage() {
+  return <LaporanKelainanMeter />;
 }

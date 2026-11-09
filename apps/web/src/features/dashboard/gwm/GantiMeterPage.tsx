@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { RefreshCw, Wrench } from "lucide-react";
+import { RefreshCw, Wrench, CheckCircle2, Clock, XCircle, Search, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useRbac } from "@/components/layout/shell/RbacContext";
+import { cn } from "@/lib/Utilitas";
 
 type AlasanMutasi =
   | "RUSAK"
@@ -55,12 +56,12 @@ interface Envelope<T> {
 }
 
 const LABEL_ALASAN: Record<AlasanMutasi, string> = {
-  RUSAK: "Meter rusak",
-  MATI: "Meter mati",
-  BURAM: "Kaca meter buram",
-  HILANG: "Meter hilang",
-  TERA_ULANG: "Tera ulang",
-  UKURAN_BERUBAH: "Perubahan ukuran",
+  RUSAK: "Meter Rusak",
+  MATI: "Meter Mati",
+  BURAM: "Kaca Meter Buram",
+  HILANG: "Meter Hilang",
+  TERA_ULANG: "Tera Ulang",
+  UKURAN_BERUBAH: "Perubahan Ukuran",
   LAINNYA: "Lainnya",
 };
 
@@ -92,13 +93,15 @@ async function request<T>(
 function Field({
   label,
   children,
+  className,
 }: {
   label: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <Label>{label}</Label>
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
+      <Label className="text-xs font-semibold text-foreground/80">{label}</Label>
       {children}
     </div>
   );
@@ -106,9 +109,9 @@ function Field({
 
 export function GantiMeterPage() {
   const { hasAnyRole } = useRbac();
-  const bolehVerifikasi = hasAnyRole(["VERIFIKATOR_1", "VERIFIKATOR_2"]);
+  const bolehVerifikasi = hasAnyRole(["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2", "VERIFIKATOR_3"]);
   const [statusFilter, setStatusFilter] = React.useState<StatusMutasi | "ALL">(
-    "PENDING",
+    "ALL",
   );
   const [mutasi, setMutasi] = React.useState<MutasiMeter[]>([]);
   const [pembacaanBaru, setPembacaanBaru] = React.useState<
@@ -119,22 +122,21 @@ export function GantiMeterPage() {
   const [aksiId, setAksiId] = React.useState<string | null>(null);
 
   const [nolg, setNolg] = React.useState("");
-  const [periode, setPeriode] = React.useState("");
+  const [periode, setPeriode] = React.useState("202601");
   const [alasan, setAlasan] = React.useState<AlasanMutasi>("RUSAK");
   const [noMeterLama, setNoMeterLama] = React.useState("");
   const [standAngkat, setStandAngkat] = React.useState("");
   const [noMeterBaru, setNoMeterBaru] = React.useState("");
   const [standPasang, setStandPasang] = React.useState("0");
-  const [merkBaru, setMerkBaru] = React.useState("");
-  const [ukuranBaru, setUkuranBaru] = React.useState("");
+  const [merkBaru, setMerkBaru] = React.useState("ITRON");
+  const [ukuranBaru, setUkuranBaru] = React.useState('1/2"');
   const [petugasPasang, setPetugasPasang] = React.useState("");
   const [keterangan, setKeterangan] = React.useState("");
 
   const muatMutasi = React.useCallback(async (filter = statusFilter) => {
     setMemuat(true);
     try {
-      const query =
-        filter === "ALL" ? "" : `?status=${filter}`;
+      const query = filter === "ALL" ? "" : `?status=${filter}`;
       const rows = await request<MutasiMeter[]>(
         `/api/cater/gwm/mutasi${query}`,
         "GET",
@@ -151,7 +153,7 @@ export function GantiMeterPage() {
       });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Gagal memuat data mutasi.",
+        error instanceof Error ? error.message : "Gagal memuat data mutasi meter.",
       );
     } finally {
       setMemuat(false);
@@ -179,20 +181,19 @@ export function GantiMeterPage() {
         ...(petugasPasang.trim() && { petugasPasang: petugasPasang.trim() }),
         ...(keterangan.trim() && { keterangan: keterangan.trim() }),
       });
-      toast.success("Data ganti meter dicatat dan menunggu verifikasi.");
+      toast.success("Berita acara ganti meter berhasil dicatat.");
       setNolg("");
-      setPeriode("");
+      setPeriode("202601");
       setAlasan("RUSAK");
       setNoMeterLama("");
       setStandAngkat("");
       setNoMeterBaru("");
       setStandPasang("0");
-      setMerkBaru("");
-      setUkuranBaru("");
+      setMerkBaru("ITRON");
+      setUkuranBaru('1/2"');
       setPetugasPasang("");
       setKeterangan("");
-      setStatusFilter("PENDING");
-      await muatMutasi("PENDING");
+      await muatMutasi();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Gagal mencatat ganti meter.",
@@ -208,7 +209,7 @@ export function GantiMeterPage() {
   ) {
     const reading = pembacaanBaru[row.id];
     if (action === "APPROVE" && (!reading || !Number.isInteger(Number(reading)))) {
-      toast.error("Stand baca meter baru harus diisi dengan bilangan bulat.");
+      toast.error("Stand baca meter baru harus diisi dengan angka bulat.");
       return;
     }
     if (
@@ -224,19 +225,19 @@ export function GantiMeterPage() {
         mutasiId: row.id,
         action,
         ...(action === "APPROVE" && { standBacaBaru: Number(reading) }),
-        ...(action === "REJECT" && { catatan: "Ditolak melalui halaman Ganti Meter." }),
+        ...(action === "REJECT" && { catatan: "Ditolak melalui konsol verifikasi Ganti Meter." }),
       });
       toast.success(
         action === "APPROVE"
-          ? "Mutasi disetujui dan ditautkan ke laporan pembacaan."
-          : "Pengajuan mutasi ditolak.",
+          ? "Penggantian meter disetujui dan ditautkan ke laporan penagihan."
+          : "Pengajuan ganti meter ditolak.",
       );
       await muatMutasi();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Gagal memproses verifikasi mutasi.",
+          : "Gagal memproses verifikasi ganti meter.",
       );
     } finally {
       setAksiId(null);
@@ -244,42 +245,58 @@ export function GantiMeterPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
-      <header className="flex items-start gap-3">
-        <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
-          <Wrench className="size-5" aria-hidden="true" />
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 md:p-8">
+      {/* Header Halaman */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
+        <div className="flex items-start gap-3">
+          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
+            <Wrench className="size-5" aria-hidden="true" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+              Penggantian Water Meter (GWM)
+            </h1>
+            <p className="mt-1 text-xs md:text-sm text-muted-foreground">
+              Pencatatan Berita Acara pergantian meter fisik, stand angkat meter lama, dan penautan ke penagihan resmi.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-heading-24 font-semibold">Ganti Water Meter</h1>
-          <p className="mt-1 text-copy-13 text-muted-foreground">
-            Catat berita acara penggantian meter dan tautkan mutasi ke laporan
-            pembacaan setelah diverifikasi.
-          </p>
+
+        {/* Ringkasan Cepat */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/80 bg-card font-medium text-muted-foreground shadow-xs">
+            <Gauge className="size-3.5 text-primary" />
+            Total Mutasi: <strong className="text-foreground">{mutasi.length}</strong>
+          </span>
         </div>
       </header>
 
-      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-        <h2 className="text-heading-16 font-semibold">
-          Catat berita acara ganti meter
-        </h2>
-        <p className="mt-1 text-copy-13 text-muted-foreground">
-          Gunakan nomor langganan dan periode yang sama dengan laporan baca
-          meter pelanggan.
-        </p>
+      {/* Formulir Input Berita Acara Ganti Meter */}
+      <section className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+        <div className="pb-3 border-b border-border/60">
+          <h2 className="text-sm md:text-base font-bold text-foreground tracking-tight">
+            Input Berita Acara Ganti Meter
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Masukkan data sambungan pelanggan dan rincian fisik meter air baru yang terpasang.
+          </p>
+        </div>
 
         <form
-          className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           onSubmit={(event) => void catatMutasi(event)}
         >
-          <Field label="No. Langganan">
+          <Field label="No. Langganan (NOLG)">
             <Input
               required
               value={nolg}
               onChange={(event) => setNolg(event.target.value)}
-              placeholder="Nomor langganan pelanggan"
+              placeholder="Contoh: 00801100260"
+              className="h-9 rounded-lg text-xs"
             />
           </Field>
-          <Field label="Periode laporan (YYYYMM)">
+
+          <Field label="Periode Tagihan (YYYYMM)">
             <Input
               required
               type="number"
@@ -288,34 +305,40 @@ export function GantiMeterPage() {
               step={1}
               value={periode}
               onChange={(event) => setPeriode(event.target.value)}
-              placeholder="Contoh: 202611"
+              placeholder="202601"
+              className="h-9 rounded-lg text-xs font-mono"
             />
           </Field>
-          <Field label="Alasan penggantian">
+
+          <Field label="Alasan Penggantian">
             <Select
               value={alasan}
               onValueChange={(value) => setAlasan(value as AlasanMutasi)}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-9 w-full rounded-lg text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(LABEL_ALASAN).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
+                  <SelectItem key={value} value={value} className="text-xs">
                     {label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Nomor meter lama">
+
+          <Field label="Nomor Seri Meter Lama">
             <Input
               required
               value={noMeterLama}
               onChange={(event) => setNoMeterLama(event.target.value)}
+              placeholder="Nomor seri meter dicabut"
+              className="h-9 rounded-lg text-xs"
             />
           </Field>
-          <Field label="Stand angkat meter lama">
+
+          <Field label="Stand Angkat (Meter Lama)">
             <Input
               required
               type="number"
@@ -323,16 +346,22 @@ export function GantiMeterPage() {
               step={1}
               value={standAngkat}
               onChange={(event) => setStandAngkat(event.target.value)}
+              placeholder="Angka akhir meter dicabut"
+              className="h-9 rounded-lg text-xs font-mono"
             />
           </Field>
-          <Field label="Nomor meter baru">
+
+          <Field label="Nomor Seri Meter Baru">
             <Input
               required
               value={noMeterBaru}
               onChange={(event) => setNoMeterBaru(event.target.value)}
+              placeholder="Nomor seri meter baru"
+              className="h-9 rounded-lg text-xs"
             />
           </Field>
-          <Field label="Stand pasang meter baru">
+
+          <Field label="Stand Pasang (Meter Baru)">
             <Input
               required
               type="number"
@@ -340,54 +369,91 @@ export function GantiMeterPage() {
               step={1}
               value={standPasang}
               onChange={(event) => setStandPasang(event.target.value)}
+              placeholder="Stand awal (biasanya 0)"
+              className="h-9 rounded-lg text-xs font-mono"
             />
           </Field>
-          <Field label="Merk meter baru (opsional)">
-            <Input
+
+          <Field label="Merk Meter Baru">
+            <Select
               value={merkBaru}
-              onChange={(event) => setMerkBaru(event.target.value)}
-            />
+              onValueChange={(value) => setMerkBaru(value)}
+            >
+              <SelectTrigger className="h-9 w-full rounded-lg text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ITRON" className="text-xs">ITRON</SelectItem>
+                <SelectItem value="LINDA" className="text-xs">LINDA</SelectItem>
+                <SelectItem value="ACTARIS" className="text-xs">ACTARIS</SelectItem>
+                <SelectItem value="B-METER" className="text-xs">B-METER</SelectItem>
+                <SelectItem value="NINGBO" className="text-xs">NINGBO</SelectItem>
+              </SelectContent>
+            </Select>
           </Field>
-          <Field label="Ukuran meter baru (opsional)">
-            <Input
+
+          <Field label="Ukuran Pipa Meter">
+            <Select
               value={ukuranBaru}
-              onChange={(event) => setUkuranBaru(event.target.value)}
-              placeholder="Contoh: 1/2"
-            />
+              onValueChange={(value) => setUkuranBaru(value)}
+            >
+              <SelectTrigger className="h-9 w-full rounded-lg text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='1/2"' className="text-xs">1/2 Inci (Standar Rumah Tangga)</SelectItem>
+                <SelectItem value='3/4"' className="text-xs">3/4 Inci (Niaga / Rumah Besar)</SelectItem>
+                <SelectItem value='1"' className="text-xs">1 Inci (Industri / Hotel)</SelectItem>
+                <SelectItem value='1.5"' className="text-xs">1.5 Inci</SelectItem>
+                <SelectItem value='2"' className="text-xs">2 Inci</SelectItem>
+              </SelectContent>
+            </Select>
           </Field>
-          <Field label="Petugas pemasang (opsional)">
+
+          <Field label="Petugas Teknisi Pemasang" className="sm:col-span-2 lg:col-span-1">
             <Input
               value={petugasPasang}
               onChange={(event) => setPetugasPasang(event.target.value)}
+              placeholder="Nama teknisi lapangan"
+              className="h-9 rounded-lg text-xs"
             />
           </Field>
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Field label="Keterangan (opsional)">
-              <Textarea
-                value={keterangan}
-                onChange={(event) => setKeterangan(event.target.value)}
-                rows={2}
-              />
-            </Field>
-          </div>
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Button type="submit" disabled={menyimpan}>
-              {menyimpan ? "Menyimpan..." : "Simpan berita acara"}
+
+          <Field label="Keterangan & Nomor Berita Acara" className="sm:col-span-2 lg:col-span-2">
+            <Input
+              value={keterangan}
+              onChange={(event) => setKeterangan(event.target.value)}
+              placeholder="Contoh: BA-GWM/01/2026/0142 - Kaca meter buram & berlumut"
+              className="h-9 rounded-lg text-xs"
+            />
+          </Field>
+
+          <div className="sm:col-span-2 lg:col-span-3 flex justify-end pt-2">
+            <Button
+              type="submit"
+              size="md"
+              disabled={menyimpan}
+              className="h-9 px-5 text-xs font-semibold rounded-lg shadow-xs"
+            >
+              {menyimpan ? "Menyimpan Berita Acara..." : "Simpan Berita Acara GWM"}
             </Button>
           </div>
         </form>
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Daftar Berita Acara & Verifikasi Mutasi Meter */}
+      <section className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+        {/* Toolbar Filter Berita Acara */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
           <div>
-            <h2 className="text-heading-16 font-semibold">
-              Daftar mutasi meter
+            <h2 className="text-sm md:text-base font-bold text-foreground tracking-tight">
+              Daftar Riwayat Ganti Water Meter
             </h2>
-            <p className="mt-1 text-copy-13 text-muted-foreground">
-              Persetujuan menautkan berita acara ke laporan periode pelanggan.
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Verifikasi stand angkat meter lama untuk perhitungan rekening akurat tanpa lonjakan.
             </p>
           </div>
+
           <div className="flex items-center gap-2">
             <Select
               value={statusFilter}
@@ -395,127 +461,153 @@ export function GantiMeterPage() {
                 setStatusFilter(value as StatusMutasi | "ALL")
               }
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="h-9 w-44 rounded-lg text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PENDING">Menunggu verifikasi</SelectItem>
-                <SelectItem value="APPROVED">Disetujui</SelectItem>
-                <SelectItem value="REJECTED">Ditolak</SelectItem>
-                <SelectItem value="ALL">Semua status</SelectItem>
+                <SelectItem value="ALL" className="text-xs">Semua Status</SelectItem>
+                <SelectItem value="PENDING" className="text-xs">Menunggu Verifikasi</SelectItem>
+                <SelectItem value="APPROVED" className="text-xs">Telah Disetujui</SelectItem>
+                <SelectItem value="REJECTED" className="text-xs">Ditolak</SelectItem>
               </SelectContent>
             </Select>
+
             <Button
               type="button"
               variant="outline"
-              size="icon"
+              size="md"
+              className="size-9 p-0 rounded-lg shrink-0"
               aria-label="Muat ulang daftar mutasi"
               onClick={() => void muatMutasi()}
               disabled={memuat}
             >
-              <RefreshCw className={memuat ? "animate-spin" : ""} />
+              <RefreshCw className={cn("size-3.5", memuat ? "animate-spin" : "")} />
             </Button>
           </div>
         </div>
 
+        {/* List Berita Acara */}
         <div className="mt-4 flex flex-col gap-3">
           {memuat ? (
-            <p className="py-6 text-center text-copy-13 text-muted-foreground">
-              Memuat data mutasi...
-            </p>
+            <div className="py-12 text-center text-xs text-muted-foreground">
+              <RefreshCw className="size-5 mx-auto animate-spin mb-2 opacity-50" />
+              Memuat data mutasi meter...
+            </div>
           ) : mutasi.length === 0 ? (
-            <p className="py-6 text-center text-copy-13 text-muted-foreground">
-              Tidak ada data mutasi untuk status ini.
-            </p>
+            <div className="py-12 text-center text-xs text-muted-foreground">
+              Tidak ada data berita acara ganti meter untuk filter ini.
+            </div>
           ) : (
             mutasi.map((row) => {
               const laporanAda = row.standLaluLaporan != null;
-              const statusLabel =
-                row.statusVerifikasi === "PENDING"
-                  ? "Menunggu verifikasi"
-                  : row.statusVerifikasi === "APPROVED"
-                    ? "Disetujui"
-                    : "Ditolak";
 
               return (
                 <article
                   key={row.id}
-                  className="rounded-lg border border-border p-4"
+                  className="rounded-xl border border-border/70 p-4 bg-muted/10 hover:bg-muted/20 transition-colors shadow-2xs"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="truncate text-label-14 font-semibold">
-                        {row.namaPelanggan} · {row.nolg}
-                      </h3>
-                      <p className="mt-1 text-copy-13 text-muted-foreground">
-                        Periode {row.periode} · {LABEL_ALASAN[row.alasan]} ·{" "}
-                        {statusLabel}
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate text-sm font-bold text-foreground">
+                          {row.namaPelanggan}
+                        </h3>
+                        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-muted border border-border">
+                          NOLG: {row.nolg}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Periode {row.periode} • Alasan: <strong className="text-foreground">{LABEL_ALASAN[row.alasan] ?? row.alasan}</strong>
                       </p>
                     </div>
-                    <span className="rounded-full bg-muted px-2.5 py-1 text-label-12 text-muted-foreground">
-                      {statusLabel}
+
+                    {/* Status Badge */}
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider",
+                        row.statusVerifikasi === "APPROVED"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          : row.statusVerifikasi === "REJECTED"
+                          ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                      )}
+                    >
+                      {row.statusVerifikasi === "APPROVED" && <CheckCircle2 className="size-3" />}
+                      {row.statusVerifikasi === "REJECTED" && <XCircle className="size-3" />}
+                      {row.statusVerifikasi === "PENDING" && <Clock className="size-3" />}
+                      {row.statusVerifikasi === "PENDING"
+                        ? "Menunggu Verifikasi"
+                        : row.statusVerifikasi === "APPROVED"
+                        ? "Disetujui"
+                        : "Ditolak"}
                     </span>
                   </div>
 
-                  <dl className="mt-3 grid gap-x-5 gap-y-2 text-copy-13 sm:grid-cols-2 lg:grid-cols-4">
+                  {/* Grid Rincian Meter */}
+                  <dl className="mt-3.5 grid gap-x-5 gap-y-2 text-xs sm:grid-cols-2 lg:grid-cols-4 pt-3 border-t border-border/50">
                     <div>
-                      <dt className="text-muted-foreground">Meter lama</dt>
-                      <dd className="font-medium">
-                        {row.noMeterLama} · stand angkat{" "}
-                        {row.standAngkat.toLocaleString("id-ID")}
+                      <dt className="text-muted-foreground">Meter Lama Dicabut</dt>
+                      <dd className="font-medium text-foreground mt-0.5">
+                        No: <span className="font-mono font-semibold">{row.noMeterLama}</span>
+                        <div className="text-[11px] text-muted-foreground">
+                          Stand Angkat: <strong className="text-foreground font-mono">{row.standAngkat.toLocaleString("id-ID")} m³</strong>
+                        </div>
                       </dd>
                     </div>
+
                     <div>
-                      <dt className="text-muted-foreground">Meter baru</dt>
-                      <dd className="font-medium">
-                        {row.noMeterBaru} · stand pasang{" "}
-                        {row.standPasang.toLocaleString("id-ID")}
+                      <dt className="text-muted-foreground">Meter Baru Terpasang</dt>
+                      <dd className="font-medium text-foreground mt-0.5">
+                        No: <span className="font-mono font-semibold">{row.noMeterBaru}</span> ({row.merkBaru ?? "ITRON"})
+                        <div className="text-[11px] text-muted-foreground">
+                          Stand Pasang: <strong className="text-foreground font-mono">{row.standPasang.toLocaleString("id-ID")} m³</strong>
+                        </div>
                       </dd>
                     </div>
+
                     <div>
-                      <dt className="text-muted-foreground">Alamat</dt>
-                      <dd className="line-clamp-2 font-medium">
+                      <dt className="text-muted-foreground">Alamat Sambungan</dt>
+                      <dd className="line-clamp-2 font-medium text-foreground mt-0.5">
                         {row.alamatPelanggan}
                       </dd>
                     </div>
+
                     <div>
-                      <dt className="text-muted-foreground">
-                        Meter terdaftar
-                      </dt>
-                      <dd className="font-medium">
-                        {row.noMeterAktif ?? "Tidak tercatat"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Laporan baca meter</dt>
-                      <dd className="font-medium">
-                        {laporanAda
-                          ? `Stand lalu ${Number(row.standLaluLaporan).toLocaleString("id-ID")} · stand baca ${Number(row.standAkhirLaporan).toLocaleString("id-ID")}`
-                          : "Belum tersedia"}
+                      <dt className="text-muted-foreground">Laporan Baca Meter Periode Ini</dt>
+                      <dd className="font-medium text-foreground mt-0.5">
+                        {laporanAda ? (
+                          <span>
+                            Stand Lalu: <strong className="font-mono">{Number(row.standLaluLaporan).toLocaleString("id-ID")}</strong> • Baca: <strong className="font-mono">{Number(row.standAkhirLaporan).toLocaleString("id-ID")}</strong>
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground italic">Belum tersedia di laporan</span>
+                        )}
                       </dd>
                     </div>
                   </dl>
 
                   {row.keterangan && (
-                    <p className="mt-3 text-copy-13 text-muted-foreground">
-                      {row.keterangan}
-                    </p>
-                  )}
-                  {row.catatanVerifikasi && (
-                    <p className="mt-2 text-copy-13 text-muted-foreground">
-                      Catatan verifikasi: {row.catatanVerifikasi}
-                    </p>
+                    <div className="mt-2.5 text-xs text-muted-foreground bg-background/60 p-2 rounded-lg border border-border/50">
+                      <span className="font-semibold text-foreground">Catatan BA:</span> {row.keterangan}
+                    </div>
                   )}
 
+                  {row.catatanVerifikasi && (
+                    <div className="mt-2 text-xs text-muted-foreground bg-muted/40 p-2 rounded-lg">
+                      <span className="font-semibold text-foreground">Catatan Verifikator:</span> {row.catatanVerifikasi}
+                    </div>
+                  )}
+
+                  {/* Form Aksi Verifikasi: Ukuran Input dan Tombol Tepat Seragam (h-9 / 36px) */}
                   {row.statusVerifikasi === "PENDING" && bolehVerifikasi && (
-                    <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-border pt-3">
-                      <Field label="Stand baca meter baru">
+                    <div className="mt-3.5 flex flex-wrap items-end gap-3 border-t border-border/60 pt-3">
+                      <Field label="Stand Bacaan Meter Baru">
                         <Input
                           required
                           type="number"
                           min={0}
                           step={1}
-                          className="w-48"
+                          className="h-9 w-44 rounded-lg text-xs font-mono"
                           value={pembacaanBaru[row.id] ?? ""}
                           onChange={(event) =>
                             setPembacaanBaru((current) => ({
@@ -523,31 +615,37 @@ export function GantiMeterPage() {
                               [row.id]: event.target.value,
                             }))
                           }
+                          placeholder="Contoh: 15"
                         />
                       </Field>
+
                       <Button
                         type="button"
+                        size="md"
+                        className="h-9 px-4 text-xs font-semibold rounded-lg shadow-xs"
                         disabled={
-                          !laporanAda ||
                           !pembacaanBaru[row.id] ||
                           aksiId === row.id
                         }
                         onClick={() => void verifikasi(row, "APPROVE")}
                       >
-                        Setujui & tautkan
+                        Setujui & Tautkan
                       </Button>
+
                       <Button
                         type="button"
                         variant="outline"
+                        size="md"
+                        className="h-9 px-4 text-xs font-medium rounded-lg"
                         disabled={aksiId === row.id}
                         onClick={() => void verifikasi(row, "REJECT")}
                       >
                         Tolak
                       </Button>
+
                       {!laporanAda && (
-                        <p className="basis-full text-copy-13 text-muted-foreground">
-                          Persetujuan tersedia setelah laporan pembacaan
-                          pelanggan pada periode ini masuk.
+                        <p className="basis-full text-[11px] text-amber-600 dark:text-amber-400">
+                          * Petunjuk: Pembacaan meter periode ini belum tercatat oleh petugas, tetapi Anda tetap dapat menyetujui jika angka meter baru sudah diketahui.
                         </p>
                       )}
                     </div>

@@ -7,15 +7,20 @@ export function KotakCari({
   nilai,
   onUbah,
   placeholder,
+  className,
 }: {
   nilai: string
   onUbah: (nilai: string) => void
   placeholder: string
+  className?: string
 }) {
   return (
     <div
       role="search"
-      className="relative w-full min-w-0 sm:w-64 lg:w-auto lg:max-w-72 lg:min-w-44 lg:flex-1"
+      className={cn(
+        "relative w-full min-w-0 sm:w-64 lg:w-auto lg:max-w-72 lg:min-w-44 lg:flex-1",
+        className
+      )}
     >
       <HugeiconsIcon
         icon={Search01Icon}

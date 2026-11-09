@@ -5,6 +5,11 @@ import { caterVerifikasiService } from '../../services/cater/cater-verifikasi.se
 import { caterRuteService } from '../../services/cater/cater-rute.service';
 import { pelangganService } from '../../services/pelanggan/pelanggan.service';
 import { caterProgressService } from '../../services/cater/cater-progress.service';
+import { caterProgresService } from '../../services/cater/cater-progres.service';
+import { laporanKoreksiService } from '../../services/laporan/laporan-koreksi.service';
+import { laporanKelainanService } from '../../services/laporan/laporan-kelainan.service';
+import { laporanEvaluasiService } from '../../services/laporan/laporan-evaluasi.service';
+import { laporanStandAwalAkhirService } from '../../services/laporan/laporan-stand.service';
 import { mapService } from '../../services/geo/map.service';
 import {
   routesQuerySchema,
@@ -347,7 +352,16 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
-      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3', 'EXECUTIVE', 'PENCATAT'],
+      requireRole: [
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'EXECUTIVE',
+        'PENCATAT',
+        'PELAKSANA',
+        'USER',
+      ],
       query: cariPelangganQuerySchema,
     }
   )
@@ -365,7 +379,16 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
-      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3', 'EXECUTIVE', 'PENCATAT'],
+      requireRole: [
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'EXECUTIVE',
+        'PENCATAT',
+        'PELAKSANA',
+        'USER',
+      ],
       params: detailPelangganParamsSchema,
     }
   )
@@ -495,7 +518,145 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
-      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3', 'EXECUTIVE', 'PENCATAT'],
+      requireRole: [
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'EXECUTIVE',
+        'PENCATAT',
+        'PELAKSANA',
+        'USER',
+      ],
       query: mapGeoJsonQuerySchema,
+    }
+  )
+
+  // 23. Progress - Live Monitoring Real-Time Lapangan
+  .get(
+    '/progress/monitoring-lapangan',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl ?? '202601';
+        const result = await caterProgresService.getMonitoringProgres(thbl);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    }
+  )
+
+  // 24. Laporan - Monitoring Kubikasi Koreksi & Audit Trail
+  .get(
+    '/laporan/monitoring-koreksi',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl ?? '202601';
+        const result = await laporanKoreksiService.getLaporanKoreksi(thbl);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    }
+  )
+
+  // 24b. Laporan - Rekapitulasi Kelainan Meter
+  .get(
+    '/laporan/kelainan-meter',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl ?? '202601';
+        const result = await laporanKelainanService.getLaporanKelainan(thbl);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    }
+  )
+
+  // 24c. Laporan - Evaluasi Produktivitas Petugas
+  .get(
+    '/laporan/evaluasi-petugas',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl ?? '202601';
+        const result = await laporanEvaluasiService.getEvaluasiPetugas(thbl);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    }
+  )
+
+  // 24d. Laporan - Rekap Stand Awal & Akhir
+  .get(
+    '/laporan/stand-awal-akhir',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl ?? '202601';
+        const limit = Number((query as any)?.limit ?? 100);
+        const result = await laporanStandAwalAkhirService.getStandAwalAkhir(thbl, limit);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    }
+  )
+
+  // 25. Progress - Monitoring Per Wilayah
+  .get(
+    '/progress/monitoring-wilayah',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl ?? '202601';
+        const result = await caterProgressService.getProgressPerWilayah(thbl);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    }
+  )
+
+  // 26. Progress - Monitoring Anomali Kubikasi
+  .get(
+    '/progress/anomali',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl ?? '202601';
+        const jenis = (query as any)?.jenis;
+        const limit = Number((query as any)?.limit ?? 100);
+        const search = (query as any)?.search;
+        const result = await caterProgressService.getAnomaliKubikasi(thbl, jenis, limit, search);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    }
+  )
+
+  // 27. Meter - Cek Foto Petugas Lapangan
+  .get(
+    '/meter/cek-foto',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl ?? '202601';
+        const filterKondisi = (query as any)?.filterKondisi;
+        const ruteKode = (query as any)?.ruteKode;
+        const limit = Number((query as any)?.limit ?? 30);
+        const offset = Number((query as any)?.offset ?? 0);
+        const search = (query as any)?.search;
+        const result = await caterProgressService.getCekFotoList(thbl, filterKondisi, ruteKode, limit, offset, search);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
     }
   );

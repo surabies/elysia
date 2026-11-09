@@ -37,8 +37,8 @@ export function SearchDialog({
   }
 
   // Tahap 3: hitung hasil. `flat` = daftar datar, dipakai untuk navigasi panah.
-  const { filteredNavGroups } = useRbac()
-  const groups = searchDocs(query, filteredNavGroups)
+  const { filteredNavGroups, filteredPrimaryNav } = useRbac()
+  const groups = searchDocs(query, filteredNavGroups, filteredPrimaryNav)
   const flat = groups.flatMap((g) => g.results)
 
   // Nomor awal tiap grup, supaya indeks global cocok dengan activeIndex

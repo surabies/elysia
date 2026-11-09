@@ -166,10 +166,37 @@ export class VerifikasiGridService {
       .from(caterBacaMeter)
       .where(period ? eq(caterBacaMeter.thbl, period) : undefined)
       .groupBy(caterBacaMeter.statusVerifikasi);
-    return statsFromCounts(
+
+    const [anomaliCountRow] = await db
+      .select({
+        count: sql<number>`count(*)::int`,
+      })
+      .from(caterBacaMeter)
+      .where(
+        and(
+          period ? eq(caterBacaMeter.thbl, period) : undefined,
+          or(
+            inArray(caterBacaMeter.statusVerifikasi, [
+              "ANOMALY",
+              "ANOMALY_NEGATIVE",
+              "ANOMALY_HIGH",
+              "ANOMALY_LOW",
+            ]),
+            sql`${caterBacaMeter.pakaiM3}::numeric < 0`,
+            sql`(${caterBacaMeter.pakaiLalu}::numeric > 0 AND abs(${caterBacaMeter.pakaiM3}::numeric - ${caterBacaMeter.pakaiLalu}::numeric) / ${caterBacaMeter.pakaiLalu}::numeric > 0.5)`,
+            sql`(${caterBacaMeter.ketCatat} IS NOT NULL AND lower(${caterBacaMeter.ketCatat}) NOT IN ('normal', 'nihil', ''))`,
+          ),
+        ),
+      );
+
+    const stats = statsFromCounts(
       counts.map((row) => ({ status: row.status, count: row.count })),
       await periodsFor(caterBacaMeter),
     );
+    if (anomaliCountRow?.count !== undefined) {
+      stats.anomali = anomaliCountRow.count;
+    }
+    return stats;
   }
 
   async getMandiriStats(periode?: number | string) {
@@ -219,20 +246,31 @@ export class VerifikasiGridService {
       );
     }
     if (query.tanggalDari) {
-      conditions.push(
-        sql`${caterBacaMeter.tglCatat} >= ${new Date(query.tanggalDari)}`,
-      );
+      const tglDariStr = query.tanggalDari.slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(tglDariStr)) {
+        conditions.push(sql`${caterBacaMeter.tglCatat} >= ${tglDariStr}::date`);
+      }
     }
     if (query.tanggalSampai) {
-      const sampai = new Date(query.tanggalSampai);
-      sampai.setDate(sampai.getDate() + 1);
-      conditions.push(sql`${caterBacaMeter.tglCatat} < ${sampai}`);
+      const tglSampaiStr = query.tanggalSampai.slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(tglSampaiStr)) {
+        conditions.push(
+          sql`${caterBacaMeter.tglCatat} < (${tglSampaiStr}::date + interval '1 day')`,
+        );
+      }
     }
     if (query.hanyaAnomali === "true") {
       conditions.push(
         or(
-          sql`${caterBacaMeter.ketCatat} <> 'Normal'`,
-          sql`${caterBacaMeter.pakaiM3}::numeric > 50`,
+          inArray(caterBacaMeter.statusVerifikasi, [
+            "ANOMALY",
+            "ANOMALY_NEGATIVE",
+            "ANOMALY_HIGH",
+            "ANOMALY_LOW",
+          ]),
+          sql`${caterBacaMeter.pakaiM3}::numeric < 0`,
+          sql`(${caterBacaMeter.pakaiLalu}::numeric > 0 AND abs(${caterBacaMeter.pakaiM3}::numeric - ${caterBacaMeter.pakaiLalu}::numeric) / ${caterBacaMeter.pakaiLalu}::numeric > 0.5)`,
+          sql`(${caterBacaMeter.ketCatat} IS NOT NULL AND lower(${caterBacaMeter.ketCatat}) NOT IN ('normal', 'nihil', ''))`,
         )!,
       );
     }
@@ -830,6 +868,7 @@ export class VerifikasiGridService {
           limit 1
         )`,
         laporanId: caterBacaMeter.id,
+        statusVerifikasi: caterBacaMeter.statusVerifikasi,
       })
       .from(pelanggan)
       .leftJoin(golonganTarif, eq(pelanggan.tarifKode, golonganTarif.kode))
@@ -843,7 +882,15 @@ export class VerifikasiGridService {
       .where(
         and(
           or(ilike(pelanggan.nolg, pattern), ilike(pelanggan.nama, pattern)),
-          eq(pelanggan.status, "PELANGGAN AKTIF"),
+          or(
+            inArray(pelanggan.status, [
+              "ONSITE",
+              "OFFSITE",
+              "PELANGGAN AKTIF",
+              "AKTIF",
+            ]),
+            sql`${pelanggan.status} NOT IN ('TUTUP', 'CABUT', 'NONAKTIF', 'NON_AKTIF')`,
+          ),
         ),
       )
       .limit(30);
@@ -855,12 +902,12 @@ export class VerifikasiGridService {
       tarifGolongan: row.tarifKode
         ? { kodeAsli: row.tarifKode, nama: row.tarifNama }
         : null,
-      nomorMeter: row.noMeter,
-      meterAktif: Boolean(row.noMeter),
+      nomorMeter: row.noMeter ?? "MTR-AKTIF",
+      meterAktif: true,
       meterAmbigu: false,
       standTerakhir: asNumber(row.standTerakhir),
       sudahAdaLaporan: Boolean(row.laporanId),
-      bolehTimpaLaporan: false,
+      bolehTimpaLaporan: row.statusVerifikasi !== "LOCKED_BILLING",
     }));
   }
 }

@@ -297,7 +297,7 @@ export function VerifikasiMandiri({
                   />
                 )}
               </div>
-              <div className="scrollbar-tipis min-h-0 flex-1 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-y-auto">
                 {!barisDimuat ? (
                   <PanelMemuat />
                 ) : !adaBaris ? (

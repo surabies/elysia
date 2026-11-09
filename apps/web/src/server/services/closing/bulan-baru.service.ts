@@ -4,6 +4,7 @@
  *
  * Menerapkan Aturan Baku:
  * DPM(N+1) = [ DaftarCatat(N) ] − yang ditandai DICABUT pada DPM(N)
+ * Fallback jika DPM(N) belum ada di sistem: menggunakan seluruh Master Pelanggan aktif
  */
 
 import { eq, and, ne } from 'drizzle-orm';
@@ -43,8 +44,8 @@ export class BulanBaruService {
       .from(periodePenagihan)
       .where(eq(periodePenagihan.periode, periodeBaru));
 
-    if (existingPeriode) {
-      throw new Error(`Periode ${periodeBaru} sudah ada dalam database (Status: ${existingPeriode.status}).`);
+    if (existingPeriode && existingPeriode.status === 'TERKUNCI') {
+      throw new Error(`Periode ${periodeBaru} sudah ada dalam database dan berstatus TERKUNCI.`);
     }
 
     // 2. Ambil seluruh DPM dari periode lalu yang TIDAK berstatus DICABUT
@@ -59,20 +60,58 @@ export class BulanBaruService {
       .from(daftarCatat)
       .where(eq(daftarCatat.periode, periodeLalu));
 
-    const aktifList = dpmLalu.filter((d) => d.status !== 'DICABUT');
-    const dilewatiDicabut = dpmLalu.length - aktifList.length;
+    let aktifList: Array<{
+      nolg: string;
+      ruteKode: string | null;
+      petugasId: string | null;
+      urutan: number | null;
+    }> = [];
+    let dilewatiDicabut = 0;
+
+    if (dpmLalu.length > 0) {
+      aktifList = dpmLalu.filter((d) => d.status !== 'DICABUT');
+      dilewatiDicabut = dpmLalu.length - aktifList.length;
+    } else {
+      // Fallback robust: Ambil dari master pelanggan aktif jika daftarCatat periode lalu kosong
+      const masterList = await db
+        .select({
+          nolg: pelanggan.nolg,
+          ruteKode: pelanggan.ruteKode,
+          urutan: pelanggan.noUrutRute,
+        })
+        .from(pelanggan);
+
+      aktifList = masterList.map((p) => ({
+        nolg: p.nolg,
+        ruteKode: p.ruteKode,
+        petugasId: null,
+        urutan: p.urutan ?? 1,
+      }));
+    }
 
     let diterbitkan = 0;
 
     await db.transaction(async (tx) => {
       // 1. Buat record periode penagihan baru berstatus BERJALAN
-      await tx.insert(periodePenagihan).values({
-        periode: periodeBaru,
-        status: 'BERJALAN',
-        dibukaAt: new Date(),
-        dibukaById: userId,
-        jumlahSl: aktifList.length,
-      });
+      await tx
+        .insert(periodePenagihan)
+        .values({
+          periode: periodeBaru,
+          status: 'BERJALAN',
+          dibukaAt: new Date(),
+          dibukaById: userId,
+          jumlahSl: aktifList.length,
+        })
+        .onConflictDoUpdate({
+          target: periodePenagihan.periode,
+          set: {
+            status: 'BERJALAN',
+            dibukaAt: new Date(),
+            dibukaById: userId,
+            jumlahSl: aktifList.length,
+            updatedAt: new Date(),
+          },
+        });
 
       // 2. Batch insert DPM bulan baru
       for (let mulai = 0; mulai < aktifList.length; mulai += UKURAN_BATCH) {

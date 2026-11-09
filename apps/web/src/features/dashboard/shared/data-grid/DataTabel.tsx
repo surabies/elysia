@@ -753,6 +753,7 @@ export function DataGrid({
           >
             <AgGridReact
               theme={temaGrid}
+              scrollbarWidth={8}
               columnDefs={columnGroupDefs ?? defsTampil}
               rowHeight={rowHeight}
               onCellValueChanged={onCellValueChanged}

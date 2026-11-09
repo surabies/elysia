@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { LaporanEvaluasiPetugas } from '@/features/dashboard/laporan/components/LaporanEvaluasiPetugas';
 
-export const metadata = { title: "Lap. Evaluasi" }
+export const metadata: Metadata = {
+  title: 'Laporan Evaluasi Kinerja Petugas Cater | PDAM Tirtawening',
+  description: 'Evaluasi produktivitas, ketepatan waktu, dan akurasi 9 petugas cater lapangan',
+};
 
-export default function Page() {
-  return <MenuPage href="/laporan/evaluasi" />
+export default function EvaluasiPetugasPage() {
+  return <LaporanEvaluasiPetugas />;
 }

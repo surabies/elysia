@@ -55,7 +55,7 @@ const WORKSPACES: Workspace[] = [
     id: "teknik",
     name: "Direktorat Teknik",
     subtitle: "Pencatatan Meter & Distribusi",
-    href: "/cater",
+    href: "/progres/cater",
     icon: Gauge,
   },
   {
@@ -69,26 +69,37 @@ const WORKSPACES: Workspace[] = [
     id: "umum",
     name: "Direktorat Umum",
     subtitle: "Laporan DRD & Master Data",
-    href: "/laporan",
+    href: "/laporan/lap-drd",
     icon: Receipt,
   },
 ]
 
-export function WorkSwitcher() {
+export function WorkSwitcher({ className }: { className?: string } = {}) {
   const pathname = usePathname()
 
   // Cari workspace yang sesuai dengan URL aktif
+  const isVerifikasi = pathname.startsWith("/verifikasi")
+  const isPengaduan = pathname.startsWith("/pengaduan")
+  const isLaporan = pathname.startsWith("/laporan")
+
   const activeWorkspace =
     WORKSPACES.find(
       (ws) =>
         ws.href === pathname ||
         (ws.href !== "/dashboard" && pathname.startsWith(ws.href))
-    ) ?? WORKSPACES[0]
+    ) ??
+    (isVerifikasi
+      ? WORKSPACES[1]
+      : isPengaduan
+      ? WORKSPACES[2]
+      : isLaporan
+      ? WORKSPACES[3]
+      : WORKSPACES[0])
 
   const ActiveIcon = activeWorkspace.icon
 
   return (
-    <div className="flex h-10 w-full flex-row items-center">
+    <div className={cn("flex h-10 w-full flex-row items-center", className)}>
       <DropdownMenu>
         {/* Seluruh baris adalah Trigger Dropdown agar posisi popup tepat keluar di bawah baris (align="start", side="bottom") */}
         <DropdownMenuTrigger asChild>
@@ -178,13 +189,8 @@ export function WorkSwitcher() {
                     href={ws.href}
                     className="flex w-full items-center justify-between gap-2.5"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <GeistAvatar
-                        size={20}
-                        icon={Icon}
-                        alt={ws.name}
-                        className={isActive ? "ring-1 ring-primary" : ""}
-                      />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <GeistAvatar size={20} icon={Icon} alt={ws.name} />
                       <div className="flex flex-col min-w-0">
                         <span className="truncate text-sm font-medium text-foreground leading-tight">
                           {ws.name}
@@ -213,12 +219,12 @@ export function WorkSwitcher() {
               className="h-8 cursor-pointer px-2 text-xs text-muted-foreground hover:bg-neutral-100 hover:text-foreground dark:hover:bg-neutral-800 rounded-md"
             >
               <Link
-                href="/cater"
+                href="/master/petugas"
                 className="flex items-center justify-between w-full"
               >
                 <div className="flex items-center gap-2">
                   <Plus className="size-3.5" />
-                  <span>Tambah Ruang Kerja Baru</span>
+                  <span>Kelola Petugas & Rute</span>
                 </div>
               </Link>
             </DropdownMenuItem>

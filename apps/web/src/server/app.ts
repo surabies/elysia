@@ -13,6 +13,7 @@ import { pengaduanModule } from "./modules/pengaduan";
 import { publikModule } from "./modules/publik";
 import { verifikasiLegacyRouter } from "./modules/verifikasi-legacy.router";
 import { drdModule } from "./modules/drd";
+import { masterRouter } from "./modules/master/master.router";
 
 export const app = new Elysia({ prefix: "/api" })
   .use(corsPlugin)
@@ -35,6 +36,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(pengaduanModule)
   .use(publikModule)
   .use(drdModule)
+  .use(masterRouter)
   .use(verifikasiLegacyRouter);
 
 export type App = typeof app;

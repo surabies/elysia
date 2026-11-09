@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { MonitoringAnomaliKubikasi } from '@/features/dashboard/progres/components/MonitoringAnomaliKubikasi';
 
-export const metadata = { title: "Ikhtisar Pemakaian Ekstrim" }
+export const metadata: Metadata = {
+  title: 'Monitoring Anomali Kubikasi | Cater PDAM',
+  description: 'Deteksi dini lonjakan ekstrem, penurunan drastis, dan stand meter 0 m³',
+};
 
-export default function Page() {
-  return <MenuPage href="/progres/ekstrim" />
+export default function AnomaliKubikasiPage() {
+  return <MonitoringAnomaliKubikasi />;
 }

@@ -16,15 +16,18 @@ export const gwmRouter = new Elysia({ prefix: '/cater/gwm' })
     '/mutasi',
     async ({ query }) => ({
       success: true,
-      data: await gwmService.daftarMutasiGantiMeter(query.status),
+      data: await gwmService.daftarMutasiGantiMeter(query.status as any),
     }),
     {
       requireRole: [
+        'SUPERADMIN',
+        'EXECUTIVE',
         'VERIFIKATOR_1',
         'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
         'STAFF_ADMIN_BILLING',
         'PENCATAT',
-      ],
+      ] as any,
       query: daftarMutasiQuerySchema,
     },
   )
@@ -34,7 +37,7 @@ export const gwmRouter = new Elysia({ prefix: '/cater/gwm' })
     '/mutasi',
     async ({ body, set }) => {
       try {
-        const result = await gwmService.catatMutasiGantiMeter(body);
+        const result = await gwmService.catatMutasiGantiMeter(body as any);
         set.status = 201;
         return { success: true, data: result };
       } catch (err: any) {
@@ -43,7 +46,15 @@ export const gwmRouter = new Elysia({ prefix: '/cater/gwm' })
       }
     },
     {
-      requireRole: ['VERIFIKATOR_1', 'STAFF_ADMIN_BILLING', 'PENCATAT'],
+      requireRole: [
+        'SUPERADMIN',
+        'EXECUTIVE',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'STAFF_ADMIN_BILLING',
+        'PENCATAT',
+      ] as any,
       body: catatMutasiGantiMeterBodySchema,
     }
   )
@@ -54,8 +65,8 @@ export const gwmRouter = new Elysia({ prefix: '/cater/gwm' })
     async ({ body, user, set }) => {
       try {
         const result = await gwmService.verifikasiMutasiGantiMeter({
-          ...body,
-          userId: user!.id,
+          ...(body as any),
+          userId: user?.id ?? 'ADMIN_SYSTEM',
         });
         return { success: true, data: result };
       } catch (err: any) {
@@ -64,7 +75,14 @@ export const gwmRouter = new Elysia({ prefix: '/cater/gwm' })
       }
     },
     {
-      requireRole: ['VERIFIKATOR_1', 'VERIFIKATOR_2'],
+      requireRole: [
+        'SUPERADMIN',
+        'EXECUTIVE',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'STAFF_ADMIN_BILLING',
+      ] as any,
       body: verifikasiMutasiBodySchema,
     }
   )

@@ -41,12 +41,12 @@ const INITIAL_METRICS = {
 // was hard to grab; the tracks overlay the last row and column, so the default
 // stays under 12px. The sticky-header overlay below follows the same variable.
 const SCROLLBAR_CLASSNAME =
-  "flex touch-none p-px transition-colors select-none data-[orientation=horizontal]:mb-px data-[orientation=horizontal]:h-[var(--data-grid-scrollbar-size,0.625rem)] data-[orientation=horizontal]:flex-col data-[orientation=horizontal]:border-t data-[orientation=horizontal]:border-t-transparent data-[orientation=vertical]:me-px data-[orientation=vertical]:h-full data-[orientation=vertical]:w-[var(--data-grid-scrollbar-size,0.625rem)] data-[orientation=vertical]:border-s data-[orientation=vertical]:border-s-transparent"
+  "flex touch-none p-px transition-colors select-none data-[orientation=horizontal]:mb-px data-[orientation=horizontal]:h-[var(--data-grid-scrollbar-size,0.5rem)] data-[orientation=horizontal]:flex-col data-[orientation=horizontal]:border-t data-[orientation=horizontal]:border-t-transparent data-[orientation=vertical]:me-px data-[orientation=vertical]:h-full data-[orientation=vertical]:w-[var(--data-grid-scrollbar-size,0.5rem)] data-[orientation=vertical]:border-s data-[orientation=vertical]:border-s-transparent"
 
 // The ::before reaches the track's outer edge, so the whole track thickness
 // grabs the thumb rather than only its painted 7px.
 const SCROLLBAR_THUMB_CLASSNAME =
-  "bg-border rounded-full relative flex-1 before:absolute before:-inset-0.5"
+  "bg-[var(--ds-gray-alpha-400)] hover:bg-[var(--ds-gray-alpha-600)] transition-colors rounded-full relative flex-1 before:absolute before:-inset-0.5"
 
 type DataGridScrollAreaOrientation = "horizontal" | "vertical" | "both"
 
@@ -535,7 +535,7 @@ function DataGridScrollArea({
             >
               <div
                 className={cn(
-                  "bg-border absolute end-px w-[calc(var(--data-grid-scrollbar-size,0.625rem)-0.1875rem)]",
+                  "bg-[var(--ds-gray-alpha-400)] hover:bg-[var(--ds-gray-alpha-600)] transition-colors absolute end-px w-[calc(var(--data-grid-scrollbar-size,0.5rem)-0.1875rem)]",
                   "top-(--data-grid-scrollbar-thumb-top) h-(--data-grid-scrollbar-thumb-height)",
                   "rounded-full before:absolute before:-inset-0.5"
                 )}

@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { MonitoringProgresWilayah } from '@/features/dashboard/progres/components/MonitoringProgresWilayah';
 
-export const metadata = { title: "Progress per Wilayah" }
+export const metadata: Metadata = {
+  title: 'Monitoring Progres Wilayah | Cater PDAM',
+  description: 'Persentase capaian pembacaan meter air per kelurahan dan zona distribusi',
+};
 
-export default function Page() {
-  return <MenuPage href="/progres/wilayah" />
+export default function ProgresWilayahPage() {
+  return <MonitoringProgresWilayah />;
 }

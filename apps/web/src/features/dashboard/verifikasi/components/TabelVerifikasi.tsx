@@ -46,7 +46,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/Utilitas";
 import {
   TEMA_GRID_WADAH,
@@ -442,18 +441,20 @@ export function KontrolKolomVerifikasi({
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <ToggleGroupItem
-              value="kolom-verifikasi"
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
               aria-label="Atur kolom tabel"
-              className={TEMA_TOGGLE_ITEM}
+              className="relative"
             >
               <HugeiconsIcon
                 icon={Columns3CogIcon}
                 strokeWidth={2}
-                className="size-4"
+                className="size-3.5"
                 aria-hidden
               />
-            </ToggleGroupItem>
+            </Button>
           </PopoverTrigger>
         </TooltipTrigger>
         <TooltipContent>Atur kolom tabel</TooltipContent>
@@ -462,7 +463,7 @@ export function KontrolKolomVerifikasi({
         <PopoverHeader>
           <PopoverTitle>Kolom tabel</PopoverTitle>
         </PopoverHeader>
-        <div className="scrollbar-tipis max-h-80 overflow-y-auto">
+        <div className="max-h-80 overflow-y-auto">
           {preferensi.urutan.map((id, index) => {
             const kolom = DEFINISI_KOLOM.find((item) => item.id === id);
             if (!kolom) return null;
@@ -869,7 +870,7 @@ export function TabelVerifikasi({
     <div className={TEMA_GRID_WADAH}>
       <div
         ref={wadahRef}
-        className="scrollbar-tipis relative min-h-0 min-w-0 flex-1 overflow-auto"
+        className="relative min-h-0 min-w-0 flex-1 overflow-auto"
       >
         <table className={`${TEMA_GRID_TABEL} ${pad}`}>
           <colgroup>

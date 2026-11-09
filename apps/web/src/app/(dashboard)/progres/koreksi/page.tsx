@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { MonitoringKoreksiStand } from '@/features/dashboard/progres/components/MonitoringKoreksiStand';
 
-export const metadata = { title: "Presentase Koreksi" }
+export const metadata: Metadata = {
+  title: 'Monitoring Koreksi Stand & Audit Trail | Cater PDAM',
+  description: 'Riwayat resmi penyesuaian angka meter, perbaikan salah baca, dan perubahan kubikasi dengan audit log',
+};
 
-export default function Page() {
-  return <MenuPage href="/progres/koreksi" />
+export default function KoreksiStandPage() {
+  return <MonitoringKoreksiStand />;
 }

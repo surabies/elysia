@@ -11,6 +11,7 @@
 // pilihan jumlah baris. Baris tab hanya memuat tab, ringkasan sebaris, dan sisa kerja.
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   Task01Icon,
   ViewOffIcon,
@@ -119,6 +120,14 @@ export function PanelTabel({
     total: number;
   } | null>(null);
   const jangkarRef = React.useRef<number | null>(null);
+  const [targetPortal, setTargetPortal] = React.useState<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    const el = document.getElementById("verifikasi-navbar-controls");
+    if (el) {
+      setTargetPortal(el);
+    }
+  }, []);
 
   /// Daftar periode untuk dropdown diambil dari PERIODE KERJA, bukan dari
   /// "periode yang punya laporan": tepat setelah buka bulan baru, daftar kerja
@@ -182,8 +191,13 @@ export function PanelTabel({
       })
       .catch((e) => {
         if (!batal) {
-          const pesan = e instanceof ApiError ? e.message : "Gagal memuat data.";
-          toast.error(pesan);
+          const pesan = e instanceof ApiError ? (e as any).pesan ?? e.message : "Gagal memuat data.";
+          const pesanRamah = pesan.includes("Failed query")
+            ? "Data pembacaan meter untuk periode/tanggal ini tidak ditemukan."
+            : pesan;
+          toast.error(pesanRamah);
+          setRows([]);
+          setTotal(0);
           if (tab === "laporan") onRowsLoaded(false);
         }
       })
@@ -467,44 +481,52 @@ export function PanelTabel({
         </div>
       </div>
 
-      <div className="shrink-0">
-        <ToolbarVerifikasi
-          filter={filter}
-          onGanti={setFilter}
-          periodes={periodePilihan}
-          pencatats={pencatats}
-          rutes={rutes}
-          penugasanRute={penugasanRute}
-          opsiPencarian={opsiPencarian}
-          jumlahTampil={rows.length}
-          jumlahTotal={total}
-          memuat={memuat}
-          modeBelumDibaca={tab === "belum"}
-          anomali={anomali ?? 0}
-          ambang={ambangAnomali}
-          aksiKanan={
-            <div className="flex items-center gap-1">
-              <KontrolTampilan
-                ringkasanTerbuka={ringkasanTerbuka}
-                onRingkasan={onRingkasan}
-                padat={kerapatan === "padat"}
-                onPadat={(p) => setKerapatan(p ? "padat" : "normal")}
-                aksiTambahan={
-                  <KontrolKolomVerifikasi
-                    preferensi={preferensiKolom.preferensiKolom}
-                    onVisibilitas={preferensiKolom.ubahVisibilitasKolom}
-                    onPindah={preferensiKolom.pindahKolom}
-                    onReset={preferensiKolom.resetKolom}
-                  />
-                }
-              />
-            </div>
-          }
-          onPencarianLanjutan={(kriteria: KriteriaPencarian) =>
-            setFilter((f) => ({ ...f, kriteriaLanjutan: kriteria }))
-          }
-        />
-      </div>
+      {(() => {
+        const toolbarContent = (
+          <ToolbarVerifikasi
+            filter={filter}
+            onGanti={setFilter}
+            periodes={periodePilihan}
+            pencatats={pencatats}
+            rutes={rutes}
+            penugasanRute={penugasanRute}
+            opsiPencarian={opsiPencarian}
+            jumlahTampil={rows.length}
+            jumlahTotal={total}
+            memuat={memuat}
+            modeBelumDibaca={tab === "belum"}
+            anomali={anomali ?? 0}
+            ambang={ambangAnomali}
+            aksiKanan={
+              <div className="flex items-center gap-1">
+                <KontrolTampilan
+                  ringkasanTerbuka={ringkasanTerbuka}
+                  onRingkasan={onRingkasan}
+                  padat={kerapatan === "padat"}
+                  onPadat={(p) => setKerapatan(p ? "padat" : "normal")}
+                  aksiTambahan={
+                    <KontrolKolomVerifikasi
+                      preferensi={preferensiKolom.preferensiKolom}
+                      onVisibilitas={preferensiKolom.ubahVisibilitasKolom}
+                      onPindah={preferensiKolom.pindahKolom}
+                      onReset={preferensiKolom.resetKolom}
+                    />
+                  }
+                />
+              </div>
+            }
+            onPencarianLanjutan={(kriteria: KriteriaPencarian) =>
+              setFilter((f) => ({ ...f, kriteriaLanjutan: kriteria }))
+            }
+          />
+        );
+
+        if (targetPortal) {
+          return createPortal(toolbarContent, targetPortal);
+        }
+
+        return <div className="shrink-0">{toolbarContent}</div>;
+      })()}
 
       <div className="min-h-0 flex-1">
         <TabelVerifikasi

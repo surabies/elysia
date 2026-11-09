@@ -49,6 +49,9 @@ export interface DataKoreksi {
 
 /** Bentuk minimum baris tabel (petugas maupun mandiri) yang dibutuhkan konversi. */
 export interface BarisSumberModal {
+  id?: string;
+  nolg?: string | null;
+  thbl?: string | number | null;
   pelangganId?: string | null;
   nomorLangganan?: string | null;
   periode?: number | null;
@@ -78,15 +81,16 @@ export interface BarisSumberModal {
 
 export function dataKoreksiDariBaris(b: BarisSumberModal): DataKoreksi {
   const nomorLangganan =
-    b.pelanggan?.nomorLangganan ?? b.nomorLangganan ?? null;
+    b.pelanggan?.nomorLangganan ?? b.nomorLangganan ?? b.nolg ?? null;
   const nama = b.pelanggan?.nama ?? b.namaPelanggan ?? "";
+  const periodeStr = b.periode ? String(b.periode) : b.thbl ? String(b.thbl) : "—";
   return {
     pelanggan: `${nomorLangganan ?? ""} ${nama}`.trim() || "—",
     nomorLangganan,
     namaPelanggan: nama || null,
     tarif: b.pelanggan?.tarifGolongan?.kodeAsli ?? b.golonganTarif ?? null,
     alamat: b.pelanggan?.alamat ?? b.alamatPelanggan ?? null,
-    periode: b.periode ? String(b.periode) : "—",
+    periode: periodeStr,
     standAwal: b.standAwal ?? null,
     standAkhir: b.standAkhir ?? null,
     pemakaian: b.pemakaian ?? null,
@@ -98,7 +102,7 @@ export function dataKoreksiDariBaris(b: BarisSumberModal): DataKoreksi {
     standAngkatLama: b.standAngkatLama ?? null,
     standMeterBaru: b.standMeterBaru ?? null,
     standPasang: b.standPasang ?? null,
-    pelangganId: b.pelanggan?.id ?? b.pelangganId ?? null,
+    pelangganId: b.pelanggan?.id ?? b.pelangganId ?? b.nolg ?? null,
     meterVerifId: b.meterVerifId ?? null,
     standAngkat:
       b.standAngkatLama != null || b.standMeterBaru != null
@@ -354,7 +358,7 @@ export function ModalKoreksi({
                 Hasil laporan
               </h3>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg bg-background px-3 py-2.5">
                 <p className="text-label-12 text-muted-foreground">Stand awal</p>
                 <p className="mt-1 text-heading-20 font-semibold tabular-nums text-foreground">
@@ -433,7 +437,7 @@ export function ModalKoreksi({
 
         <section className="flex min-w-0 flex-col gap-3">
           <JudulBagian>Form Edit</JudulBagian>
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-3">
             {kelainan === "REV_PENCATAT" && (
               <BarisForm label="ST Awal revisi" htmlFor="koreksi-awal">
                 <Input

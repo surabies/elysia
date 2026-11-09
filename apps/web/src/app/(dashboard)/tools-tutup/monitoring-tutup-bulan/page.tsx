@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { MonitoringTutupBulan } from '@/features/dashboard/closing/components/MonitoringTutupBulan';
 
-export const metadata = { title: "Monitoring Tutup Bulan" }
+export const metadata: Metadata = {
+  title: 'Closing Periode & Tutup Bulan | Cater PDAM',
+  description: 'Konsol audit 12 tahapan penutupan buku, proyeksi rekening DRD, dan eksekusi periode billing',
+};
 
-export default function PemantauanTutupBulanPage() {
-  return <MenuPage href="/tools-tutup/monitoring-tutup-bulan" />
+export default function TutupBulanPage() {
+  return <MonitoringTutupBulan />;
 }

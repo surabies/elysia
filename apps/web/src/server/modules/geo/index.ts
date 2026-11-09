@@ -2,9 +2,49 @@ import { Elysia, t } from 'elysia';
 import { sql, eq, desc, count } from 'drizzle-orm';
 import { db, places } from '@cater/db';
 import { authPlugin } from '@/server/plugins/auth';
+import { mapService } from '@/server/services/geo/map.service';
 
 export const geoModule = new Elysia({ prefix: '/places' })
   .use(authPlugin)
+  // GIS Monitoring Spasial (Peta Pelanggan, Lokasi Catat, & Anti-Nembak Meter)
+  .get(
+    '/gis-monitoring',
+    async ({ query }) => {
+      const data = await mapService.getMonitoringSpasial({
+        thbl: query.thbl,
+        ruteKode: query.ruteKode,
+        hanyaAnomali: query.hanyaAnomali === 'true',
+        hanyaGeofenceAlert: query.hanyaGeofenceAlert === 'true',
+        limit: query.limit ? Number(query.limit) : 500,
+      });
+      return { success: true, data };
+    },
+    {
+      query: t.Object({
+        thbl: t.Optional(t.String()),
+        ruteKode: t.Optional(t.String()),
+        hanyaAnomali: t.Optional(t.String()),
+        hanyaGeofenceAlert: t.Optional(t.String()),
+        limit: t.Optional(t.Numeric()),
+      }),
+    }
+  )
+  .get(
+    '/gis-geojson',
+    async ({ query }) => {
+      const geojson = await mapService.getPelangganGeoJson(
+        query.ruteKode,
+        query.thbl
+      );
+      return geojson;
+    },
+    {
+      query: t.Object({
+        thbl: t.Optional(t.String()),
+        ruteKode: t.Optional(t.String()),
+      }),
+    }
+  )
   // 1. Proximity search (must be declared before :id to prevent shadowing)
   .get(
     '/nearby',

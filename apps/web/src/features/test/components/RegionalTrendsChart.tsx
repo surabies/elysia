@@ -1,14 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -113,7 +106,7 @@ export function RegionalTrendsChart({ data }: RegionalTrendsChartProps) {
       </div>
 
       {/* Recharts Multi-Line Container */}
-      <div className="h-[200px] w-full pt-1">
+      <div className="h-50 w-full pt-1">
         <ChartContainer
           config={regionalConfig}
           className="h-full w-full aspect-auto"
@@ -197,7 +190,7 @@ export function RegionalTrendsChart({ data }: RegionalTrendsChartProps) {
               <th className="pb-1.5 font-normal text-right">Akhir (Tgl 25)</th>
               <th className="pb-1.5 font-normal text-right">Terendah</th>
               <th className="pb-1.5 font-normal text-right">Puncak</th>
-              <th className="pb-1.5 font-normal text-right font-semibold text-foreground">
+              <th className="pb-1.5 font-normal text-right text-foreground">
                 Total SL
               </th>
             </tr>

@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { LaporanStandAwalAkhir } from '@/features/dashboard/laporan/components/LaporanStandAwalAkhir';
 
-export const metadata = { title: "Lap. Data St. Awal & Akhir" }
+export const metadata: Metadata = {
+  title: 'Laporan Stand Awal & Akhir Meter | PDAM Tirtawening',
+  description: 'Komparasi angka stand meter lalu (STML) terhadap stand meter angkat (STMA) dan kubikasi',
+};
 
-export default function Page() {
-  return <MenuPage href="/laporan/stand-awal-akhir" />
+export default function StandAwalAkhirPage() {
+  return <LaporanStandAwalAkhir />;
 }

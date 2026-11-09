@@ -2,18 +2,17 @@
 
 import * as React from "react";
 import type { FeatureCollection, Geometry } from "geojson";
-import { ChoroplethChart } from "../choropleth-chart";
-import { ChoroplethFeature } from "../choropleth-feature";
-import { ChoroplethTooltip } from "../choropleth-tooltip";
-import type { ChoroplethFeatureProperties } from "../choropleth-context";
+import {
+  ChoroplethChart,
+  ChoroplethFeatureLayer as ChoroplethFeature,
+  ChoroplethTooltip,
+  type ChoroplethFeatureProperties,
+} from "@/components/charts/choropleth";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ServiceAreaRisk } from "@/server/services/dashboard/analytics.service";
 
 type RiskMetric = "nonNormal" | "usageSpike" | "standDecline";
-type RiskCountKey =
-  | "catatanNonNormal"
-  | "lonjakanPemakaian"
-  | "standMenurun";
+type RiskCountKey = "catatanNonNormal" | "lonjakanPemakaian" | "standMenurun";
 type RiskRateKey =
   | "persentaseNonNormal"
   | "persentaseLonjakan"
@@ -28,7 +27,7 @@ const RISK_METRICS: Record<
   }
 > = {
   nonNormal: {
-    label: "Status non-normal",
+    label: "Anomali",
     countKey: "catatanNonNormal",
     rateKey: "persentaseNonNormal",
   },
@@ -65,9 +64,7 @@ type MappedServiceAreaRisk = Omit<ServiceAreaRisk, "geometry"> & {
   geometry: NonNullable<ServiceAreaRisk["geometry"]>;
 };
 
-function hasGeometry(
-  area: ServiceAreaRisk,
-): area is MappedServiceAreaRisk {
+function hasGeometry(area: ServiceAreaRisk): area is MappedServiceAreaRisk {
   return area.geometry !== null;
 }
 
@@ -105,7 +102,10 @@ export function ServiceAreaRiskMap({ data }: ServiceAreaRiskMapProps) {
 
   const summary = React.useMemo(() => {
     const mappedAreas = data.filter(hasGeometry);
-    const readings = mappedAreas.reduce((sum, area) => sum + area.jumlahBaca, 0);
+    const readings = mappedAreas.reduce(
+      (sum, area) => sum + area.jumlahBaca,
+      0,
+    );
     const flagged = mappedAreas.reduce(
       (sum, area) => sum + Number(area[currentMetric.countKey]),
       0,
@@ -120,7 +120,8 @@ export function ServiceAreaRiskMap({ data }: ServiceAreaRiskMapProps) {
       areasWithFlags,
       rate: readings > 0 ? (flagged / readings) * 100 : 0,
       areasWithGeometry: mappedAreas.length,
-      areasWithReadings: mappedAreas.filter((area) => area.jumlahBaca > 0).length,
+      areasWithReadings: mappedAreas.filter((area) => area.jumlahBaca > 0)
+        .length,
     };
   }, [data, currentMetric.countKey, currentMetric.rateKey]);
 
@@ -198,7 +199,7 @@ export function ServiceAreaRiskMap({ data }: ServiceAreaRiskMapProps) {
             >
               <ChoroplethChart
                 data={mapData}
-                className="min-h-[340px]"
+                className="min-h-50"
                 aspectRatio="16 / 9"
                 center={[107.6, -6.9]}
                 zoomEnabled
@@ -210,9 +211,10 @@ export function ServiceAreaRiskMap({ data }: ServiceAreaRiskMapProps) {
                 <ChoroplethFeature
                   stroke="var(--background)"
                   strokeWidth={0.8}
-                  getFeatureColor={(feature) => {
+                  getFeatureColor={(feature: any) => {
                     const area = data.find(
-                      (item) => item.kodeDesa === feature.properties?.id ||
+                      (item) =>
+                        item.kodeDesa === feature.properties?.id ||
                         item.kodeDesa === feature.properties?.kodeDesa,
                     );
                     return getRiskColor(
@@ -223,7 +225,7 @@ export function ServiceAreaRiskMap({ data }: ServiceAreaRiskMapProps) {
                 />
                 <ChoroplethTooltip
                   backgroundColor="var(--popover)"
-                  content={({ feature }) => {
+                  content={({ feature }: any) => {
                     const area = data.find(
                       (item) =>
                         item.kodeDesa === feature.properties?.kodeDesa ||
@@ -358,7 +360,6 @@ export function ServiceAreaRiskMap({ data }: ServiceAreaRiskMapProps) {
             </p>
           )}
         </div>
-
       </aside>
     </div>
   );

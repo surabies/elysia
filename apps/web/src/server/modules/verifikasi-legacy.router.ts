@@ -1,10 +1,11 @@
 import { Elysia, t } from "elysia";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or, isNotNull, ilike } from "drizzle-orm";
 import {
   caterBacaMeter,
   caterMandiriPelanggan,
   caterVerifikasiLog,
   db,
+  pelanggan,
   periodePenagihan,
   rekeningDrd,
   waterMeterMutasi,
@@ -14,6 +15,7 @@ import { authPlugin } from "../plugins/auth";
 import { caterVerifikasiService } from "../services/cater/cater-verifikasi.service";
 import { mandiriService } from "../services/mandiri/mandiri.service";
 import { verifikasiGridService } from "../services/cater/verifikasi-grid.service";
+import { manualAddMasalService } from "../services/cater/manual-add-masal.service";
 import { hitungKubikasiGantiMeter } from "../domain/gwm/gwm.engine";
 
 const READ_ROLES: AppRole[] = [
@@ -483,6 +485,187 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
       query: t.Object({
         nomor: t.String({ minLength: 1 }),
         periode: t.Numeric(),
+      }),
+    },
+  )
+  .get(
+    "/manual-add/riwayat",
+    async ({ query, set }) => {
+      try {
+        const thbl = String(query.periode ?? "202601");
+        const search = query.q ? `%${query.q.trim()}%` : undefined;
+
+        const baseWhere = and(
+          eq(caterBacaMeter.thbl, thbl),
+          or(
+            eq(caterBacaMeter.sumberCatat, "MANUAL"),
+            eq(caterBacaMeter.metodeCatat, "OFFSITE"),
+            isNotNull(caterBacaMeter.catatan),
+          ),
+          search
+            ? or(
+                ilike(caterBacaMeter.nolg, search),
+                ilike(pelanggan.nama, search),
+                ilike(caterBacaMeter.catatan, search),
+              )
+            : undefined,
+        );
+
+        const rows = await db
+          .select({
+            id: caterBacaMeter.id,
+            nolg: caterBacaMeter.nolg,
+            nama: pelanggan.nama,
+            alamat: pelanggan.alamat,
+            tarifKode: pelanggan.tarifKode,
+            ruteKode: caterBacaMeter.ruteKode,
+            stml: caterBacaMeter.stml,
+            stma: caterBacaMeter.stma,
+            pakaiM3: caterBacaMeter.pakaiM3,
+            catatan: caterBacaMeter.catatan,
+            sumberCatat: caterBacaMeter.sumberCatat,
+            statusVerifikasi: caterBacaMeter.statusVerifikasi,
+            tglCatat: caterBacaMeter.tglCatat,
+            updatedAt: caterBacaMeter.updatedAt,
+          })
+          .from(caterBacaMeter)
+          .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+          .where(baseWhere)
+          .orderBy(desc(caterBacaMeter.updatedAt))
+          .limit(100);
+
+        const totalManual = rows.length;
+        const totalM3 = rows.reduce((sum, r) => sum + Number(r.pakaiM3 ?? 0), 0);
+        const rataRataM3 = totalManual > 0 ? Number((totalM3 / totalManual).toFixed(1)) : 0;
+
+        return {
+          success: true,
+          data: {
+            periode: thbl,
+            kpi: {
+              totalManual,
+              totalM3,
+              rataRataM3,
+            },
+            items: rows.map((r) => ({
+              ...r,
+              stml: Number(r.stml ?? 0),
+              stma: Number(r.stma ?? 0),
+              pakaiM3: Number(r.pakaiM3 ?? 0),
+            })),
+          },
+        };
+      } catch (error) {
+        set.status = 500;
+        return {
+          success: false,
+          error: {
+            code: "MANUAL_HISTORY_FAILED",
+            message: errorMessage(error),
+          },
+        };
+      }
+    },
+    {
+      requireRole: READ_ROLES,
+      query: t.Object({
+        periode: t.Optional(t.Numeric()),
+        q: t.Optional(t.String()),
+      }),
+    },
+  )
+  // Options Filter Petugas & Rute untuk Manual ADD Masal
+  .get(
+    "/manual-add/masal/options",
+    async ({ set }) => {
+      try {
+        const data = await manualAddMasalService.getFilterOptions();
+        return { success: true, data };
+      } catch (error) {
+        set.status = 500;
+        return {
+          success: false,
+          error: { code: "OPTIONS_FAILED", message: errorMessage(error) },
+        };
+      }
+    },
+    {
+      requireRole: READ_ROLES,
+    },
+  )
+  // Pratinjau Taksasi Masal (Petugas Berhalangan / Rute Tertentu)
+  .get(
+    "/manual-add/masal/preview",
+    async ({ query, set }) => {
+      try {
+        const thbl = String(query.periode ?? "202601");
+        const petugasId = query.petugasId ? String(query.petugasId) : undefined;
+        const ruteKode = query.ruteKode ? String(query.ruteKode) : undefined;
+        const hanyaBelumBaca = query.hanyaBelumBaca !== "false";
+        const limit = Number(query.limit ?? 200);
+
+        const data = await manualAddMasalService.getPreviewTaksasi({
+          thbl,
+          petugasId,
+          ruteKode,
+          hanyaBelumBaca,
+          limit,
+        });
+        return { success: true, data };
+      } catch (error) {
+        set.status = 500;
+        return {
+          success: false,
+          error: { code: "PREVIEW_FAILED", message: errorMessage(error) },
+        };
+      }
+    },
+    {
+      requireRole: READ_ROLES,
+      query: t.Object({
+        periode: t.Optional(t.Numeric()),
+        petugasId: t.Optional(t.String()),
+        ruteKode: t.Optional(t.String()),
+        hanyaBelumBaca: t.Optional(t.String()),
+        limit: t.Optional(t.Numeric()),
+      }),
+    },
+  )
+  // Eksekusi Taksasi Masal
+  .post(
+    "/manual-add/masal/eksekusi",
+    async ({ body, set }) => {
+      try {
+        const result = await manualAddMasalService.eksekusiTaksasiMasal({
+          periode: String(body.periode),
+          alasanKategori: body.alasanKategori,
+          catatanBeritaAcara: body.catatanBeritaAcara,
+          items: body.items,
+        });
+        return { success: true, data: result };
+      } catch (error) {
+        set.status = 400;
+        return {
+          success: false,
+          error: { code: "EKSEKUSI_FAILED", message: errorMessage(error) },
+        };
+      }
+    },
+    {
+      requireRole: ["STAFF_ADMIN_BILLING", "VERIFIKATOR_1", "VERIFIKATOR_2"],
+      body: t.Object({
+        periode: t.Numeric(),
+        alasanKategori: t.String({ minLength: 1 }),
+        catatanBeritaAcara: t.String(),
+        items: t.Array(
+          t.Object({
+            nolg: t.String(),
+            ruteKode: t.Optional(t.Nullable(t.String())),
+            stml: t.Number(),
+            stma: t.Number(),
+            pakaiM3: t.Number(),
+          }),
+        ),
       }),
     },
   )
@@ -1092,8 +1275,11 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
     "/manual-add/satuan",
     async ({ body, user, set }) => {
       try {
-        const existing = await db
-          .select({ id: caterBacaMeter.id })
+        const [existing] = await db
+          .select({
+            id: caterBacaMeter.id,
+            statusVerifikasi: caterBacaMeter.statusVerifikasi,
+          })
           .from(caterBacaMeter)
           .where(
             and(
@@ -1102,13 +1288,13 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
             ),
           )
           .limit(1);
-        if (existing.length) {
+        if (existing?.statusVerifikasi === "LOCKED_BILLING") {
           set.status = 409;
           return {
             success: false,
             error: {
-              code: "READING_EXISTS",
-              message: "Pembacaan periode ini sudah ada; gunakan menu koreksi.",
+              code: "READING_LOCKED",
+              message: "Pembacaan periode ini sudah terkunci billing dan tidak dapat ditimpa.",
             },
           };
         }

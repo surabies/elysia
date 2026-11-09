@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { MenuPage } from '@/components/layout/page/MenuPage';
+import { KelolaUrutanRute } from '@/features/dashboard/master/components/KelolaUrutanRute';
 
 export const metadata: Metadata = {
-  title: 'Pemetaan Rute',
+  title: 'Urutan Langkah Rute (DPM) | PDAM Tirtawening',
+  description: 'Pengaturan urutan langkah gang dan sekuensial pembacaan meter pelanggan',
 };
 
-export default function UrutPage() {
-  return <MenuPage href="/master/urut" />;
+export default function MasterUrutPage() {
+  return <KelolaUrutanRute />;
 }

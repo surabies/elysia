@@ -1,7 +1,7 @@
 "use client"
 
 // features/dashboard/verifikasi/components/KontrolTampilan.tsx — kelompok
-// tombol ikon (ToggleGroup) untuk mengatur TAMPILAN halaman: lipat/buka kartu
+// tombol ikon untuk mengatur TAMPILAN halaman: lipat/buka kartu
 // ringkasan dan, bila ada, kerapatan baris. Tiap tombol berikon saja dan
 // dijelaskan Tooltip — ruang toolbar dihemat, maknanya tidak hilang.
 //
@@ -9,13 +9,7 @@
 import type { ReactNode } from "react"
 import { DashboardSquare01Icon, Menu01Icon } from "@/features/dashboard/shared/icons/IkonLucide"
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { TEMA_TOGGLE_ITEM } from "../lib/TemaVerifikasi"
+import { TombolIkonVerifikasi } from "./BilahVerifikasi"
 
 export function KontrolTampilan({
   ringkasanTerbuka,
@@ -31,66 +25,39 @@ export function KontrolTampilan({
   onPadat?: (padat: boolean) => void
   aksiTambahan?: ReactNode
 }) {
-  // type="multiple": dua tombol saling bebas; nilai = daftar yang sedang AKTIF.
-  const nilai = [
-    ringkasanTerbuka ? "ringkasan" : "",
-    padat ? "padat" : "",
-  ].filter(Boolean)
-
   return (
-    <ToggleGroup
-      type="multiple"
-      variant="outline"
-      size="default"
-      value={nilai}
-      onValueChange={(v) => {
-        onRingkasan(v.includes("ringkasan"))
-        onPadat?.(v.includes("padat"))
-      }}
-      aria-label="Tampilan halaman"
-    >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <ToggleGroupItem
-            value="ringkasan"
-            aria-label="Kartu ringkasan"
-            className={TEMA_TOGGLE_ITEM}
-          >
-            <HugeiconsIcon
-              icon={DashboardSquare01Icon}
-              strokeWidth={2}
-              className="size-4"
-              aria-hidden
-            />
-          </ToggleGroupItem>
-        </TooltipTrigger>
-        <TooltipContent>
-          {ringkasanTerbuka ? "Sembunyikan ringkasan" : "Tampilkan ringkasan"}
-        </TooltipContent>
-      </Tooltip>
+    <div className="flex items-center gap-1" role="toolbar" aria-label="Tampilan halaman">
+      <TombolIkonVerifikasi
+        label={ringkasanTerbuka ? "Sembunyikan ringkasan" : "Tampilkan ringkasan"}
+        onClick={() => onRingkasan(!ringkasanTerbuka)}
+        aktif={ringkasanTerbuka}
+        ikon={
+          <HugeiconsIcon
+            icon={DashboardSquare01Icon}
+            strokeWidth={2}
+            className="size-3.5"
+            aria-hidden
+          />
+        }
+      />
 
       {onPadat && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <ToggleGroupItem
-              value="padat"
-              aria-label="Kerapatan baris padat"
-              className={TEMA_TOGGLE_ITEM}
-            >
-              <HugeiconsIcon
-                icon={Menu01Icon}
-                strokeWidth={2}
-                className="size-4"
-                aria-hidden
-              />
-            </ToggleGroupItem>
-          </TooltipTrigger>
-          <TooltipContent>
-            {padat ? "Kerapatan normal" : "Kerapatan padat"}
-          </TooltipContent>
-        </Tooltip>
+        <TombolIkonVerifikasi
+          label={padat ? "Kerapatan normal" : "Kerapatan padat"}
+          onClick={() => onPadat(!padat)}
+          aktif={padat}
+          ikon={
+            <HugeiconsIcon
+              icon={Menu01Icon}
+              strokeWidth={2}
+              className="size-3.5"
+              aria-hidden
+            />
+          }
+        />
       )}
+
       {aksiTambahan}
-    </ToggleGroup>
+    </div>
   )
 }

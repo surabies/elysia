@@ -73,7 +73,42 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --color-table-head: var(--table-head);
-  --color-table-accent: var(--table-accent);
+    --color-table-accent: var(--table-accent);
+
+  /* Brand & def color scales (Merged from styles.css) */
+  --color-highlight: var(--highlight);
+  --color-foregroundish: var(--foregroundish);
+  --color-def-100: var(--def-100);
+  --color-def-200: var(--def-200);
+  --color-def-300: var(--def-300);
+  --color-def-400: var(--def-400);
+
+  /* Extended chart colors & tokens (Merged from styles.css) */
+  --color-chart-0: var(--chart-0);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
+  --color-chart-10: var(--chart-10);
+  --color-chart-11: var(--chart-11);
+  --color-chart-12: var(--chart-12);
+  --color-chart-background: var(--chart-background);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-line-primary: var(--chart-line-primary);
+  --color-chart-line-secondary: var(--chart-line-secondary);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-marker-badge-background: var(--chart-marker-badge-background);
+  --color-chart-marker-badge-foreground: var(--chart-marker-badge-foreground);
+  --color-chart-ring-background: var(--chart-ring-background);
+  --color-chart-label: var(--chart-label);
 
   /* Geist Official Radii Scale (Subtle, Restrained, Swiss Geometry) */
   --radius-xs: 2px;
@@ -83,7 +118,54 @@
   --radius-xl: 12px; /* Geist Overlays: menus, popovers, modals */
   --radius-2xl: 16px;
   --radius-3xl: 24px;
-  --radius: 6px;
+    --radius: 6px;
+
+  /* Brand & def tokens (Light Mode - Merged from styles.css) */
+  --highlight: #0070f3;
+  --foregroundish: #383838;
+  --def-100: #f4f6f8;
+  --def-200: #e9ecf0;
+  --def-300: #dde2e8;
+  --def-400: #b5bec8;
+
+  /* Extended chart palette (Light Mode) */
+  --chart-0: #2563eb;
+  --chart-6: #ffb27a;
+  --chart-7: #0f7ea0;
+  --chart-8: #3ba974;
+  --chart-9: #febbb2;
+  --chart-10: #cb80dc;
+  --chart-11: #5cb7af;
+  --chart-12: #7856ff;
+
+  --chart-background: var(--card);
+  --chart-foreground: var(--foreground);
+  --chart-foreground-muted: var(--muted-foreground);
+  --chart-line-primary: var(--chart-0);
+  --chart-line-secondary: var(--chart-1);
+  --chart-crosshair: rgba(0, 0, 0, 0.4);
+  --chart-grid: var(--border);
+  --chart-tooltip-background: rgba(255, 255, 255, 0.95);
+  --chart-tooltip-foreground: var(--foreground);
+  --chart-tooltip-muted: var(--muted-foreground);
+  --chart-marker-background: var(--def-100);
+  --chart-marker-border: var(--border);
+  --chart-marker-foreground: var(--foreground);
+  --chart-marker-badge-background: var(--foreground);
+  --chart-marker-badge-foreground: var(--background);
+  --chart-ring-background: rgba(0, 0, 0, 0.12);
+  --chart-label: var(--muted-foreground);
+  --chart-scale-01: color-mix(in srgb, var(--chart-0) 8%, var(--card));
+  --chart-scale-02: color-mix(in srgb, var(--chart-0) 28%, var(--card));
+  --chart-scale-03: color-mix(in srgb, var(--chart-0) 50%, var(--card));
+  --chart-scale-04: color-mix(in srgb, var(--chart-0) 75%, var(--card));
+  --chart-scale-05: var(--chart-0);
+  --chart-scale-pattern-color: var(--def-100);
+  --legend: var(--card);
+  --legend-foreground: var(--foreground);
+  --legend-muted: var(--def-100);
+  --legend-muted-foreground: var(--muted-foreground);
+  --legend-track: var(--def-200);
 
   /* Geist Color System: Backgrounds */
   --color-ds-background-100: var(--ds-background-100);
@@ -204,12 +286,28 @@
   --color-info: var(--info);
   --color-success-foreground: var(--success-foreground);
   --color-success: var(--success);
+  --color-chart-brush-border: var(--chart-brush-border);
+  --color-chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-03: var(--chart-scale-03);
+  --color-chart-scale-04: var(--chart-scale-04);
+  --color-chart-scale-05: var(--chart-scale-05);
+  --color-chart-segment-line: var(--chart-segment-line);
+  --color-chart-segment-background: var(--chart-segment-background);
+  --color-chart-indicator-secondary-color: var(--chart-indicator-secondary-color);
+  --color-chart-indicator-color: var(--chart-indicator-color);
+  --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
+  --color-chart-scale-01: var(--chart-scale-01);
+  --color-chart-scale-mix: var(--chart-scale-mix);
+  --chart-brush-border: var(--chart-brush-border);
+  --color-chart-negative: var(--chart-negative);
+  --color-chart-positive: var(--chart-positive);
 }
 
 /* ==========================================================================
    CSS Variables: Root (Light Mode)
    ========================================================================== */
-:root {
+:root,
+.lembar-cetak {
   /* Sidebar Width: Vercel standard default is 256px (16rem), min-width 240px */
   --sidebar-width: 256px;
 
@@ -408,6 +506,36 @@
   --warning-foreground: var(--foreground);
   --invert: var(--foreground);
   --invert-foreground: var(--background);
+  --chart-positive: oklch(0.696 0.17 162.48);
+  --chart-negative: oklch(0.637 0.237 25.331);
+  --chart-background: oklch(1 0 0);
+  --chart-foreground: oklch(0.145 0.004 285);
+  --chart-foreground-muted: oklch(0.55 0.014 260);
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: oklch(0.4 0.1828 274.34);
+  --chart-grid: oklch(0.9 0 0);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: var(--popover);
+  --chart-tooltip-foreground: var(--popover-foreground);
+  --chart-tooltip-muted: var(--muted-foreground);
+  --chart-marker-background: oklch(0.97 0.005 260);
+  --chart-marker-border: oklch(0.85 0.01 260);
+  --chart-marker-foreground: oklch(0.3 0.01 260);
+  --chart-label: oklch(0.45 0.01 260);
+  --chart-scale-mix: oklch(1 0 0);
+  --chart-scale-01: oklch(0.922 0 0);
+  --chart-scale-02: color-mix(in oklab, var(--chart-1) 35%, var(--chart-scale-mix));
+  --chart-scale-03: color-mix(in oklab, var(--chart-1) 55%, var(--chart-scale-mix));
+  --chart-scale-04: color-mix(in oklab, var(--chart-1) 78%, var(--chart-scale-mix));
+  --chart-scale-05: var(--chart-1);
+  --chart-scale-pattern-color: oklch(1 0 0);
+  --chart-indicator-color: oklch(0.21 0.006 285);
+  --chart-indicator-secondary-color: oklch(0.913 0 0);
+  --chart-marker-badge-background: oklch(0 0 0);
+  --chart-marker-badge-foreground: oklch(0.84 0 0);
+  --chart-segment-background: oklch(0.756 0 0 / 0.06);
+  --chart-segment-line: oklch(0.5 0 0 / 0.25);
 }
 
 /* ==========================================================================
@@ -416,7 +544,54 @@
 .dark {
   /* Backgrounds */
   --ds-background-100: #000000;
-  --ds-background-200: #0a0a0a;
+    --ds-background-200: #0a0a0a;
+
+  /* Brand & def tokens (Dark Mode - Merged from styles.css) */
+  --highlight: #3291ff;
+  --foregroundish: #d4d4d4;
+  --def-100: #141414;
+  --def-200: #1f1f1f;
+  --def-300: #292929;
+  --def-400: #424242;
+
+  /* Extended chart palette (Dark Mode) */
+  --chart-0: #3b82f6;
+  --chart-6: #ffb27a;
+  --chart-7: #0f7ea0;
+  --chart-8: #3ba974;
+  --chart-9: #febbb2;
+  --chart-10: #cb80dc;
+  --chart-11: #5cb7af;
+  --chart-12: #7856ff;
+
+  --chart-background: var(--card);
+  --chart-foreground: var(--foreground);
+  --chart-foreground-muted: var(--muted-foreground);
+  --chart-line-primary: var(--chart-0);
+  --chart-line-secondary: var(--chart-1);
+  --chart-crosshair: rgba(255, 255, 255, 0.4);
+  --chart-grid: var(--border);
+  --chart-tooltip-background: rgba(10, 10, 10, 0.95);
+  --chart-tooltip-foreground: var(--foreground);
+  --chart-tooltip-muted: var(--muted-foreground);
+  --chart-marker-background: var(--def-100);
+  --chart-marker-border: var(--border);
+  --chart-marker-foreground: var(--foreground);
+  --chart-marker-badge-background: var(--foreground);
+  --chart-marker-badge-foreground: var(--background);
+  --chart-ring-background: rgba(255, 255, 255, 0.12);
+  --chart-label: var(--muted-foreground);
+  --chart-scale-01: color-mix(in srgb, var(--chart-0) 12%, var(--card));
+  --chart-scale-02: color-mix(in srgb, var(--chart-0) 30%, var(--card));
+  --chart-scale-03: color-mix(in srgb, var(--chart-0) 55%, var(--card));
+  --chart-scale-04: color-mix(in srgb, var(--chart-0) 80%, var(--card));
+  --chart-scale-05: var(--chart-0);
+  --chart-scale-pattern-color: var(--def-100);
+  --legend: var(--card);
+  --legend-foreground: var(--foreground);
+  --legend-muted: var(--def-100);
+  --legend-muted-foreground: var(--muted-foreground);
+  --legend-track: var(--def-200);
 
   /* Gray */
   --ds-gray-100: #111111;
@@ -606,6 +781,14 @@
   --warning-foreground: var(--background);
   --invert: var(--foreground);
   --invert-foreground: var(--background);
+  --chart-positive: oklch(0.765 0.177 163.223);
+  --chart-negative: oklch(0.704 0.191 22.216);
+  --chart-brush-border: var(--chart-grid);
+  --chart-scale-mix: oklch(0.25 0 0);
+  --chart-indicator-color: oklch(1 0 0);
+  --chart-indicator-secondary-color: oklch(0.145 0 0);
+  --chart-segment-background: oklch(0.41 0.0127 248.14 / 0.25);
+  --chart-segment-line: oklch(1 0 0 / 0.25);
 }
 
 /* ==========================================================================
@@ -877,6 +1060,303 @@
 }
 
 /* ==========================================================================
+   OpenPanel / Dashboard Analytics Utilities & Animations (Merged from styles.css)
+   ========================================================================== */
+
+@utility center-center {
+  @apply flex items-center justify-center text-center;
+}
+
+@utility col {
+  @apply flex flex-col;
+}
+
+@utility row {
+  @apply flex flex-row;
+}
+
+@utility text-text {
+  @apply text-foreground;
+}
+
+@utility scrollbar-hidden {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Standardized 8px pill scrollbar (aliases matching the verification standard) */
+.scrollbar-thin,
+.scrollbar-tipis {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-gray-alpha-400) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar,
+.scrollbar-tipis::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-track,
+.scrollbar-tipis::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb,
+.scrollbar-tipis::-webkit-scrollbar-thumb {
+  background-color: var(--ds-gray-alpha-400);
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+  transition: background-color 0.15s ease;
+}
+.scrollbar-thin:hover::-webkit-scrollbar-thumb,
+.scrollbar-thin:active::-webkit-scrollbar-thumb,
+.scrollbar-tipis:hover::-webkit-scrollbar-thumb,
+.scrollbar-tipis:active::-webkit-scrollbar-thumb {
+  background-color: var(--ds-gray-alpha-600);
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Shimmer animation */
+@keyframes op-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.op-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--muted-foreground) 0%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: op-shimmer 2.2s linear infinite;
+}
+
+/* Custom slow pulse animation */
+@keyframes slow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.animate-slow-pulse {
+  animation: slow-pulse 4s ease-in-out infinite;
+}
+
+/* Floating element animations */
+@keyframes float-1 {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 0.6; }
+}
+.animate-float-1 {
+  animation: float-1 4s ease-in-out infinite;
+}
+
+@keyframes float-2 {
+  0%, 100% { transform: scale(1.2); opacity: 0.4; }
+  50% { transform: scale(1); opacity: 0.7; }
+}
+.animate-float-2 {
+  animation: float-2 3.5s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+@keyframes ping-slow {
+  75%, 100% { transform: scale(1.2); opacity: 0; }
+}
+.animate-ping-slow {
+  animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes live-feed-in {
+  from {
+    margin-top: calc(-1 * (1.75rem + 0.25rem));
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    margin-top: 0;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-live-feed-in {
+  animation: live-feed-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.scrollarea {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+}
+.scrollarea-content {
+  height: 100%;
+  width: 100%;
+  overflow-y: scroll;
+  padding-right: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-gray-alpha-400) transparent;
+}
+.scrollarea-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollarea-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollarea-content::-webkit-scrollbar-thumb {
+  background-color: var(--ds-gray-alpha-400);
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+  transition: background-color 0.15s ease;
+}
+.scrollarea-content:hover::-webkit-scrollbar-thumb,
+.scrollarea-content:active::-webkit-scrollbar-thumb {
+  background-color: var(--ds-gray-alpha-600);
+}
+
+@keyframes sticky-shadow {
+  0% {
+    box-shadow: none;
+    border-bottom-color: transparent;
+    border-bottom-width: 1px;
+    background-color: transparent;
+  }
+  100% {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    border-bottom-color: var(--border);
+    border-bottom-width: 1px;
+    background-color: var(--def-100);
+  }
+}
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid transparent;
+  animation: sticky-shadow linear both;
+  animation-timeline: scroll();
+  animation-range: 0 1px;
+}
+
+/* React grid layout styles */
+.react-grid-item.cssTransforms {
+  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+.react-grid-item.react-draggable-dragging,
+.react-grid-item.resizing {
+  transition: none;
+}
+.react-grid-item.react-grid-placeholder {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  opacity: 1;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  transition: transform 100ms cubic-bezier(0.2, 0, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .react-grid-item.cssTransforms,
+  .react-grid-item.react-grid-placeholder {
+    transition: none;
+  }
+}
+[data-gesture] .react-grid-item > * {
+  pointer-events: none;
+  user-select: none;
+}
+html:has([data-gesture] .react-grid-item.react-draggable-dragging),
+[data-gesture] .react-grid-item.react-draggable-dragging {
+  cursor: grabbing;
+}
+[data-gesture] .react-grid-item.react-draggable-dragging > * {
+  transform: scale(1.02);
+  box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.35);
+  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-gesture] .react-grid-item.react-draggable-dragging > * {
+    transform: none;
+  }
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w {
+  margin: 0;
+  transform: none;
+  background: none;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n::after,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s::after,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e::after,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w::after {
+  display: none;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  left: 20px;
+  right: 20px;
+  width: auto;
+  height: 8px;
+  cursor: ns-resize;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n {
+  top: -4px;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  bottom: -4px;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w {
+  top: 20px;
+  bottom: 20px;
+  width: 8px;
+  height: auto;
+  cursor: ew-resize;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e {
+  right: -4px;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w {
+  left: -4px;
+}
+.react-grid-item.resizing {
+  overflow: hidden;
+}
+.react-grid-item.resizing [data-tile-body] {
+  opacity: 0.5;
+}
+.react-grid-item.resizing[data-tile-size]::after {
+  content: attr(data-tile-size);
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--foreground);
+  color: var(--background);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* ==========================================================================
    Geist Icon Styling Rule
    Crisp 1px/1.5px stroke width matching Swiss minimalist geometry
    ========================================================================== */
@@ -898,33 +1378,114 @@
   font-weight: 500;
 }
 
-.scrollbar-tipis {
-  scrollbar-color: var(--ds-gray-alpha-400) transparent;
-  scrollbar-width: thin;
+/* ==========================================================================
+   AG Grid Scrollbar Precision (Unlayered)
+   Guarantees a clean single 8px floating pill scrollbar for AG Grid tables.
+   Strictly targets AG Grid's designated scroll viewports and prevents
+   duplicate scrollbars from appearing on internal viewports.
+   ========================================================================== */
+.ag-grid-viewport,
+.ag-body-horizontal-scroll-end-spacer {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-.scrollbar-tipis::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+.ag-grid-viewport::-webkit-scrollbar,
+.ag-body-horizontal-scroll-end-spacer::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
-.scrollbar-tipis::-webkit-scrollbar-thumb {
-  background-color: var(--ds-gray-alpha-400);
-  border: 2px solid transparent;
-  border-radius: 9999px;
-  background-clip: padding-box;
+.ag-body-horizontal-scroll-viewport,
+.ag-body-vertical-scroll-viewport,
+.ag-virtual-list-viewport {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--ds-gray-alpha-400) transparent !important;
+  background-color: transparent !important;
 }
 
-.scrollbar-tipis::-webkit-scrollbar-track {
-  background: transparent;
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar,
+.ag-virtual-list-viewport::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-track,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-track,
+.ag-virtual-list-viewport::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-virtual-list-viewport::-webkit-scrollbar-thumb {
+  background-color: var(--ds-gray-alpha-400) !important;
+  border: 2px solid transparent !important;
+  border-radius: 9999px !important;
+  background-clip: padding-box !important;
+  transition: background-color 0.15s ease;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb:hover,
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb:active,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb:hover,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb:active,
+.ag-virtual-list-viewport::-webkit-scrollbar-thumb:hover,
+.ag-virtual-list-viewport::-webkit-scrollbar-thumb:active {
+  background-color: var(--ds-gray-alpha-600) !important;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-corner,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+.ag-body-horizontal-scroll,
+.ag-body-vertical-scroll {
+  background-color: transparent !important;
 }
 
 /* ==========================================================================
-   Base Layer Overrides
+   Base Layer Overrides & Global Scrollbar System
+   Standardized 8px pill scrollbar matching the verification screen across
+   all pages, tables, sidebars, modals, and containers.
    ========================================================================== */
 @layer base {
-  * {
+  *,
+  *::before,
+  *::after {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ds-gray-alpha-400) transparent;
+  }
+
+  /* Global WebKit scrollbar matching Verifikasi standard (8px floating pill) */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--ds-gray-alpha-400);
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+    transition: background-color 0.15s ease;
+  }
+
+  *::-webkit-scrollbar-thumb:hover,
+  *::-webkit-scrollbar-thumb:active {
+    background-color: var(--ds-gray-alpha-600);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
   }
 
   body {
@@ -941,5 +1502,74 @@
   samp,
   pre {
     font-family: var(--font-geist-mono), monospace;
+  }
+
+  .h1 {
+    @apply text-xl font-semibold;
+  }
+
+  .h2 {
+    @apply text-lg font-medium;
+  }
+
+  .h3 {
+    @apply text-base font-medium;
+  }
+
+  .h4 {
+    @apply font-medium;
+  }
+
+  .ellipsis {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+
+  .heading {
+    @apply text-xl font-semibold;
+  }
+
+  .title {
+    @apply text-lg font-semibold;
+  }
+
+  .subtitle {
+    @apply text-base font-medium;
+  }
+
+  .card {
+    @apply rounded-md border border-border bg-card;
+  }
+}
+
+/* ==========================================================================
+   Lembar Cetak A4 / PDF Info Pelanggan
+   ========================================================================== */
+.lembar-cetak {
+  display: none;
+  color-scheme: light;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+  }
+  body > *:not(.lembar-cetak) {
+    display: none !important;
+  }
+  .lembar-cetak {
+    display: block;
+  }
+  .lembar-cetak,
+  .lembar-cetak * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .lembar-cetak section {
+    break-inside: avoid;
   }
 }

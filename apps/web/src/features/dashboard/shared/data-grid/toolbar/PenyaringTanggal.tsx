@@ -36,12 +36,14 @@ export function PenyaringTanggal({
   sampai,
   onTerapkan,
   ringkas = false,
+  align,
 }: {
   label: string
   dari: string
   sampai: string
   onTerapkan: (dari: string, sampai: string) => void
   ringkas?: boolean
+  align?: "start" | "center" | "end"
 }) {
   const mobil = useIsMobile()
   const [terbuka, setTerbuka] = React.useState(false)
@@ -117,8 +119,11 @@ export function PenyaringTanggal({
         <PopoverTrigger asChild>{pemicu}</PopoverTrigger>
       )}
       <PopoverContent
-        align="start"
-        className="w-auto gap-0 overflow-hidden rounded-lg border-border p-0 shadow-overlay"
+        align={align ?? (ringkas ? "end" : "start")}
+        side="bottom"
+        sideOffset={8}
+        collisionPadding={16}
+        className="w-auto gap-0 overflow-hidden rounded-lg border-border p-0 shadow-overlay z-50"
       >
         <div className="flex flex-col sm:flex-row">
           <div className="flex gap-1 overflow-x-auto border-b border-border-subtle p-2 sm:w-40 sm:flex-col sm:overflow-visible sm:border-r sm:border-b-0">
@@ -142,7 +147,7 @@ export function PenyaringTanggal({
             <Calendar
               mode="range"
               locale={localeId}
-              numberOfMonths={mobil ? 1 : 2}
+              numberOfMonths={mobil || ringkas ? 1 : 2}
               defaultMonth={draft?.from ?? tglDari ?? new Date()}
               selected={draft}
               onDayClick={klikHari}

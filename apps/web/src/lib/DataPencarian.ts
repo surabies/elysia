@@ -1,40 +1,62 @@
 // lib/DataPencarian.ts
-// Tugas: sumber data pencarian (Ctrl+K). Dibangun dari config/Navigasi.ts,
-// mendukung filtering RBAC berdasarkan role yang sedang aktif.
-import { navGroups, type NavGroup, type NavItem } from "@/config/Navigasi"
+// Pencarian menu cepat (Ctrl+K) dengan indeks menyeluruh dari Navigasi.ts.
 
-export type SearchResult = { page: string; title: string; href: string }
-export type SearchGroup = { category: string; results: SearchResult[] }
+import {
+  navGroups,
+  primaryNav,
+  flattenNavItems,
+  type NavGroup,
+  type NavItem,
+} from "@/config/Navigasi";
+
+export type SearchResult = { page: string; title: string; href: string };
+export type SearchGroup = { category: string; results: SearchResult[] };
 
 export function searchDocs(
   query: string,
-  sourceGroups: readonly NavGroup[] = navGroups
+  sourceGroups: readonly NavGroup[] = navGroups,
+  sourcePrimary: readonly NavItem[] = primaryNav
 ): SearchGroup[] {
-  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  if (terms.length === 0) return []
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return [];
 
-  const groups: SearchGroup[] = []
+  const groups: SearchGroup[] = [];
 
-  for (const group of sourceGroups) {
-    const items = "items" in group ? group.items : []
+  // 1. Cari pada modul mandiri (Primary Nav)
+  const primaryResults: SearchResult[] = sourcePrimary
+    .filter((item: NavItem) => {
+      const text = `${item.title} ${item.description || ""} ${(item.keywords || []).join(" ")}`.toLowerCase();
+      return terms.every((t) => text.includes(t));
+    })
+    .map((item: NavItem) => ({
+      page: item.title,
+      title: item.description || "",
+      href: item.href,
+    }));
 
-    const pageResults: SearchResult[] = items
-      .filter(
-        (entry): entry is NavItem => "href" in entry && entry.href !== undefined
-      )
-      .filter((item) => {
-        const text = `${item.title} ${item.description || ""} ${(item.keywords || []).join(" ")}`.toLowerCase()
-        return terms.every((t) => text.includes(t))
-      })
-      .map((item) => ({
-        page: item.title,
-        title: item.description!,
-        href: item.href,
-      }))
-
-    if (pageResults.length > 0)
-      groups.push({ category: group.title, results: pageResults })
+  if (primaryResults.length > 0) {
+    groups.push({ category: "Menu Utama", results: primaryResults });
   }
 
-  return groups
+  // 2. Cari pada kelompok tematik
+  for (const group of sourceGroups) {
+    const items = flattenNavItems(group.items);
+
+    const pageResults: SearchResult[] = items
+      .filter((item: NavItem) => {
+        const text = `${item.title} ${item.description || ""} ${(item.keywords || []).join(" ")}`.toLowerCase();
+        return terms.every((t) => text.includes(t));
+      })
+      .map((item: NavItem) => ({
+        page: item.title,
+        title: item.description || "",
+        href: item.href,
+      }));
+
+    if (pageResults.length > 0) {
+      groups.push({ category: group.title, results: pageResults });
+    }
+  }
+
+  return groups;
 }

@@ -1,7 +1,11 @@
-import { MenuPage } from "@/components/layout/index"
+import type { Metadata } from 'next';
+import { KelolaManajemenUser } from '@/features/dashboard/master/components/KelolaManajemenUser';
 
-export const metadata = { title: "User" }
+export const metadata: Metadata = {
+  title: 'Manajemen Akun Pengguna | PDAM Tirtawening',
+  description: 'Manajemen akun operator, supervisor, verifikator, dan administrator',
+};
 
-export default function Page() {
-  return <MenuPage href="/master/user" />
+export default function MasterUserPage() {
+  return <KelolaManajemenUser />;
 }

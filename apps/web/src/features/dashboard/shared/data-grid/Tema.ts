@@ -53,10 +53,13 @@ export const temaGrid = themeQuartz.withParams({
   checkboxIndeterminateBorderColor: "var(--primary)",
   checkboxIndeterminateShapeColor: "var(--primary-foreground)",
   browserColorScheme: "inherit",
+  scrollbarWidth: "thin",
+  scrollbarThumbColor: "var(--ds-gray-alpha-400)",
+  scrollbarTrackColor: "transparent",
 })
 
 export const KELAS_AREA_GRID =
   // min-h-0: AG Grid perlu ruang terukur agar bisa menggulir di panel.
-  "min-h-0 scrollbar-tipis [&_.ag-header]:border-b-0 " +
+  "min-h-0 [&_.ag-header]:border-b-0 " +
   "[&_.ag-cell]:tabular-nums " +
   "[&_.baris-terpilih]:bg-table-accent "

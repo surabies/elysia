@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { MenuPage } from '@/components/layout/page/MenuPage';
+import { KelolaPetugas } from '@/features/dashboard/master/components/KelolaPetugas';
 
 export const metadata: Metadata = {
-  title: 'Kelola Petugas',
+  title: 'Master Petugas Cater | PDAM Tirtawening',
+  description: 'Manajemen master data profil dan status petugas catat meter lapangan',
 };
 
 export default function PetugasPage() {
-  return <MenuPage href="/master/petugas" />;
+  return <KelolaPetugas />;
 }

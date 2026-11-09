@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Ikhtisar Pemakaian Turun" }
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <MenuPage href="/progres/turun" />
+  redirect('/progres/ekstrim');
 }

@@ -11,6 +11,7 @@ import {
   rekeningDrd,
   golonganTarif,
   waterMeter,
+  petugasCater,
 } from '@cater/db';
 
 export class PelangganService {
@@ -84,10 +85,16 @@ export class PelangganService {
         pakaiTagih: caterBacaMeter.pakaiTagih,
         ketCatat: caterBacaMeter.ketCatat,
         fotoMeterUrl: caterBacaMeter.fotoMeterUrl,
+        fotoRumahUrl: caterBacaMeter.fotoRumahUrl,
+        lokasiGps: caterBacaMeter.lokasiGps,
+        petugasId: caterBacaMeter.petugasId,
+        petugasNama: petugasCater.nama,
+        ruteKode: caterBacaMeter.ruteKode,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
         tglCatat: caterBacaMeter.tglCatat,
       })
       .from(caterBacaMeter)
+      .leftJoin(petugasCater, eq(caterBacaMeter.petugasId, petugasCater.id))
       .where(eq(caterBacaMeter.nolg, nolg))
       .orderBy(desc(caterBacaMeter.thbl))
       .limit(12);

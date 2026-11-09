@@ -618,7 +618,7 @@ export function VerifikasiLapangan({ role }: { role: string }) {
                   />
                 )}
               </div>
-              <div className="scrollbar-tipis min-h-0 flex-1 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-y-auto">
                 {tab === "belum" ? (
                   <PanelKosong
                     icon={ViewOffIcon}
@@ -725,9 +725,18 @@ export function VerifikasiLapangan({ role }: { role: string }) {
             pelangganId:
               modalLain.baris.pelangganId ??
               modalLain.baris.pelanggan?.id ??
+              (modalLain.baris as any).nolg ??
               null,
-            nomorLangganan: modalLain.baris.nomorLangganan ?? null,
-            periodeId: modalLain.baris.periode ?? null,
+            nomorLangganan:
+              modalLain.baris.nomorLangganan ??
+              modalLain.baris.pelanggan?.nomorLangganan ??
+              (modalLain.baris as any).nolg ??
+              null,
+            periodeId:
+              modalLain.baris.periode ??
+              ((modalLain.baris as any).thbl
+                ? Number((modalLain.baris as any).thbl)
+                : null),
           }}
           onTutup={() => setModalLain(null)}
           onSimpan={(hasil) => simpanBacaManual(modalLain.baris, hasil)}

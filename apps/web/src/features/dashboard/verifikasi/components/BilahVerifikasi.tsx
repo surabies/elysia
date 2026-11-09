@@ -17,6 +17,7 @@ import {
   Cancel01Icon,
   CalendarDaysIcon,
   Database01Icon,
+  FilterIcon,
   Route01Icon,
   Search01Icon,
   Task01Icon,
@@ -26,13 +27,17 @@ import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { cn } from "@/lib/Utilitas";
 import { Button } from "@/components/ui/button";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
   TooltipContent,
@@ -42,11 +47,9 @@ import { formatPeriode } from "@/features/public/lib/Format";
 import {
   KELAS_KONTROL_AKTIF,
 } from "../../shared/data-grid/KelasKontrol";
-import { TEMA_TOGGLE_ITEM } from "../lib/TemaVerifikasi";
 import { KotakCari } from "../../shared/data-grid/toolbar/KotakCari";
 import { FilterPilihan } from "../../shared/data-grid/toolbar/PenyaringPilihan";
 import { PenyaringTanggal } from "../../shared/data-grid/toolbar/PenyaringTanggal";
-import { TombolFilterLanjutan } from "../../shared/data-grid/toolbar/TombolPenyaringLanjutan";
 import {
   hitungKriteriaPencarian,
   ModalPencarian,
@@ -92,14 +95,13 @@ export const FILTER_AWAL: FilterVerifikasi = {
 
 export const PILIHAN_UKURAN = [50, 100, 200, 500, 1000, 2000, 5000] as const;
 
-const ID_PANEL = "panel-filter-verifikasi";
-
 export function TombolIkonVerifikasi({
   label,
   ikon,
   onClick,
   aktif = false,
   jumlah,
+  warnaBadge,
   ditekan,
   diperluas,
   hasPopup,
@@ -110,6 +112,7 @@ export function TombolIkonVerifikasi({
   onClick: () => void;
   aktif?: boolean;
   jumlah?: number;
+  warnaBadge?: string;
   ditekan?: boolean;
   diperluas?: boolean;
   hasPopup?: "dialog";
@@ -129,13 +132,18 @@ export function TombolIkonVerifikasi({
           aria-controls={controls}
           onClick={onClick}
           className={cn(
-            "relative",
+            "relative shrink-0 overflow-visible",
             aktif && KELAS_KONTROL_AKTIF,
           )}
         >
           {ikon}
           {jumlah !== undefined && jumlah > 0 && (
-            <span className="absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-label-11 font-semibold text-background tabular-nums">
+            <span
+              className={cn(
+                "absolute -top-1.5 -right-1.5 z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-background tabular-nums shadow-xs pointer-events-none",
+                warnaBadge ?? "bg-foreground"
+              )}
+            >
               {jumlah}
             </span>
           )}
@@ -250,13 +258,15 @@ export function ToolbarVerifikasi({
     filter.tanggalSampai !== "";
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-1">
-        <div className="flex flex-wrap items-center gap-1">
+    <>
+      <div className="flex w-full min-w-0 items-center justify-between gap-2 overflow-visible">
+        {/* KIRI: Kelompok Filter */}
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-visible py-1">
           <KotakCari
             nilai={cari}
             onUbah={setCari}
-            placeholder="Cari no. langganan atau nama"
+            placeholder="Cari no. langganan / nama"
+            className="w-44 max-w-56 shrink-0"
           />
 
           <FilterPilihan
@@ -294,6 +304,7 @@ export function ToolbarVerifikasi({
                 })
               }
               ringkas
+              align="end"
             />
           )}
 
@@ -331,216 +342,240 @@ export function ToolbarVerifikasi({
             </>
           )}
 
-          <div className="relative flex items-center">
-            <TombolFilterLanjutan
-              idPanel={ID_PANEL}
-              terbuka={panelBuka}
-              jumlah={jumlahLanjutan}
-              onKlik={() => setPanelBuka((b) => !b)}
-              ringkas
-            />
+          {/* Popover Filter Lanjutan: Muncul rapi ke bawah, TIDAK AKAN PERNAH menimpa elemen lain */}
+          <Popover open={panelBuka} onOpenChange={setPanelBuka}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Filter lainnya${jumlahLanjutan > 0 ? ` (${jumlahLanjutan} aktif)` : ""}`}
+                    aria-expanded={panelBuka}
+                    className={cn(
+                      "relative shrink-0 overflow-visible",
+                      (panelBuka || jumlahLanjutan > 0) && KELAS_KONTROL_AKTIF
+                    )}
+                  >
+                    <HugeiconsIcon
+                      icon={FilterIcon}
+                      strokeWidth={2}
+                      className="size-3.5 text-muted-foreground"
+                      aria-hidden
+                    />
+                    {jumlahLanjutan > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-semibold text-background tabular-nums shadow-xs pointer-events-none">
+                        {jumlahLanjutan}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Filter lainnya</TooltipContent>
+            </Tooltip>
 
-            <div
-              id={ID_PANEL}
-              aria-hidden={!panelBuka}
-              inert={!panelBuka}
-              className={cn(
-                "absolute top-0 left-full z-30 ml-1 flex w-max flex-nowrap items-center gap-1 whitespace-nowrap transition-[opacity,transform,visibility] duration-200 ease-out",
-                panelBuka
-                  ? "visible translate-x-0 opacity-100"
-                  : "invisible -translate-x-2 opacity-0",
-              )}
+            <PopoverContent
+              align="end"
+              side="bottom"
+              sideOffset={8}
+              collisionPadding={16}
+              className="w-80 rounded-xl border border-border bg-popover p-3.5 shadow-xl z-50 flex flex-col gap-3"
             >
-              {!modeBelumDibaca && (
-                <FilterPilihan
-                  filter={{
-                    param: "jenisInput",
-                    label: "Asal laporan",
-                    opsi: [
-                      { value: "PETUGAS", label: "Petugas" },
-                      { value: "KONSUMEN", label: "Mandiri" },
-                      { value: "MANUAL_SATUAN", label: "Manual Add satuan" },
-                      { value: "MANUAL_MASSAL", label: "Manual Add All" },
-                    ],
-                  }}
-                  nilai={filter.jenisInput}
-                  onUbah={(v) => set("jenisInput", v)}
-                  ikon={
-                    <HugeiconsIcon
-                      icon={Database01Icon}
-                      strokeWidth={2}
-                      className="size-3.5"
-                      aria-hidden
-                    />
-                  }
-                  ringkas
-                />
-              )}
-              {!modeBelumDibaca && (
-                <FilterPilihan
-                  filter={{
-                    param: "statusVerif",
-                    label: "Status",
-                    opsi: [
-                      { value: "SUBMITTED", label: "Menunggu" },
-                      { value: "VERIFIED_L1", label: "V1" },
-                      { value: "VERIFIED_L2", label: "V2" },
-                      { value: "APPROVED_FINAL", label: "V3" },
-                      { value: "NEED_RESURVEY", label: "Cek ulang" },
-                    ],
-                  }}
-                  nilai={filter.statusVerif}
-                  onUbah={(v) => set("statusVerif", v)}
-                  ikon={
-                    <HugeiconsIcon
-                      icon={Task01Icon}
-                      strokeWidth={2}
-                      className="size-3.5"
-                      aria-hidden
-                    />
-                  }
-                  ringkas
-                />
-              )}
-              {!modeBelumDibaca && (
-                <FilterPilihan
-                  filter={{
-                    param: "kondisi",
-                    label: "Kondisi Catat",
-                    opsi: Object.entries(LABEL_KONDISI_CATAT).map(
-                      ([value, label]) => ({ value, label }),
-                    ),
-                  }}
-                  nilai={filter.kondisi}
-                  onUbah={(v) => set("kondisi", v)}
-                  ikon={
-                    <HugeiconsIcon
-                      icon={Alert02Icon}
-                      strokeWidth={2}
-                      className="size-3.5"
-                      aria-hidden
-                    />
-                  }
-                  ringkas
-                />
-              )}
-              <FilterPilihan
-                filter={{
-                  param: "pencatatId",
-                  label: "Petugas",
-                  opsi: opsiFilterUtama.pencatats.map((p) => ({
-                    value: p.id,
-                    label: p.namaLapangan,
-                  })),
-                }}
-                nilai={filter.pencatatId}
-                onUbah={(v) => set("pencatatId", v)}
-                ikon={
-                  <HugeiconsIcon
-                    icon={UserGroupIcon}
-                    strokeWidth={2}
-                    className="size-3.5"
-                    aria-hidden
-                  />
-                }
-                ringkas
-              />
-              <FilterPilihan
-                filter={{
-                  param: "ruteId",
-                  label: "Rute",
-                  opsi: opsiFilterUtama.rutes.map((r) => ({
-                    value: r.id,
-                    label: r.kode,
-                  })),
-                }}
-                nilai={filter.ruteId}
-                onUbah={(v) => set("ruteId", v)}
-                ikon={
-                  <HugeiconsIcon
-                    icon={Route01Icon}
-                    strokeWidth={2}
-                    className="size-3.5"
-                    aria-hidden
-                  />
-                }
-                ringkas
-              />
-              {!modeBelumDibaca && (
-                <ToggleGroup
-                  type="multiple"
-                  variant="outline"
-                  size="sm"
-                  spacing={1}
-                  value={filter.hanyaAnomali ? ["anomali"] : []}
-                  onValueChange={(v) =>
-                    set("hanyaAnomali", v.includes("anomali"))
-                  }
-                  aria-label="Filter anomali"
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <ToggleGroupItem
-                        value="anomali"
-                        aria-label="Hanya anomali"
-                        className={cn(
-                          TEMA_TOGGLE_ITEM,
-                          "relative size-8 min-w-8 p-0",
-                          filter.hanyaAnomali && KELAS_KONTROL_AKTIF,
-                        )}
+              <div className="flex items-center justify-between border-b border-border/80 pb-2">
+                <div className="flex items-center gap-1.5">
+                  <HugeiconsIcon icon={FilterIcon} className="size-3.5 text-muted-foreground" />
+                  <span className="text-xs font-semibold text-foreground">Filter Lainnya</span>
+                  {jumlahLanjutan > 0 && (
+                    <span className="inline-flex items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-foreground tabular-nums">
+                      {jumlahLanjutan} aktif
+                    </span>
+                  )}
+                </div>
+                {adaFilter && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      onGanti({
+                        ...FILTER_AWAL,
+                        periode: filter.periode,
+                        pageSize: filter.pageSize,
+                      });
+                    }}
+                  >
+                    Reset Filter
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2.5 text-xs">
+                {/* Petugas */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-medium text-muted-foreground">Petugas Lapangan</label>
+                  <Select
+                    value={filter.pencatatId || "SEMUA"}
+                    onValueChange={(v) => set("pencatatId", v === "SEMUA" ? "" : v)}
+                  >
+                    <SelectTrigger size="sm" className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua Petugas" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="max-h-56 z-50">
+                      <SelectItem value="SEMUA">Semua Petugas</SelectItem>
+                      {opsiFilterUtama.pencatats.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.namaLapangan}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Rute */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-medium text-muted-foreground">Rute Baca</label>
+                  <Select
+                    value={filter.ruteId || "SEMUA"}
+                    onValueChange={(v) => set("ruteId", v === "SEMUA" ? "" : v)}
+                  >
+                    <SelectTrigger size="sm" className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua Rute" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="max-h-56 z-50">
+                      <SelectItem value="SEMUA">Semua Rute</SelectItem>
+                      {opsiFilterUtama.rutes.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.kode}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {!modeBelumDibaca && (
+                  <>
+                    {/* Status Verifikasi */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-medium text-muted-foreground">Status Verifikasi</label>
+                      <Select
+                        value={filter.statusVerif || "SEMUA"}
+                        onValueChange={(v) => set("statusVerif", v === "SEMUA" ? "" : v)}
                       >
-                        <HugeiconsIcon
-                          icon={Alert02Icon}
-                          strokeWidth={2}
-                          className="size-3.5"
-                          aria-hidden
-                        />
-                        {anomali > 0 && (
-                          <span className="absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-(--verif-error) px-1 text-label-11 font-semibold text-background tabular-nums">
-                            {anomali}
-                          </span>
-                        )}
-                      </ToggleGroupItem>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Hanya anomali: deviasi lebih dari ±{ambang}% dari bulan
-                      lalu
-                    </TooltipContent>
-                  </Tooltip>
-                </ToggleGroup>
-              )}
-              {adaFilter && (
-                <TombolIkonVerifikasi
-                  label="Bersihkan filter"
-                  onClick={() =>
-                    onGanti({
-                      ...FILTER_AWAL,
-                      periode: filter.periode,
-                      pageSize: filter.pageSize,
-                    })
-                  }
-                  ikon={
-                    <HugeiconsIcon
-                      icon={Cancel01Icon}
-                      strokeWidth={2}
-                      className="size-3.5"
-                      aria-hidden
-                    />
-                  }
+                        <SelectTrigger size="sm" className="w-full h-8 text-xs">
+                          <SelectValue placeholder="Semua Status" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" className="max-h-56 z-50">
+                          <SelectItem value="SEMUA">Semua Status</SelectItem>
+                          <SelectItem value="SUBMITTED">Menunggu</SelectItem>
+                          <SelectItem value="VERIFIED_L1">V1</SelectItem>
+                          <SelectItem value="VERIFIED_L2">V2</SelectItem>
+                          <SelectItem value="APPROVED_FINAL">V3</SelectItem>
+                          <SelectItem value="NEED_RESURVEY">Cek ulang</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Kondisi Catat */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-medium text-muted-foreground">Kondisi Catat</label>
+                      <Select
+                        value={filter.kondisi || "SEMUA"}
+                        onValueChange={(v) => set("kondisi", v === "SEMUA" ? "" : v)}
+                      >
+                        <SelectTrigger size="sm" className="w-full h-8 text-xs">
+                          <SelectValue placeholder="Semua Kondisi" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" className="max-h-56 z-50">
+                          <SelectItem value="SEMUA">Semua Kondisi</SelectItem>
+                          {Object.entries(LABEL_KONDISI_CATAT).map(([val, lbl]) => (
+                            <SelectItem key={val} value={val}>
+                              {lbl}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Asal Laporan */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-medium text-muted-foreground">Asal Laporan</label>
+                      <Select
+                        value={filter.jenisInput || "SEMUA"}
+                        onValueChange={(v) => set("jenisInput", v === "SEMUA" ? "" : v)}
+                      >
+                        <SelectTrigger size="sm" className="w-full h-8 text-xs">
+                          <SelectValue placeholder="Semua Asal" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" className="max-h-56 z-50">
+                          <SelectItem value="SEMUA">Semua Asal</SelectItem>
+                          <SelectItem value="PETUGAS">Petugas</SelectItem>
+                          <SelectItem value="KONSUMEN">Mandiri</SelectItem>
+                          <SelectItem value="MANUAL_SATUAN">Manual Add satuan</SelectItem>
+                          <SelectItem value="MANUAL_MASSAL">Manual Add All</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Quick Toggle Anomali: Diposisikan di paling kanan setelah filter lainnya */}
+          {!modeBelumDibaca && (
+            <TombolIkonVerifikasi
+              label={`Hanya anomali: deviasi lebih dari ±${ambang}% dari bulan lalu`}
+              onClick={() => set("hanyaAnomali", !filter.hanyaAnomali)}
+              aktif={filter.hanyaAnomali}
+              jumlah={anomali > 0 ? anomali : undefined}
+              warnaBadge="bg-(--verif-error)"
+              ikon={
+                <HugeiconsIcon
+                  icon={Alert02Icon}
+                  strokeWidth={2}
+                  className="size-3.5"
+                  aria-hidden
                 />
-              )}
-            </div>
-          </div>
+              }
+            />
+          )}
+
+          {/* Quick Clear Filter jika ada filter aktif */}
+          {adaFilter && (
+            <TombolIkonVerifikasi
+              label="Bersihkan semua filter"
+              onClick={() =>
+                onGanti({
+                  ...FILTER_AWAL,
+                  periode: filter.periode,
+                  pageSize: filter.pageSize,
+                })
+              }
+              ikon={
+                <HugeiconsIcon
+                  icon={Cancel01Icon}
+                  strokeWidth={2}
+                  className="size-3.5"
+                  aria-hidden
+                />
+              }
+            />
+          )}
         </div>
 
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
-          <span className="text-label-12 text-muted-foreground tabular-nums">
+        {/* Separator Antar Kolom */}
+        <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" />
+
+        {/* KANAN: Status Baris, Baris per Halaman & Kontrol Tampilan */}
+        <div className="flex shrink-0 items-center justify-end gap-1.5">
+          <span className="text-label-12 text-muted-foreground tabular-nums whitespace-nowrap">
             {memuat
               ? "Memuat…"
               : `${jumlahTampil.toLocaleString("id-ID")} dari ${jumlahTotal.toLocaleString("id-ID")}`}
           </span>
-          {/* Bukan FilterPilihan: ia selalu menyisipkan item "Semua" yang untuk
-              ukuran halaman tidak bermakna. */}
+
           <Select
             value={String(filter.pageSize)}
             onValueChange={(v) => set("pageSize", Number(v))}
@@ -548,10 +583,11 @@ export function ToolbarVerifikasi({
             <SelectTrigger
               size="sm"
               aria-label="Baris per halaman"
+              className="w-auto h-8 text-xs shrink-0"
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent position="popper" align="end">
+            <SelectContent position="popper" align="end" className="z-50">
               {PILIHAN_UKURAN.map((n) => (
                 <SelectItem key={n} value={String(n)}>
                   {n.toLocaleString("id-ID")} baris
@@ -559,6 +595,10 @@ export function ToolbarVerifikasi({
               ))}
             </SelectContent>
           </Select>
+
+          {/* Separator Antar Kontrol Tampilan */}
+          <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" />
+
           {aksiKanan}
         </div>
       </div>
@@ -573,6 +613,6 @@ export function ToolbarVerifikasi({
           onCari={(kriteria) => onPencarianLanjutan(kriteria)}
         />
       )}
-    </div>
+    </>
   );
 }

@@ -1,115 +1,66 @@
 // components/layout/navigation/sidebar/lib/Icons.ts
 // Sistem ikon sidebar yang konsisten, berorientasi semantik domain PDAM / Billing / Meter.
-// 100% konsisten: stroke-width 1.5, size 16x16, geometri presisi Geist / Lucide.
-// ZERO DUPLICATES across all 70 modules!
+// 100% konsisten: stroke-width 1.5, size 16x16, geometri presisi.
+// ZERO DUPLICATES across all navigation modules!
 
 import type * as React from "react";
 import type { SidebarIconComponent } from "../NavRow";
 import {
   GeistProjects,
   GeistAnalytics,
-  GeistSupport,
-  GeistStorage,
-  GeistLogs,
-  GeistNetworking,
-  GeistBilling,
-  GeistSecurity,
-  GeistWorkflows,
-  GeistInfrastructure,
-  GeistSettings,
 } from "./GeistIcons";
 
 import {
-  // Master
-  AlertTriangle,
+  // Group Icons (6 Core Enterprise Groups)
+  Activity,
   ShieldCheck,
-  UserCog,
-  UserCheck,
-  MapPin,
-  ListOrdered,
-  Merge,
-  ArrowRightLeft,
-  History,
-
-  // Pengolahan Data
-  Gauge,
-  Contact,
-  FilePlus2,
-  Phone,
-  Tags,
-  FilePenLine,
-  CopyPlus,
+  Users,
   Calculator,
-  Eye,
-  Smartphone,
+  FileSpreadsheet,
+  Database,
 
-  // Peta
-  Compass,
-
-  // Progress
+  // Submenu: Monitoring
   LineChart,
+  MapPinned,
   Building2,
-  ClipboardCheck,
-  Percent,
   TrendingUp,
-  TrendingDown,
-  CircleSlash,
   Camera,
 
-  // Laporan
-  Receipt,
-  UsersRound,
+  // Submenu: Verifikasi
+  ClipboardCheck,
+  Smartphone,
+  RefreshCw,
+  FilePenLine,
+  PenTool,
+
+  // Submenu: Pelayanan
+  LifeBuoy,
+  Contact,
   GitFork,
-  CalendarRange,
-  FileSpreadsheet,
-  AlertCircle,
-  Award,
-  BookUser,
-  Hourglass,
-  Binary,
-  Ban,
-  Milestone,
-  FileClock,
-  Image,
-  Activity,
 
-  // Tool Tutup Bulan
-  ClipboardEdit,
-  KeyRound,
-  Layers,
-  Send,
+  // Submenu: Tutup Bulan
   Lock,
-  GitCompare,
-  CalendarPlus,
-  UploadCloud,
-  UserPlus,
-  UserCheck2,
   Scale,
-  GaugeCircle,
 
-  // Tools
-  Megaphone,
-  DownloadCloud,
-  FileDown,
-  Cpu,
-  FileImage,
-  Images,
-  DatabaseBackup,
-  ScrollText,
-  ShieldAlert,
-  Droplets,
-  FolderArchive,
+  // Submenu: Laporan
+  Receipt,
+  Coins,
+  AlertTriangle,
+  Award,
+  Binary,
 
-  // Sync
-  Share2,
-  SendHorizontal,
-  FolderSync,
-  CalendarSync,
-
-  // Secondary utilities
-  HelpCircle,
-  Bell,
+  // Submenu: Master Data
+  UserCheck,
+  Navigation,
+  ListOrdered,
   Sliders,
+  UserCog,
+  KeyRound,
+
+  // Fallbacks & Secondary
+  FolderDot,
+  Compass,
+  Settings,
 } from "lucide-react";
 
 // ----------------------------------------------------------------------------
@@ -118,7 +69,11 @@ import {
 export const PRIMARY_ICONS: Record<string, SidebarIconComponent> = {
   "/dashboard": GeistProjects,
   "/analytics": GeistAnalytics,
-  "/pengaduan": GeistSupport,
+  "/places": Compass,
+  "/pelanggan": Users,
+  "/info-pelanggan": Contact,
+  "/tools-tutup/monitoring-tutup-bulan": Lock,
+  "/pengaturan": Settings,
 };
 
 export function getPrimaryIcon(href: string): SidebarIconComponent {
@@ -126,147 +81,124 @@ export function getPrimaryIcon(href: string): SidebarIconComponent {
 }
 
 // ----------------------------------------------------------------------------
-// 2. IKON GRUP / DIREKTORAT (8 Grup Utama)
+// 2. IKON GRUP UTAMA (6 Core Enterprise Groups - ZERO DUPLICATES)
 // ----------------------------------------------------------------------------
 export const GROUP_ICONS: Record<string, SidebarIconComponent> = {
-  master: GeistStorage,
-  "pengolahan-data": GeistLogs,
-  peta: GeistNetworking,
-  progres: GeistAnalytics,
-  progress: GeistAnalytics,
-  laporan: GeistBilling,
-  "tool-tutup-bulan": GeistSecurity,
-  tools: GeistWorkflows,
-  "sync-tutup-bulan": GeistInfrastructure,
-  pengaturan: GeistSettings,
-  bantuan: GeistSupport,
+  monitoring: Activity,
+  verifikasi: ShieldCheck,
+  pelayanan: Users,
+  "tutup-bulan": Calculator,
+  laporan: FileSpreadsheet,
+  master: Database,
+
+  // Alias kompatibilitas
+  progres: Activity,
+  billing: Calculator,
+  "pengolahan-data": ShieldCheck,
+  "tool-tutup-bulan": Calculator,
 };
 
-export const FALLBACK_GROUP_ICON: SidebarIconComponent = GeistProjects;
+export const FALLBACK_GROUP_ICON: SidebarIconComponent = FolderDot;
 
 export function getGroupIcon(groupId: string): SidebarIconComponent {
   return GROUP_ICONS[groupId] ?? FALLBACK_GROUP_ICON;
 }
 
 // ----------------------------------------------------------------------------
-// 3. IKON SUBMENU (70 Modul: 100% Unik & Sangat Relevan Tanpa Duplikat)
+// 3. IKON SUBMENU (Semua Modul: 100% Unik & Semantik Tanpa Duplikat)
 // ----------------------------------------------------------------------------
 const ITEM_ICONS: Record<string, SidebarIconComponent> = {
-  // === 1. MASTER ===
-  kelainan: AlertTriangle,
-  "otorisasi menu": ShieldCheck,
-  user: UserCog,
-  pengguna: UserCog,
-  petugas: UserCheck,
-  "pemetaan petugas": MapPin,
-  "pengurutan rute petugas": ListOrdered,
-  "pengurutan rute": ListOrdered,
-  "penggabungan rute": Merge,
-  "pindah rute": ArrowRightLeft,
-  "pindah rute monitoring": History,
+  // === 1. MONITORING ===
+  "progres cater": LineChart,
+  "progres pembacaan harian": LineChart,
+  "peta spasial": MapPinned,
+  "peta monitoring spasial": MapPinned,
+  "places": MapPinned,
+  "progres wilayah": Building2,
+  "capaian per wilayah": Building2,
+  "anomali kubikasi": TrendingUp,
+  "pemakaian ekstrim & anomali": TrendingUp,
+  "ikhtisar pemakaian ekstrim": TrendingUp,
+  "cek foto": Camera,
+  "audit bukti foto meter": Camera,
+  "cek foto petugas": Camera,
 
-  // === 2. PENGOLAHAN DATA ===
-  "baca meter chn": Gauge,
-  "info pelanggan": Contact,
-  "mutasi pb-pk": FilePlus2,
-  "mutasi pbpk": FilePlus2,
-  "no hp pel": Phone,
-  "no hp pelanggan": Phone,
-  "pindah jenis pel": Tags,
-  "pindah jenis pelanggan": Tags,
-  "manual add": FilePenLine,
-  "manual add all": CopyPlus,
-  "hitung rata-rata": Calculator,
-  "cek foto petugas": Eye,
+  // === 2. VERIFIKASI ===
+  "baca petugas": ClipboardCheck,
+  "verifikasi petugas lapangan": ClipboardCheck,
+  "verifikasi baca petugas": ClipboardCheck,
+  "baca meter chn": ClipboardCheck,
+  "lapor mandiri": Smartphone,
+  "verifikasi lapor mandiri warga": Smartphone,
+  "verifikasi baca pelanggan": Smartphone,
   "baca meter mandiri": Smartphone,
   "stand konsumen": Smartphone,
+  "ganti meter": RefreshCw,
+  "penggantian meter air (gwm)": RefreshCw,
+  "koreksi stand": FilePenLine,
+  "koreksi kubikasi & reklasifikasi": FilePenLine,
+  "koreksi kubikasi": FilePenLine,
+  "manual add": PenTool,
+  "input stand manual": PenTool,
 
-  // === 3. PETA (MAPPING) ===
-  "pemetaan pelanggan": Compass,
+  // === 3. PELAYANAN ===
+  "pengaduan air": LifeBuoy,
+  "monitoring pengaduan air": LifeBuoy,
+  "pengaduan": LifeBuoy,
+  "data pelanggan": Contact,
+  "direktori master pelanggan": Contact,
+  "info pelanggan": Contact,
+  "pelanggan": Contact,
+  "mutasi pelanggan": GitFork,
+  "mutasi sambungan & pbpk": GitFork,
+  "mutasi pb-pk": GitFork,
+  "mutasi": GitFork,
 
-  // === 4. PROGRESS ===
-  "grafik pelanggan": LineChart,
-  "progress per wilayah": Building2,
-  "progress per cater": ClipboardCheck,
-  "progres pencatat": ClipboardCheck,
-  "presentase koreksi": Percent,
-  "ikhtisar pemakaian ekstrim": TrendingUp,
-  "ikhtisar pemakaian turun": TrendingDown,
-  "ikhtisar pemakaian 0 (nol)": CircleSlash,
-  "ikhtisar pemakaian 0": CircleSlash,
-  "hasil foto petugas": Camera,
-
-  // === 5. LAPORAN (REPORTS) ===
-  "laporan drd": Receipt,
-  "lap. mutasi pel": UsersRound,
-  "lap mutasi pel": UsersRound,
-  "lap. mutasi pb-pk": GitFork,
-  "lap mutasi pb-pk": GitFork,
-  "lap. periode cater": CalendarRange,
-  "lap periode cater": CalendarRange,
-  "lap. data meter": FileSpreadsheet,
-  "lap data meter": FileSpreadsheet,
-  "lap. kelainan meter": AlertCircle,
-  "lap kelainan meter": AlertCircle,
-  "lap. evaluasi": Award,
-  "lap evaluasi": Award,
-  "lap. pelanggan": BookUser,
-  "lap pelanggan": BookUser,
-  "lap. selisih hari": Hourglass,
-  "lap selisih hari": Hourglass,
-  "lap. data st. awal & akhir": Binary,
-  "lap data st. awal & akhir": Binary,
-  "lap. data st. 0 (nol)": Ban,
-  "lap data st. 0 (nol)": Ban,
-  "lap. history": Milestone,
-  "lap history": Milestone,
-  "lap. perubahan pel": FileClock,
-  "lap perubahan pel": FileClock,
-  "lap. data dan foto": Image,
-  "lap data dan foto": Image,
-  "lap. monitoring kubikasi koreksi": Activity,
-  "lap monitoring kubikasi koreksi": Activity,
-
-  // === 6. TOOL TUTUP BULAN ===
-  pbpk: ClipboardEdit,
-  "stand angkat": KeyRound,
-  "update zonasi": Layers,
-  "posting datameter": Send,
-  "create closed drd": Lock,
-  "create perbandingan": GitCompare,
-  "create bulan baru": CalendarPlus,
-  "upload master pelanggan": UploadCloud,
-  "sync pelanggan baru": UserPlus,
-  "update data pelanggan": UserCheck2,
+  // === 4. TUTUP BULAN ===
+  "closing periode": Lock,
+  "konsol tutup periode (closing)": Lock,
+  "monitoring tutup bulan": Lock,
+  "monitoring ttp bulan": Lock,
+  "cek selisih": Scale,
+  "rekonsiliasi unbilled & selisih": Scale,
   "cek selisih pelanggan": Scale,
-  "monitoring ttp bulan": GaugeCircle,
-  "monitoring tutup bulan": GaugeCircle,
 
-  // === 7. TOOLS & INTEGRASI ===
-  "running text": Megaphone,
-  "import st angkat": DownloadCloud,
-  "import stand angkat": DownloadCloud,
-  "import pb pk": FileDown,
-  "import pbpk": FileDown,
-  "proses pbpk": Cpu,
-  "import backup photo": FileImage,
-  "import backup photo gwm": Images,
-  "import backup data": DatabaseBackup,
-  "import data spt": ScrollText,
-  "import data anomali": ShieldAlert,
-  "import data gwm": Droplets,
-  "import tutup": FolderArchive,
+  // === 5. LAPORAN ===
+  "laporan drd": Receipt,
+  "laporan drd resmi": Receipt,
+  "rekap koreksi": Coins,
+  "monitoring kubikasi koreksi": Coins,
+  "lap. monitoring kubikasi koreksi": Coins,
+  "kelainan meter": AlertTriangle,
+  "laporan kelainan fisik meter": AlertTriangle,
+  "lap. kelainan meter": AlertTriangle,
+  "kinerja petugas": Award,
+  "evaluasi produktivitas petugas": Award,
+  "lap. evaluasi": Award,
+  "stand awal & akhir": Binary,
+  "komparasi stand awal & akhir": Binary,
+  "lap. data st. awal & akhir": Binary,
 
-  // === 8. SYNC TUTUP BULAN ===
-  "sync (1) kirim mutasi": Share2,
-  "sync (2) kirim datameter": SendHorizontal,
-  "sync (3) import sti": FolderSync,
-  "sync (4) bulan baru": CalendarSync,
-
-  // === 9. BANTUAN & PENGATURAN ===
-  notifikasi: Bell,
-  "panduan pengguna": HelpCircle,
-  pengaturan: Sliders,
+  // === 6. MASTER DATA ===
+  "petugas cater": UserCheck,
+  "master petugas cater": UserCheck,
+  "petugas": UserCheck,
+  "pemetaan rute": Navigation,
+  "pemetaan rute dpm": Navigation,
+  "pemetaan petugas": Navigation,
+  "urutan rute": ListOrdered,
+  "pengurutan sekuensial rute": ListOrdered,
+  "pengurutan rute petugas": ListOrdered,
+  "kode kelainan": Sliders,
+  "master kelainan meter": Sliders,
+  "kelainan": Sliders,
+  "manajemen user": UserCog,
+  "manajemen pengguna sistem": UserCog,
+  "user": UserCog,
+  "pengguna": UserCog,
+  "hak akses": KeyRound,
+  "otorisasi & hak akses (rbac)": KeyRound,
+  "otorisasi menu": KeyRound,
 };
 
 export function getItemIcon(
