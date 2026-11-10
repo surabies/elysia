@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { MatriksHakAkses } from '@/features/dashboard/master/components/MatriksHakAkses';
+import { MatriksHakAkses } from '@/features/dashboard/master';
 
 export const metadata: Metadata = {
   title: 'Matriks Hak Akses & Otorisasi RBAC | PDAM Tirtawening',

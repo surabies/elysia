@@ -12,7 +12,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import { GroupDetail } from "./sidebar/GroupDetail";
 import { GroupList } from "./sidebar/GroupList";
 import { PrimaryNav } from "./sidebar/PrimaryNav";
@@ -23,17 +23,18 @@ import { useSidebarDrilldown } from "./sidebar/hooks/UseSidebarDrilldown";
 import {
   standaloneTopNav,
   standaloneMidNav,
-  standaloneClosingNav,
   standaloneBottomNav,
+  operasionalGroupIds,
+  billingMasterGroupIds,
   navGroups,
-} from "@/config/Navigasi";
+} from "@/config/navigasi";
 
 // Kelompok grup tematik
-const operasionalGroups = navGroups.filter(
-  (g) => g.id === "monitoring" || g.id === "verifikasi"
+const operasionalGroups = navGroups.filter((g) =>
+  operasionalGroupIds.includes(g.id)
 );
-const billingMasterGroups = navGroups.filter(
-  (g) => g.id === "laporan" || g.id === "master"
+const billingMasterGroups = navGroups.filter((g) =>
+  billingMasterGroupIds.includes(g.id)
 );
 
 export function SidebarNav({
@@ -107,7 +108,7 @@ export function SidebarNav({
                 <RowSeparator />
               </div>
 
-              {/* 4. Kelompok Grup Billing & Master */}
+              {/* 4. Kelompok Grup Tutup Bulan, Laporan & Master */}
               <GroupList
                 groups={billingMasterGroups}
                 activeGroupId={activeGroupId}
@@ -118,14 +119,7 @@ export function SidebarNav({
                 <RowSeparator />
               </div>
 
-              {/* 5. Aksi Puncak Bulanan: Closing Periode (Standalone) */}
-              <PrimaryNav items={standaloneClosingNav} />
-
-              <div className="py-1.5">
-                <RowSeparator />
-              </div>
-
-              {/* 6. Footer Paling Bawah: Pengaturan & Preferensi Sistem (Standalone) */}
+              {/* 5. Footer Paling Bawah: Pengaturan & Preferensi Sistem (Standalone) */}
               <PrimaryNav items={standaloneBottomNav} />
             </div>
           </Slide>

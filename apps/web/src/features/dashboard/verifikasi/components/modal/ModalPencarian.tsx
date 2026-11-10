@@ -9,19 +9,19 @@
 // datanya dari server (wilayah, zonasi, petugas, …) diberikan lewat prop `opsi`
 // dan kuncinya sama dengan `kunci` kriteria; selama belum ada, dropdown mati.
 import * as React from "react";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
 import { PilihSatu, type OpsiPilihan } from "../DialogVerifikasi";
 import { KerangkaModal } from "../KerangkaModal";
 import {
   saringOpsiFilterPencarian,
   sesuaikanFilterPencarian,
   type OpsiFilterPencarian,
-} from "../../lib/PenyaringanRelasi";
+} from "../../lib/penyaringan-relasi";
 
 export type KriteriaPencarian = Record<string, string>;
 export type OpsiPencarian = OpsiFilterPencarian;

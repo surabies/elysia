@@ -17,7 +17,7 @@
 
 import { notFound } from "next/navigation"
 
-import { findNavItem } from "@/config/Navigasi"
+import { findNavItem } from "@/config/navigasi"
 import { PageContainer } from "./PageContainer"
 
 // Label kartu ringkasan placeholder. Ubah di sini jika ingin mengganti isi.
@@ -40,9 +40,9 @@ export function MenuPage({
   return (
     <PageContainer className={className}>
       {/* Banner status pengembangan */}
-      <div className="mb-6 border border-dashed border-sky-300/60 bg-sky-400/10 p-4 text-sm/6 text-sky-900 sm:mb-8 sm:p-5 dark:border-sky-300/30 dark:text-sky-200">
-        <p className="font-medium">Halaman dalam tahap pengembangan</p>
-        <p className="mt-1">
+      <div className="mb-6 rounded-lg border border-(--ds-blue-300) bg-(--ds-blue-100) p-4 text-copy-13 text-(--ds-blue-900) sm:mb-6 sm:p-5 dark:border-(--ds-blue-400) dark:bg-(--ds-blue-100) dark:text-(--ds-blue-900)">
+        <p className="text-label-14 font-semibold">Halaman dalam tahap pengembangan</p>
+        <p className="mt-1 text-copy-13">
           Kerangka modul sudah tersedia. Konten dan integrasi data akan
           ditambahkan pada tahap berikutnya.
         </p>
@@ -50,28 +50,28 @@ export function MenuPage({
 
       {/* Kartu ringkasan (placeholder; "—" = data belum tersedia) */}
       <section aria-label={`Ringkasan ${item.title}`}>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {SUMMARY_LABELS.map((label) => (
             <div
               key={label}
-              className="min-w-0 rounded-lg border border-border bg-card p-4 sm:p-5"
+              className="min-w-0 rounded-lg border border-border bg-card p-5"
             >
-              <p className="text-sm text-muted-foreground">{label}</p>
-              <p className="mt-2 text-2xl font-medium">&mdash;</p>
+              <p className="text-label-13 text-muted-foreground">{label}</p>
+              <p className="mt-2 font-mono text-heading-24 tabular-nums">&mdash;</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Area data (placeholder; ganti dengan tabel/grafik modul) */}
-      <section className="mt-5 rounded-lg border border-border bg-card p-4 sm:mt-6 sm:p-5">
-        <h2 className="font-medium">Data {item.title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <section className="mt-5 rounded-lg border border-border bg-card p-5 sm:mt-6">
+        <h2 className="text-heading-16 text-foreground">Data {item.title}</h2>
+        <p className="mt-1 text-copy-13 text-muted-foreground">
           Data untuk modul ini akan ditampilkan di sini.
         </p>
         <div
           aria-hidden="true"
-          className="mt-4 h-48 rounded-md bg-muted/60 sm:h-64"
+          className="mt-4 h-48 rounded-md border border-dashed border-border bg-(--ds-gray-100) sm:h-64"
         />
       </section>
     </PageContainer>

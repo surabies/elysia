@@ -13,7 +13,7 @@ import { GeistSearch } from "./lib/GeistIcons"
 import { SearchDialog } from "@/components/layout/search/SearchDialog"
 import { FOCUS_RING } from "./lib/Styles"
 import { useIsClient } from "./hooks/UseIsClient"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 export function SidebarSearch() {
   const [open, setOpen] = React.useState(false)
@@ -69,7 +69,7 @@ export function SidebarSearch() {
         onClick={() => setOpen(true)}
         className={cn(
           "relative flex h-9 w-full items-center rounded-md border border-border bg-card p-0 text-left transition-colors cursor-pointer select-none overflow-hidden",
-          "hover:border-neutral-400 dark:hover:border-neutral-600",
+          "hover:border-(--ds-gray-500)",
           FOCUS_RING
         )}
       >

@@ -7,7 +7,7 @@ import { useRbac } from "@/components/layout/shell/RbacContext";
 import { getGroupIcon } from "./lib/Icons";
 import { NavRowContent, RowChevron } from "./NavRow";
 import { navRowClass } from "./lib/Styles";
-import type { NavGroup } from "@/config/Navigasi";
+import type { NavGroup } from "@/config/navigasi";
 
 type Props = {
   activeGroupId?: string;

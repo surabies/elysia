@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { KelolaKodeKelainan } from '@/features/dashboard/master/components/KelolaKodeKelainan';
+import { KelolaKodeKelainan } from '@/features/dashboard/master';
 
 export const metadata: Metadata = {
   title: 'Master Kode Kelainan Meter | PDAM Tirtawening',

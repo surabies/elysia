@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { MonitoringKoreksiStand } from '@/features/dashboard/progres/components/MonitoringKoreksiStand';
+import { MonitoringKoreksiStand } from '@/features/dashboard/progres';
 
 export const metadata: Metadata = {
   title: 'Monitoring Koreksi Stand & Audit Trail | Cater PDAM',

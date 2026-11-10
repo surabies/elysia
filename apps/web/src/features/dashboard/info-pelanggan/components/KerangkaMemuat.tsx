@@ -1,5 +1,5 @@
 // KerangkaMemuat menampilkan placeholder selama data dimuat.
-import { PanelDasbor } from "../../shared/PanelDasbor";
+import { PanelDasbor } from "@/features/dashboard/shared";
 
 function Blok({ className }: { className: string }) {
   return <div className={`animate-pulse rounded-lg bg-muted ${className}`} />;

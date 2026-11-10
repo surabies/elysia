@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { CekSelisihPelanggan } from '@/features/dashboard/closing/components/CekSelisihPelanggan';
+import { CekSelisihPelanggan } from '@/features/dashboard/closing';
 
 export const metadata: Metadata = {
   title: 'Cek Selisih Pelanggan | Tutup Bulan Cater PDAM',

@@ -30,6 +30,7 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table';
+import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -167,27 +168,27 @@ export function LaporanMonitoringKoreksi() {
   }, [data, search, filterSelisih]);
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] w-full bg-background p-6 space-y-6">
+    <PageContainer className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
+          <h1 className="text-heading-20 text-foreground">
             Laporan Monitoring Kubikasi Koreksi
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-copy-13 text-muted-foreground mt-1">
             Audit trail rekapitulasi penyesuaian angka stand meter dan selisih kubikasi pemakaian air
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-card border rounded-lg px-3 py-1.5 shadow-xs text-xs">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+          <div className="flex items-center gap-2 bg-card border border-border rounded-md px-3 py-1 text-label-12">
+            <Calendar className="size-3.5 text-muted-foreground" />
             <span className="text-muted-foreground">Periode:</span>
             <input
               type="text"
               value={periode}
               onChange={(e) => setPeriode(e.target.value)}
-              className="w-16 font-mono font-bold bg-transparent border-none text-foreground focus:outline-none"
+              className="w-16 font-mono font-semibold bg-transparent border-none text-foreground focus:outline-none"
             />
           </div>
 
@@ -196,9 +197,8 @@ export function LaporanMonitoringKoreksi() {
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="h-8 text-xs gap-1.5"
           >
-            <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+            <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
             Segarkan
           </Button>
 
@@ -206,64 +206,63 @@ export function LaporanMonitoringKoreksi() {
             size="sm"
             onClick={exportCsv}
             disabled={loading || !data?.items.length}
-            className="h-8 text-xs gap-1.5 font-semibold"
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="size-3.5" />
             Ekspor CSV
           </Button>
         </div>
       </div>
 
       {/* KPI Stat Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4 border bg-card/60 backdrop-blur">
-          <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center justify-between text-label-12 text-muted-foreground">
             <span>Total Laporan Dikoreksi</span>
-            <FileText className="h-4 w-4 text-primary" />
+            <FileText className="size-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-foreground">
+          <div className="mt-2 text-heading-24 font-mono tabular-nums text-foreground">
             {data?.summary.totalKoreksi ?? 0}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Sambungan Langganan</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Sambungan Langganan</p>
         </Card>
 
-        <Card className="p-4 border bg-card/60 backdrop-blur">
-          <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center justify-between text-label-12 text-muted-foreground">
             <span>Koreksi Tambah (+)</span>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <TrendingUp className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-emerald-600">
+          <div className="mt-2 text-heading-24 font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
             +{data?.summary.totalM3Tambah.toLocaleString('id-ID') ?? 0} m³
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Penyesuaian stand bertambah</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Penyesuaian stand bertambah</p>
         </Card>
 
-        <Card className="p-4 border bg-card/60 backdrop-blur">
-          <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center justify-between text-label-12 text-muted-foreground">
             <span>Koreksi Kurang (-)</span>
-            <TrendingDown className="h-4 w-4 text-amber-600" />
+            <TrendingDown className="size-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-amber-600">
+          <div className="mt-2 text-heading-24 font-mono tabular-nums text-amber-600 dark:text-amber-400">
             -{data?.summary.totalM3Kurang.toLocaleString('id-ID') ?? 0} m³
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Penyesuaian stand berkurang</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Penyesuaian stand berkurang</p>
         </Card>
 
-        <Card className="p-4 border bg-card/60 backdrop-blur">
-          <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center justify-between text-label-12 text-muted-foreground">
             <span>Netto Dampak Kubikasi</span>
-            <Scale className="h-4 w-4 text-blue-600" />
+            <Scale className="size-4 text-(--ds-blue-900)" />
           </div>
           <div
             className={cn(
-              'mt-2 text-2xl font-bold font-mono',
-              (data?.summary.nettoM3 ?? 0) >= 0 ? 'text-blue-600' : 'text-rose-600'
+              'mt-2 text-heading-24 font-mono tabular-nums',
+              (data?.summary.nettoM3 ?? 0) >= 0 ? 'text-(--ds-blue-900)' : 'text-rose-600 dark:text-rose-400'
             )}
           >
             {(data?.summary.nettoM3 ?? 0) >= 0 ? '+' : ''}
             {data?.summary.nettoM3.toLocaleString('id-ID') ?? 0} m³
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Total selisih volume air DRD</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Total selisih volume air DRD</p>
         </Card>
       </div>
 
@@ -271,56 +270,47 @@ export function LaporanMonitoringKoreksi() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="relative w-72">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
             <Input
+              size="sm"
               type="text"
               placeholder="Cari NOLG, nama pelanggan, alasan..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-8 text-xs bg-card"
+              className="pl-8 bg-card"
             />
           </div>
 
-          <div className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-xs">
-            <button
+          <div className="inline-flex rounded-md border border-border bg-(--ds-gray-100) p-0.5">
+            <Button
+              size="xs"
+              variant={filterSelisih === 'ALL' ? 'secondary' : 'ghost'}
               onClick={() => setFilterSelisih('ALL')}
-              className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
-                filterSelisih === 'ALL'
-                  ? 'bg-background text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
             >
               Semua ({data?.items.length ?? 0})
-            </button>
-            <button
+            </Button>
+            <Button
+              size="xs"
+              variant={filterSelisih === 'PLUS' ? 'secondary' : 'ghost'}
               onClick={() => setFilterSelisih('PLUS')}
-              className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
-                filterSelisih === 'PLUS'
-                  ? 'bg-emerald-500/10 text-emerald-600 font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-emerald-600'
-              )}
+              className="text-emerald-600 dark:text-emerald-400"
             >
               Koreksi Tambah (+)
-            </button>
-            <button
+            </Button>
+            <Button
+              size="xs"
+              variant={filterSelisih === 'MINUS' ? 'secondary' : 'ghost'}
               onClick={() => setFilterSelisih('MINUS')}
-              className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
-                filterSelisih === 'MINUS'
-                  ? 'bg-amber-500/10 text-amber-600 font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-amber-600'
-              )}
+              className="text-amber-600 dark:text-amber-400"
             >
               Koreksi Kurang (-)
-            </button>
+            </Button>
           </div>
         </div>
 
         <Card className="border-border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/50">
+            <TableHeader>
               <TableRow>
                 <TableHead>NOLG / Pelanggan</TableHead>
                 <TableHead>Tarif / Rute</TableHead>
@@ -339,38 +329,38 @@ export function LaporanMonitoringKoreksi() {
               {filteredItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium text-foreground">
-                    <div className="font-mono font-bold text-xs">{item.nolg}</div>
+                    <div className="font-mono text-label-12">{item.nolg}</div>
                     <div className="text-foreground truncate max-w-[180px]">{item.nama}</div>
                   </TableCell>
-                  <TableCell className="font-mono text-[11px] text-muted-foreground">
+                  <TableCell className="font-mono text-label-12 text-muted-foreground">
                     <div>{item.tarifKode || '—'}</div>
-                    <div className="text-[10px]">{item.ruteKode || '—'}</div>
+                    <div className="text-label-11">{item.ruteKode || '—'}</div>
                   </TableCell>
-                  <TableCell className="text-right font-mono text-muted-foreground">
+                  <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                     {item.stml}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-muted-foreground">
+                  <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                     {item.stmaAwal}
                   </TableCell>
-                  <TableCell className="text-right font-mono font-bold text-foreground">
+                  <TableCell className="text-right font-mono tabular-nums font-medium text-foreground">
                     {item.stmaRevisi}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-muted-foreground">
+                  <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                     {item.pakaiM3Awal} m³
                   </TableCell>
-                  <TableCell className="text-right font-mono font-bold text-foreground">
+                  <TableCell className="text-right font-mono tabular-nums font-medium text-foreground">
                     {item.pakaiM3Revisi} m³
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge
                       variant="outline"
                       className={cn(
-                        'text-[10px] font-mono font-bold',
+                        'font-mono',
                         item.selisihM3 > 0
-                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-300'
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400'
                           : item.selisihM3 < 0
-                          ? 'bg-amber-500/10 text-amber-600 border-amber-300'
-                          : 'bg-muted text-muted-foreground'
+                          ? 'bg-amber-500/10 text-amber-600 border-amber-500/25 dark:text-amber-400'
+                          : 'bg-(--ds-gray-100) text-muted-foreground'
                       )}
                     >
                       {item.selisihM3 > 0 ? `+${item.selisihM3}` : item.selisihM3} m³
@@ -380,11 +370,11 @@ export function LaporanMonitoringKoreksi() {
                     <div className="font-medium text-foreground line-clamp-1">
                       {item.alasanKoreksi || 'Koreksi Stand Meter'}
                     </div>
-                    <div className="text-[10px] text-muted-foreground line-clamp-1">
+                    <div className="text-copy-12 text-muted-foreground line-clamp-1">
                       {item.catatanAudit || '—'}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground font-mono text-[11px]">
+                  <TableCell className="text-right text-muted-foreground font-mono text-label-12">
                     {new Date(item.updatedAt).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'short',
@@ -395,10 +385,10 @@ export function LaporanMonitoringKoreksi() {
                   <TableCell className="text-right">
                     <Link
                       href={`/verifikasi/baca-petugas?q=${item.nolg}`}
-                      className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                      className="inline-flex items-center gap-1 text-label-12 text-(--ds-blue-900) hover:underline"
                     >
                       Verifikasi
-                      <ArrowUpRight className="h-3 w-3" />
+                      <ArrowUpRight className="size-3" />
                     </Link>
                   </TableCell>
                 </TableRow>
@@ -407,6 +397,6 @@ export function LaporanMonitoringKoreksi() {
           </Table>
         </Card>
       </div>
-    </div>
+    </PageContainer>
   );
 }

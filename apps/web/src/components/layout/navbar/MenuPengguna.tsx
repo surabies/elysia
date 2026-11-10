@@ -40,7 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 import { signOut as clientSignOut } from "@/lib/auth-client"
 
 function inisial(nama: string | null, email: string): string {
@@ -100,15 +100,15 @@ export function UserMenu({
       align={variant === "navbar" ? "end" : "start"}
       side={variant === "sidebar" ? "top" : "bottom"}
       sideOffset={8}
-      className="w-64 min-w-64 rounded-xl border border-border bg-popover p-1.5 shadow-2xl text-sm"
+      className="w-64 min-w-64 rounded-xl border border-border bg-popover p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.6)] text-sm"
     >
       {/* Panel Info Akun: Nama & Email di kiri, Icon Setting di pojok kanan (tanpa avatar) */}
       <div className="flex items-center justify-between gap-2 px-2.5 py-2">
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="truncate text-sm font-medium text-foreground leading-tight">
+          <span className="truncate text-label-14 text-foreground leading-tight">
             {nama?.trim() || email}
           </span>
-          <span className="truncate text-xs text-muted-foreground leading-tight mt-0.5">
+          <span className="truncate text-copy-12 text-muted-foreground leading-tight mt-0.5">
             {email}
           </span>
         </div>
@@ -116,7 +116,7 @@ export function UserMenu({
           href="/pengaturan"
           aria-label="Pengaturan Akun"
           title="Pengaturan Akun"
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-neutral-100 hover:text-foreground dark:hover:bg-neutral-800 transition-colors"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-(--ds-gray-100) hover:text-foreground dark:hover:bg-(--ds-gray-200) transition-colors"
         >
           <Settings className="size-4" />
         </Link>
@@ -281,7 +281,7 @@ export function UserMenu({
             </span>
 
             {/* Ikon 3 Titik Lingkaran More: HOVER HANYA AKTIF DI SINI! */}
-            <span className="grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card transition-colors text-muted-foreground group-hover/row:bg-neutral-200 dark:group-hover/row:bg-neutral-700 group-hover/row:text-foreground">
+            <span className="grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card transition-colors text-muted-foreground group-hover/row:bg-(--ds-gray-200) group-hover/row:text-foreground">
               <GeistMoreDots size={12} />
             </span>
           </button>
@@ -296,7 +296,7 @@ export function UserMenu({
         title="Lihat notifikasi"
         className={cn(
           "relative grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card cursor-pointer transition-colors",
-          "text-muted-foreground hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-foreground",
+          "text-muted-foreground hover:bg-(--ds-gray-200) hover:text-foreground",
           "focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
         )}
       >

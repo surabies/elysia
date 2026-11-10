@@ -6,9 +6,9 @@
 // periode berjalan supaya verifikator membandingkan angka dua bulan
 // bersebelahan tanpa membuka halaman lain.
 import * as React from "react"
-import { formatPeriode } from "@/features/public/lib/Format"
-import { ambilList, ApiError } from "@/features/dashboard/shared/api/ApiDashboard"
-import type { PembacaanRingkas } from "../../types/TipeVerifikasi"
+import { formatPeriode } from "@/features/public"
+import { ambilList, ApiError } from "@/features/dashboard/shared/api/api-dashboard"
+import type { PembacaanRingkas } from "../../types"
 import { FotoBukti, FotoKosong } from "./FotoBukti"
 
 function thblDariIso(iso: string): number {

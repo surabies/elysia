@@ -1,7 +1,7 @@
 // GrafikPemakaian menampilkan batang per periode (terlama → terbaru). CSS murni.
-import { cn } from "@/lib/Utilitas";
-import { fmtAngka, fmtPeriode, fmtPeriodeSingkat } from "../lib/FormatTampilan";
-import type { BarisRiwayat } from "../types/TipeInfoPelanggan";
+import { cn } from "@/lib/utils";
+import { fmtAngka, fmtPeriode, fmtPeriodeSingkat } from "../lib/format-tampilan";
+import type { BarisRiwayat } from "../types";
 
 export function GrafikPemakaian({
   periode,

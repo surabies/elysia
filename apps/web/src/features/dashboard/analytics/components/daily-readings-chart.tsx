@@ -10,8 +10,18 @@ import { formatNumber } from "../lib/format";
 import type { DailyTrendItem } from "@/server/services/dashboard/analytics.service";
 
 const METRICS = {
-  total: { label: "Total SL", rowLabel: "Pembacaan meter", unit: "SL", color: "#ec4899" },
-  kubikasi: { label: "Total m³", rowLabel: "Kubikasi", unit: "m³", color: "#0284c7" },
+  total: {
+    label: "Total SL",
+    rowLabel: "Pembacaan meter",
+    unit: "SL",
+    color: "var(--ds-blue-700)",
+  },
+  kubikasi: {
+    label: "Total m³",
+    rowLabel: "Kubikasi",
+    unit: "m³",
+    color: "var(--ds-teal-700)",
+  },
 } as const;
 
 type Metric = keyof typeof METRICS;
@@ -92,7 +102,7 @@ export function DailyReadingsChart({
           onValueChange={setMetric}
         />
       }
-      legendValue={formatNumber(metric === "total" ? totalReadings : totalVolume)}
+      legendValue={`${formatNumber(metric === "total" ? totalReadings : totalVolume)} ${unit}`}
     >
       <DailyLineChart
         data={points}

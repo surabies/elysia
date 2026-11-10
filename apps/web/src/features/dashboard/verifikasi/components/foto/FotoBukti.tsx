@@ -6,7 +6,7 @@
 // Frame SELALU potret 3:4 (BingkaiPotret) dan empty state memakai bentuk yang
 // sama, jadi panel tidak berubah tinggi ketika sebuah laporan tidak berfoto.
 // Klik foto membuka lightbox: zoom, putar, geser, Esc.
-import { ImageNotFound01Icon } from "@/features/dashboard/shared/icons/IkonLucide"
+import { ImageNotFound01Icon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
 import { BingkaiPotret, FotoZoom } from "./PenampilFoto"
 

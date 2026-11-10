@@ -1,4 +1,4 @@
-import { GantiMeterPage } from "@/features/dashboard/gwm/GantiMeterPage";
+import { GantiMeterPage } from "@/features/dashboard/gwm";
 
 export const metadata = { title: "Ganti Water Meter" };
 

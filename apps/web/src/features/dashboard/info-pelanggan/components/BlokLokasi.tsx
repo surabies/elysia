@@ -1,5 +1,5 @@
 // BlokLokasi menampilkan lokasi pencatatan di OpenStreetMap (tanpa API key).
-import { PanelDasbor } from "../../shared/PanelDasbor";
+import { PanelDasbor } from "@/features/dashboard/shared";
 
 export function BlokLokasi({
   lokasi,

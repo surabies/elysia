@@ -8,11 +8,11 @@ export function TooltipPanel({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-1 rounded-md border border-border bg-popover/95 p-2 text-xs text-popover-foreground shadow-md backdrop-blur-sm">
-      <p className="border-b border-border/60 pb-1 font-semibold text-foreground">
+    <div className="material-menu min-w-44 space-y-1.5 rounded-lg px-3 py-2 text-popover-foreground">
+      <p className="border-b border-border pb-1 text-label-12 text-foreground">
         {title}
       </p>
-      {children}
+      <div className="space-y-1">{children}</div>
     </div>
   );
 }
@@ -27,16 +27,18 @@ export function TooltipRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 font-mono text-[11px]">
+    <div className="flex items-center justify-between gap-4 text-label-12">
       <span className="flex items-center gap-1.5 text-muted-foreground">
         <span
           aria-hidden="true"
-          className="size-2 rounded-full"
+          className="size-2 shrink-0 rounded-full"
           style={{ backgroundColor: color }}
         />
-        {label}
+        <span>{label}</span>
       </span>
-      <span className="font-bold text-foreground">{value}</span>
+      <span className="text-label-12-mono tabular-nums text-foreground">
+        {value}
+      </span>
     </div>
   );
 }

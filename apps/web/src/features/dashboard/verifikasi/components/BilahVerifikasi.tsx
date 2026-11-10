@@ -22,9 +22,9 @@ import {
   Search01Icon,
   Task01Icon,
   UserGroupIcon,
-} from "@/features/dashboard/shared/icons/IkonLucide";
+} from "@/features/dashboard/shared/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -43,13 +43,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatPeriode } from "@/features/public/lib/Format";
+import { formatPeriode } from "@/features/public";
 import {
   KELAS_KONTROL_AKTIF,
-} from "../../shared/data-grid/KelasKontrol";
-import { KotakCari } from "../../shared/data-grid/toolbar/KotakCari";
-import { FilterPilihan } from "../../shared/data-grid/toolbar/PenyaringPilihan";
-import { PenyaringTanggal } from "../../shared/data-grid/toolbar/PenyaringTanggal";
+  KotakCari,
+  FilterPilihan,
+  PenyaringTanggal,
+} from "@/features/dashboard/shared/data-grid";
 import {
   hitungKriteriaPencarian,
   ModalPencarian,
@@ -59,8 +59,8 @@ import {
 import {
   saringOpsiPetugasRute,
   type PenugasanFilter,
-} from "../lib/PenyaringanRelasi";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
+} from "../lib/penyaringan-relasi";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
 
 export interface FilterVerifikasi {
   q: string;

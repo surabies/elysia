@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -18,9 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { NILAI_KOSONG } from "../lib/KonstantaDataGrid"
-import { KELAS_KONTROL_AKTIF } from "../Tema"
-import type { FilterSelect } from "../types/TipeDataGrid"
+import { NILAI_KOSONG } from "../lib/konstanta-data-grid"
+import { KELAS_KONTROL_AKTIF } from "../lib/tema"
+import type { FilterSelect } from "../types"
 
 /** Select satu penyaring. Labelnya jadi awalan di dalam tombol ("Status Semua")
  *  sehingga tidak perlu item "Status: semua" dan baris tetap ringkas. */

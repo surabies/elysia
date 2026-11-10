@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Hasil Foto Petugas" }
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MenuPage href="/progres/hasil-foto" />
+  redirect("/meter/cek-foto");
 }

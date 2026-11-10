@@ -11,10 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
-import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
+import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/api-dashboard";
 import { PilihSatu } from "../DialogVerifikasi";
-import { hitungPemakaianGantiMeter } from "@/lib/domain/PerhitunganMeter";
+import { hitungPemakaianGantiMeter } from "@/lib/domain/perhitungan-meter";
 import { toast } from "sonner";
 import {
   BarisForm,

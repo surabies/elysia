@@ -32,6 +32,7 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table';
+import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 
 export interface PetugasProgresItem {
@@ -114,20 +115,20 @@ export function MonitoringProgresLapangan() {
   }, [data, search]);
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] w-full bg-background p-6 space-y-6">
+    <PageContainer className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
+            <h1 className="text-heading-20 text-foreground">
               Monitoring Progres Lapangan Real-Time
             </h1>
-            <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 border-emerald-300 gap-1.5 py-0.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400 gap-1.5">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Live Sync
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-copy-13 text-muted-foreground mt-1">
             Pantau laju pencatatan meter, target DPM, dan performa petugas catat meter per rute
           </p>
         </div>
@@ -135,40 +136,28 @@ export function MonitoringProgresLapangan() {
         {/* Toolbar Controls */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Auto Refresh Select */}
-          <div className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-xs">
-            <button
+          <div className="inline-flex rounded-md border border-border bg-(--ds-gray-100) p-0.5">
+            <Button
+              size="xs"
+              variant={autoRefreshInterval === 0 ? 'secondary' : 'ghost'}
               onClick={() => setAutoRefreshInterval(0)}
-              className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
-                autoRefreshInterval === 0
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
             >
               Manual
-            </button>
-            <button
+            </Button>
+            <Button
+              size="xs"
+              variant={autoRefreshInterval === 30 ? 'secondary' : 'ghost'}
               onClick={() => setAutoRefreshInterval(30)}
-              className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
-                autoRefreshInterval === 30
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
             >
               Auto 30s
-            </button>
-            <button
+            </Button>
+            <Button
+              size="xs"
+              variant={autoRefreshInterval === 60 ? 'secondary' : 'ghost'}
               onClick={() => setAutoRefreshInterval(60)}
-              className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors',
-                autoRefreshInterval === 60
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
             >
               Auto 60s
-            </button>
+            </Button>
           </div>
 
           <Button
@@ -176,53 +165,48 @@ export function MonitoringProgresLapangan() {
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="h-8 text-xs gap-1.5"
           >
-            <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+            <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
             Segarkan
           </Button>
         </div>
       </div>
 
       {/* KPI Stat Cards Ribbon */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Target DPM */}
-        <Card className="p-4 border bg-card/60 backdrop-blur">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Target Beban (DPM)</span>
-            <span className="rounded-lg bg-primary/10 p-2 text-primary">
-              <Users className="h-4 w-4" />
-            </span>
+            <span className="text-label-12 text-muted-foreground">Target Beban (DPM)</span>
+            <Users className="size-4 text-muted-foreground" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-foreground">
+            <span className="text-heading-24 font-mono tabular-nums text-foreground">
               {data?.kpi.totalTarget.toLocaleString('id-ID') ?? '—'}
             </span>
-            <span className="text-xs text-muted-foreground">Pelanggan</span>
+            <span className="text-label-12 text-muted-foreground">Pelanggan</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-muted-foreground">
             Beban total rute berjalan
           </p>
         </Card>
 
         {/* Realisasi Pembacaan */}
-        <Card className="p-4 border bg-card/60 backdrop-blur">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Realisasi Tercatat</span>
-            <span className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600">
-              <CheckCheck className="h-4 w-4" />
-            </span>
+            <span className="text-label-12 text-muted-foreground">Realisasi Tercatat</span>
+            <CheckCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-emerald-600">
+            <span className="text-heading-24 font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
               {data?.kpi.totalTerbaca.toLocaleString('id-ID') ?? '—'}
             </span>
-            <span className="text-xs font-bold text-emerald-600">
+            <span className="text-label-12 font-semibold text-emerald-600 dark:text-emerald-400">
               ({data?.kpi.readRatePersen ?? 0}%)
             </span>
           </div>
           {/* Progress bar line */}
-          <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div className="mt-2 h-1.5 w-full rounded-full bg-(--ds-gray-200) overflow-hidden">
             <div
               className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
               style={{ width: `${Math.min(100, data?.kpi.readRatePersen ?? 0)}%` }}
@@ -231,39 +215,35 @@ export function MonitoringProgresLapangan() {
         </Card>
 
         {/* Sisa Belum Terbaca */}
-        <Card className="p-4 border bg-card/60 backdrop-blur">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Sisa Belum Terbaca</span>
-            <span className="rounded-lg bg-amber-500/10 p-2 text-amber-600">
-              <Clock className="h-4 w-4" />
-            </span>
+            <span className="text-label-12 text-muted-foreground">Sisa Belum Terbaca</span>
+            <Clock className="size-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-foreground">
+            <span className="text-heading-24 font-mono tabular-nums text-foreground">
               {data?.kpi.totalSisa.toLocaleString('id-ID') ?? '—'}
             </span>
-            <span className="text-xs text-muted-foreground">Pelanggan</span>
+            <span className="text-label-12 text-muted-foreground">Pelanggan</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-muted-foreground">
             Masih dalam rute kunjungan
           </p>
         </Card>
 
         {/* Petugas Aktif Lapangan */}
-        <Card className="p-4 border bg-card/60 backdrop-blur">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Petugas Lapangan</span>
-            <span className="rounded-lg bg-blue-500/10 p-2 text-blue-600">
-              <Activity className="h-4 w-4" />
-            </span>
+            <span className="text-label-12 text-muted-foreground">Petugas Lapangan</span>
+            <Activity className="size-4 text-(--ds-blue-900)" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-blue-600">
+            <span className="text-heading-24 font-mono tabular-nums text-(--ds-blue-900)">
               {data?.kpi.petugasAktif ?? 0} / {data?.kpi.totalPetugas ?? 0}
             </span>
-            <span className="text-xs text-muted-foreground">Petugas</span>
+            <span className="text-label-12 text-muted-foreground">Petugas</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-muted-foreground">
             {data?.kpi.petugasAktif ?? 0} aktif submit data hari ini
           </p>
         </Card>
@@ -273,64 +253,57 @@ export function MonitoringProgresLapangan() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="relative w-72">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
             <Input
+              size="sm"
               type="text"
               placeholder="Cari nama petugas atau rute..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-8 text-xs bg-card"
+              className="pl-8 bg-card"
             />
           </div>
 
-          <div className="flex items-center gap-1 border rounded-lg p-0.5 bg-muted/40">
-            <button
+          <div className="flex items-center gap-0.5 border border-border rounded-md p-0.5 bg-(--ds-gray-100)">
+            <Button
+              size="xs"
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
               onClick={() => setViewMode('grid')}
-              className={cn(
-                'p-1.5 rounded-md text-xs font-medium transition-colors',
-                viewMode === 'grid'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
               title="Tampilan Grid Kartu"
             >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </button>
-            <button
+              <LayoutGrid className="size-3.5" />
+            </Button>
+            <Button
+              size="xs"
+              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
               onClick={() => setViewMode('table')}
-              className={cn(
-                'p-1.5 rounded-md text-xs font-medium transition-colors',
-                viewMode === 'table'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
               title="Tampilan Tabel Rinci"
             >
-              <TableIcon className="h-3.5 w-3.5" />
-            </button>
+              <TableIcon className="size-3.5" />
+            </Button>
           </div>
         </div>
 
         {/* View Mode: Grid Kartu Petugas */}
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {filteredPetugas.map((petugas) => (
               <Card
                 key={petugas.petugasId}
-                className="p-5 border bg-card/80 backdrop-blur transition-all hover:shadow-md flex flex-col justify-between space-y-4"
+                className="p-4 border-border bg-card transition-colors hover:border-(--ds-gray-500) flex flex-col justify-between space-y-4"
               >
                 <div>
                   {/* Card Header */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-9 rounded-full border border-border bg-(--ds-gray-100) text-foreground flex items-center justify-center text-label-12 font-semibold shrink-0">
                         {petugas.nama.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-foreground leading-tight">
+                        <h3 className="text-label-14 font-semibold text-foreground leading-tight">
                           {petugas.nama}
                         </h3>
-                        <p className="text-xs text-muted-foreground font-mono">
+                        <p className="text-label-11 text-muted-foreground font-mono mt-0.5">
                           ID: {petugas.petugasId} · {petugas.wilayahKode ?? 'Wilayah'}
                         </p>
                       </div>
@@ -344,10 +317,8 @@ export function MonitoringProgresLapangan() {
                           : 'secondary'
                       }
                       className={cn(
-                        'text-[10px] px-2 py-0.5',
                         petugas.statusKerja === 'AKTIF_LAPANGAN' &&
-                          'bg-emerald-500/10 text-emerald-600 border-emerald-300 font-semibold',
-                        petugas.statusKerja === 'SELESAI' && 'bg-primary text-primary-foreground'
+                          'bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400'
                       )}
                     >
                       {petugas.statusKerja === 'AKTIF_LAPANGAN'
@@ -360,18 +331,18 @@ export function MonitoringProgresLapangan() {
 
                   {/* Progress Bar & Percentage */}
                   <div className="mt-4 space-y-1.5">
-                    <div className="flex justify-between items-baseline text-xs">
+                    <div className="flex justify-between items-baseline text-label-12">
                       <span className="text-muted-foreground">Progres Pencatatan:</span>
-                      <span className="font-mono font-bold text-sm text-foreground">
+                      <span className="font-mono tabular-nums font-semibold text-foreground">
                         {petugas.persentase}%
                       </span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="h-2 w-full rounded-full bg-(--ds-gray-200) overflow-hidden">
                       <div
                         className={cn(
                           'h-full rounded-full transition-all duration-500',
                           petugas.persentase >= 100
-                            ? 'bg-primary'
+                            ? 'bg-foreground'
                             : petugas.persentase >= 75
                             ? 'bg-emerald-500'
                             : 'bg-amber-500'
@@ -382,22 +353,22 @@ export function MonitoringProgresLapangan() {
                   </div>
 
                   {/* 3 Metric Columns: Target | Terbaca | Sisa */}
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-center rounded-lg bg-muted/30 p-2.5 border">
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-center rounded-md bg-(--ds-gray-100) p-2.5 border border-border">
                     <div>
-                      <span className="text-[10px] text-muted-foreground block">Target</span>
-                      <span className="font-mono text-xs font-bold text-foreground">
+                      <span className="text-label-11 text-muted-foreground block">Target</span>
+                      <span className="font-mono tabular-nums text-label-12 font-semibold text-foreground">
                         {petugas.target.toLocaleString('id-ID')}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-muted-foreground block">Terbaca</span>
-                      <span className="font-mono text-xs font-bold text-emerald-600">
+                      <span className="text-label-11 text-muted-foreground block">Terbaca</span>
+                      <span className="font-mono tabular-nums text-label-12 font-semibold text-emerald-600 dark:text-emerald-400">
                         {petugas.terbaca.toLocaleString('id-ID')}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-muted-foreground block">Sisa</span>
-                      <span className="font-mono text-xs font-bold text-amber-600">
+                      <span className="text-label-11 text-muted-foreground block">Sisa</span>
+                      <span className="font-mono tabular-nums text-label-12 font-semibold text-amber-600 dark:text-amber-400">
                         {petugas.sisa.toLocaleString('id-ID')}
                       </span>
                     </div>
@@ -405,14 +376,14 @@ export function MonitoringProgresLapangan() {
 
                   {/* Assigned Routes Tags */}
                   <div className="mt-3">
-                    <span className="text-[10px] text-muted-foreground block mb-1">
+                    <span className="text-label-11 text-muted-foreground block mb-1">
                       Rute Penugasan ({petugas.ruteList.length}):
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {petugas.ruteList.map((rute) => (
                         <span
                           key={rute}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted text-muted-foreground border"
+                          className="px-1.5 py-0.5 rounded text-label-11 font-mono bg-(--ds-gray-100) text-muted-foreground border border-border"
                         >
                           {rute}
                         </span>
@@ -422,9 +393,9 @@ export function MonitoringProgresLapangan() {
                 </div>
 
                 {/* Card Footer: Last Active & Action */}
-                <div className="pt-3 border-t flex items-center justify-between text-[11px] text-muted-foreground">
+                <div className="pt-3 border-t border-border flex items-center justify-between text-label-12 text-muted-foreground">
                   <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
+                    <Clock className="size-3" />
                     <span>
                       {petugas.terakhirCatat
                         ? new Date(petugas.terakhirCatat).toLocaleDateString('id-ID', {
@@ -438,10 +409,10 @@ export function MonitoringProgresLapangan() {
                   </div>
                   <Link
                     href={`/verifikasi/baca-petugas?q=${petugas.petugasId}`}
-                    className="inline-flex items-center gap-1 font-semibold text-primary hover:underline text-xs"
+                    className="inline-flex items-center gap-1 text-(--ds-blue-900) hover:underline text-label-12"
                   >
                     Verifikasi Hasil
-                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    <ArrowUpRight className="size-3.5" />
                   </Link>
                 </div>
               </Card>
@@ -451,7 +422,7 @@ export function MonitoringProgresLapangan() {
           /* View Mode: Tabel Rinci menggunakan shadcn Table */
           <Card className="border-border bg-card overflow-hidden">
             <Table>
-              <TableHeader className="bg-muted/50">
+              <TableHeader>
                 <TableRow>
                   <TableHead>Petugas</TableHead>
                   <TableHead>Status</TableHead>
@@ -468,13 +439,13 @@ export function MonitoringProgresLapangan() {
                 {filteredPetugas.map((petugas) => (
                   <TableRow key={petugas.petugasId}>
                     <TableCell className="font-medium text-foreground">
-                      <div className="flex items-center gap-2">
-                        <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-full border border-border bg-(--ds-gray-100) text-foreground flex items-center justify-center text-label-11 shrink-0">
                           {petugas.nama.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <span className="block font-semibold">{petugas.nama}</span>
-                          <span className="text-[10px] text-muted-foreground font-mono">
+                          <span className="block font-medium">{petugas.nama}</span>
+                          <span className="text-label-11 text-muted-foreground font-mono">
                             {petugas.petugasId}
                           </span>
                         </div>
@@ -484,40 +455,39 @@ export function MonitoringProgresLapangan() {
                       <Badge
                         variant="outline"
                         className={cn(
-                          'text-[10px]',
                           petugas.statusKerja === 'AKTIF_LAPANGAN' &&
-                            'bg-emerald-500/10 text-emerald-600 border-emerald-300'
+                            'bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400'
                         )}
                       >
                         {petugas.statusKerja === 'AKTIF_LAPANGAN' ? 'Aktif' : 'Selesai'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-mono font-semibold">
+                    <TableCell className="text-right font-mono tabular-nums font-medium">
                       {petugas.target.toLocaleString('id-ID')}
                     </TableCell>
-                    <TableCell className="text-right font-mono font-semibold text-emerald-600">
+                    <TableCell className="text-right font-mono tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
                       {petugas.terbaca.toLocaleString('id-ID')}
                     </TableCell>
-                    <TableCell className="text-right font-mono font-semibold text-amber-600">
+                    <TableCell className="text-right font-mono tabular-nums font-medium text-amber-600 dark:text-amber-400">
                       {petugas.sisa.toLocaleString('id-ID')}
                     </TableCell>
                     <TableCell className="w-40">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="flex-1 h-1.5 rounded-full bg-(--ds-gray-200) overflow-hidden">
                           <div
                             className="h-full bg-emerald-500 rounded-full"
                             style={{ width: `${Math.min(100, petugas.persentase)}%` }}
                           />
                         </div>
-                        <span className="font-mono font-bold text-xs w-10 text-right">
+                        <span className="font-mono tabular-nums font-medium text-label-12 w-10 text-right">
                           {petugas.persentase}%
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-[11px] text-muted-foreground max-w-xs truncate">
+                    <TableCell className="font-mono text-label-12 text-muted-foreground max-w-xs truncate">
                       {petugas.ruteList.join(', ') || '—'}
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-[11px]">
+                    <TableCell className="text-muted-foreground text-label-12 font-mono">
                       {petugas.terakhirCatat
                         ? new Date(petugas.terakhirCatat).toLocaleTimeString('id-ID', {
                             hour: '2-digit',
@@ -528,10 +498,10 @@ export function MonitoringProgresLapangan() {
                     <TableCell className="text-right">
                       <Link
                         href={`/verifikasi/baca-petugas?q=${petugas.petugasId}`}
-                        className="inline-flex items-center gap-1 text-primary hover:underline font-semibold"
+                        className="inline-flex items-center gap-1 text-label-12 text-(--ds-blue-900) hover:underline"
                       >
                         Verifikasi
-                        <ArrowUpRight className="h-3 w-3" />
+                        <ArrowUpRight className="size-3" />
                       </Link>
                     </TableCell>
                   </TableRow>
@@ -541,6 +511,6 @@ export function MonitoringProgresLapangan() {
           </Card>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

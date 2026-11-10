@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { KelolaManajemenUser } from '@/features/dashboard/master/components/KelolaManajemenUser';
+import { KelolaManajemenUser } from '@/features/dashboard/master';
 
 export const metadata: Metadata = {
   title: 'Manajemen Akun Pengguna | PDAM Tirtawening',

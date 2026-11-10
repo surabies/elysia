@@ -1,3 +1,6 @@
+"use client"
+
+import * as React from "react"
 import Link from "next/link"
 
 import { AutoHideHeader } from "@/components/layout/AutoHideHeader"
@@ -9,6 +12,8 @@ import { downloadAppLink, mainNavLinks } from "@/config/site"
 import { topEventsContent } from "@/data/home"
 
 export function SiteHeader() {
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+
   return (
     <AutoHideHeader>
       <nav
@@ -17,9 +22,15 @@ export function SiteHeader() {
       >
         <Logo className="shrink-0" />
 
-        <SearchExperience events={topEventsContent.events} />
+        {/* Search Bar Desktop (xl+) di samping Logo */}
+        <SearchExperience
+          events={topEventsContent.events}
+          mode="desktop"
+        />
 
-        <div className="ml-auto flex items-center shrink-0">
+        {/* Grup Elemen Kanan */}
+        <div className="ml-auto flex items-center shrink-0 gap-2">
+          {/* Menu Link Desktop (md+) */}
           <ul className="hidden items-center md:flex shrink-0">
             {mainNavLinks.map((link) => (
               <li key={link.href} className="mx-2 lg:mx-3 xl:mx-4 shrink-0">
@@ -33,11 +44,24 @@ export function SiteHeader() {
             ))}
           </ul>
 
-          <MobileMenu />
+          {/* Icon Search Mobile (< xl) - Berdampingan langsung dengan Icon Hamburger */}
+          <SearchExperience
+            events={topEventsContent.events}
+            mode="mobile"
+            isMenuOpen={mobileMenuOpen}
+            onOpen={() => setMobileMenuOpen(false)}
+          />
 
+          {/* Icon Hamburger Menu (< md) */}
+          <MobileMenu
+            open={mobileMenuOpen}
+            onOpenChange={setMobileMenuOpen}
+          />
+
+          {/* Tombol Unduh App (md+) */}
           <PillButton
             asChild
-            className="ml-3.5 hidden last:mr-0 md:inline-flex shrink-0 whitespace-nowrap"
+            className="ml-2 hidden last:mr-0 md:inline-flex shrink-0 whitespace-nowrap"
           >
             <Link href={downloadAppLink.href}>{downloadAppLink.label}</Link>
           </PillButton>

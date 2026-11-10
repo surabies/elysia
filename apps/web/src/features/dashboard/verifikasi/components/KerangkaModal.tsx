@@ -10,7 +10,7 @@
 // tinggi pasti tidak membuat persentase tinggi viewport terselesaikan, jadi
 // batasnya dipasang langsung pada viewport lewat selektor anak.
 import * as React from "react";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,

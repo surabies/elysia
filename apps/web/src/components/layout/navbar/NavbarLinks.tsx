@@ -1,7 +1,7 @@
 // components/layout/navbar/NavbarLinks.tsx
 // Tugas: daftar link teks di navbar desktop. Datanya dari config/Navigasi.ts.
 import Link from "next/link"
-import { navbarLinks } from "@/config/Navigasi"
+import { navbarLinks } from "@/config/navigasi"
 
 export function NavbarLinks() {
   return (

@@ -17,6 +17,7 @@ import {
 } from '@cater/db';
 
 const UKURAN_BATCH = 1000;
+const bulanBaruInFlightLocks = new Set<string>();
 
 export interface BukaBulanBaruInput {
   periodeLalu: string; // e.g. '202601'
@@ -37,16 +38,40 @@ export class BulanBaruService {
    */
   async bukaBulanBaru(input: BukaBulanBaruInput): Promise<HasilBukaBulanBaru> {
     const { periodeLalu, periodeBaru, userId } = input;
+    const lockKey = `bulan-baru:${periodeBaru}`;
 
-    // 1. Validasi periode penagihan baru belum pernah ada / terkunci
-    const [existingPeriode] = await db
-      .select()
-      .from(periodePenagihan)
-      .where(eq(periodePenagihan.periode, periodeBaru));
-
-    if (existingPeriode && existingPeriode.status === 'TERKUNCI') {
-      throw new Error(`Periode ${periodeBaru} sudah ada dalam database dan berstatus TERKUNCI.`);
+    if (bulanBaruInFlightLocks.has(lockKey)) {
+      throw new Error(
+        `Proses pembukaan jadwal bulan baru ${periodeBaru} sedang berlangsung. Mohon tunggu sebentar; data Anda tetap aman.`
+      );
     }
+
+    bulanBaruInFlightLocks.add(lockKey);
+
+    try {
+      // 0. Validasi pra-syarat: Periode berjalan (periodeLalu) wajib sudah ditutup (TERKUNCI)
+      const [periodeLaluRow] = await db
+        .select()
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.periode, periodeLalu));
+
+      if (!periodeLaluRow || periodeLaluRow.status !== 'TERKUNCI') {
+        throw new Error(
+          `Jadwal bulan baru ${periodeBaru} belum dapat dibuka karena periode berjalan (${periodeLalu}) belum dikunci. Selesaikan Langkah 4 (Kunci Tutup Buku) terlebih dahulu.`
+        );
+      }
+
+      // 1. Validasi periode penagihan baru belum pernah terkunci
+      const [existingPeriode] = await db
+        .select()
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.periode, periodeBaru));
+
+      if (existingPeriode && existingPeriode.status === 'TERKUNCI') {
+        throw new Error(
+          `Periode ${periodeBaru} sudah pernah ditutup dan berstatus TERKUNCI. Tidak ada data yang diubah.`
+        );
+      }
 
     // 2. Ambil seluruh DPM dari periode lalu yang TIDAK berstatus DICABUT
     const dpmLalu = await db
@@ -132,12 +157,15 @@ export class BulanBaruService {
       }
     });
 
-    return {
-      periodeBaru,
-      totalDpmDiterbitkan: diterbitkan,
-      dilewatiDicabut,
-      message: `Periode baru ${periodeBaru} berhasil dibuka dengan ${diterbitkan} target DPM aktif.`,
-    };
+      return {
+        periodeBaru,
+        totalDpmDiterbitkan: diterbitkan,
+        dilewatiDicabut,
+        message: `Jadwal baca meter bulan baru ${periodeBaru} berhasil disiapkan untuk ${diterbitkan.toLocaleString('id-ID')} pelanggan aktif.`,
+      };
+    } finally {
+      bulanBaruInFlightLocks.delete(lockKey);
+    }
   }
 }
 

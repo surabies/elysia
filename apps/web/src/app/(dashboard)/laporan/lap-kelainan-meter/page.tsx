@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LaporanKelainanMeter } from '@/features/dashboard/laporan/components/LaporanKelainanMeter';
+import { LaporanKelainanMeter } from '@/features/dashboard/laporan';
 
 export const metadata: Metadata = {
   title: 'Laporan Rekapitulasi Kelainan Meter | PDAM Tirtawening',

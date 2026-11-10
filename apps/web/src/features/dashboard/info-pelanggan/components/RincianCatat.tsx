@@ -1,9 +1,9 @@
 // Kartu rincian pencatatan: periode, kondisi, petugas, waktu, biaya, dan koordinat.
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
-import { PanelDasbor } from "../../shared/PanelDasbor";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
+import { PanelDasbor } from "@/features/dashboard/shared";
 import { BarisInfo, DaftarInfo } from "./BarisInfo";
-import { fmtPeriode, fmtRupiah, fmtTeks, fmtWaktu } from "../lib/FormatTampilan";
-import type { DataCatat } from "../types/TipeInfoPelanggan";
+import { fmtPeriode, fmtRupiah, fmtTeks, fmtWaktu } from "../lib/format-tampilan";
+import type { DataCatat } from "../types";
 
 export function RincianCatat({
   catat,

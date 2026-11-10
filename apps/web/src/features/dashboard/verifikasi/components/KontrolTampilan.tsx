@@ -7,7 +7,7 @@
 //
 // Dipakai halaman petugas (ringkasan + kerapatan) dan pelanggan (ringkasan).
 import type { ReactNode } from "react"
-import { DashboardSquare01Icon, Menu01Icon } from "@/features/dashboard/shared/icons/IkonLucide"
+import { DashboardSquare01Icon, Menu01Icon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
 import { TombolIkonVerifikasi } from "./BilahVerifikasi"
 

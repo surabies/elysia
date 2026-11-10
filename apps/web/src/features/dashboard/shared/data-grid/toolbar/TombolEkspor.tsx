@@ -1,5 +1,5 @@
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
-import { FileSpreadsheetIcon } from "@/features/dashboard/shared/icons/IkonLucide"
+import { FileSpreadsheetIcon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroupItem } from "@/components/ui/toggle-group"
 

@@ -15,7 +15,7 @@ import {
   Cancel01Icon,
   Download01Icon,
   Task01Icon,
-} from "@/features/dashboard/shared/icons/IkonLucide";
+} from "@/features/dashboard/shared/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,18 +26,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatPeriode } from "@/features/public/lib/Format";
-import { ambilList, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
-import { OPSI_STATUS_LAPORAN_MANDIRI } from "@/features/dashboard/verifikasi/lib/LabelLaporanMandiri";
-import { KotakCari } from "../../../shared/data-grid/toolbar/KotakCari";
-import { FilterPilihan } from "../../../shared/data-grid/toolbar/PenyaringPilihan";
+import { formatPeriode } from "@/features/public";
+import { ambilList, ApiError } from "@/features/dashboard/shared/api/api-dashboard";
+import { OPSI_STATUS_LAPORAN_MANDIRI } from "@/features/dashboard/verifikasi/lib/label-laporan-mandiri";
+import { KotakCari, FilterPilihan } from "@/features/dashboard/shared/data-grid";
 import { PILIHAN_UKURAN, TombolIkonVerifikasi } from "../BilahVerifikasi";
 import { KontrolKolomVerifikasi, TabelVerifikasi } from "../TabelVerifikasi";
-import type { BarisVerifikasi, Kerapatan } from "../../types/TipeVerifikasi";
-import { usePreferensiKolom } from "../../hooks/GunakanPreferensiKolom";
+import type { BarisVerifikasi, Kerapatan } from "../../types";
+import { usePreferensiKolom } from "../../hooks/use-preferensi-kolom";
 import { KontrolTampilan } from "../KontrolTampilan";
 import { RingkasanSebaris } from "../RingkasanVerifikasi";
-import type { StatsVerifikasi } from "../../types/TipeVerifikasi";
+import type { StatsVerifikasi } from "../../types";
 import { toast } from "sonner";
 
 export type StatusMandiri =

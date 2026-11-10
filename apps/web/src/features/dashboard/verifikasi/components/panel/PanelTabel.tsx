@@ -15,36 +15,36 @@ import { createPortal } from "react-dom";
 import {
   Task01Icon,
   ViewOffIcon,
-} from "@/features/dashboard/shared/icons/IkonLucide";
+} from "@/features/dashboard/shared/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   TEMA_TAB_AKTIF,
   TEMA_TAB_TIDAK_AKTIF,
-} from "../../lib/TemaVerifikasi";
+} from "../../lib/tema-verifikasi";
 import {
   ambilList,
   kirimJson,
   ApiError,
-} from "@/features/dashboard/shared/api/ApiDashboard";
+} from "@/features/dashboard/shared/api/api-dashboard";
 import {
   ToolbarVerifikasi,
   FILTER_AWAL,
   type FilterVerifikasi,
 } from "../BilahVerifikasi";
 import { KontrolKolomVerifikasi, TabelVerifikasi } from "../TabelVerifikasi";
-import type { BarisVerifikasi, Kerapatan } from "../../types/TipeVerifikasi";
-import { usePreferensiKolom } from "../../hooks/GunakanPreferensiKolom";
+import type { BarisVerifikasi, Kerapatan } from "../../types";
+import { usePreferensiKolom } from "../../hooks/use-preferensi-kolom";
 import { AksiMassal, type Ring } from "../AksiMassal";
-import { usePeriodeKerja } from "@/features/dashboard/shared/hooks/UsePeriodeKerja";
-import { formatPeriode } from "@/features/public/lib/Format";
+import { usePeriodeKerja } from "@/features/dashboard/shared/hooks/use-periode-kerja";
+import { formatPeriode } from "@/features/public";
 import { KontrolTampilan } from "../KontrolTampilan";
 import { RingkasanSebaris } from "../RingkasanVerifikasi";
-import type { StatsVerifikasi } from "../../types/TipeVerifikasi";
+import type { StatsVerifikasi } from "../../types";
 import type { OpsiPencarian, KriteriaPencarian } from "../modal/ModalPencarian";
-import type { PenugasanFilter } from "../../lib/PenyaringanRelasi";
+import type { PenugasanFilter } from "../../lib/penyaringan-relasi";
 
 /// Batas per permintaan verifikasi massal — sama dengan yang diterima server.
 const BATCH_VERIF = 500;

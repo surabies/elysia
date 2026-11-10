@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { FilterSelect } from "../types/TipeDataGrid";
+import type { FilterSelect } from "../types";
 
 export interface FilterTanggalModal {
   paramDari: string;

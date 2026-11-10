@@ -11,15 +11,15 @@ import * as React from "react";
 import {
   CheckmarkCircle02Icon,
   CursorPointer01Icon,
-} from "@/features/dashboard/shared/icons/IkonLucide";
+} from "@/features/dashboard/shared/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatTanggal } from "@/features/public/lib/Format";
-import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/ApiDashboard";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
-import { label } from "@/features/dashboard/verifikasi/lib/Label";
-import type { LaporanHarianDetail } from "../../types/TipeVerifikasi";
-import { tahapLaporanHarian, ringVerif } from "../../types/TipeVerifikasi";
+import { formatTanggal } from "@/features/public";
+import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/api-dashboard";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
+import { label } from "@/features/dashboard/verifikasi/lib/label";
+import type { LaporanHarianDetail } from "../../types";
+import { tahapLaporanHarian, ringVerif } from "../../types";
 import {
   PanelKosong,
   RingkasanPelanggan,
@@ -28,8 +28,8 @@ import {
 import { FotoSebelumnya } from "../foto/FotoSebelumnya";
 import { TabFoto } from "../foto/TabFoto";
 import { PetaLokasi } from "../PetaLokasi";
-import { TEKS_RING } from "../../types/WarnaTahap";
-import { tentukanHasilPembacaan } from "../../lib/HasilPembacaan";
+import { TEKS_RING } from "../../lib/warna-tahap";
+import { tentukanHasilPembacaan } from "../../lib/hasil-pembacaan";
 
 /// Baris progres ring V1/V2/V3 — penampil murni. Warna per ring SAMA dengan
 /// kolom Ring di tabel, dan ketiganya diperlakukan setara.

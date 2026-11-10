@@ -18,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { TriangleAlert } from "lucide-react"
-import { pesanErrorMasuk } from "../lib/GalatMasuk"
+import { pesanErrorMasuk } from "../lib/galat-masuk"
 import { GoogleSignInButton } from "./TombolMasukGoogle"
 import { CredentialsForm } from "./FormulirKredensial"
 

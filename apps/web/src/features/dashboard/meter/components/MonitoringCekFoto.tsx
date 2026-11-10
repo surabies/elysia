@@ -42,6 +42,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 import type {
   CekFotoItem,
@@ -93,23 +94,22 @@ export function MonitoringCekFoto() {
   }, [selectedFoto]);
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+    <PageContainer className="space-y-6">
       {/* 1. Header Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <Camera className="size-6 text-primary" />
+          <h1 className="text-heading-20 text-foreground">
             Audit & Cek Foto Petugas
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <p className="text-copy-13 text-muted-foreground mt-1">
             Galeri foto angka meter dan fisik rumah pelanggan hasil perekaman petugas lapangan.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Period Selector */}
-          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-xs">
-            <span className="text-muted-foreground mr-2 font-medium">Periode:</span>
+          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
+            <span className="text-muted-foreground mr-2">Periode:</span>
             <NativeSelect
               value={periode}
               onChange={(e) => setPeriode(e.target.value)}
@@ -127,7 +127,6 @@ export function MonitoringCekFoto() {
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="h-8 gap-1.5 text-xs"
           >
             <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
             Segarkan
@@ -138,115 +137,111 @@ export function MonitoringCekFoto() {
       {/* 2. KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {/* Total Foto */}
-        <Card className="p-4 rounded-[10px] border-border bg-card shadow-xs">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Total Dokumentasi</span>
-            <Camera className="size-4 text-primary" />
+            <span className="text-label-12">Total Dokumentasi</span>
+            <Camera className="size-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalFoto) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">foto</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">foto</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Tercatat dalam periode aktif</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Tercatat dalam periode aktif</p>
         </Card>
 
         {/* Kondisi Normal */}
-        <Card className="p-4 rounded-[10px] border-border bg-card shadow-xs">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Kondisi Normal</span>
-            <CheckCircle2 className="size-4 text-emerald-500" />
+            <span className="text-label-12">Kondisi Normal</span>
+            <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalNormal) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">foto</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">foto</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Angka stand wajar & terbaca</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Angka stand wajar & terbaca</p>
         </Card>
 
         {/* Anomali / Kelainan */}
-        <Card className="p-4 rounded-[10px] border-border bg-card shadow-xs">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Kelainan Catat</span>
-            <AlertTriangle className="size-4 text-amber-500" />
+            <span className="text-label-12">Kelainan Catat</span>
+            <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-amber-600 dark:text-amber-400 font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalAnomali) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">foto</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">foto</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Meter rusak / buram / anomali</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Meter rusak / buram / anomali</p>
         </Card>
 
         {/* Terverifikasi */}
-        <Card className="p-4 rounded-[10px] border-border bg-card shadow-xs">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Status Terverifikasi</span>
-            <ShieldCheck className="size-4 text-teal-500" />
+            <span className="text-label-12">Status Terverifikasi</span>
+            <ShieldCheck className="size-4 text-(--ds-blue-900)" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalVerified) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">laporan</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">laporan</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Lolos verifikasi bertingkat</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Lolos verifikasi bertingkat</p>
         </Card>
       </div>
 
       {/* 3. Controls & Filter */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1">
-        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-lg bg-muted/40 border border-border w-fit">
+        <div className="flex flex-wrap items-center gap-1 p-1 rounded-md bg-(--ds-gray-100) border border-border w-fit">
           <Button
             variant={kondisiFilter === 'all' ? 'secondary' : 'ghost'}
-            size="sm"
+            size="xs"
             onClick={() => setKondisiFilter('all')}
-            className="h-7 text-xs"
           >
             Semua Foto
           </Button>
           <Button
             variant={kondisiFilter === 'normal' ? 'secondary' : 'ghost'}
-            size="sm"
+            size="xs"
             onClick={() => setKondisiFilter('normal')}
-            className="h-7 text-xs gap-1"
           >
-            <CheckCircle2 className="size-3 text-emerald-500" />
+            <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
             Normal
           </Button>
           <Button
             variant={kondisiFilter === 'anomali' ? 'secondary' : 'ghost'}
-            size="sm"
+            size="xs"
             onClick={() => setKondisiFilter('anomali')}
-            className="h-7 text-xs gap-1"
           >
-            <AlertTriangle className="size-3 text-amber-500" />
+            <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400" />
             Anomali / Kelainan
           </Button>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
             <Input
+              size="sm"
               placeholder="Cari NOLG, nama, atau rute..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-9 text-xs"
+              className="pl-8 bg-card"
             />
           </div>
 
-          <div className="flex items-center rounded-md border border-border p-0.5 bg-card">
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-(--ds-gray-100)">
             <Button
               variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="sm"
+              size="xs"
               onClick={() => setViewMode('grid')}
-              className="h-7 px-2 text-xs gap-1"
             >
               <LayoutGrid className="size-3.5" />
               Galeri
             </Button>
             <Button
               variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-              size="sm"
+              size="xs"
               onClick={() => setViewMode('table')}
-              className="h-7 px-2 text-xs gap-1"
             >
               <TableIcon className="size-3.5" />
               Tabel
@@ -260,16 +255,16 @@ export function MonitoringCekFoto() {
         <div className="flex h-64 w-full items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <Spinner className="size-6 text-primary" />
-            <p className="text-xs text-muted-foreground">Memuat galeri foto meter...</p>
+            <p className="text-copy-12 text-muted-foreground">Memuat galeri foto meter...</p>
           </div>
         </div>
       ) : !data || data.items.length === 0 ? (
-        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-copy-13 text-muted-foreground">
           Tidak ditemukan foto meter pada filter ini.
         </div>
       ) : viewMode === 'grid' ? (
         /* Grid Galeri */
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {data.items.map((item) => {
             const isNormal = item.ketCatat === 'Normal' && item.pakaiM3 <= 50 && item.pakaiM3 > 0;
             const photoSrc = item.fotoMeterUrl || '/images/meter/petugas.jpg';
@@ -277,11 +272,11 @@ export function MonitoringCekFoto() {
             return (
               <Card
                 key={item.id}
-                className="group relative overflow-hidden rounded-[10px] border-border bg-card shadow-xs transition-all hover:border-primary/50 hover:shadow-md cursor-pointer flex flex-col justify-between"
+                className="group relative overflow-hidden rounded-lg border-border bg-card transition-colors hover:border-(--ds-gray-500) cursor-pointer flex flex-col justify-between"
                 onClick={() => setSelectedFoto(item)}
               >
                 {/* Photo Container */}
-                <div className="relative aspect-4/3 w-full overflow-hidden bg-muted/40">
+                <div className="relative aspect-4/3 w-full overflow-hidden bg-(--ds-gray-100)">
                   <img
                     src={photoSrc}
                     alt={`Meter ${item.nolg}`}
@@ -291,16 +286,16 @@ export function MonitoringCekFoto() {
 
                   {/* Top Badges */}
                   <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-                    <span className="rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] font-bold text-white backdrop-blur-xs">
+                    <span className="rounded bg-black/70 px-1.5 py-0.5 font-mono text-label-11 text-white">
                       {item.ruteKode ?? 'RUTE'}
                     </span>
                     <Badge
                       variant="outline"
                       className={cn(
-                        'text-[10px] font-medium border-0 px-1.5 py-0.5',
+                        'border-0',
                         isNormal
-                          ? 'bg-emerald-500/90 text-white'
-                          : 'bg-amber-500/90 text-white'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-amber-600 text-white'
                       )}
                     >
                       {item.ketCatat}
@@ -308,36 +303,36 @@ export function MonitoringCekFoto() {
                   </div>
 
                   {/* Bottom Stats Overlay */}
-                  <div className="absolute bottom-2 left-2 right-2 text-white font-mono flex items-baseline justify-between text-xs">
+                  <div className="absolute bottom-2 left-2 right-2 text-white font-mono tabular-nums flex items-baseline justify-between text-label-12">
                     <div>
-                      <span className="text-[10px] text-zinc-300 font-sans block">Stand Akhir</span>
-                      <span className="font-bold text-sm tracking-tight">{numberFormat.format(item.stma)}</span>
+                      <span className="text-label-11 text-zinc-300 font-sans block">Stand Akhir</span>
+                      <span className="font-semibold text-label-14">{numberFormat.format(item.stma)}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] text-zinc-300 font-sans block">Pakai</span>
-                      <span className="font-bold text-sm text-sky-300">{numberFormat.format(item.pakaiM3)} m³</span>
+                      <span className="text-label-11 text-zinc-300 font-sans block">Pakai</span>
+                      <span className="font-semibold text-label-14 text-sky-300">{numberFormat.format(item.pakaiM3)} m³</span>
                     </div>
                   </div>
 
                   {/* Hover Zoom Icon */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 bg-black/20">
-                    <div className="rounded-full bg-black/60 p-2 text-white shadow-lg backdrop-blur-xs">
+                    <div className="rounded-full bg-black/70 p-2 text-white">
                       <Maximize2 className="size-4" />
                     </div>
                   </div>
                 </div>
 
                 {/* Card Meta Footer */}
-                <div className="p-3 text-xs space-y-1.5">
+                <div className="p-3 space-y-1.5">
                   <div className="truncate">
-                    <span className="font-mono font-semibold text-foreground text-[11px] block">
+                    <span className="font-mono text-label-11 text-foreground block">
                       {item.nolg}
                     </span>
-                    <p className="font-medium text-foreground truncate text-xs">{item.nama}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{item.alamat}</p>
+                    <p className="text-label-13 font-medium text-foreground truncate">{item.nama}</p>
+                    <p className="text-copy-12 text-muted-foreground truncate">{item.alamat}</p>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-border/50 pt-1.5 text-[10px] text-muted-foreground">
+                  <div className="flex items-center justify-between border-t border-border pt-1.5 text-label-11 text-muted-foreground">
                     <span className="flex items-center gap-1 truncate">
                       <User className="size-3 shrink-0" />
                       {item.petugasNama}
@@ -355,7 +350,7 @@ export function MonitoringCekFoto() {
         /* Tabel Audit Foto menggunakan shadcn Table */
         <Card className="border-border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow>
                 <TableHead className="w-16">Foto</TableHead>
                 <TableHead>No. Langganan</TableHead>
@@ -370,7 +365,7 @@ export function MonitoringCekFoto() {
                 <TableHead className="text-center">Aksi</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody className="font-mono">
+            <TableBody className="font-mono tabular-nums">
               {data.items.map((row) => (
                 <TableRow
                   key={row.id}
@@ -384,7 +379,7 @@ export function MonitoringCekFoto() {
                       className="size-10 rounded-md object-cover border border-border"
                     />
                   </TableCell>
-                  <TableCell className="font-semibold text-foreground font-sans">
+                  <TableCell className="font-medium text-foreground font-sans">
                     {row.nolg}
                   </TableCell>
                   <TableCell className="font-sans font-medium text-foreground max-w-[180px] truncate">
@@ -396,30 +391,29 @@ export function MonitoringCekFoto() {
                   <TableCell className="text-right text-muted-foreground">
                     {numberFormat.format(row.stml)}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-foreground">
+                  <TableCell className="text-right font-medium text-foreground">
                     {numberFormat.format(row.stma)}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-sky-600 dark:text-sky-400">
+                  <TableCell className="text-right font-medium text-(--ds-blue-900)">
                     {numberFormat.format(row.pakaiM3)} m³
                   </TableCell>
                   <TableCell className="font-sans text-muted-foreground">
                     {row.petugasNama}
                   </TableCell>
                   <TableCell className="font-sans">
-                    <Badge variant="outline" className="text-[10px]">
+                    <Badge variant="outline">
                       {row.ketCatat}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center font-sans">
-                    <Badge variant="secondary" className="text-[10px]">
+                    <Badge variant="secondary">
                       {row.statusVerifikasi}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center font-sans">
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
+                      size="icon-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedFoto(row);
@@ -455,37 +449,37 @@ export function MonitoringCekFoto() {
                 </div>
 
                 {/* Viewer Control Bar */}
-                <div className="absolute bottom-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-white backdrop-blur-md shadow-lg">
+                <div className="absolute bottom-3 flex items-center gap-2 rounded-full bg-black/75 px-3 py-1.5 text-white border border-white/15">
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-white hover:bg-white/20"
+                    size="icon-xs"
+                    className="text-white hover:bg-white/20"
                     onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
                     title="Perbesar"
                   >
-                    <ZoomIn className="size-4" />
+                    <ZoomIn className="size-3.5" />
                   </Button>
-                  <span className="text-[11px] font-mono select-none px-1">
+                  <span className="text-label-11 font-mono select-none px-1">
                     {Math.round(zoomLevel * 100)}%
                   </span>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-white hover:bg-white/20"
+                    size="icon-xs"
+                    className="text-white hover:bg-white/20"
                     onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
                     title="Perkecil"
                   >
-                    <ZoomOut className="size-4" />
+                    <ZoomOut className="size-3.5" />
                   </Button>
                   <div className="h-4 w-px bg-white/20 mx-1" />
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-white hover:bg-white/20"
+                    size="icon-xs"
+                    className="text-white hover:bg-white/20"
                     onClick={() => setRotation((r) => (r + 90) % 360)}
                     title="Putar 90°"
                   >
-                    <RotateCw className="size-4" />
+                    <RotateCw className="size-3.5" />
                   </Button>
                 </div>
               </div>
@@ -494,44 +488,44 @@ export function MonitoringCekFoto() {
               <div className="w-full lg:w-80 p-5 flex flex-col justify-between overflow-y-auto bg-card space-y-4">
                 <div>
                   <DialogHeader className="p-0 text-left">
-                    <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase">
+                    <span className="text-label-11 font-mono text-muted-foreground uppercase">
                       NOLG: {selectedFoto.nolg}
                     </span>
-                    <DialogTitle className="text-base font-bold text-foreground leading-tight mt-0.5">
+                    <DialogTitle className="mt-0.5">
                       {selectedFoto.nama}
                     </DialogTitle>
-                    <DialogDescription className="text-xs text-muted-foreground mt-1">
+                    <DialogDescription className="mt-1">
                       {selectedFoto.alamat} • {selectedFoto.ruteKode ?? '-'}
                     </DialogDescription>
                   </DialogHeader>
 
                   {/* Meter Numbers */}
-                  <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3 font-mono text-center">
+                  <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg border border-border bg-(--ds-gray-100) p-3 font-mono tabular-nums text-center">
                     <div>
-                      <span className="block text-[10px] text-muted-foreground font-sans">Stand Akhir</span>
-                      <span className="text-base font-bold text-primary">
+                      <span className="block text-label-11 text-muted-foreground font-sans">Stand Akhir</span>
+                      <span className="text-heading-16 text-foreground">
                         {numberFormat.format(selectedFoto.stma)}
                       </span>
                     </div>
                     <div>
-                      <span className="block text-[10px] text-muted-foreground font-sans">Pemakaian</span>
-                      <span className="text-base font-bold text-foreground">
+                      <span className="block text-label-11 text-muted-foreground font-sans">Pemakaian</span>
+                      <span className="text-heading-16 text-(--ds-blue-900)">
                         {numberFormat.format(selectedFoto.pakaiM3)} m³
                       </span>
                     </div>
                   </div>
 
                   {/* Metadata List */}
-                  <div className="mt-4 space-y-2 text-xs border-t border-border/60 pt-3">
+                  <div className="mt-4 space-y-2 text-copy-12 border-t border-border pt-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Kondisi Catat:</span>
-                      <Badge variant="outline" className="font-semibold text-[11px]">
+                      <Badge variant="outline">
                         {selectedFoto.ketCatat}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Status Verifikasi:</span>
-                      <span className="font-semibold text-foreground">{selectedFoto.statusVerifikasi}</span>
+                      <span className="font-medium text-foreground">{selectedFoto.statusVerifikasi}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Petugas Lapangan:</span>
@@ -539,7 +533,7 @@ export function MonitoringCekFoto() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Waktu Perekaman:</span>
-                      <span className="font-mono text-muted-foreground text-[11px]">
+                      <span className="font-mono text-muted-foreground text-label-11">
                         {selectedFoto.tglCatat
                           ? new Date(selectedFoto.tglCatat).toLocaleString('id-ID')
                           : '-'}
@@ -556,12 +550,11 @@ export function MonitoringCekFoto() {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-border/60 flex justify-end">
+                <div className="pt-2 border-t border-border flex justify-end">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedFoto(null)}
-                    className="text-xs"
                   >
                     Tutup
                   </Button>
@@ -571,6 +564,6 @@ export function MonitoringCekFoto() {
           </DialogContent>
         )}
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

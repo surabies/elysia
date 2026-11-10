@@ -298,9 +298,165 @@
   --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
   --color-chart-scale-01: var(--chart-scale-01);
   --color-chart-scale-mix: var(--chart-scale-mix);
+  /* Geist Typography Font Sizes (Tailwind v4 font-size tokens)
+     Allows text-heading-*, text-copy-*, text-label-*, and text-button-* to be
+     recognized as font-size utilities by Tailwind & tailwind-merge/cn without
+     stripping text-* color classes (e.g. text-primary-foreground). */
+  --text-heading-72: 4.5rem;
+  --text-heading-72--line-height: 5rem;
+  --text-heading-72--letter-spacing: -0.04em;
+  --text-heading-72--font-weight: 600;
+
+  --text-heading-64: 4rem;
+  --text-heading-64--line-height: 4.5rem;
+  --text-heading-64--letter-spacing: -0.035em;
+  --text-heading-64--font-weight: 600;
+
+  --text-heading-56: 3.5rem;
+  --text-heading-56--line-height: 4rem;
+  --text-heading-56--letter-spacing: -0.03em;
+  --text-heading-56--font-weight: 600;
+
+  --text-heading-48: 3rem;
+  --text-heading-48--line-height: 3.5rem;
+  --text-heading-48--letter-spacing: -0.025em;
+  --text-heading-48--font-weight: 600;
+
+  --text-heading-40: 2.5rem;
+  --text-heading-40--line-height: 3rem;
+  --text-heading-40--letter-spacing: -0.02em;
+  --text-heading-40--font-weight: 600;
+
+  --text-heading-32: 2rem;
+  --text-heading-32--line-height: 2.5rem;
+  --text-heading-32--letter-spacing: -0.02em;
+  --text-heading-32--font-weight: 600;
+
+  --text-heading-24: 1.5rem;
+  --text-heading-24--line-height: 2rem;
+  --text-heading-24--letter-spacing: -0.015em;
+  --text-heading-24--font-weight: 600;
+
+  --text-heading-20: 1.25rem;
+  --text-heading-20--line-height: 1.75rem;
+  --text-heading-20--letter-spacing: -0.01em;
+  --text-heading-20--font-weight: 600;
+
+  --text-heading-18: 1.125rem;
+  --text-heading-18--line-height: 1.625rem;
+  --text-heading-18--letter-spacing: -0.008em;
+  --text-heading-18--font-weight: 600;
+
+  --text-heading-16: 1rem;
+  --text-heading-16--line-height: 1.5rem;
+  --text-heading-16--letter-spacing: -0.005em;
+  --text-heading-16--font-weight: 600;
+
+  --text-heading-14: 0.875rem;
+  --text-heading-14--line-height: 1.25rem;
+  --text-heading-14--letter-spacing: 0;
+  --text-heading-14--font-weight: 600;
+
+  --text-copy-24: 1.5rem;
+  --text-copy-24--line-height: 2.25rem;
+  --text-copy-24--letter-spacing: -0.01em;
+  --text-copy-24--font-weight: 400;
+
+  --text-copy-20: 1.25rem;
+  --text-copy-20--line-height: 2rem;
+  --text-copy-20--letter-spacing: -0.005em;
+  --text-copy-20--font-weight: 400;
+
+  --text-copy-18: 1.125rem;
+  --text-copy-18--line-height: 1.75rem;
+  --text-copy-18--letter-spacing: -0.005em;
+  --text-copy-18--font-weight: 400;
+
+  --text-copy-16: 1rem;
+  --text-copy-16--line-height: 1.5rem;
+  --text-copy-16--letter-spacing: 0;
+  --text-copy-16--font-weight: 400;
+
+  --text-copy-14: 0.875rem;
+  --text-copy-14--line-height: 1.375rem;
+  --text-copy-14--letter-spacing: 0;
+  --text-copy-14--font-weight: 400;
+
+  --text-copy-13: 0.8125rem;
+  --text-copy-13--line-height: 1.25rem;
+  --text-copy-13--letter-spacing: 0;
+  --text-copy-13--font-weight: 400;
+
+  --text-copy-12: 0.75rem;
+  --text-copy-12--line-height: 1.125rem;
+  --text-copy-12--letter-spacing: 0;
+  --text-copy-12--font-weight: 400;
+
+  --text-label-16: 1rem;
+  --text-label-16--line-height: 1.5rem;
+  --text-label-16--letter-spacing: 0;
+  --text-label-16--font-weight: 500;
+
+  --text-label-14: 0.875rem;
+  --text-label-14--line-height: 1.25rem;
+  --text-label-14--letter-spacing: 0;
+  --text-label-14--font-weight: 500;
+
+  --text-label-13: 0.8125rem;
+  --text-label-13--line-height: 1.125rem;
+  --text-label-13--letter-spacing: 0;
+  --text-label-13--font-weight: 500;
+
+  --text-label-12: 0.75rem;
+  --text-label-12--line-height: 1rem;
+  --text-label-12--letter-spacing: 0.01em;
+  --text-label-12--font-weight: 500;
+
+  --text-label-11: 0.6875rem;
+  --text-label-11--line-height: 0.875rem;
+  --text-label-11--letter-spacing: 0.01em;
+  --text-label-11--font-weight: 500;
+
+  --text-button-16: 1rem;
+  --text-button-16--line-height: 1.5rem;
+  --text-button-16--letter-spacing: -0.005em;
+  --text-button-16--font-weight: 500;
+
+  --text-button-14: 0.875rem;
+  --text-button-14--line-height: 1.25rem;
+  --text-button-14--letter-spacing: -0.005em;
+  --text-button-14--font-weight: 500;
+
+  --text-button-13: 0.8125rem;
+  --text-button-13--line-height: 1.125rem;
+  --text-button-13--letter-spacing: 0;
+  --text-button-13--font-weight: 500;
+
+  --text-button-12: 0.75rem;
+  --text-button-12--line-height: 1rem;
+  --text-button-12--letter-spacing: 0;
+  --text-button-12--font-weight: 500;
+
   --chart-brush-border: var(--chart-brush-border);
   --color-chart-negative: var(--chart-negative);
   --color-chart-positive: var(--chart-positive);
+
+  /* DICE Landing Page Tokens */
+  --font-body: var(--font-body-src), Helvetica, Arial, sans-serif;
+  --font-display: var(--font-display-src), Impact, "Arial Narrow", sans-serif;
+  --radius-4: 4px;
+  --color-placeholder: #d9d9d9;
+  --color-surface-muted: #f2f2f2;
+  --color-ink-muted: #595959;
+  --color-store-button: #333333;
+  --color-brand-yellow: #f2ef1d;
+  --color-brand-green: #4bfa94;
+  --color-dice-green: #00d8af;
+  --color-dice-blue: #0000fe;
+  --color-dice-blue-light: #24afee;
+  --color-dice-purple-light: #a783ff;
+  --ease-out-sine: cubic-bezier(0.39, 0.575, 0.565, 1);
+  --animate-swipe-up: swipe-up 250ms var(--ease-out-sine) calc(30ms * var(--index, 0)) forwards;
 }
 
 /* ==========================================================================
@@ -318,28 +474,28 @@
   --ds-background-100: #ffffff;
   --ds-background-200: #fafafa;
 
-  /* Gray */
+  /* Gray (Official Vercel Geist 10-step scale) */
   --ds-gray-100: #f2f2f2;
   --ds-gray-200: #ebebeb;
-  --ds-gray-300: #e5e5e5;
-  --ds-gray-400: #c9c9c9;
-  --ds-gray-500: #a8a8a8;
-  --ds-gray-600: #8f8f8f;
-  --ds-gray-700: #7d7d7d;
-  --ds-gray-800: #4d4d4d;
-  --ds-gray-900: #262626;
+  --ds-gray-300: #e6e6e6;
+  --ds-gray-400: #e5e5e5;
+  --ds-gray-500: #c9c9c9;
+  --ds-gray-600: #a8a8a8;
+  --ds-gray-700: #8f8f8f;
+  --ds-gray-800: #7d7d7d;
+  --ds-gray-900: #666666;
   --ds-gray-1000: #171717;
 
   /* Gray Alpha */
   --ds-gray-alpha-100: rgba(0, 0, 0, 0.05);
   --ds-gray-alpha-200: rgba(0, 0, 0, 0.08);
   --ds-gray-alpha-300: rgba(0, 0, 0, 0.1);
-  --ds-gray-alpha-400: rgba(0, 0, 0, 0.15);
+  --ds-gray-alpha-400: rgba(0, 0, 0, 0.11);
   --ds-gray-alpha-500: rgba(0, 0, 0, 0.21);
   --ds-gray-alpha-600: rgba(0, 0, 0, 0.35);
   --ds-gray-alpha-700: rgba(0, 0, 0, 0.45);
-  --ds-gray-alpha-800: rgba(0, 0, 0, 0.65);
-  --ds-gray-alpha-900: rgba(0, 0, 0, 0.85);
+  --ds-gray-alpha-800: rgba(0, 0, 0, 0.51);
+  --ds-gray-alpha-900: rgba(0, 0, 0, 0.61);
   --ds-gray-alpha-1000: rgba(0, 0, 0, 0.91);
 
   /* Blue */
@@ -436,18 +592,18 @@
   --primary: #171717;
   --primary-foreground: #ffffff;
   --primary-hover: #383838;
-  --secondary: #ffffff;
+  --secondary: #f2f2f2;
   --secondary-foreground: #171717;
   --muted: #f2f2f2;
-  --muted-foreground: #737373;
-  --accent: #ebebeb;
+  --muted-foreground: #666666;
+  --accent: #f2f2f2;
   --accent-foreground: #171717;
   --destructive: var(--ds-red-700);
   --destructive-foreground: #ffffff;
-  /* Border Geist Vercel: sangat tipis & subtle tapi tegas */
-  --border: var(--ds-gray-alpha-200);
-  --input: var(--ds-gray-alpha-200);
-  --ring: #d1d1d1;
+  /* Border Geist Vercel: crisp 1px hairline (#e5e5e5) */
+  --border: var(--ds-gray-400);
+  --input: var(--ds-gray-400);
+  --ring: #8f8f8f;
 
   /* Geist Sizing Dimensions */
   --ds-size-small: 24px;
@@ -496,8 +652,8 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #ebebeb;
   --sidebar-accent-foreground: #171717;
-  --sidebar-border: var(--ds-gray-alpha-200);
-  --sidebar-ring: #d1d1d1;
+  --sidebar-border: var(--ds-gray-400);
+  --sidebar-ring: #8f8f8f;
   --success: var(--verif-v3);
   --success-foreground: var(--card);
   --info: var(--verif-v2);
@@ -593,29 +749,29 @@
   --legend-muted-foreground: var(--muted-foreground);
   --legend-track: var(--def-200);
 
-  /* Gray */
-  --ds-gray-100: #111111;
-  --ds-gray-200: #1a1a1a;
-  --ds-gray-300: #222222;
-  --ds-gray-400: #333333;
-  --ds-gray-500: #444444;
-  --ds-gray-600: #666666;
-  --ds-gray-700: #888888;
-  --ds-gray-800: #999999;
-  --ds-gray-900: #eaeaea;
-  --ds-gray-1000: #ffffff;
+  /* Gray (Official Vercel Geist Dark 10-step scale) */
+  --ds-gray-100: #1a1a1a;
+  --ds-gray-200: #1f1f1f;
+  --ds-gray-300: #292929;
+  --ds-gray-400: #2e2e2e;
+  --ds-gray-500: #454545;
+  --ds-gray-600: #878787;
+  --ds-gray-700: #8f8f8f;
+  --ds-gray-800: #7d7d7d;
+  --ds-gray-900: #a1a1a1;
+  --ds-gray-1000: #ededed;
 
   /* Gray Alpha */
   --ds-gray-alpha-100: rgba(255, 255, 255, 0.06);
   --ds-gray-alpha-200: rgba(255, 255, 255, 0.09);
   --ds-gray-alpha-300: rgba(255, 255, 255, 0.13);
-  --ds-gray-alpha-400: rgba(255, 255, 255, 0.2);
-  --ds-gray-alpha-500: rgba(255, 255, 255, 0.27);
-  --ds-gray-alpha-600: rgba(255, 255, 255, 0.4);
-  --ds-gray-alpha-700: rgba(255, 255, 255, 0.53);
-  --ds-gray-alpha-800: rgba(255, 255, 255, 0.6);
-  --ds-gray-alpha-900: rgba(255, 255, 255, 0.92);
-  --ds-gray-alpha-1000: rgba(255, 255, 255, 1);
+  --ds-gray-alpha-400: rgba(255, 255, 255, 0.14);
+  --ds-gray-alpha-500: rgba(255, 255, 255, 0.24);
+  --ds-gray-alpha-600: rgba(255, 255, 255, 0.51);
+  --ds-gray-alpha-700: rgba(255, 255, 255, 0.54);
+  --ds-gray-alpha-800: rgba(255, 255, 255, 0.47);
+  --ds-gray-alpha-900: rgba(255, 255, 255, 0.61);
+  --ds-gray-alpha-1000: rgba(255, 255, 255, 0.92);
 
   /* Blue */
   --ds-blue-100: #001738;
@@ -709,20 +865,20 @@
   --popover: #0a0a0a;
   --popover-foreground: #ededed;
   --primary: #ededed;
-  --primary-foreground: #000000;
+  --primary-foreground: #0a0a0a;
   --primary-hover: #cccccc;
-  --secondary: #0a0a0a;
+  --secondary: #1a1a1a;
   --secondary-foreground: #ededed;
-  --muted: #1f1f1f;
-  --muted-foreground: #888888;
+  --muted: #1a1a1a;
+  --muted-foreground: #a1a1a1;
   --accent: #1f1f1f;
   --accent-foreground: #ededed;
   --destructive: var(--ds-red-700);
   --destructive-foreground: #ffffff;
-  /* Border Geist Vercel Dark: ultra-subtle tapi tegas */
-  --border: var(--ds-gray-alpha-200);
-  --input: var(--ds-gray-alpha-200);
-  --ring: #3d3d3d;
+  /* Border Geist Vercel Dark: crisp 1px hairline (#2e2e2e) */
+  --border: var(--ds-gray-400);
+  --input: var(--ds-gray-400);
+  --ring: #525252;
 
   /* Geist Sizing Dimensions */
   --ds-size-small: 24px;
@@ -768,11 +924,11 @@
   --sidebar: #000000;
   --sidebar-foreground: #ededed;
   --sidebar-primary: #ededed;
-  --sidebar-primary-foreground: #000000;
+  --sidebar-primary-foreground: #0a0a0a;
   --sidebar-accent: #1f1f1f;
   --sidebar-accent-foreground: #ededed;
-  --sidebar-border: var(--ds-gray-alpha-200);
-  --sidebar-ring: #3d3d3d;
+  --sidebar-border: var(--ds-gray-400);
+  --sidebar-ring: #525252;
   --success: var(--verif-v3);
   --success-foreground: var(--background);
   --info: var(--verif-v2);
@@ -853,6 +1009,13 @@
   font-weight: 600;
 }
 
+.text-heading-18 {
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.625rem; /* 26px */
+  letter-spacing: -0.008em;
+  font-weight: 600;
+}
+
 .text-heading-16 {
   font-size: 1rem; /* 16px */
   line-height: 1.5rem; /* 24px */
@@ -910,7 +1073,21 @@
   font-weight: 400;
 }
 
+.text-copy-12 {
+  font-size: 0.75rem; /* 12px */
+  line-height: 1.125rem; /* 18px */
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
 /* UI Labels */
+.text-label-16 {
+  font-size: 1rem; /* 16px */
+  line-height: 1.5rem; /* 24px */
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
 .text-label-14 {
   font-size: 0.875rem; /* 14px */
   line-height: 1.25rem; /* 20px */
@@ -976,11 +1153,25 @@
 }
 
 /* Buttons */
+.text-button-16 {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
 .text-button-14 {
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 500;
   letter-spacing: -0.005em;
+}
+
+.text-button-13 {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 .text-button-12 {
@@ -1035,20 +1226,31 @@
 }
 
 .material-menu {
-  background-color: var(--ds-background-100);
-  border-radius: var(--radius-lg);
+  background-color: var(--popover);
+  border-radius: var(--radius-xl);
   box-shadow:
     0px 8px 30px rgba(0, 0, 0, 0.12),
-    0px 0px 0px 1px var(--ds-gray-alpha-400);
-  backdrop-filter: blur(16px);
+    0px 0px 0px 1px var(--border);
+}
+
+.dark .material-menu {
+  box-shadow:
+    0px 8px 30px rgba(0, 0, 0, 0.6),
+    0px 0px 0px 1px var(--border);
 }
 
 .material-modal {
-  background-color: var(--ds-background-100);
+  background-color: var(--card);
   border-radius: var(--radius-xl);
   box-shadow:
     0px 16px 70px rgba(0, 0, 0, 0.2),
-    0px 0px 0px 1px var(--ds-gray-alpha-400);
+    0px 0px 0px 1px var(--border);
+}
+
+.dark .material-modal {
+  box-shadow:
+    0px 16px 70px rgba(0, 0, 0, 0.7),
+    0px 0px 0px 1px var(--border);
 }
 
 .material-fullscreen {
@@ -1057,6 +1259,85 @@
   box-shadow:
     0px 24px 80px rgba(0, 0, 0, 0.25),
     0px 0px 0px 1px var(--ds-gray-alpha-400);
+}
+
+/* ==========================================================================
+   DICE Landing Page Typography & Keyframes
+   ========================================================================== */
+
+@keyframes swipe-up {
+  from {
+    translate: 0 100%;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+@utility type-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 48px;
+  line-height: 48px;
+
+  @media (min-width: 62rem) {
+    font-size: 106px;
+    line-height: 88px;
+  }
+}
+
+@utility type-heading {
+  font-weight: 350;
+  font-size: 20px;
+  line-height: 25px;
+
+  @media (min-width: 62rem) {
+    font-size: 28px;
+    line-height: 34px;
+  }
+}
+
+@utility type-body {
+  font-weight: 350;
+  letter-spacing: 0.01em;
+  font-size: 15px;
+  line-height: 20px;
+
+  @media (min-width: 62rem) {
+    letter-spacing: normal;
+    font-size: 18px;
+    line-height: 22px;
+  }
+}
+
+@utility type-caption {
+  font-weight: 350;
+  letter-spacing: 0.01em;
+  font-size: 13px;
+  line-height: 17px;
+
+  @media (min-width: 62rem) {
+    letter-spacing: normal;
+    font-size: 16px;
+    line-height: 20px;
+  }
+}
+
+@utility link-underline {
+  position: relative;
+  display: inline;
+  padding-bottom: 1px;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0 1px;
+  transition: background-size 150ms ease-in-out;
+
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
 }
 
 /* ==========================================================================
@@ -1457,14 +1738,18 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
   *::before,
   *::after {
     @apply border-border outline-ring/50;
-    scrollbar-width: thin;
-    scrollbar-color: var(--ds-gray-alpha-400) transparent;
   }
 
-  /* Global WebKit scrollbar matching Verifikasi standard (8px floating pill) */
+  /* Global WebKit scrollbar matching Verifikasi standard (8px floating pill, no up/down arrows) */
   *::-webkit-scrollbar {
     width: 8px;
     height: 8px;
+  }
+
+  *::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   *::-webkit-scrollbar-track {
@@ -1486,6 +1771,43 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
 
   *::-webkit-scrollbar-corner {
     background: transparent;
+  }
+
+  /* Custom Sidebar Scrollbar: Slim 2.5px with clear visibility, expands to 6px on thumb hover */
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-button,
+  .sidebar-scroll::-webkit-scrollbar-button:single-button,
+  .sidebar-scroll::-webkit-scrollbar-button:vertical:start:decrement,
+  .sidebar-scroll::-webkit-scrollbar-button:vertical:end:increment {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--ds-gray-alpha-400);
+    border-radius: 9999px;
+    border: 1.75px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.15s ease;
+  }
+
+  .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: var(--ds-gray-alpha-500);
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover,
+  .sidebar-scroll::-webkit-scrollbar-thumb:active {
+    background-color: var(--ds-gray-alpha-600);
+    border: 0px solid transparent;
   }
 
   body {

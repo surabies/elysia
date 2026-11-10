@@ -1,9 +1,9 @@
 // components/layout/navigation/sidebar/GroupDetail.tsx
 // Tampilan detail: baris "‹ Nama Grup" untuk kembali, lalu menu grup itu.
 
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 import { GeistChevronLeft } from "./lib/GeistIcons"
-import type { NavGroup } from "@/config/Navigasi"
+import type { NavGroup } from "@/config/navigasi"
 import { getGroupIcon } from "./lib/Icons"
 import { NavNodeRow } from "./NavNodeRow"
 import { navRowClass } from "./lib/Styles"

@@ -7,7 +7,7 @@
 // jangan tambahkan "use client" kecuali komponennya benar-benar butuh
 // interaktivitas.
 import Image from "next/image"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 export function AppLogo({ className }: { className?: string }) {
   return (

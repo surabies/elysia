@@ -33,7 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 type Workspace = {
   id: string
@@ -133,7 +133,7 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
             </span>
 
             {/* Tombol icon chevron arrow di pojok kanan: HOVER ACTIVE HANYA DI ICON INI! */}
-            <span className="grid shrink-0 place-content-center size-7 rounded-md transition-colors text-muted-foreground group-hover/scope:bg-neutral-200 dark:group-hover/scope:bg-neutral-700 group-hover/scope:text-foreground">
+            <span className="grid shrink-0 place-content-center size-7 rounded-md transition-colors text-muted-foreground group-hover/scope:bg-(--ds-gray-200) group-hover/scope:text-foreground">
               <GeistChevronsUpDown size={16} className="size-4" />
             </span>
           </button>
@@ -144,15 +144,15 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
           align="start"
           side="bottom"
           sideOffset={6}
-          className="w-[224px] min-w-[224px] rounded-xl border border-border bg-popover p-1.5 shadow-2xl text-sm"
+          className="w-[224px] min-w-[224px] rounded-xl border border-border bg-popover p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.6)] text-sm"
         >
           {/* Header Panel Info: Nama Tim / Organisasi di kiri, Icon Setting di pojok kanan */}
           <div className="flex items-center justify-between gap-2 px-2 py-1.5">
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="truncate text-xs font-semibold text-foreground tracking-tight">
+              <span className="truncate text-label-12 font-semibold text-foreground tracking-tight">
                 Perumda Tirtawening
               </span>
-              <span className="truncate text-[10px] text-muted-foreground">
+              <span className="truncate text-label-11 text-muted-foreground">
                 Pilih Halaman Kerja
               </span>
             </div>
@@ -160,7 +160,7 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
               href="/master/otorisasi"
               aria-label="Otorisasi Menu"
               title="Otorisasi Menu"
-              className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-neutral-100 hover:text-foreground dark:hover:bg-neutral-800 transition-colors"
+              className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-(--ds-gray-100) hover:text-foreground dark:hover:bg-(--ds-gray-200) transition-colors"
             >
               <Settings className="size-3.5" />
             </Link>
@@ -181,8 +181,8 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
                   className={cn(
                     "cursor-pointer px-2 py-1.5 rounded-md transition-colors",
                     isActive
-                      ? "bg-neutral-100 dark:bg-neutral-800/80 text-foreground"
-                      : "hover:bg-neutral-100 dark:hover:bg-neutral-800/50 text-foreground"
+                      ? "bg-(--ds-gray-200) text-foreground"
+                      : "hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200) text-foreground"
                   )}
                 >
                   <Link
@@ -192,10 +192,10 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
                     <div className="flex items-center gap-2 min-w-0">
                       <GeistAvatar size={20} icon={Icon} alt={ws.name} />
                       <div className="flex flex-col min-w-0">
-                        <span className="truncate text-sm font-medium text-foreground leading-tight">
+                        <span className="truncate text-label-13 text-foreground leading-tight">
                           {ws.name}
                         </span>
-                        <span className="truncate text-[11px] text-muted-foreground leading-tight mt-0.5">
+                        <span className="truncate text-label-11 text-muted-foreground leading-tight mt-0.5">
                           {ws.subtitle}
                         </span>
                       </div>
@@ -216,7 +216,7 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
           <div className="flex flex-col gap-0.5">
             <DropdownMenuItem
               asChild
-              className="h-8 cursor-pointer px-2 text-xs text-muted-foreground hover:bg-neutral-100 hover:text-foreground dark:hover:bg-neutral-800 rounded-md"
+              className="h-8 cursor-pointer px-2 text-label-12 text-muted-foreground hover:bg-(--ds-gray-100) hover:text-foreground dark:hover:bg-(--ds-gray-200) rounded-md"
             >
               <Link
                 href="/master/petugas"

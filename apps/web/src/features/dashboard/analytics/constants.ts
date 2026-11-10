@@ -1,8 +1,8 @@
 export const REGIONAL_SERIES_COLORS = [
-  "#2563eb",
-  "#059669",
-  "#db2777",
-  "#d97706",
+  "var(--ds-blue-700)",
+  "var(--ds-teal-700)",
+  "var(--ds-purple-700)",
+  "var(--ds-amber-700)",
 ] as const;
 
 export const REGIONAL_TOP_LIMIT = REGIONAL_SERIES_COLORS.length;

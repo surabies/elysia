@@ -1,6 +1,6 @@
 // components/layout/navigation/sidebar/types/Tipe.ts
 
-import type { NavFolder, NavItem } from "@/config/Navigasi"
+import type { NavFolder, NavItem } from "@/config/navigasi"
 
 /** Halaman aktif + rantai folder induknya (hasil findActiveNav). */
 export type ActiveInfo = {

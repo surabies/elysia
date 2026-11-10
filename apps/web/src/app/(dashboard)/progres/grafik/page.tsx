@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Grafik Pelanggan" }
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MenuPage href="/progres/grafik" />
+  redirect("/analytics");
 }

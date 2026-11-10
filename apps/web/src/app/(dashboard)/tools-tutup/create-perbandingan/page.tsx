@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { MonitoringTutupBulan } from '@/features/dashboard/closing/components/MonitoringTutupBulan';
+import { PerbandinganTagihanView } from '@/features/dashboard/closing';
 
 export const metadata: Metadata = {
-  title: 'Create Perbandingan (Tahap 6) | Cater PDAM',
-  description: 'Komparasi konsumsi kubikasi dan omzet tagihan air antar periode penagihan',
+  title: 'Perbandingan Tagihan Antar Periode | Cater PDAM',
+  description:
+    'Halaman komparasi jumlah pelanggan, kubikasi air (m3), dan omzet tagihan antar periode per golongan tarif',
 };
 
 export default function CreatePerbandinganPage() {
-  return <MonitoringTutupBulan initialTab="perbandingan" highlightStage="create-perbandingan" />;
+  return <PerbandinganTagihanView />;
 }

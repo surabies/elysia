@@ -9,7 +9,7 @@ import {
   flattenNavItems,
   type NavGroup,
   type NavItem,
-} from "@/config/Navigasi";
+} from "@/config/navigasi";
 
 export type RbacContextType = {
   userRoles: string[];

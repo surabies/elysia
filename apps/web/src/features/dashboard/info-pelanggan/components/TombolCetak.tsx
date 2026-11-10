@@ -4,7 +4,7 @@
 // lalu memanggil dialog cetak browser (window.print).
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 
 const BATAS_TUNGGU_FOTO_MS = 4000;
 

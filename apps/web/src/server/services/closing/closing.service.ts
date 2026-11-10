@@ -15,9 +15,11 @@ import {
   pelanggan,
   tarifBlok,
   biayaTetap,
+  waterMeter,
   waterMeterMutasi,
   golonganTarif,
   ruteCater,
+  kelurahan,
   type PeriodePenagihan,
 } from '@cater/db';
 import {
@@ -29,6 +31,13 @@ import {
 
 const UKURAN_BATCH = 500;
 const MAKS_CONTOH_HAMBATAN = 20;
+const closingInFlightLocks = new Set<string>();
+
+export interface ClosingAuditInfo {
+  ditutupAt: string | null;
+  ditutupById: string | null;
+  tanggalJatuhTempo: string | null;
+}
 
 export interface HambatanClosing {
   kode: string;
@@ -63,6 +72,7 @@ export interface PratinjauClosingResult {
   };
   hambatan: HambatanClosing[];
   bisaDitutup: boolean;
+  audit?: ClosingAuditInfo;
 }
 
 export interface EksekusiClosingInput {
@@ -78,6 +88,7 @@ export interface HasilEksekusiClosing {
   jumlahSl: number;
   totalM3: number;
   totalTagihan: number;
+  audit?: ClosingAuditInfo;
 }
 
 export interface WorkflowStageInfo {
@@ -260,10 +271,31 @@ export class ClosingService {
 
     const hambatan: HambatanClosing[] = [];
 
+    // Cek apakah masih ada mutasi ganti meter (Stand Angkat) yang belum disetujui
+    const periodeNum = Number(periodeStr);
+    const pendingMutasiRows = await db
+      .select({ nolg: waterMeterMutasi.nolg })
+      .from(waterMeterMutasi)
+      .where(
+        and(
+          eq(waterMeterMutasi.periode, periodeNum),
+          eq(waterMeterMutasi.statusVerifikasi, 'PENDING')
+        )
+      );
+
+    if (pendingMutasiRows.length > 0) {
+      hambatan.push({
+        kode: 'MUTASI_METER_PENDING',
+        pesan: `Masih ada ${pendingMutasiRows.length.toLocaleString('id-ID')} data pergantian meter air yang belum disetujui pada Langkah 1. Setujui atau tolak data tersebut terlebih dahulu.`,
+        jumlah: pendingMutasiRows.length,
+        contoh: pendingMutasiRows.slice(0, MAKS_CONTOH_HAMBATAN).map((m) => m.nolg),
+      });
+    }
+
     if (verifBelumSelesai > 0) {
       hambatan.push({
         kode: 'VERIFIKASI_BELUM_TUNTAS',
-        pesan: `Masih terdapat ${verifBelumSelesai.toLocaleString('id-ID')} pembacaan meter yang belum disahkan (Tahap 4 Posting Datameter). Lakukan posting massal sebelum closing.`,
+        pesan: `Masih terdapat ${verifBelumSelesai.toLocaleString('id-ID')} hasil baca meter yang belum disahkan pada Langkah 2. Klik tombol "Sahkan Seluruh Bacaan Meter" sebelum menutup buku.`,
         jumlah: verifBelumSelesai,
         contoh: caterRows
           .filter((c) => c.statusVerifikasi !== 'APPROVED_FINAL' && c.statusVerifikasi !== 'LOCKED_BILLING')
@@ -275,7 +307,7 @@ export class ClosingService {
     if (dpmBelumSelesai > 0) {
       hambatan.push({
         kode: 'DPM_BELUM_SELESAI',
-        pesan: `Read rate belum 100% (${readRatePersen}% tercapai). Tersisa ${dpmBelumSelesai} pelanggan pada DPM yang belum tercatat.`,
+        pesan: `Target pencatatan meter belum mencapai 100% (tercapai ${readRatePersen}%). Masih ada ${dpmBelumSelesai.toLocaleString('id-ID')} pelanggan yang belum dicatat.`,
         jumlah: dpmBelumSelesai,
         contoh: [],
       });
@@ -358,7 +390,18 @@ export class ClosingService {
         totalTagihan: finalTotalTagihan,
       },
       hambatan,
-      bisaDitutup: statusPeriode !== 'TERKUNCI',
+      bisaDitutup:
+        statusPeriode !== 'TERKUNCI' &&
+        pendingMutasiRows.length === 0 &&
+        verifBelumSelesai === 0 &&
+        caterRows.length > 0,
+      audit: {
+        ditutupAt: periodeRow?.ditutupAt ? periodeRow.ditutupAt.toISOString() : null,
+        ditutupById: periodeRow?.ditutupById ?? null,
+        tanggalJatuhTempo: periodeRow?.tanggalJatuhTempo
+          ? periodeRow.tanggalJatuhTempo.toISOString()
+          : null,
+      },
     };
   }
 
@@ -367,92 +410,199 @@ export class ClosingService {
    */
   async eksekusiClosing(input: EksekusiClosingInput): Promise<HasilEksekusiClosing> {
     const { periode: periodeStr, tanggalJatuhTempo, userId } = input;
+    const lockKey = `closing:${periodeStr}`;
 
-    const [existingPeriode] = await db
-      .select()
-      .from(periodePenagihan)
-      .where(eq(periodePenagihan.periode, periodeStr));
-
-    if (existingPeriode?.status === 'TERKUNCI') {
-      throw new Error(`Periode ${periodeStr} sudah ditutup dan berstatus TERKUNCI.`);
+    if (closingInFlightLocks.has(lockKey)) {
+      throw new Error(
+        `Proses tutup buku untuk periode ${periodeStr} sedang berlangsung. Mohon tunggu hingga selesai; data Anda tetap aman.`
+      );
     }
 
-    const { blokPerTarif, beaBebanPerUkuran, beaAdminDefault, airKotorDefault } =
-      await this.muatKonteksTarif();
+    closingInFlightLocks.add(lockKey);
 
-    // Ambil pembacaan meter periode ini
-    const caterList = await db
-      .select({
-        id: caterBacaMeter.id,
-        nolg: caterBacaMeter.nolg,
-        pakaiM3: caterBacaMeter.pakaiM3,
-        pakaiTagih: caterBacaMeter.pakaiTagih,
-        tarifKode: pelanggan.tarifKode,
-      })
-      .from(caterBacaMeter)
-      .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
-      .where(eq(caterBacaMeter.thbl, periodeStr));
+    try {
+      const [existingPeriode] = await db
+        .select()
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.periode, periodeStr));
 
-    const existingDrd = await db
-      .select({ nolg: rekeningDrd.nolg })
-      .from(rekeningDrd)
-      .where(eq(rekeningDrd.thbl, periodeStr));
-    const setSudahDitagih = new Set(existingDrd.map((d) => d.nolg));
-
-    const siapDitagih = caterList.filter((c) => !setSudahDitagih.has(c.nolg));
-
-    let diterbitkan = 0;
-    let akumulasiTotalM3 = 0;
-    let akumulasiTotalTagihan = 0;
-
-    await db.transaction(async (tx) => {
-      // 1. Batch insert tagihan rekening DRD jika ada yang belum terbit
-      if (siapDitagih.length > 0) {
-        for (let mulai = 0; mulai < siapDitagih.length; mulai += UKURAN_BATCH) {
-          const batch = siapDitagih.slice(mulai, mulai + UKURAN_BATCH);
-          const drdRows = batch.map((item) => {
-            const volumeM3 = Number(item.pakaiTagih ?? item.pakaiM3);
-            const tarifList = blokPerTarif.get(item.tarifKode ?? '2A2') ?? [];
-            const { total: jmlHargaAir } = hitungRincianHargaAir(volumeM3, tarifList);
-            const beaBeban = beaBebanPerUkuran.get('1/2') ?? 15000;
-            const totalTagihan = hitungTotalTagihan({
-              jmlHargaAir,
-              beaBeban,
-              beaAdmin: beaAdminDefault,
-              airKotor: airKotorDefault,
-            });
-
-            akumulasiTotalM3 += volumeM3;
-            akumulasiTotalTagihan += totalTagihan;
-
-            return {
-              id: `drd-${periodeStr}-${item.nolg}`,
-              thbl: periodeStr,
-              nolg: item.nolg,
-              pakaiM3: String(volumeM3),
-              blokM3: tentukanBlok(volumeM3),
-              jmlHargaAir: String(jmlHargaAir),
-              beaBeban: String(beaBeban),
-              beaAdmin: String(beaAdminDefault),
-              airKotor: String(airKotorDefault),
-              totalTagihan: String(totalTagihan),
-              statusLunas: false,
-            };
-          });
-
-          await tx.insert(rekeningDrd).values(drdRows).onConflictDoNothing();
-          diterbitkan += batch.length;
-        }
+      if (existingPeriode?.status === 'TERKUNCI') {
+        throw new Error(
+          `Periode ${periodeStr} sudah ditutup dan terkunci sebelumnya. Tidak ada perubahan data yang dilakukan.`
+        );
       }
 
-      // 2. Kunci seluruh pembacaan meter periode ini menjadi LOCKED_BILLING
-      await tx
-        .update(caterBacaMeter)
-        .set({ statusVerifikasi: 'LOCKED_BILLING', updatedAt: new Date() })
+      // Guard 1: Pastikan tidak ada mutasi ganti meter yang masih PENDING
+      const periodeNum = Number(periodeStr);
+      const [pendingMutasi] = await db
+        .select({
+          count: sql<number>`count(*)::int`,
+        })
+        .from(waterMeterMutasi)
+        .where(
+          and(
+            eq(waterMeterMutasi.periode, periodeNum),
+            eq(waterMeterMutasi.statusVerifikasi, 'PENDING')
+          )
+        );
+
+      if ((pendingMutasi?.count ?? 0) > 0) {
+        throw new Error(
+          `Tutup buku ditolak karena masih ada ${pendingMutasi.count} pergantian meter air yang belum disetujui. Data tagihan belum diubah. Silakan kembali ke Langkah 1 untuk menyetujui pergantian meter.`
+        );
+      }
+
+      // Guard 2: Pastikan seluruh pembacaan meter periode ini sudah disahkan (APPROVED_FINAL / LOCKED_BILLING)
+      const [unapprovedCater] = await db
+        .select({
+          total: sql<number>`count(*)::int`,
+          belumDisahkan: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} != 'APPROVED_FINAL' and ${caterBacaMeter.statusVerifikasi} != 'LOCKED_BILLING' then 1 end)::int`,
+        })
+        .from(caterBacaMeter)
         .where(eq(caterBacaMeter.thbl, periodeStr));
 
-      // 3. Ambil total resmi DRD dari database
-      const [drdAgg] = await tx
+      if ((unapprovedCater?.total ?? 0) === 0) {
+        throw new Error(
+          `Tutup buku ditolak karena belum ada data bacaan meter pada periode ${periodeStr}. Tidak ada data yang diubah.`
+        );
+      }
+
+      if ((unapprovedCater?.belumDisahkan ?? 0) > 0) {
+        throw new Error(
+          `Tutup buku ditolak karena masih ada ${unapprovedCater.belumDisahkan.toLocaleString('id-ID')} hasil baca meter yang belum disahkan. Data tagihan tetap aman. Silakan kembali ke Langkah 2 dan klik "Sahkan Seluruh Bacaan Meter".`
+        );
+      }
+
+      const { blokPerTarif, beaBebanPerUkuran, beaAdminDefault, airKotorDefault } =
+        await this.muatKonteksTarif();
+
+      // Ambil pembacaan meter periode ini
+      const caterList = await db
+        .select({
+          id: caterBacaMeter.id,
+          nolg: caterBacaMeter.nolg,
+          pakaiM3: caterBacaMeter.pakaiM3,
+          pakaiTagih: caterBacaMeter.pakaiTagih,
+          tarifKode: pelanggan.tarifKode,
+        })
+        .from(caterBacaMeter)
+        .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .where(eq(caterBacaMeter.thbl, periodeStr));
+
+      const existingDrd = await db
+        .select({ nolg: rekeningDrd.nolg })
+        .from(rekeningDrd)
+        .where(eq(rekeningDrd.thbl, periodeStr));
+      const setSudahDitagih = new Set(existingDrd.map((d) => d.nolg));
+
+      const siapDitagih = caterList.filter((c) => !setSudahDitagih.has(c.nolg));
+
+      let diterbitkan = 0;
+      let akumulasiTotalM3 = 0;
+      let akumulasiTotalTagihan = 0;
+      const waktuTutup = new Date();
+
+      await db.transaction(async (tx) => {
+        // Re-check status di dalam transaksi untuk menjamin atomisitas & mencegah race condition
+        const [lockedCheck] = await tx
+          .select({ status: periodePenagihan.status })
+          .from(periodePenagihan)
+          .where(eq(periodePenagihan.periode, periodeStr));
+
+        if (lockedCheck?.status === 'TERKUNCI') {
+          throw new Error(
+            `Periode ${periodeStr} sudah ditutup oleh proses lain. Transaksi dibatalkan agar data tidak ganda.`
+          );
+        }
+
+        // 1. Batch insert tagihan rekening DRD jika ada yang belum terbit
+        if (siapDitagih.length > 0) {
+          for (let mulai = 0; mulai < siapDitagih.length; mulai += UKURAN_BATCH) {
+            const batch = siapDitagih.slice(mulai, mulai + UKURAN_BATCH);
+            const drdRows = batch.map((item) => {
+              const volumeM3 = Number(item.pakaiTagih ?? item.pakaiM3);
+              const tarifList = blokPerTarif.get(item.tarifKode ?? '2A2') ?? [];
+              const { total: jmlHargaAir } = hitungRincianHargaAir(volumeM3, tarifList);
+              const beaBeban = beaBebanPerUkuran.get('1/2') ?? 15000;
+              const totalTagihan = hitungTotalTagihan({
+                jmlHargaAir,
+                beaBeban,
+                beaAdmin: beaAdminDefault,
+                airKotor: airKotorDefault,
+              });
+
+              akumulasiTotalM3 += volumeM3;
+              akumulasiTotalTagihan += totalTagihan;
+
+              return {
+                id: `drd-${periodeStr}-${item.nolg}`,
+                thbl: periodeStr,
+                nolg: item.nolg,
+                pakaiM3: String(volumeM3),
+                blokM3: tentukanBlok(volumeM3),
+                jmlHargaAir: String(jmlHargaAir),
+                beaBeban: String(beaBeban),
+                beaAdmin: String(beaAdminDefault),
+                airKotor: String(airKotorDefault),
+                totalTagihan: String(totalTagihan),
+                statusLunas: false,
+              };
+            });
+
+            await tx.insert(rekeningDrd).values(drdRows).onConflictDoNothing();
+            diterbitkan += batch.length;
+          }
+        }
+
+        // 2. Kunci seluruh pembacaan meter periode ini menjadi LOCKED_BILLING
+        await tx
+          .update(caterBacaMeter)
+          .set({ statusVerifikasi: 'LOCKED_BILLING', updatedAt: waktuTutup })
+          .where(eq(caterBacaMeter.thbl, periodeStr));
+
+        // 3. Ambil total resmi DRD dari database
+        const [drdAgg] = await tx
+          .select({
+            totalSl: sql<number>`count(*)::int`,
+            totalM3: sql<number>`coalesce(sum(${rekeningDrd.pakaiM3}::numeric), 0)::int`,
+            totalTagihan: sql<number>`coalesce(sum(${rekeningDrd.totalTagihan}::numeric), 0)::numeric`,
+          })
+          .from(rekeningDrd)
+          .where(eq(rekeningDrd.thbl, periodeStr));
+
+        const finalTotalSl = drdAgg?.totalSl ?? (diterbitkan + setSudahDitagih.size);
+        const finalTotalM3 = drdAgg?.totalM3 ?? akumulasiTotalM3;
+        const finalTotalTagihan = drdAgg?.totalTagihan ? Number(drdAgg.totalTagihan) : akumulasiTotalTagihan;
+
+        // 4. Kunci Periode Penagihan & Simpan Snapshot Audit
+        await tx
+          .insert(periodePenagihan)
+          .values({
+            periode: periodeStr,
+            status: 'TERKUNCI',
+            tanggalJatuhTempo,
+            ditutupAt: waktuTutup,
+            ditutupById: userId,
+            jumlahSl: finalTotalSl,
+            totalM3: String(finalTotalM3),
+            totalTagihan: String(finalTotalTagihan),
+          })
+          .onConflictDoUpdate({
+            target: periodePenagihan.periode,
+            set: {
+              status: 'TERKUNCI',
+              tanggalJatuhTempo,
+              ditutupAt: waktuTutup,
+              ditutupById: userId,
+              jumlahSl: finalTotalSl,
+              totalM3: String(finalTotalM3),
+              totalTagihan: String(finalTotalTagihan),
+              updatedAt: waktuTutup,
+            },
+          });
+      });
+
+      const [finalDrdAgg] = await db
         .select({
           totalSl: sql<number>`count(*)::int`,
           totalM3: sql<number>`coalesce(sum(${rekeningDrd.pakaiM3}::numeric), 0)::int`,
@@ -461,94 +611,84 @@ export class ClosingService {
         .from(rekeningDrd)
         .where(eq(rekeningDrd.thbl, periodeStr));
 
-      const finalTotalSl = drdAgg?.totalSl ?? (diterbitkan + setSudahDitagih.size);
-      const finalTotalM3 = drdAgg?.totalM3 ?? akumulasiTotalM3;
-      const finalTotalTagihan = drdAgg?.totalTagihan ? Number(drdAgg.totalTagihan) : akumulasiTotalTagihan;
-
-      // 4. Kunci Periode Penagihan
-      await tx
-        .insert(periodePenagihan)
-        .values({
-          periode: periodeStr,
-          status: 'TERKUNCI',
-          tanggalJatuhTempo,
-          ditutupAt: new Date(),
+      return {
+        periode: periodeStr,
+        tagihanDiterbitkan: diterbitkan,
+        tagihanSudahAda: setSudahDitagih.size,
+        jumlahSl: finalDrdAgg?.totalSl ?? (diterbitkan + setSudahDitagih.size),
+        totalM3: finalDrdAgg?.totalM3 ?? akumulasiTotalM3,
+        totalTagihan: Number(finalDrdAgg?.totalTagihan ?? akumulasiTotalTagihan),
+        audit: {
+          ditutupAt: waktuTutup.toISOString(),
           ditutupById: userId,
-          jumlahSl: finalTotalSl,
-          totalM3: String(finalTotalM3),
-          totalTagihan: String(finalTotalTagihan),
-        })
-        .onConflictDoUpdate({
-          target: periodePenagihan.periode,
-          set: {
-            status: 'TERKUNCI',
-            tanggalJatuhTempo,
-            ditutupAt: new Date(),
-            ditutupById: userId,
-            jumlahSl: finalTotalSl,
-            totalM3: String(finalTotalM3),
-            totalTagihan: String(finalTotalTagihan),
-            updatedAt: new Date(),
-          },
-        });
-    });
-
-    const [finalDrdAgg] = await db
-      .select({
-        totalSl: sql<number>`count(*)::int`,
-        totalM3: sql<number>`coalesce(sum(${rekeningDrd.pakaiM3}::numeric), 0)::int`,
-        totalTagihan: sql<number>`coalesce(sum(${rekeningDrd.totalTagihan}::numeric), 0)::numeric`,
-      })
-      .from(rekeningDrd)
-      .where(eq(rekeningDrd.thbl, periodeStr));
-
-    return {
-      periode: periodeStr,
-      tagihanDiterbitkan: diterbitkan,
-      tagihanSudahAda: setSudahDitagih.size,
-      jumlahSl: finalDrdAgg?.totalSl ?? (diterbitkan + setSudahDitagih.size),
-      totalM3: finalDrdAgg?.totalM3 ?? akumulasiTotalM3,
-      totalTagihan: Number(finalDrdAgg?.totalTagihan ?? akumulasiTotalTagihan),
-    };
+          tanggalJatuhTempo: tanggalJatuhTempo.toISOString(),
+        },
+      };
+    } finally {
+      closingInFlightLocks.delete(lockKey);
+    }
   }
 
   /**
    * Tahap 4: Posting Datameter Massal
    * Mengesahkan seluruh pembacaan meter berstatus VERIFIED / VERIFIED_L1 menjadi APPROVED_FINAL
    */
-  async postingDatameterMassal(periodeStr: string, userId: string): Promise<{ diposting: number; message: string }> {
-    const [caterCounts] = await db
-      .select({
-        total: sql<number>`count(*)::int`,
-        belumApprove: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} != 'APPROVED_FINAL' and ${caterBacaMeter.statusVerifikasi} != 'LOCKED_BILLING' then 1 end)::int`,
-      })
-      .from(caterBacaMeter)
-      .where(eq(caterBacaMeter.thbl, periodeStr));
-
-    if (!caterCounts || caterCounts.belumApprove === 0) {
-      return {
-        diposting: 0,
-        message: 'Seluruh data pembacaan meter periode ini sudah berstatus APPROVED_FINAL / LOCKED_BILLING.',
-      };
+  async postingDatameterMassal(periodeStr: string, _userId: string): Promise<{ diposting: number; message: string }> {
+    const lockKey = `posting:${periodeStr}`;
+    if (closingInFlightLocks.has(lockKey)) {
+      throw new Error(
+        `Proses pengesahan bacaan meter periode ${periodeStr} sedang berlangsung. Mohon tunggu sebentar; data Anda tetap aman.`
+      );
     }
 
-    await db
-      .update(caterBacaMeter)
-      .set({
-        statusVerifikasi: 'APPROVED_FINAL',
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(caterBacaMeter.thbl, periodeStr),
-          sql`${caterBacaMeter.statusVerifikasi} != 'APPROVED_FINAL' and ${caterBacaMeter.statusVerifikasi} != 'LOCKED_BILLING'`
-        )
-      );
+    closingInFlightLocks.add(lockKey);
+    try {
+      const [periodeRow] = await db
+        .select({ status: periodePenagihan.status })
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.periode, periodeStr));
 
-    return {
-      diposting: caterCounts.belumApprove,
-      message: `Berhasil memposting dan mengesahkan ${caterCounts.belumApprove.toLocaleString('id-ID')} data pembacaan meter menjadi APPROVED_FINAL.`,
-    };
+      if (periodeRow?.status === 'TERKUNCI') {
+        throw new Error(
+          `Periode ${periodeStr} sudah terkunci. Pengesahan bacaan meter tidak dapat dijalankan ulang pada periode yang telah ditutup.`
+        );
+      }
+
+      const [caterCounts] = await db
+        .select({
+          total: sql<number>`count(*)::int`,
+          belumApprove: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} != 'APPROVED_FINAL' and ${caterBacaMeter.statusVerifikasi} != 'LOCKED_BILLING' then 1 end)::int`,
+        })
+        .from(caterBacaMeter)
+        .where(eq(caterBacaMeter.thbl, periodeStr));
+
+      if (!caterCounts || caterCounts.belumApprove === 0) {
+        return {
+          diposting: 0,
+          message: 'Seluruh data hasil baca meter periode ini sudah berstatus disahkan (APPROVED_FINAL). Anda siap melanjutkan ke langkah berikutnya.',
+        };
+      }
+
+      await db
+        .update(caterBacaMeter)
+        .set({
+          statusVerifikasi: 'APPROVED_FINAL',
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`${caterBacaMeter.statusVerifikasi} != 'APPROVED_FINAL' and ${caterBacaMeter.statusVerifikasi} != 'LOCKED_BILLING'`
+          )
+        );
+
+      return {
+        diposting: caterCounts.belumApprove,
+        message: `Berhasil mengesahkan ${caterCounts.belumApprove.toLocaleString('id-ID')} data hasil baca meter. Seluruh bacaan kini siap dihitung menjadi tagihan.`,
+      };
+    } finally {
+      closingInFlightLocks.delete(lockKey);
+    }
   }
 
   /**
@@ -667,6 +807,7 @@ export class ClosingService {
         status: (pelangganCounts[0]?.tanpaRute ?? 0) === 0 ? 'SELESAI' : 'PERLU_TINDAKAN',
         deskripsi: 'Pembaruan struktur zonasi wilayah, kelurahan, dan rute pembacaan meter.',
         metrikUtama: `${(pelangganCounts[0]?.tanpaRute ?? 0) === 0 ? '100% Terpetakan' : `${pelangganCounts[0]?.tanpaRute} Belum Ada Rute`}`,
+        canExecute: true,
         routeUrl: '/tools-tutup/update-zonasi',
         detail: { tanpaRute: pelangganCounts[0]?.tanpaRute ?? 0 },
       },
@@ -745,6 +886,7 @@ export class ClosingService {
         status: 'SELESAI',
         deskripsi: 'Sinkronisasi database induk master pelanggan ke server dan perangkat pembaca.',
         metrikUtama: `${totalMaster.toLocaleString('id-ID')} Pelanggan Terverifikasi`,
+        canExecute: true,
         routeUrl: '/tools-tutup/upload-master-pelanggan',
         detail: { totalMaster },
       },
@@ -757,6 +899,7 @@ export class ClosingService {
         status: (pelangganCounts[0]?.tanpaRute ?? 0) === 0 ? 'SELESAI' : 'PERLU_TINDAKAN',
         deskripsi: 'Sinkronisasi pelanggan pendaftaran baru ke buku rute DPM periode mendatang.',
         metrikUtama: `${(pelangganCounts[0]?.tanpaRute ?? 0) === 0 ? 'Semua Pelanggan Masuk Rute' : `${pelangganCounts[0]?.tanpaRute} Butuh Penugasan Rute`}`,
+        canExecute: true,
         routeUrl: '/tools-tutup/sync-pelanggan-baru',
         detail: { tanpaRute: pelangganCounts[0]?.tanpaRute ?? 0 },
       },
@@ -769,6 +912,7 @@ export class ClosingService {
         status: (pelangganCounts[0]?.tanpaUrutan ?? 0) === 0 ? 'SELESAI' : 'SIAP',
         deskripsi: 'Pembaruan massal nomor urut rute lapangan, koordinat GPS, dan nomor telepon.',
         metrikUtama: `${totalMaster - (pelangganCounts[0]?.tanpaUrutan ?? 0)} Rute Berurutan`,
+        canExecute: true,
         routeUrl: '/tools-tutup/update-data-pelanggan',
         detail: { tanpaUrutan: pelangganCounts[0]?.tanpaUrutan ?? 0 },
       },
@@ -1080,6 +1224,279 @@ export class ClosingService {
       .where(eq(waterMeterMutasi.id, id));
 
     return { success: true, message: `Mutasi stand angkat ${id} berhasil diupdate menjadi ${status}.` };
+  }
+
+  /**
+   * Info Periode Kerja Aktif & Daftar Periode Penagihan
+   */
+  async getPeriodeKerja() {
+    const daftarRows = await db
+      .select({
+        periode: periodePenagihan.periode,
+        status: periodePenagihan.status,
+        jumlahSl: periodePenagihan.jumlahSl,
+      })
+      .from(periodePenagihan)
+      .orderBy(desc(periodePenagihan.periode));
+
+    const daftarPeriode = daftarRows.map((r) => ({
+      periode: r.periode,
+      status: r.status as 'BERJALAN' | 'TERKUNCI',
+      jumlahSl: r.jumlahSl,
+    }));
+
+    const openPeriod = daftarPeriode.find((p) => p.status === 'BERJALAN');
+    const latestPeriod = daftarPeriode[0]?.periode ?? '202601';
+    const periodeAktif = openPeriod ? openPeriod.periode : null;
+    const saranPeriode = openPeriod ? openPeriod.periode : latestPeriod;
+
+    return {
+      periodeAktif,
+      saranPeriode,
+      daftarPeriode:
+        daftarPeriode.length > 0
+          ? daftarPeriode
+          : [{ periode: '202601', status: 'BERJALAN' as const, jumlahSl: null }],
+    };
+  }
+
+  /**
+   * Tahap 3: Update Zonasi & Pemetaan Rute Otomatis
+   * Menetapkan ruteKode dan kelurahanKode default bagi pelanggan yang belum terpetakan,
+   * serta menyelaraskan ruteKode pada tabel daftarCatat (DPM) periode berjalan.
+   */
+  async sinkronZonasiRute(periodeStr: string) {
+    const [defaultRute] = await db
+      .select({ kode: ruteCater.kode })
+      .from(ruteCater)
+      .orderBy(asc(ruteCater.kode))
+      .limit(1);
+
+    const [defaultKelurahan] = await db
+      .select({ kode: kelurahan.kode })
+      .from(kelurahan)
+      .orderBy(asc(kelurahan.kode))
+      .limit(1);
+
+    const fallbackRuteKode = defaultRute?.kode ?? 'CD101';
+    const fallbackKelKode = defaultKelurahan?.kode ?? null;
+
+    const [unmappedCounts] = await db
+      .select({
+        tanpaRute: sql<number>`count(case when ${pelanggan.ruteKode} is null then 1 end)::int`,
+        tanpaKelurahan: sql<number>`count(case when ${pelanggan.kelurahanKode} is null then 1 end)::int`,
+      })
+      .from(pelanggan);
+
+    const jmlTanpaRute = unmappedCounts?.tanpaRute ?? 0;
+    const jmlTanpaKelurahan = unmappedCounts?.tanpaKelurahan ?? 0;
+
+    await db.transaction(async (tx) => {
+      if (jmlTanpaRute > 0 && defaultRute) {
+        await tx
+          .update(pelanggan)
+          .set({
+            ruteKode: fallbackRuteKode,
+            updatedAt: new Date(),
+          })
+          .where(isNull(pelanggan.ruteKode));
+      }
+
+      if (jmlTanpaKelurahan > 0 && fallbackKelKode) {
+        await tx
+          .update(pelanggan)
+          .set({
+            kelurahanKode: fallbackKelKode,
+            updatedAt: new Date(),
+          })
+          .where(isNull(pelanggan.kelurahanKode));
+      }
+
+      // Sinkronkan juga daftarCatat yang ruteKode-nya masih kosong
+      if (defaultRute) {
+        await tx
+          .update(daftarCatat)
+          .set({
+            ruteKode: fallbackRuteKode,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(daftarCatat.periode, periodeStr),
+              isNull(daftarCatat.ruteKode)
+            )
+          );
+      }
+    });
+
+    return {
+      periode: periodeStr,
+      dipetakanRute: jmlTanpaRute,
+      dipetakanKelurahan: jmlTanpaKelurahan,
+      ruteDefault: fallbackRuteKode,
+      message:
+        jmlTanpaRute === 0 && jmlTanpaKelurahan === 0
+          ? `Seluruh pelanggan pada periode ${periodeStr} sudah memiliki zonasi kelurahan & kode rute yang valid (100% terpetakan).`
+          : `Berhasil menyelaraskan zonasi: ${jmlTanpaRute} pelanggan dipetakan ke rute ${fallbackRuteKode} dan ${jmlTanpaKelurahan} pelanggan disinkronkan kelurahannya.`,
+    };
+  }
+
+  /**
+   * Tahap 8: Upload & Validasi Master Pelanggan
+   * Memvalidasi integritas data induk pelanggan (golongan tarif, aset water meter, dan status sambungan).
+   */
+  async validasiUploadMasterPelanggan(periodeStr: string) {
+    const [defaultTarif] = await db
+      .select({ kode: golonganTarif.kode })
+      .from(golonganTarif)
+      .orderBy(asc(golonganTarif.kode))
+      .limit(1);
+
+    const fallbackTarif = defaultTarif?.kode ?? '2A2';
+
+    const [anomaliCounts] = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+        tanpaTarif: sql<number>`count(case when ${pelanggan.tarifKode} is null then 1 end)::int`,
+        tanpaMeter: sql<number>`count(case when ${pelanggan.noMeter} is null then 1 end)::int`,
+      })
+      .from(pelanggan);
+
+    const jmlTanpaTarif = anomaliCounts?.tanpaTarif ?? 0;
+
+    if (jmlTanpaTarif > 0 && defaultTarif) {
+      await db
+        .update(pelanggan)
+        .set({
+          tarifKode: fallbackTarif,
+          updatedAt: new Date(),
+        })
+        .where(isNull(pelanggan.tarifKode));
+    }
+
+    return {
+      periode: periodeStr,
+      totalMaster: anomaliCounts?.total ?? 0,
+      dinormalisasiTarif: jmlTanpaTarif,
+      tanpaMeter: anomaliCounts?.tanpaMeter ?? 0,
+      message: `Sinkronisasi & validasi Master Pelanggan selesai: ${(anomaliCounts?.total ?? 0).toLocaleString('id-ID')} sambungan aktif terverifikasi (${jmlTanpaTarif} golongan tarif dinormalisasi).`,
+    };
+  }
+
+  /**
+   * Tahap 9: Sync Pelanggan Baru ke Rute DPM
+   * Menemukan seluruh pelanggan aktif di tabel pelanggan yang belum masuk ke daftarCatat (DPM)
+   * pada periode target dan menginjeksinya dengan sumber 'PBPK'.
+   */
+  async syncPelangganBaruKeDpm(periodeStr: string) {
+    const allPelanggan = await db
+      .select({
+        nolg: pelanggan.nolg,
+        ruteKode: pelanggan.ruteKode,
+        noUrutRute: pelanggan.noUrutRute,
+      })
+      .from(pelanggan);
+
+    const existingDpm = await db
+      .select({ nolg: daftarCatat.nolg })
+      .from(daftarCatat)
+      .where(eq(daftarCatat.periode, periodeStr));
+
+    const setDpm = new Set(existingDpm.map((d) => d.nolg));
+    const belumMasukDpm = allPelanggan.filter((p) => !setDpm.has(p.nolg));
+
+    let diinjeksi = 0;
+
+    if (belumMasukDpm.length > 0) {
+      await db.transaction(async (tx) => {
+        for (let i = 0; i < belumMasukDpm.length; i += UKURAN_BATCH) {
+          const batch = belumMasukDpm.slice(i, i + UKURAN_BATCH);
+          const rows = batch.map((p, idx) => ({
+            periode: periodeStr,
+            nolg: p.nolg,
+            ruteKode: p.ruteKode,
+            urutan: p.noUrutRute && p.noUrutRute > 0 ? p.noUrutRute : idx + 1,
+            sumber: 'PBPK',
+            status: 'BELUM_DICATAT',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }));
+
+          await tx
+            .insert(daftarCatat)
+            .values(rows)
+            .onConflictDoNothing({
+              target: [daftarCatat.periode, daftarCatat.nolg],
+            });
+
+          diinjeksi += rows.length;
+        }
+      });
+    }
+
+    return {
+      periode: periodeStr,
+      totalMaster: allPelanggan.length,
+      sudahDiDpm: setDpm.size,
+      diinjeksiBaru: diinjeksi,
+      message:
+        diinjeksi === 0
+          ? `Seluruh ${allPelanggan.length.toLocaleString('id-ID')} pelanggan aktif sudah terdaftar di DPM periode ${periodeStr} (0 selisih).`
+          : `Berhasil menyinkronkan dan menginjeksi ${diinjeksi.toLocaleString('id-ID')} pelanggan baru ke rute DPM periode ${periodeStr}.`,
+    };
+  }
+
+  /**
+   * Tahap 10: Update Data Pelanggan (Sequencing Nomor Urut Rute)
+   * Menormalisasi nomor urut rute (noUrutRute) pelanggan yang masih bernilai null atau <= 0
+   * agar berurutan rapi di setiap rute baca meter.
+   */
+  async sequencingUrutanPelanggan(periodeStr: string) {
+    const [countsBefore] = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+        tanpaUrutan: sql<number>`count(case when ${pelanggan.noUrutRute} is null or ${pelanggan.noUrutRute} <= 0 then 1 end)::int`,
+      })
+      .from(pelanggan);
+
+    const perluUpdate = countsBefore?.tanpaUrutan ?? 0;
+
+    // Gunakan window function row_number() per rute_kode untuk menormalisasi nomor urut yang kosong/0
+    if (perluUpdate > 0) {
+      await db.execute(sql`
+        WITH ranked AS (
+          SELECT nolg, ROW_NUMBER() OVER (PARTITION BY coalesce(rute_kode, 'DEFAULT') ORDER BY nolg ASC)::int AS seq_num
+          FROM pelanggan
+        )
+        UPDATE pelanggan AS p
+        SET no_urut_rute = ranked.seq_num,
+            updated_at = NOW()
+        FROM ranked
+        WHERE p.nolg = ranked.nolg
+          AND (p.no_urut_rute IS NULL OR p.no_urut_rute <= 0)
+      `);
+    }
+
+    // Sinkronkan urutan pada daftarCatat periode ini jika urutan <= 0
+    await db.execute(sql`
+      UPDATE daftar_catat AS dc
+      SET urutan = COALESCE(p.no_urut_rute, 1),
+          updated_at = NOW()
+      FROM pelanggan AS p
+      WHERE dc.nolg = p.nolg
+        AND dc.periode = ${periodeStr}
+        AND dc.urutan <= 0
+    `);
+
+    return {
+      periode: periodeStr,
+      totalPelanggan: countsBefore?.total ?? 0,
+      diurutkan: perluUpdate,
+      message:
+        perluUpdate === 0
+          ? `Sequencing rute pelanggan periode ${periodeStr} sudah teratur 100% (${(countsBefore?.total ?? 0).toLocaleString('id-ID')} SL berurutan).`
+          : `Berhasil menormalisasi urutan baca (sequencing) untuk ${perluUpdate.toLocaleString('id-ID')} pelanggan pada rute periode ${periodeStr}.`,
+    };
   }
 }
 

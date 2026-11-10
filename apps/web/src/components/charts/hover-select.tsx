@@ -47,18 +47,18 @@ export function HoverSelect<V extends string>({
             if (event.pointerType === "mouse") show();
           }}
           onPointerLeave={scheduleHide}
-          className="group inline-flex items-center gap-1 rounded-sm text-[11px] leading-none text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
+          className="group inline-flex h-6 cursor-pointer items-center gap-1 rounded-md border border-border bg-(--ds-gray-100) px-2 text-label-12 text-foreground outline-none transition-colors hover:border-(--ds-gray-500) hover:bg-(--ds-gray-200) focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-(--ds-gray-200) dark:hover:bg-(--ds-gray-300)"
         >
+          <span>{current?.label}</span>
           <ChevronDown
             aria-hidden="true"
-            className="size-3.5 transition-transform duration-200 group-hover:rotate-180 group-data-[state=open]:rotate-180"
+            className="size-3.5 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-180"
           />
-          {current?.label}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="min-w-32"
+        className="min-w-36"
         onPointerEnter={show}
         onPointerLeave={scheduleHide}
       >

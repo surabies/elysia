@@ -1,7 +1,7 @@
 // Kartu grafik pemakaian per periode.
 import { GrafikPemakaian } from "./GrafikPemakaian";
-import { PanelDasbor } from "../../shared/PanelDasbor";
-import type { BarisRiwayat, DataCatat } from "../types/TipeInfoPelanggan";
+import { PanelDasbor } from "@/features/dashboard/shared";
+import type { BarisRiwayat, DataCatat } from "../types";
 
 export function KartuGrafik({
   catat,

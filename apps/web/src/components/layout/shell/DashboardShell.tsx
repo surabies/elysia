@@ -3,7 +3,7 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import {
   useSidebar,
   MIN_SIDEBAR_WIDTH,
@@ -167,7 +167,7 @@ export function DashboardShell({
           </header>
 
           {/* Body Sidebar: Hirarki Menu Navigasi (sesuai inspeksi Vercel: px-2 pt-2.5) */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-2 pt-2.5 pb-2 overscroll-contain">
+          <div className="sidebar-scroll flex-1 min-h-0 overflow-y-auto px-2 pt-2.5 pb-2 overscroll-contain">
             <SidebarNav />
           </div>
 

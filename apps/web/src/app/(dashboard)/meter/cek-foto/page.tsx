@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { MonitoringCekFoto } from '@/features/dashboard/meter/components/MonitoringCekFoto';
+import { MonitoringCekFoto } from '@/features/dashboard/meter';
 
 export const metadata: Metadata = {
   title: 'Audit & Cek Foto Petugas | Cater PDAM',

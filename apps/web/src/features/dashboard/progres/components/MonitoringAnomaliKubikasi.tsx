@@ -41,6 +41,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 import type {
   AnomaliKubikasiItem,
@@ -82,23 +83,22 @@ export function MonitoringAnomaliKubikasi() {
   }, [fetchData]);
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+    <PageContainer className="space-y-6">
       {/* 1. Header Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <Gauge className="size-6 text-amber-500" />
+          <h1 className="text-heading-20 text-foreground">
             Monitoring Anomali Kubikasi
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <p className="text-copy-13 text-muted-foreground mt-1">
             Deteksi dini lonjakan pemakaian ekstrem, penurunan drastis, dan stand meter 0 m³.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Period Selector */}
-          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-xs">
-            <span className="text-muted-foreground mr-2 font-medium">Periode:</span>
+          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
+            <span className="text-muted-foreground mr-2">Periode:</span>
             <NativeSelect
               value={periode}
               onChange={(e) => setPeriode(e.target.value)}
@@ -116,7 +116,6 @@ export function MonitoringAnomaliKubikasi() {
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="h-8 gap-1.5 text-xs"
           >
             <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
             Segarkan
@@ -130,19 +129,19 @@ export function MonitoringAnomaliKubikasi() {
         <Card
           onClick={() => setJenisFilter('all')}
           className={cn(
-            'p-4 rounded-[10px] border-border bg-card shadow-xs cursor-pointer transition-all hover:border-primary/50',
-            jenisFilter === 'all' && 'ring-2 ring-primary border-transparent'
+            'p-4 border-border bg-card cursor-pointer transition-colors hover:border-(--ds-gray-500)',
+            jenisFilter === 'all' && 'ring-2 ring-ring border-foreground'
           )}
         >
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Total Anomali Terdeteksi</span>
-            <AlertTriangle className="size-4 text-amber-500" />
+            <span className="text-label-12">Total Anomali Terdeteksi</span>
+            <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalAnomali) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-muted-foreground">
             Rekening berpotensi kelainan catat
           </p>
         </Card>
@@ -151,19 +150,19 @@ export function MonitoringAnomaliKubikasi() {
         <Card
           onClick={() => setJenisFilter('ekstrim')}
           className={cn(
-            'p-4 rounded-[10px] border-border bg-card shadow-xs cursor-pointer transition-all hover:border-rose-500/50',
-            jenisFilter === 'ekstrim' && 'ring-2 ring-rose-500 border-transparent'
+            'p-4 border-border bg-card cursor-pointer transition-colors hover:border-(--ds-gray-500)',
+            jenisFilter === 'ekstrim' && 'ring-2 ring-rose-500/40 border-rose-500'
           )}
         >
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Lonjakan Ekstrem (&gt;50 m³)</span>
-            <TrendingUp className="size-4 text-rose-500" />
+            <span className="text-label-12">Lonjakan Ekstrem (&gt;50 m³)</span>
+            <TrendingUp className="size-4 text-rose-600 dark:text-rose-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-rose-600 dark:text-rose-400 font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalEkstrim) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-muted-foreground">
             Pemakaian melompat tinggi
           </p>
         </Card>
@@ -172,19 +171,19 @@ export function MonitoringAnomaliKubikasi() {
         <Card
           onClick={() => setJenisFilter('nol')}
           className={cn(
-            'p-4 rounded-[10px] border-border bg-card shadow-xs cursor-pointer transition-all hover:border-amber-500/50',
-            jenisFilter === 'nol' && 'ring-2 ring-amber-500 border-transparent'
+            'p-4 border-border bg-card cursor-pointer transition-colors hover:border-(--ds-gray-500)',
+            jenisFilter === 'nol' && 'ring-2 ring-amber-500/40 border-amber-500'
           )}
         >
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Stand 0 m³ (Nihil / Macet)</span>
-            <HelpCircle className="size-4 text-amber-500" />
+            <span className="text-label-12">Stand 0 m³ (Nihil / Macet)</span>
+            <HelpCircle className="size-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-amber-600 dark:text-amber-400 font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalNol) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-muted-foreground">
             Meter tidak bergerak / rumah kosong
           </p>
         </Card>
@@ -193,19 +192,19 @@ export function MonitoringAnomaliKubikasi() {
         <Card
           onClick={() => setJenisFilter('turun')}
           className={cn(
-            'p-4 rounded-[10px] border-border bg-card shadow-xs cursor-pointer transition-all hover:border-sky-500/50',
-            jenisFilter === 'turun' && 'ring-2 ring-sky-500 border-transparent'
+            'p-4 border-border bg-card cursor-pointer transition-colors hover:border-(--ds-gray-500)',
+            jenisFilter === 'turun' && 'ring-2 ring-(--ds-blue-400) border-(--ds-blue-900)'
           )}
         >
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Pemakaian Turun Drastis</span>
-            <TrendingDown className="size-4 text-sky-500" />
+            <span className="text-label-12">Pemakaian Turun Drastis</span>
+            <TrendingDown className="size-4 text-(--ds-blue-900)" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-(--ds-blue-900) font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalTurun) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-muted-foreground">
             Turun &gt; 50% dari bulan lalu
           </p>
         </Card>
@@ -213,51 +212,48 @@ export function MonitoringAnomaliKubikasi() {
 
       {/* 3. Filter Tabs & Search */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1">
-        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-lg bg-muted/40 border border-border w-fit">
+        <div className="flex flex-wrap items-center gap-1 p-1 rounded-md bg-(--ds-gray-100) border border-border w-fit">
           <Button
             variant={jenisFilter === 'all' ? 'secondary' : 'ghost'}
-            size="sm"
+            size="xs"
             onClick={() => setJenisFilter('all')}
-            className="h-7 text-xs"
           >
             Semua Anomali
           </Button>
           <Button
             variant={jenisFilter === 'ekstrim' ? 'secondary' : 'ghost'}
-            size="sm"
+            size="xs"
             onClick={() => setJenisFilter('ekstrim')}
-            className="h-7 text-xs gap-1"
           >
-            <TrendingUp className="size-3 text-rose-500" />
+            <TrendingUp className="size-3 text-rose-600 dark:text-rose-400" />
             Lonjakan Ekstrem
           </Button>
           <Button
             variant={jenisFilter === 'nol' ? 'secondary' : 'ghost'}
-            size="sm"
+            size="xs"
             onClick={() => setJenisFilter('nol')}
-            className="h-7 text-xs gap-1"
           >
-            <HelpCircle className="size-3 text-amber-500" />
+            <HelpCircle className="size-3 text-amber-600 dark:text-amber-400" />
             Stand 0 m³
           </Button>
           <Button
             variant={jenisFilter === 'turun' ? 'secondary' : 'ghost'}
-            size="sm"
+            size="xs"
             onClick={() => setJenisFilter('turun')}
-            className="h-7 text-xs gap-1"
           >
-            <TrendingDown className="size-3 text-sky-500" />
+            <TrendingDown className="size-3 text-(--ds-blue-900)" />
             Turun Drastis
           </Button>
         </div>
 
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
           <Input
+            size="sm"
             placeholder="Cari NOLG, nama, atau rute..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 text-xs"
+            className="pl-8 bg-card"
           />
         </div>
       </div>
@@ -267,17 +263,17 @@ export function MonitoringAnomaliKubikasi() {
         <div className="flex h-64 w-full items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <Spinner className="size-6 text-primary" />
-            <p className="text-xs text-muted-foreground">Memuat daftar kasus anomali...</p>
+            <p className="text-copy-12 text-muted-foreground">Memuat daftar kasus anomali...</p>
           </div>
         </div>
       ) : !data || data.items.length === 0 ? (
-        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-copy-13 text-muted-foreground">
           Tidak ditemukan kasus anomali pada filter ini.
         </div>
       ) : (
         <Card className="border-border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow>
                 <TableHead>No. Langganan</TableHead>
                 <TableHead>Pelanggan & Alamat</TableHead>
@@ -292,7 +288,7 @@ export function MonitoringAnomaliKubikasi() {
                 <TableHead className="text-center">Aksi</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody className="font-mono">
+            <TableBody className="font-mono tabular-nums">
               {data.items.map((row) => {
                 const isEkstrim = row.jenisAnomali === 'EKSTRIM';
                 const isNol = row.jenisAnomali === 'NOL';
@@ -304,28 +300,28 @@ export function MonitoringAnomaliKubikasi() {
                     className="cursor-pointer"
                     onClick={() => setSelectedItem(row)}
                   >
-                    <TableCell className="font-semibold text-foreground font-sans">
+                    <TableCell className="font-medium text-foreground font-sans">
                       {row.nolg}
                     </TableCell>
                     <TableCell className="font-sans">
                       <div className="max-w-[200px] truncate">
-                        <p className="font-semibold text-foreground truncate">{row.nama}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{row.alamat}</p>
+                        <p className="font-medium text-foreground truncate">{row.nama}</p>
+                        <p className="text-label-11 text-muted-foreground truncate">{row.alamat}</p>
                       </div>
                     </TableCell>
                     <TableCell className="font-sans text-muted-foreground">
-                      <div className="text-[11px]">
-                        <span className="font-semibold text-foreground font-mono">{row.ruteKode ?? '-'}</span>
-                        <p className="text-[10px] text-muted-foreground">{row.kelurahanNama ?? '-'}</p>
+                      <div className="text-label-12">
+                        <span className="font-medium text-foreground font-mono">{row.ruteKode ?? '-'}</span>
+                        <p className="text-label-11 text-muted-foreground">{row.kelurahanNama ?? '-'}</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {numberFormat.format(row.stml)}
                     </TableCell>
-                    <TableCell className="text-right font-semibold text-foreground">
+                    <TableCell className="text-right font-medium text-foreground">
                       {numberFormat.format(row.stma)}
                     </TableCell>
-                    <TableCell className="text-right font-bold text-foreground">
+                    <TableCell className="text-right font-semibold text-foreground">
                       {numberFormat.format(row.pakaiM3)} m³
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
@@ -333,12 +329,12 @@ export function MonitoringAnomaliKubikasi() {
                     </TableCell>
                     <TableCell className="text-right">
                       {row.selisihM3 > 0 ? (
-                        <span className="inline-flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-semibold">
+                        <span className="inline-flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-medium">
                           <ArrowUpRight className="size-3" />
                           +{row.selisihM3} (+{row.persenDeviasi}%)
                         </span>
                       ) : row.selisihM3 < 0 ? (
-                        <span className="inline-flex items-center gap-0.5 text-sky-600 dark:text-sky-400 font-semibold">
+                        <span className="inline-flex items-center gap-0.5 text-(--ds-blue-900) font-medium">
                           <ArrowDownRight className="size-3" />
                           {row.selisihM3} ({row.persenDeviasi}%)
                         </span>
@@ -348,15 +344,15 @@ export function MonitoringAnomaliKubikasi() {
                     </TableCell>
                     <TableCell className="text-center font-sans">
                       {isEkstrim ? (
-                        <Badge variant="outline" className="text-[10px] text-rose-600 border-rose-500/30 bg-rose-500/10">
+                        <Badge variant="outline" className="text-rose-600 border-rose-500/25 bg-rose-500/10 dark:text-rose-400">
                           Lonjakan Ekstrem
                         </Badge>
                       ) : isNol ? (
-                        <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-500/30 bg-amber-500/10">
+                        <Badge variant="outline" className="text-amber-600 border-amber-500/25 bg-amber-500/10 dark:text-amber-400">
                           Stand 0 m³
                         </Badge>
                       ) : isTurun ? (
-                        <Badge variant="outline" className="text-[10px] text-sky-600 border-sky-500/30 bg-sky-500/10">
+                        <Badge variant="outline" className="text-(--ds-blue-900) border-(--ds-blue-400) bg-(--ds-blue-100)">
                           Turun Drastis
                         </Badge>
                       ) : null}
@@ -367,8 +363,7 @@ export function MonitoringAnomaliKubikasi() {
                     <TableCell className="text-center font-sans">
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
+                        size="icon-xs"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedItem(row);
@@ -390,44 +385,44 @@ export function MonitoringAnomaliKubikasi() {
         {selectedItem && (
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <div className="text-[10px] font-mono font-bold text-muted-foreground uppercase">
+              <div className="text-label-11 font-mono text-muted-foreground uppercase">
                 NOLG: {selectedItem.nolg} • Periode {selectedItem.thbl}
               </div>
-              <DialogTitle className="text-base font-bold text-foreground leading-snug mt-0.5">
+              <DialogTitle className="mt-0.5">
                 {selectedItem.nama}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription>
                 {selectedItem.alamat}
               </DialogDescription>
             </DialogHeader>
 
             {/* Stand comparison */}
-            <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/40 p-3 text-center font-mono">
+            <div className="grid grid-cols-3 gap-2 rounded-lg border border-border bg-(--ds-gray-100) p-3 text-center font-mono tabular-nums">
               <div>
-                <span className="block text-[11px] text-muted-foreground font-sans">Stand Lalu</span>
-                <span className="text-sm font-semibold text-foreground">
+                <span className="block text-label-11 text-muted-foreground font-sans">Stand Lalu</span>
+                <span className="text-heading-16 text-foreground">
                   {numberFormat.format(selectedItem.stml)}
                 </span>
               </div>
               <div>
-                <span className="block text-[11px] text-muted-foreground font-sans">Stand Akhir</span>
-                <span className="text-sm font-bold text-primary">
+                <span className="block text-label-11 text-muted-foreground font-sans">Stand Akhir</span>
+                <span className="text-heading-16 text-(--ds-blue-900)">
                   {numberFormat.format(selectedItem.stma)}
                 </span>
               </div>
               <div>
-                <span className="block text-[11px] text-muted-foreground font-sans">Pemakaian</span>
-                <span className="text-sm font-bold text-foreground">
+                <span className="block text-label-11 text-muted-foreground font-sans">Pemakaian</span>
+                <span className="text-heading-16 text-foreground">
                   {numberFormat.format(selectedItem.pakaiM3)} m³
                 </span>
               </div>
             </div>
 
             {/* Anomaly summary box */}
-            <div className="rounded-lg border border-border p-3 space-y-2 text-xs">
+            <div className="rounded-lg border border-border p-3 space-y-2 text-copy-12">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Kategori Anomali:</span>
-                <Badge variant="outline" className="font-semibold text-xs">
+                <Badge variant="outline">
                   {selectedItem.jenisAnomali}
                 </Badge>
               </div>
@@ -455,13 +450,13 @@ export function MonitoringAnomaliKubikasi() {
             </div>
 
             {/* Photo fallback preview */}
-            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-center">
+            <div className="rounded-lg border border-dashed border-border bg-(--ds-gray-100) p-3 text-center">
               <img
                 src={selectedItem.fotoMeterUrl || '/images/meter/petugas.jpg'}
                 alt="Foto bukti meter"
                 className="mx-auto h-40 object-cover rounded-md border border-border"
               />
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
+              <p className="mt-1.5 text-copy-12 text-muted-foreground">
                 Dokumentasi fisik meter pelanggan
               </p>
             </div>
@@ -471,7 +466,6 @@ export function MonitoringAnomaliKubikasi() {
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedItem(null)}
-                className="text-xs"
               >
                 Tutup
               </Button>
@@ -479,6 +473,6 @@ export function MonitoringAnomaliKubikasi() {
           </DialogContent>
         )}
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

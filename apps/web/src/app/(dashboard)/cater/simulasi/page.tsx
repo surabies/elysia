@@ -1,4 +1,4 @@
-import { SimulatorBacaMeter } from '@/features/cater-simulation/components/SimulatorBacaMeter';
+import { SimulatorBacaMeter } from '@/features/cater-simulation';
 
 export default function CaterSimulationPage() {
   return <SimulatorBacaMeter />;

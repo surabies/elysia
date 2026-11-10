@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Lap. Data St. 0 (Nol)" }
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MenuPage href="/laporan/stand-nol" />
+  redirect("/progres/ekstrim");
 }

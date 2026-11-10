@@ -1,6 +1,6 @@
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
-import { Search01Icon } from "@/features/dashboard/shared/icons/IkonLucide"
-import { cn } from "@/lib/Utilitas"
+import { Search01Icon } from "@/features/dashboard/shared/icons/ikon-lucide"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 
 export function KotakCari({

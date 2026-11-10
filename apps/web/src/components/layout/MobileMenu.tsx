@@ -6,19 +6,40 @@ import { useEffect, useState } from "react"
 
 import { PillButton } from "@/components/shared/PillButton"
 import { downloadAppLink, mainNavLinks } from "@/config/site"
+import { cn } from "@/lib/utils"
+
+interface MobileMenuProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
 
 /**
  * Menu layar kecil (< md): panel putih jatuh dari header dengan latar gelap.
  * Dirender di dalam <header> (fixed), sehingga panel & overlay mengikuti header.
  */
-export function MobileMenu() {
-  const [open, setOpen] = useState(false)
+export function MobileMenu({
+  open: controlledOpen,
+  onOpenChange,
+}: MobileMenuProps = {}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : uncontrolledOpen
+
+  const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof next === "function" ? next(open) : next
+    if (isControlled) {
+      onOpenChange?.(nextVal)
+    } else {
+      setUncontrolledOpen(nextVal)
+    }
+  }
+
   const close = () => setOpen(false)
 
   useEffect(() => {
     if (!open) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false)
+      if (event.key === "Escape") close()
     }
     document.addEventListener("keydown", onKeyDown)
     return () => document.removeEventListener("keydown", onKeyDown)
@@ -26,22 +47,26 @@ export function MobileMenu() {
 
   return (
     <>
-      <PillButton
+      <button
         type="button"
-        size="icon"
         aria-label={open ? "Tutup menu" : "Buka menu"}
         aria-expanded={open}
         aria-controls="mobile-menu"
         data-open={open}
-        onClick={() => setOpen((current) => !current)}
-        className="ml-2 size-8 p-0 data-[open=true]:bg-white data-[open=true]:text-black md:hidden"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "flex size-8 items-center justify-center rounded-full transition-all duration-200 outline-none md:hidden",
+          open
+            ? "border-2 border-white bg-white text-black shadow-md"
+            : "border-2 border-transparent bg-black text-white hover:opacity-80"
+        )}
       >
         {open ? (
-          <X size={24} aria-hidden="true" />
+          <X className="size-4.5" aria-hidden="true" />
         ) : (
-          <Menu size={24} aria-hidden="true" />
+          <Menu className="size-4.5" aria-hidden="true" />
         )}
-      </PillButton>
+      </button>
 
       {open ? (
         <>
@@ -58,12 +83,12 @@ export function MobileMenu() {
               {mainNavLinks.map((link) => (
                 <li
                   key={link.href}
-                  className="border-b border-placeholder last:border-b-0"
+                  className="border-b border-neutral-100 last:border-b-0"
                 >
                   <Link
                     href={link.href}
                     onClick={close}
-                    className="block py-3 text-[15px] leading-5 font-medium"
+                    className="block py-3 text-[15px] leading-5 font-medium text-black hover:text-blue-600"
                   >
                     {link.label}
                   </Link>

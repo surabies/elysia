@@ -7,7 +7,7 @@ import { BebanRute } from './BebanRute';
 import { PembacaanDitinjau } from './PembacaanDitinjau';
 import { ProduktivitasPetugas } from './ProduktivitasPetugas';
 import { RingkasanCater } from './RingkasanCater';
-import { useCaterMonitoring } from '../hooks/useCaterMonitoring';
+import { useCaterMonitoring } from '../hooks/use-cater-monitoring';
 
 export function MonitoringBacaMeter() {
   const state = useCaterMonitoring();

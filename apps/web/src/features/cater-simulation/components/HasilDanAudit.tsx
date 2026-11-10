@@ -2,7 +2,7 @@
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { CaterSimulatorState } from '../hooks/useCaterSimulator';
+import type { CaterSimulatorState } from '../hooks/use-cater-simulator';
 
 type Props = Pick<
   CaterSimulatorState,

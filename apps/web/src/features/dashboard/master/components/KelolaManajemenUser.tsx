@@ -34,6 +34,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 import type { UserManagementItem } from '@/server/services/master/master-extended.service';
 
@@ -112,15 +113,14 @@ export function KelolaManajemenUser() {
   }, [users, search, filterRole]);
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+    <PageContainer className="space-y-6">
       {/* 1. Header Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <Users className="size-6 text-primary" />
+          <h1 className="text-heading-20 text-foreground">
             Manajemen Akun Pengguna & Hak Akses
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <p className="text-copy-13 text-muted-foreground mt-1">
             Pengelolaan akun staf billing, supervisor verifikator, manager cabang, direksi, dan operator.
           </p>
         </div>
@@ -130,7 +130,7 @@ export function KelolaManajemenUser() {
           size="sm"
           onClick={fetchUsers}
           disabled={loading}
-          className="h-8 gap-1.5 text-xs w-fit"
+          className="w-fit"
         >
           <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
           Segarkan
@@ -140,12 +140,11 @@ export function KelolaManajemenUser() {
       {/* 2. Filter Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-medium">Filter Peran:</span>
+          <span className="text-label-12 text-muted-foreground">Filter Peran:</span>
           <NativeSelect
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
             size="sm"
-            className="text-xs font-semibold"
           >
             <NativeSelectOption value="ALL">Semua Peran ({users.length})</NativeSelectOption>
             {ALL_ROLES.map((r) => (
@@ -157,12 +156,13 @@ export function KelolaManajemenUser() {
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
           <Input
+            size="sm"
             placeholder="Cari nama, email, jabatan..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-8 text-xs"
+            className="pl-8 bg-card"
           />
         </div>
       </div>
@@ -179,7 +179,7 @@ export function KelolaManajemenUser() {
       ) : (
         <Card className="border-border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow>
                 <TableHead>Nama Pengguna</TableHead>
                 <TableHead>Email Akun</TableHead>
@@ -192,15 +192,15 @@ export function KelolaManajemenUser() {
             <TableBody>
               {filteredUsers.map((userItem) => (
                 <TableRow key={userItem.id}>
-                  <TableCell className="font-semibold text-foreground">
-                    <div className="flex items-center gap-2">
-                      <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                  <TableCell className="font-medium text-foreground">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-7 rounded-full border border-border bg-(--ds-gray-100) text-foreground flex items-center justify-center text-label-11 shrink-0">
                         {(userItem.name || userItem.email).slice(0, 2).toUpperCase()}
                       </div>
                       <span>{userItem.name || 'User Tanpa Nama'}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
+                  <TableCell className="font-mono text-label-12 text-muted-foreground">
                     {userItem.email}
                   </TableCell>
                   <TableCell>
@@ -212,23 +212,22 @@ export function KelolaManajemenUser() {
                           ? 'secondary'
                           : 'outline'
                       }
-                      className="text-[10px] font-mono"
+                      className="font-mono"
                     >
                       {userItem.role}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
-                    <span className="font-medium text-foreground block">{userItem.jabatan}</span>
-                    <span className="text-[10px]">{userItem.unitKerja}</span>
+                  <TableCell className="text-muted-foreground">
+                    <span className="text-label-13 text-foreground block">{userItem.jabatan}</span>
+                    <span className="text-copy-12">{userItem.unitKerja}</span>
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge
                       variant={userItem.status === 'AKTIF' ? 'outline' : 'secondary'}
                       className={cn(
-                        'text-[10px]',
                         userItem.status === 'AKTIF'
-                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-300'
-                          : 'bg-muted text-muted-foreground'
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400'
+                          : 'bg-(--ds-gray-100) text-muted-foreground'
                       )}
                     >
                       {userItem.status}
@@ -237,9 +236,8 @@ export function KelolaManajemenUser() {
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="xs"
                       onClick={() => bukaEditRole(userItem)}
-                      className="h-7 text-xs gap-1"
                     >
                       <Key className="size-3" />
                       Ubah Peran
@@ -257,23 +255,23 @@ export function KelolaManajemenUser() {
         {editUser && (
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle>
                 Ubah Peran Otorisasi Pengguna
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription>
                 Tetapkan tingkatan akses sistem untuk {editUser.name} ({editUser.email}).
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={simpanRole} className="space-y-4 text-xs pt-2">
-              <div>
-                <label className="font-semibold text-foreground block mb-1">
+            <form onSubmit={simpanRole} className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="text-label-13 text-foreground block">
                   Pilih Peran Sistem (Role RBAC)
                 </label>
                 <NativeSelect
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full text-xs font-semibold"
+                  className="w-full"
                 >
                   {ALL_ROLES.map((r) => (
                     <NativeSelectOption key={r} value={r}>
@@ -283,22 +281,21 @@ export function KelolaManajemenUser() {
                 </NativeSelect>
               </div>
 
-              <div className="rounded-lg bg-muted/40 p-3 text-muted-foreground text-[11px] space-y-1">
-                <p className="font-semibold text-foreground">Keterangan Tingkat Akses:</p>
+              <div className="rounded-lg border border-border bg-(--ds-gray-100) p-3 text-muted-foreground text-copy-12 space-y-1">
+                <p className="text-label-12 text-foreground">Keterangan Tingkat Akses:</p>
                 <p>• VERIFIKATOR_1: Supervisor (Screening anomali Ring 1)</p>
                 <p>• VERIFIKATOR_2: Manager Cabang (Approval Ring 2)</p>
                 <p>• VERIFIKATOR_3: Senior Manager (Pengesahan Ring 3)</p>
                 <p>• STAFF_ADMIN_BILLING: Akses penuh closing, koreksi, dan manual ADD</p>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-border/60">
+              <div className="flex justify-end gap-2 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setEditUser(null)}
                   disabled={saving}
-                  className="h-8 text-xs"
                 >
                   Batal
                 </Button>
@@ -306,9 +303,8 @@ export function KelolaManajemenUser() {
                   type="submit"
                   size="sm"
                   disabled={saving}
-                  className="h-8 text-xs font-semibold gap-1.5"
                 >
-                  {saving && <Spinner className="size-3" />}
+                  {saving && <Spinner className="size-3.5" />}
                   Simpan Peran
                 </Button>
               </div>
@@ -316,6 +312,6 @@ export function KelolaManajemenUser() {
           </DialogContent>
         )}
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

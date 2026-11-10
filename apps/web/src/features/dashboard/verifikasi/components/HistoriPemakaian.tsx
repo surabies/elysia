@@ -1,15 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { formatBulanSingkat } from "@/features/public/lib/Format";
+import { formatBulanSingkat } from "@/features/public";
 import {
   ambilList,
   ApiError,
-} from "@/features/dashboard/shared/api/ApiDashboard";
+} from "@/features/dashboard/shared/api/api-dashboard";
 import type {
   PembacaanPanelRingkas,
   PembacaanRingkas,
-} from "../types/TipeVerifikasi";
+} from "../types";
 
 function angka(nilai: number | null | undefined) {
   return nilai == null ? "—" : nilai.toLocaleString("id-ID");

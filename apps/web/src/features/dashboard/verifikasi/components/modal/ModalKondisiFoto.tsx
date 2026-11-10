@@ -4,11 +4,11 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
-import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/ApiDashboard"
+import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/api-dashboard"
 import { PilihSatu } from "../DialogVerifikasi"
 import { BarisTumpuk, KerangkaModal, KotakBaca } from "../KerangkaModal"
 import { TabFoto } from "../foto/TabFoto"
-import type { LaporanHarianDetail } from "../../types/TipeVerifikasi"
+import type { LaporanHarianDetail } from "../../types"
 import type { DataKoreksi } from "./ModalKoreksi"
 
 export interface HasilKondisiFoto {

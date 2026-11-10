@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { MonitoringTutupBulan } from '@/features/dashboard/closing/components/MonitoringTutupBulan';
+import { StandAngkatView } from '@/features/dashboard/closing';
 
 export const metadata: Metadata = {
-  title: 'Stand Angkat GWM (Tahap 2) | Cater PDAM',
-  description: 'Penguncian stand meter lama dan stand pasang meter baru transaksi ganti water meter',
+  title: 'Data Pergantian Meter (Stand Angkat) | Cater PDAM',
+  description:
+    'Halaman persetujuan stand meter lama dan stand pasang meter baru untuk transaksi ganti water meter',
 };
 
 export default function StandAngkatPage() {
-  return <MonitoringTutupBulan initialTab="stand-angkat" highlightStage="stand-angkat" />;
+  return <StandAngkatView />;
 }

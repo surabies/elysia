@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono';
 import { fontBody, fontDisplay } from '@/lib/fonts';
 import { ThemeProvider } from '@/components/PenyediaTema';
 import { Toaster } from '@/components/ui/sonner';
+import { LandingShell } from '@/components/layout/LandingShell';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -40,7 +41,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <LandingShell>{children}</LandingShell>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>

@@ -5,7 +5,7 @@
 // tidak ikut menggulir; isi di dalamnya yang menggulir.
 import * as React from "react"
 import type { ReactNode } from "react"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 const TINGGI_MIN = 360
 

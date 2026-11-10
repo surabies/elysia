@@ -9,12 +9,12 @@
 // diukur lewat JS, dan isi seksi yang tertutup TIDAK dirender — histori dan
 // foto pembanding baru mengambil data setelah seksinya dibuka.
 import * as React from "react";
-import { ArrowDown01Icon } from "@/features/dashboard/shared/icons/IkonLucide";
+import { ArrowDown01Icon } from "@/features/dashboard/shared/icons/ikon-lucide";
 import {
   HugeiconsIcon,
   type IconSvgElement,
 } from "@/features/dashboard/shared/icons/IconRenderer";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import {
   Collapsible,
   CollapsibleContent,
@@ -25,9 +25,9 @@ import {
   KELAS_JUDUL_PANEL,
   KELAS_TEKS_BANTUAN,
   KELAS_TEKS_META,
-} from "../../lib/TemaVerifikasi";
+} from "../../lib/tema-verifikasi";
 import { HistoriPemakaian } from "../HistoriPemakaian";
-import type { PembacaanPanelRingkas } from "../../types/TipeVerifikasi";
+import type { PembacaanPanelRingkas } from "../../types";
 
 /// Judul bagian untuk modal (bukan seksi lipat).
 export function Bagian({

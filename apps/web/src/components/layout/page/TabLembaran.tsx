@@ -6,7 +6,7 @@
 // memakai gaya ini supaya tampilannya seragam.
 import * as React from "react"
 import type { ReactNode } from "react"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 import { useAreaTinggiLayar } from "./AreaTinggiLayar"
 
 export interface ItemTab<K extends string> {

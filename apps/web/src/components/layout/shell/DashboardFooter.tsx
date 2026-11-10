@@ -3,7 +3,7 @@
 // versi + hak cipta instansi di kanan. Kredit pembuat ditaruh di dialog "Tentang".
 import type { ReactNode } from "react"
 
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 type SystemStatus = "normal" | "degraded" | "offline" | "unknown"
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { MonitoringProgresLapangan } from '@/features/dashboard/progres/components/MonitoringProgresLapangan';
+import { MonitoringProgresLapangan } from '@/features/dashboard/progres';
 
 export const metadata: Metadata = {
   title: 'Monitoring Progres Lapangan | Cater PDAM',

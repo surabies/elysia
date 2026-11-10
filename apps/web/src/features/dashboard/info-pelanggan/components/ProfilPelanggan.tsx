@@ -3,10 +3,10 @@
 // ProfilPelanggan menampilkan identitas: nama + alamat di kiri,
 // No. Langganan (bisa disalin) + status di kanan, chip ciri teknis di bawah.
 import * as React from "react";
-import { cn } from "@/lib/Utilitas";
-import { PanelDasbor } from "../../shared/PanelDasbor";
-import { LABEL_STATUS_PELANGGAN } from "../lib/LabelPelanggan";
-import type { DataPelanggan } from "../types/TipeInfoPelanggan";
+import { cn } from "@/lib/utils";
+import { PanelDasbor } from "@/features/dashboard/shared";
+import { LABEL_STATUS_PELANGGAN } from "../lib/label-pelanggan";
+import type { DataPelanggan } from "../types";
 
 const NADA_STATUS: Record<string, string> = {
   AKTIF: "bg-success-muted text-success",

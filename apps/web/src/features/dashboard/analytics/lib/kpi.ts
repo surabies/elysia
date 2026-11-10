@@ -17,10 +17,10 @@ export function buildKpis(data: AnalyticsPageData): Kpi[] {
   return [
     {
       id: "invocations",
-      label: "Total Invocations",
+      label: "Total Pembacaan Meter",
       icon: Activity,
       value: formatNumber(data.totalBaca),
-      unit: "SL (100%)",
+      unit: "SL",
       note: `Dari ${formatNumber(data.totalPelanggan)} pelanggan terdaftar`,
     },
     {
@@ -41,7 +41,7 @@ export function buildKpis(data: AnalyticsPageData): Kpi[] {
     },
     {
       id: "peak",
-      label: "Puncak Aktivitas",
+      label: "Puncak Aktivitas Harian",
       icon: Flame,
       value: formatNumber(data.puncakHarian.total),
       unit: "SL",

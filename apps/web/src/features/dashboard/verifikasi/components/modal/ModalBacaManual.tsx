@@ -4,8 +4,8 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { ambilSatu } from "@/features/dashboard/shared/api/ApiDashboard";
-import { ALASAN_MANUAL } from "../../../tambah-manual/lib/AlasanManual";
+import { ambilSatu } from "@/features/dashboard/shared/api/api-dashboard";
+import { ALASAN_MANUAL } from "../../lib/alasan-manual";
 import { BarisTumpuk, KerangkaModal } from "../KerangkaModal";
 import type { DataKoreksi } from "./ModalKoreksi";
 

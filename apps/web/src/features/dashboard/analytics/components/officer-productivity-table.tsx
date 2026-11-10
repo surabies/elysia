@@ -1,4 +1,11 @@
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Table,
   TableBody,
   TableCaption,
@@ -7,11 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { formatNumber } from "../lib/format";
 import type { OfficerProductivity } from "@/server/services/dashboard/analytics.service";
-
-const HEAD = "h-7 px-1 py-1 text-[10px] uppercase tracking-wide text-muted-foreground";
-const NUM = "px-1 py-1.5 text-right font-mono tabular-nums";
 
 export function OfficerProductivityTable({
   data,
@@ -19,48 +24,67 @@ export function OfficerProductivityTable({
   data: OfficerProductivity[];
 }) {
   return (
-    <section
-      aria-labelledby="officer-productivity-title"
-      className="w-full rounded-[10px] border border-border bg-card p-4"
-    >
-      <h2
-        id="officer-productivity-title"
-        className="pb-3 text-sm font-semibold tracking-tight text-foreground"
-      >
-        Produktivitas & Ranking Petugas Lapangan
-      </h2>
+    <Card aria-labelledby="officer-productivity-title">
+      <CardHeader className="p-5 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle id="officer-productivity-title">
+              Produktivitas &amp; Peringkat Petugas Lapangan
+            </CardTitle>
+            <CardDescription className="mt-0.5">
+              Performa pencatatan meter petugas lapangan berdasarkan jumlah sambungan terbaca dan porsi beban kerja.
+            </CardDescription>
+          </div>
+          <Badge variant="subtle" size="md" className="tabular-nums">
+            {data.length} Petugas
+          </Badge>
+        </div>
+      </CardHeader>
 
-      <Table className="min-w-95 text-xs">
-        <TableCaption className="sr-only">
-          Peringkat petugas lapangan berdasarkan jumlah meter terbaca
-        </TableCaption>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className={HEAD}>Petugas</TableHead>
-            <TableHead className={`${HEAD} text-right`}>Terbaca</TableHead>
-            <TableHead className={`${HEAD} text-right`}>Kubikasi</TableHead>
-            <TableHead className={`${HEAD} text-right`}>Beban</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((officer) => (
-            <TableRow key={officer.kodepetugas} className="hover:bg-muted/30">
-              <TableCell className="max-w-0 px-1 py-1.5 font-medium text-foreground">
-                <span className="block truncate">{officer.nama}</span>
-              </TableCell>
-              <TableCell className={`${NUM} font-semibold text-foreground`}>
-                {formatNumber(officer.totalBaca)} SL
-              </TableCell>
-              <TableCell className={`${NUM} text-muted-foreground`}>
-                {formatNumber(officer.totalKubikasi)} m³
-              </TableCell>
-              <TableCell className={`${NUM} text-muted-foreground`}>
-                {officer.persentaseBeban}%
-              </TableCell>
+      <CardContent className="p-5 pt-2">
+        <Table className="min-w-105">
+          <TableCaption className="sr-only">
+            Peringkat petugas lapangan berdasarkan jumlah meter terbaca
+          </TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12 text-center">#</TableHead>
+              <TableHead>Petugas Lapangan</TableHead>
+              <TableHead className="text-right">Meter Terbaca</TableHead>
+              <TableHead className="text-right">Total Kubikasi</TableHead>
+              <TableHead className="text-right">Porsi Beban</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </section>
+          </TableHeader>
+          <TableBody>
+            {data.map((officer, index) => (
+              <TableRow key={officer.kodepetugas}>
+                <TableCell className="text-center text-label-12-mono tabular-nums text-muted-foreground">
+                  {index + 1}
+                </TableCell>
+                <TableCell className="max-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-label-13 text-foreground">
+                      {officer.nama}
+                    </span>
+                    <span className="shrink-0 text-label-12-mono text-muted-foreground">
+                      {officer.kodepetugas}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right text-label-13-mono tabular-nums text-foreground">
+                  {formatNumber(officer.totalBaca)} SL
+                </TableCell>
+                <TableCell className="text-right text-label-13-mono tabular-nums text-muted-foreground">
+                  {formatNumber(officer.totalKubikasi)} m³
+                </TableCell>
+                <TableCell className="text-right text-label-13-mono tabular-nums text-foreground">
+                  {officer.persentaseBeban}%
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

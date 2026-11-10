@@ -4,14 +4,14 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
-import { formatPeriode } from "@/features/public/lib/Format"
+import { formatPeriode } from "@/features/public"
 import { toast } from "sonner"
 import {
   ambilSatu,
   kirimJson,
   ApiError,
-} from "@/features/dashboard/shared/api/ApiDashboard"
-import type { LaporanHarianDetail } from "../../types/TipeVerifikasi"
+} from "@/features/dashboard/shared/api/api-dashboard"
+import type { LaporanHarianDetail } from "../../types"
 import { DialogVerifikasi } from "../DialogVerifikasi"
 
 export function ModalCekUlang({

@@ -13,6 +13,9 @@ import {
   golonganTarif,
   ruteCater,
   caterBacaMeter,
+  waterMeter,
+  daftarCatat,
+  periodePenagihan,
 } from '@cater/db';
 
 export interface InputPasangBaruDTO {
@@ -25,6 +28,7 @@ export interface InputPasangBaruDTO {
   noTelp?: string;
   jmlPenghuni?: number;
   standAwal?: number;
+  periode?: string;
   userId: string;
 }
 
@@ -96,7 +100,7 @@ export class PbpkService {
    * Pendaftaran Sambungan Baru (Pasang Baru - PB)
    */
   async inputPasangBaru(data: InputPasangBaruDTO) {
-    const { nolg, nama, alamat, tarifKode, ruteKode, noMeter, noTelp, jmlPenghuni, userId } = data;
+    const { nolg, nama, alamat, tarifKode, ruteKode, noMeter, noTelp, jmlPenghuni, periode } = data;
 
     // Cek apakah nolg sudah terdaftar
     const [existing] = await db
@@ -108,25 +112,81 @@ export class PbpkService {
       throw new Error(`Nomor langganan ${nolg} sudah terdaftar di database.`);
     }
 
-    // Insert pelanggan baru
-    await db.insert(pelanggan).values({
-      nolg,
-      nama,
-      alamat,
-      tarifKode,
-      ruteKode,
-      noMeter,
-      noTelp: noTelp ?? null,
-      jmlPenghuni: jmlPenghuni ?? 4,
-      status: 'ONSITE',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    await db.transaction(async (tx) => {
+      // 1. Upsert waterMeter terlebih dahulu untuk memenuhi foreign key pelanggan.noMeter
+      await tx
+        .insert(waterMeter)
+        .values({
+          noMeter,
+          merk: 'ITR',
+          ukuran: '1/2',
+          tglPasang: new Date(),
+          umurTahun: 0,
+          umurBulan: 0,
+          kondisi: 'Normal',
+        })
+        .onConflictDoNothing({ target: waterMeter.noMeter });
+
+      // 2. Hitung urutan rute berikutnya pada ruteKode terkait
+      const [maxUrutan] = await tx
+        .select({
+          maxUrut: sql<number>`coalesce(max(${pelanggan.noUrutRute}), 0)::int`,
+        })
+        .from(pelanggan)
+        .where(eq(pelanggan.ruteKode, ruteKode));
+
+      const urutanBerikutnya = (maxUrutan?.maxUrut ?? 0) + 1;
+      const kelurahanKode = ruteKode.length >= 3 ? ruteKode.slice(0, 3) : null;
+
+      // 3. Insert pelanggan baru
+      await tx.insert(pelanggan).values({
+        nolg,
+        nama,
+        alamat,
+        tarifKode,
+        ruteKode,
+        kelurahanKode: null, // Disesuaikan pada tahap sinkronisasi zonasi jika kode kelurahan ada di master
+        noUrutRute: urutanBerikutnya,
+        noMeter,
+        noTelp: noTelp ?? null,
+        jmlPenghuni: jmlPenghuni ?? 4,
+        status: 'PELANGGAN AKTIF',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // 4. Jika ada periode berjalan aktif, daftarkan otomatis ke daftarCatat (DPM) dengan sumber 'PBPK'
+      const targetPeriode = periode || '202601';
+      const [periodeRow] = await tx
+        .select({ status: periodePenagihan.status })
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.periode, targetPeriode));
+
+      if (!periodeRow || periodeRow.status !== 'TERKUNCI') {
+        await tx
+          .insert(daftarCatat)
+          .values({
+            periode: targetPeriode,
+            nolg,
+            ruteKode,
+            urutan: urutanBerikutnya,
+            sumber: 'PBPK',
+            status: 'BELUM_DICATAT',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .onConflictDoNothing({
+            target: [daftarCatat.periode, daftarCatat.nolg],
+          });
+      }
+
+      void kelurahanKode;
     });
 
     return {
       success: true,
       nolg,
-      message: `Pasang Baru (SL Baru) ${nolg} - ${nama} berhasil didaftarkan dan akan otomatis masuk ke DPM periode berikutnya.`,
+      message: `Pasang Baru (SL Baru) ${nolg} - ${nama} berhasil didaftarkan ke Master Pelanggan & aset Water Meter serta siap masuk ke DPM.`,
     };
   }
 

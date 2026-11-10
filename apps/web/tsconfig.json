@@ -26,6 +26,9 @@
       "@/*": [
         "./src/*"
       ],
+      "cn": [
+        "./src/lib/utils.ts"
+      ],
       "@cater/db": [
         "../../packages/db/src"
       ],

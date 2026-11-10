@@ -9,7 +9,7 @@ import {
 } from "@/features/dashboard/shared/icons/IconRenderer";
 import { Card } from "@/components/ui/card";
 import { IconTile } from "@/components/reui/icon-tile";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 
 type Nada = "netral" | "perhatian" | "peringatan" | "info" | "sukses";
 

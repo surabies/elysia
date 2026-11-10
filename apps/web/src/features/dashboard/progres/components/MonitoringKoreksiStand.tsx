@@ -30,6 +30,7 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table';
+import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 import type {
   KoreksiItem,
@@ -76,23 +77,22 @@ export function MonitoringKoreksiStand() {
   }, [data, search]);
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+    <PageContainer className="space-y-6">
       {/* 1. Header Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <FileEdit className="size-6 text-primary" />
+          <h1 className="text-heading-20 text-foreground">
             Monitoring Koreksi Stand & Audit Trail
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <p className="text-copy-13 text-muted-foreground mt-1">
             Riwayat resmi penyesuaian angka meter, perbaikan salah baca, dan perubahan kubikasi dengan audit log bertingkat.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Period Selector */}
-          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-xs">
-            <span className="text-muted-foreground mr-2 font-medium">Periode:</span>
+          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
+            <span className="text-muted-foreground mr-2">Periode:</span>
             <NativeSelect
               value={periode}
               onChange={(e) => setPeriode(e.target.value)}
@@ -110,7 +110,6 @@ export function MonitoringKoreksiStand() {
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="h-8 gap-1.5 text-xs"
           >
             <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
             Segarkan
@@ -121,71 +120,72 @@ export function MonitoringKoreksiStand() {
       {/* 2. KPI Cards Koreksi */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {/* Total Koreksi */}
-        <Card className="p-4 rounded-[10px] border-border bg-card shadow-xs">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Total Rekening Dikoreksi</span>
-            <FileEdit className="size-4 text-primary" />
+            <span className="text-label-12">Total Rekening Dikoreksi</span>
+            <FileEdit className="size-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? numberFormat.format(data.summary.totalKoreksi) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">rekening</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">rekening</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Oleh Verifikator & Billing</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Oleh Verifikator & Billing</p>
         </Card>
 
         {/* Kubikasi Bertambah */}
-        <Card className="p-4 rounded-[10px] border-border bg-card shadow-xs">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Koreksi Bertambah (+)</span>
-            <TrendingUp className="size-4 text-emerald-500" />
+            <span className="text-label-12">Koreksi Bertambah (+)</span>
+            <TrendingUp className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
             +{data ? numberFormat.format(data.summary.totalM3Tambah) : '0'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">m³</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">m³</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Penyesuaian kurang catat</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Penyesuaian kurang catat</p>
         </Card>
 
         {/* Kubikasi Berkurang */}
-        <Card className="p-4 rounded-[10px] border-border bg-card shadow-xs">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Koreksi Berkurang (-)</span>
-            <TrendingDown className="size-4 text-sky-500" />
+            <span className="text-label-12">Koreksi Berkurang (-)</span>
+            <TrendingDown className="size-4 text-(--ds-blue-900)" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-(--ds-blue-900) font-mono tabular-nums">
             -{data ? numberFormat.format(data.summary.totalM3Kurang) : '0'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">m³</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">m³</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Penyesuaian lebih catat</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Penyesuaian lebih catat</p>
         </Card>
 
         {/* Netto Selisih */}
-        <Card className="p-4 rounded-[10px] border-border bg-card shadow-xs">
+        <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Netto Deviasi Koreksi</span>
-            <Droplets className="size-4 text-teal-500" />
+            <span className="text-label-12">Netto Deviasi Koreksi</span>
+            <Droplets className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? (data.summary.nettoM3 >= 0 ? `+${data.summary.nettoM3}` : data.summary.nettoM3) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">m³</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">m³</span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Dampak kubikasi ke billing</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Dampak kubikasi ke billing</p>
         </Card>
       </div>
 
       {/* 3. Controls & Filter */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1">
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
           <Input
+            size="sm"
             placeholder="Cari NOLG, nama pelanggan, atau alasan..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 text-xs"
+            className="pl-8 bg-card"
           />
         </div>
 
-        <span className="text-xs text-muted-foreground font-mono">
+        <span className="text-label-12 text-muted-foreground font-mono">
           Menampilkan {filteredItems.length} riwayat koreksi
         </span>
       </div>
@@ -195,18 +195,18 @@ export function MonitoringKoreksiStand() {
         <div className="flex h-64 w-full items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <Spinner className="size-6 text-primary" />
-            <p className="text-xs text-muted-foreground">Memuat data monitoring koreksi...</p>
+            <p className="text-copy-12 text-muted-foreground">Memuat data monitoring koreksi...</p>
           </div>
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-copy-13 text-muted-foreground">
           Tidak ada data koreksi stand pada periode ini.
         </div>
       ) : (
         /* Tabel Audit Koreksi menggunakan shadcn Table */
         <Card className="border-border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow>
                 <TableHead>No. Langganan</TableHead>
                 <TableHead>Nama Pelanggan</TableHead>
@@ -220,38 +220,38 @@ export function MonitoringKoreksiStand() {
                 <TableHead className="text-right">Waktu Koreksi</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody className="font-mono">
+            <TableBody className="font-mono tabular-nums">
               {filteredItems.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="font-semibold text-foreground font-sans">
+                  <TableCell className="font-medium text-foreground font-sans">
                     {row.nolg}
                   </TableCell>
                   <TableCell className="font-sans font-medium text-foreground max-w-[170px] truncate">
                     {row.nama}
                   </TableCell>
                   <TableCell className="font-sans text-muted-foreground">
-                    <span className="font-semibold text-foreground font-mono">{row.tarifKode ?? '-'}</span>
-                    <span className="text-[10px] text-muted-foreground ml-1.5">({row.ruteKode ?? '-'})</span>
+                    <span className="font-medium text-foreground font-mono">{row.tarifKode ?? '-'}</span>
+                    <span className="text-label-11 text-muted-foreground ml-1.5">({row.ruteKode ?? '-'})</span>
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     {numberFormat.format(row.stmaAwal)}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-foreground">
+                  <TableCell className="text-right font-semibold text-foreground">
                     {numberFormat.format(row.stmaRevisi)}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     {numberFormat.format(row.pakaiM3Awal)} m³
                   </TableCell>
-                  <TableCell className="text-right font-bold text-foreground">
+                  <TableCell className="text-right font-semibold text-foreground">
                     {numberFormat.format(row.pakaiM3Revisi)} m³
                   </TableCell>
                   <TableCell className="text-right">
                     {row.selisihM3 > 0 ? (
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                         +{row.selisihM3} m³
                       </span>
                     ) : row.selisihM3 < 0 ? (
-                      <span className="text-sky-600 dark:text-sky-400 font-semibold">
+                      <span className="text-(--ds-blue-900) font-medium">
                         {row.selisihM3} m³
                       </span>
                     ) : (
@@ -259,11 +259,11 @@ export function MonitoringKoreksiStand() {
                     )}
                   </TableCell>
                   <TableCell className="font-sans text-muted-foreground max-w-[260px]">
-                    <span className="line-clamp-1 text-[11px]">
+                    <span className="line-clamp-1 text-copy-12">
                       {row.catatanAudit || row.alasanKoreksi || 'Koreksi terverifikasi'}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground text-[11px]">
+                  <TableCell className="text-right text-muted-foreground text-label-12">
                     {row.updatedAt
                       ? new Date(row.updatedAt).toLocaleDateString('id-ID', {
                           day: 'numeric',
@@ -279,6 +279,6 @@ export function MonitoringKoreksiStand() {
           </Table>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

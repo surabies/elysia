@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { InfoPelangganView } from "@/features/dashboard/info-pelanggan/index";
+import { InfoPelangganView } from "@/features/dashboard/info-pelanggan";
 
 export const metadata: Metadata = { title: "Info Pelanggan" };
 

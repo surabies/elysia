@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { MonitoringTutupBulan } from '@/features/dashboard/closing/components/MonitoringTutupBulan';
+import { MonitoringTutupBulan } from '@/features/dashboard/closing';
 
 export const metadata: Metadata = {
   title: 'Closing Periode & Tutup Bulan | Cater PDAM',

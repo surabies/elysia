@@ -1,7 +1,9 @@
 import Link from "next/link";
 import {
+  ArrowUpRight,
   Compass,
   Gauge,
+  LineChart,
   Receipt,
   Users as UsersIcon,
 } from "lucide-react";
@@ -12,8 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { IconTile } from "@/components/reui/icon-tile";
 
 const shortcuts = [
   {
@@ -37,8 +37,8 @@ const shortcuts = [
   {
     href: "/analytics",
     title: "Observabilitas & Grafik",
-    description: "Grafik Vercel time-series, kubikasi & beban kerja",
-    Icon: Gauge,
+    description: "Grafik time-series, kubikasi & beban kerja",
+    Icon: LineChart,
   },
   {
     href: "/laporan/lap-drd",
@@ -52,40 +52,31 @@ export function PintasanModul() {
   return (
     <Card>
       <CardHeader className="p-5 pb-3">
-        <CardTitle className="font-semibold tracking-tight">
-          Pintasan Modul Utama
-        </CardTitle>
+        <CardTitle>Pintasan Modul Utama</CardTitle>
         <CardDescription>
           Akses cepat ke modul operasional harian PDAM Tirtawening.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 gap-2.5 p-4 pt-0 sm:grid-cols-2 sm:p-5 sm:pt-0">
+      <CardContent className="grid grid-cols-1 gap-2.5 p-5 pt-0 sm:grid-cols-2">
         {shortcuts.map(({ href, title, description, Icon }) => (
-          <Button
+          <Link
             key={href}
-            asChild
-            variant="outline"
-            className="h-auto w-full min-w-0 flex-col items-start whitespace-normal rounded-md border-border p-3 hover:bg-accent/60"
+            href={href}
+            className="group flex flex-col justify-between gap-1.5 rounded-md border border-border bg-card p-3 transition-colors duration-150 hover:border-(--ds-gray-500) hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200)"
           >
-            <Link href={href}>
-              <div className="mb-1 flex min-w-0 items-center gap-2">
-                <IconTile
-                  aria-hidden="true"
-                  size="sm"
-                  variant="frame"
-                  className="text-muted-foreground"
-                >
-                  <Icon />
-                </IconTile>
-                <span className="min-w-0 text-left text-label-13 text-foreground">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <Icon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+                <span className="truncate text-label-13 text-foreground">
                   {title}
                 </span>
               </div>
-              <span className="min-w-0 text-left text-copy-13 text-muted-foreground">
-                {description}
-              </span>
-            </Link>
-          </Button>
+              <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
+            </div>
+            <p className="text-copy-12 text-muted-foreground">
+              {description}
+            </p>
+          </Link>
         ))}
       </CardContent>
     </Card>

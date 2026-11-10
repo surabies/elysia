@@ -30,6 +30,7 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table';
+import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 import type {
   LaporanEvaluasiResult,
@@ -118,22 +119,21 @@ export function LaporanEvaluasiPetugas() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+    <PageContainer className="space-y-6">
       {/* 1. Header Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <Award className="size-6 text-primary" />
+          <h1 className="text-heading-20 text-foreground">
             Laporan Evaluasi Kinerja Petugas Cater
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <p className="text-copy-13 text-muted-foreground mt-1">
             Penilaian capaian target, produktivitas harian, akurasi GPS, dan kualitas pembacaan 9 petugas cater.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1 text-xs">
-            <span className="text-muted-foreground font-medium">Periode:</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
+            <span className="text-muted-foreground">Periode:</span>
             <NativeSelect
               value={periode}
               onChange={(e) => setPeriode(e.target.value)}
@@ -151,7 +151,6 @@ export function LaporanEvaluasiPetugas() {
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="h-8 gap-1.5 text-xs"
           >
             <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
             Segarkan
@@ -161,7 +160,6 @@ export function LaporanEvaluasiPetugas() {
             size="sm"
             onClick={exportCsv}
             disabled={loading || !filteredItems.length}
-            className="h-8 gap-1.5 text-xs font-semibold"
           >
             <Download className="size-3.5" />
             Ekspor CSV
@@ -173,64 +171,65 @@ export function LaporanEvaluasiPetugas() {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Petugas Aktif</span>
-            <Users className="size-4 text-primary" />
+            <span className="text-label-12">Petugas Aktif</span>
+            <Users className="size-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalPetugasAktif) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">personel</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">personel</span>
           </div>
-          <p className="mt-1 text-label-11 text-muted-foreground">Regu pembaca meter resmi</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Regu pembaca meter resmi</p>
         </Card>
 
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Rata-rata Pencapaian</span>
-            <TrendingUp className="size-4 text-emerald-500" />
+            <span className="text-label-12">Rata-rata Pencapaian</span>
+            <TrendingUp className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? `${data.kpi.rataRataPencapaian}%` : '...'}
           </div>
-          <p className="mt-1 text-label-11 text-muted-foreground">Dari seluruh target rute</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Dari seluruh target rute</p>
         </Card>
 
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Total SL Terbaca</span>
-            <CheckCircle2 className="size-4 text-teal-500" />
+            <span className="text-label-12">Total SL Terbaca</span>
+            <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalSLSelesai) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">SL</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">SL</span>
           </div>
-          <p className="mt-1 text-label-11 text-muted-foreground">Hasil pembacaan terverifikasi</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Hasil pembacaan terverifikasi</p>
         </Card>
 
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Kubikasi Tercatat</span>
-            <ShieldCheck className="size-4 text-sky-500" />
+            <span className="text-label-12">Kubikasi Tercatat</span>
+            <ShieldCheck className="size-4 text-(--ds-blue-900)" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? numberFormat.format(data.kpi.totalKubikasiTercatat) : '...'}
-            <span className="text-xs font-normal text-muted-foreground ml-1.5 font-sans">m³</span>
+            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">m³</span>
           </div>
-          <p className="mt-1 text-label-11 text-muted-foreground">Volume air terjual</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Volume air terjual</p>
         </Card>
       </div>
 
       {/* 3. Search & Filter Bar */}
       <div className="flex items-center justify-between">
-        <span className="text-label-12 text-muted-foreground font-medium">
+        <span className="text-label-13 text-muted-foreground">
           Daftar Rapor Kinerja Petugas Periode {periode}
         </span>
         <div className="relative w-64">
-          <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
           <Input
+            size="sm"
             placeholder="Cari nama atau NIP petugas..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-8 text-xs"
+            className="pl-8 bg-card"
           />
         </div>
       </div>
@@ -247,7 +246,7 @@ export function LaporanEvaluasiPetugas() {
       ) : (
         <Card className="border-border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader>
               <TableRow>
                 <TableHead className="w-12 text-center">Rank</TableHead>
                 <TableHead>Petugas Cater</TableHead>
@@ -262,19 +261,19 @@ export function LaporanEvaluasiPetugas() {
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody className="font-mono">
+            <TableBody className="font-mono tabular-nums">
               {filteredItems.map((item) => (
                 <TableRow key={item.petugasId}>
-                  <TableCell className="text-center font-bold">
+                  <TableCell className="text-center">
                     <span
                       className={cn(
-                        'size-6 rounded-full inline-flex items-center justify-center text-xs',
+                        'size-6 rounded-full inline-flex items-center justify-center text-label-11',
                         item.peringkat === 1
-                          ? 'bg-amber-500/20 text-amber-600 font-extrabold'
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold'
                           : item.peringkat === 2
-                          ? 'bg-zinc-200 dark:bg-zinc-700 text-foreground font-bold'
+                          ? 'bg-(--ds-gray-200) text-foreground font-semibold'
                           : item.peringkat === 3
-                          ? 'bg-amber-700/20 text-amber-700 font-bold'
+                          ? 'bg-amber-700/15 text-amber-700 dark:text-amber-400 font-semibold'
                           : 'text-muted-foreground font-normal'
                       )}
                     >
@@ -282,13 +281,13 @@ export function LaporanEvaluasiPetugas() {
                     </span>
                   </TableCell>
                   <TableCell className="font-sans">
-                    <div className="flex items-center gap-2">
-                      <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-7 rounded-full border border-border bg-(--ds-gray-100) text-foreground flex items-center justify-center text-label-11 shrink-0">
                         {item.nama.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <span className="font-semibold text-foreground block">{item.nama}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">
+                        <span className="font-medium text-foreground block">{item.nama}</span>
+                        <span className="text-label-11 text-muted-foreground font-mono">
                           ID: {item.petugasId} {item.noHp ? `• ${item.noHp}` : ''}
                         </span>
                       </div>
@@ -297,7 +296,7 @@ export function LaporanEvaluasiPetugas() {
                   <TableCell className="text-right text-muted-foreground">
                     {numberFormat.format(item.targetSL)}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">
+                  <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
                     {numberFormat.format(item.realisasiSL)}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
@@ -305,17 +304,17 @@ export function LaporanEvaluasiPetugas() {
                   </TableCell>
                   <TableCell className="font-sans">
                     <div className="space-y-1">
-                      <div className="flex justify-between text-[11px] font-mono">
-                        <span className="font-bold text-foreground">{item.persenSelesai}%</span>
+                      <div className="flex justify-between text-label-11 font-mono">
+                        <span className="font-medium text-foreground">{item.persenSelesai}%</span>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-1.5 w-full rounded-full bg-(--ds-gray-200) overflow-hidden">
                         <div
                           className={cn(
                             'h-full transition-all',
                             item.persenSelesai >= 90
                               ? 'bg-emerald-500'
                               : item.persenSelesai >= 70
-                              ? 'bg-primary'
+                              ? 'bg-foreground'
                               : 'bg-amber-500'
                           )}
                           style={{ width: `${Math.min(100, item.persenSelesai)}%` }}
@@ -323,14 +322,14 @@ export function LaporanEvaluasiPetugas() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-bold text-foreground">
+                  <TableCell className="text-right font-medium text-foreground">
                     {numberFormat.format(item.totalM3)} m³
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground text-label-11">
+                  <TableCell className="text-right text-muted-foreground text-label-12">
                     {item.rataDurasiDetik} detik
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground text-label-11">
-                    <span className="font-semibold text-foreground">{item.akurasiGpsPersen}%</span>
+                  <TableCell className="text-right text-muted-foreground text-label-12">
+                    <span className="font-medium text-foreground">{item.akurasiGpsPersen}%</span>
                   </TableCell>
                   <TableCell className="text-center font-sans">
                     <Badge
@@ -341,7 +340,6 @@ export function LaporanEvaluasiPetugas() {
                           ? 'secondary'
                           : 'outline'
                       }
-                      className="text-[10px]"
                     >
                       {item.gradeKinerja.replace('_', ' ')}
                     </Badge>
@@ -349,7 +347,7 @@ export function LaporanEvaluasiPetugas() {
                   <TableCell className="text-right font-sans">
                     <Link
                       href={`/verifikasi/baca-petugas?q=${item.petugasId}`}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      className="inline-flex items-center gap-1 text-label-12 text-(--ds-blue-900) hover:underline"
                     >
                       Verifikasi
                       <ArrowUpRight className="size-3" />
@@ -361,6 +359,6 @@ export function LaporanEvaluasiPetugas() {
           </Table>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

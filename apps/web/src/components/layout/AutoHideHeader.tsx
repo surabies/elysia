@@ -51,7 +51,7 @@ export function AutoHideHeader({ children }: AutoHideHeaderProps) {
     <header
       ref={headerRef}
       onFocusCapture={revealHeader}
-      className={`fixed inset-x-0 top-0 z-40 bg-white/85 text-black backdrop-blur-[6px] transition-transform duration-300 ease-in-out motion-reduce:transition-none has-data-[open=true]:max-md:bg-transparent has-data-[open=true]:max-md:backdrop-blur-none md:bg-white/80 md:backdrop-blur-sm ${
+      className={`group/header fixed inset-x-0 top-0 z-40 bg-white/85 text-black backdrop-blur-[6px] transition-transform duration-300 ease-in-out motion-reduce:transition-none has-data-[open=true]:max-md:bg-transparent has-data-[open=true]:max-md:backdrop-blur-none md:bg-white/80 md:backdrop-blur-sm ${
         hidden ? "pointer-events-none -translate-y-full" : ""
       }`}
     >

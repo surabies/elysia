@@ -1,6 +1,6 @@
 // components/layout/navigation/sidebar/lib/Utilitas.ts
 
-import { isNavFolder, type NavItem, type NavNode } from "@/config/Navigasi"
+import { isNavFolder, type NavItem, type NavNode } from "@/config/navigasi"
 
 /** Menu yang deskripsinya memuat kata "pending" ditandai badge "Segera". */
 export function isPending(item: NavItem): boolean {

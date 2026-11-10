@@ -26,14 +26,17 @@ export async function auth() {
         .where(eq(userRoles.userId, sessionData.user.id));
       roles = userRolesList.map((r) => r.role);
     }
+    if (roles.length === 0) {
+      roles = ['USER'];
+    }
 
     return {
       user: {
         id: sessionData.user.id,
-        name: sessionData.user.name ?? 'Petugas PDAM',
+        name: sessionData.user.name ?? 'Warga',
         email: sessionData.user.email ?? '',
         image: sessionData.user.image ?? null,
-        role: roles[0] ?? 'VERIFIKATOR_1',
+        role: roles[0] ?? 'USER',
         roles,
       },
       session: sessionData.session,

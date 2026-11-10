@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth/index";
-import { VerifikasiMandiri } from "@/features/dashboard/verifikasi/components/VerifikasiMandiri";
-import { roleVerifikasi } from "@/features/dashboard/verifikasi/lib/RoleVerifikasi";
+import {
+  VerifikasiMandiri,
+  roleVerifikasi,
+} from "@/features/dashboard/verifikasi";
 
 export const metadata: Metadata = {
   title: "Verifikasi Pembacaan Pelanggan",

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { MonitoringTutupBulan } from '@/features/dashboard/closing/components/MonitoringTutupBulan';
+import { MonitoringTutupBulan } from '@/features/dashboard/closing';
 
 export const metadata: Metadata = {
-  title: 'Sync Pelanggan Baru (Tahap 9) | Cater PDAM',
+  title: 'Sinkronkan Pelanggan Baru ke Rute (Langkah 5) | Cater PDAM',
   description: 'Sinkronisasi pelanggan pendaftaran baru ke buku rute DPM periode mendatang',
 };
 
 export default function SyncPelangganBaruPage() {
-  return <MonitoringTutupBulan initialTab="pipeline" highlightStage="sync-pelanggan-baru" />;
+  return <MonitoringTutupBulan initialStep={5} highlightStage="sync-pelanggan-baru" />;
 }

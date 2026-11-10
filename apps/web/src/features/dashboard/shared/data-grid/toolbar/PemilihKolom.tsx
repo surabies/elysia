@@ -1,6 +1,6 @@
 import type { ColDef } from "ag-grid-community"
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
-import { Columns3CogIcon } from "@/features/dashboard/shared/icons/IkonLucide"
+import { Columns3CogIcon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ToggleGroupItem } from "@/components/ui/toggle-group"
-import { kunciKolom } from "../NilaiSel"
+import { kunciKolom } from "../lib/nilai-sel"
 
 /** Picker kolom tampil. Harus dirender di dalam <ToggleGroup> toolbar. */
 export function PemilihKolom({

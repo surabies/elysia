@@ -5,17 +5,17 @@ import { Spinner } from '@/components/ui/spinner';
 
 const PetaMonitoringSpasial = dynamic(
   () =>
-    import(
-      '@/features/dashboard/gis/components/PetaMonitoringSpasial'
-    ).then((mod) => mod.PetaMonitoringSpasial),
+    import('@/features/dashboard/gis').then(
+      (mod) => mod.PetaMonitoringSpasial,
+    ),
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[calc(100vh-4rem)] w-full items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner className="h-8 w-8 text-primary" />
-          <p className="text-sm text-muted-foreground animate-pulse">
-            Memuat Modul Peta Spasial GIS & PostGIS Layer...
+      <div className="flex h-[calc(100vh-3.5rem)] w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-2.5">
+          <Spinner className="size-5 text-muted-foreground" />
+          <p className="text-label-13 text-muted-foreground">
+            Memuat peta spasial PostGIS...
           </p>
         </div>
       </div>

@@ -5,8 +5,8 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { cn } from "@/lib/Utilitas"
-import { searchDocs } from "@/lib/DataPencarian"
+import { cn } from "@/lib/utils"
+import { searchDocs } from "@/lib/data-pencarian"
 import { useRbac } from "@/components/layout/shell/RbacContext"
 import { Highlight } from "./Highlight"
 import { Search, ArrowRight } from "lucide-react"

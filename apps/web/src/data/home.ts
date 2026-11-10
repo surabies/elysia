@@ -11,6 +11,7 @@ export const heroContent: HeroContent = {
   description:
     "Layanan digital terpadu PERUMDA Tirtawening Kota Bandung. Cek tagihan rekening air, laporkan angka meter mandiri, dan sampaikan pengaduan gangguan secara cepat, transparan, serta terverifikasi 24 jam.",
   videoSrc: "/vid/hero.mp4",
+  poster: "/images/hero.jpg",
   cta: { label: "Cek Tagihan Air", href: "/cek-tagihan" },
 }
 
@@ -83,14 +84,26 @@ export const ticketingContent: TicketingContent = {
     {
       description:
         "Cek rincian tagihan rekening air dan grafik pemakaian 12 bulan terakhir dalam hitungan detik.",
+      image: {
+        src: "/images/layanan/tagihan.png",
+        alt: "Cek Tagihan Rekening Air Tirtawening",
+      },
     },
     {
       description:
         "Foto dan laporkan angka stand meter air sendiri dari rumah sebelum tanggal 20 agar tagihan selalu presisi.",
+      image: {
+        src: "/images/layanan/lapor.png",
+        alt: "Lapor Stand Meter Mandiri",
+      },
     },
     {
       description:
         "Laporkan titik pipa bocor atau aliran keruh di peta interaktif untuk langsung ditangani teknisi lapangan.",
+      image: {
+        src: "/images/layanan/peta.png",
+        alt: "Peta Kendali Pengaduan & Gangguan Spasial",
+      },
     },
   ],
 }
@@ -101,22 +114,34 @@ export const benefitsContent: BenefitsContent = {
     {
       title: "Transparansi perhitungan kubikasi pemakaian air tanpa biaya tersembunyi",
       icon: {
-        src: "https://dicewebsite.cdn.prismic.io/dicewebsite/Z6tNz5bqstJ9-emG_ticket.svg",
+        src: "/icons/benefits/transparansi-tarif.svg",
         alt: "Transparansi Tarif",
+      },
+      image: {
+        src: "/images/benefits/transparansi.webp.png",
+        alt: "Transparansi Tarif Rekening Air Tirtawening",
       },
     },
     {
       title: "Kemudahan lapor mandiri dengan verifikasi foto meteran oleh staf resmi",
       icon: {
-        src: "https://dicewebsite.cdn.prismic.io/dicewebsite/Z6tN2pbqstJ9-emH_friends-add.svg",
+        src: "/icons/benefits/lapor-meter.svg",
         alt: "Verifikasi Cepat",
+      },
+      image: {
+        src: "/images/benefits/lapor-meter.webp.png",
+        alt: "Verifikasi Stand Meter Air Tirtawening",
       },
     },
     {
       title: "Tindak lanjut pengaduan kebocoran pipa oleh Tim Reaksi Cepat di lapangan",
       icon: {
-        src: "https://dicewebsite.cdn.prismic.io/dicewebsite/Z6tN5pbqstJ9-emK_merch.svg",
+        src: "/icons/benefits/reaksi-cepat.svg",
         alt: "Reaksi Cepat",
+      },
+      image: {
+        src: "/images/benefits/reaksi-cepat.webp.png",
+        alt: "Tim Reaksi Cepat Lapangan Tirtawening",
       },
     },
   ],
@@ -130,10 +155,10 @@ export const featureSections: FeatureSectionContent[] = [
       "PERUMDA Tirtawening mengalirkan air minum perpipaan ke lebih dari 170.000 sambungan pelanggan di wilayah utara, timur, barat, dan selatan Kota Bandung dengan pemantauan kualitas laboratorium berkala.",
     media: {
       type: "image",
-      src: "https://images.prismic.io/dicewebsite/ahCB3LK9tuLqEFdI_b2b-partners-logo-narrow.png?auto=format%2Ccompress&fit=max&w=3840",
-      alt: "Peta Jaringan Pipa Air Bandung",
-      width: 1080,
-      height: 1350,
+      src: "/images/features/jaringan-bandung.png",
+      alt: "Peta Jaringan Pipa Air Minum Tirtawening Kota Bandung",
+      width: 1122,
+      height: 1402,
     },
     mediaPosition: "right",
     cta: { label: "Buka Peta Kendali", href: "/peta-pengaduan" },
@@ -144,8 +169,8 @@ export const featureSections: FeatureSectionContent[] = [
     description:
       "Cegah lonjakan tagihan tak terduga. Ambil foto stand meteran air Anda, masukkan angkanya, dan kirimkan langsung setiap tanggal 1 hingga 20. Staf verifikator kami akan memvalidasi keabsahan data sebelum tagihan diterbitkan.",
     media: {
-      type: "video",
-      src: "https://dicewebsite.cdn.prismic.io/dicewebsite/Z6tTHZbqstJ9-eqd_B2C_Home_Artists-1-.mp4",
+      type: "mockup",
+      name: "lapor-meter",
     },
     mediaPosition: "left",
     cta: { label: "Lapor Meter Sekarang", href: "/lapor-meter" },
@@ -156,8 +181,8 @@ export const featureSections: FeatureSectionContent[] = [
     description:
       "Melihat pipa dinas bocor di jalan, air mati, atau meteran air rusak? Laporkan lokasinya dengan penanda peta GPS interaktif. Tiket aduan Anda langsung masuk ke dashboard teknisi reaksi cepat.",
     media: {
-      type: "video",
-      src: "https://dicewebsite.cdn.prismic.io/dicewebsite/Z6tsYJbqstJ9-fMC_B2C_Home_Fans-1-.mp4",
+      type: "mockup",
+      name: "pengaduan",
     },
     mediaPosition: "right",
     cta: { label: "Kirim Pengaduan Air", href: "/pengaduan-air" },

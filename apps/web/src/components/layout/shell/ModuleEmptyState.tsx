@@ -3,7 +3,7 @@
 // Satu ikon, satu judul, satu kalimat arahan, aksi opsional. Tanpa border putus-putus.
 import type { ComponentType, ReactNode } from "react"
 
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 type ModuleEmptyStateProps = {
   icon: ComponentType<{

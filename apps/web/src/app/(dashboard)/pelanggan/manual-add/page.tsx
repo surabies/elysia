@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ManualAddPage } from '@/features/dashboard/pelanggan/components/ManualAddPage';
+import { ManualAddPage } from '@/features/dashboard/pelanggan';
 
 export const metadata: Metadata = {
   title: 'Manual ADD — Input Stand Darurat | Cater PDAM',

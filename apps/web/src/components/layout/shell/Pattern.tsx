@@ -1,7 +1,7 @@
 // components/layout/shell/Pattern.tsx
 // Pola garis miring halus. Warna dari token --pattern-fg (globals.css),
 // jadi terang/gelap otomatis; tidak perlu patternVars lagi.
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 // Tahap 1: pita di sisi kiri/kanan konten. `fade` memudarkan ke bawah.
 export function PatternStrip({

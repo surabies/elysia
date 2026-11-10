@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PengaturanView } from '@/features/dashboard/pengaturan/components/PengaturanView';
+import { PengaturanView } from '@/features/dashboard/pengaturan';
 
 export const metadata: Metadata = {
   title: 'Pengaturan & Preferensi Sistem | Cater PDAM Tirtawening',

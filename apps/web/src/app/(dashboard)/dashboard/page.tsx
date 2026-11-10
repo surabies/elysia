@@ -3,11 +3,13 @@ import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/layout";
 import { auth } from "@/lib/auth/index";
 import { dashboardService } from "@/server/services/dashboard/dashboard.service";
-import { DistribusiWilayahTarif } from "@/features/dashboard/overview/components/DistribusiWilayahTarif";
-import { KartuMetrik } from "@/features/dashboard/overview/components/KartuMetrik";
-import { PintasanModul } from "@/features/dashboard/overview/components/PintasanModul";
-import { RingkasanHeader } from "@/features/dashboard/overview/components/RingkasanHeader";
-import { StatusSistem } from "@/features/dashboard/overview/components/StatusSistem";
+import {
+  DistribusiWilayahTarif,
+  KartuMetrik,
+  PintasanModul,
+  RingkasanHeader,
+  StatusSistem,
+} from "@/features/dashboard/overview";
 
 export const metadata: Metadata = {
   title: "Ringkasan Eksekutif — PDAM Tirtawening",

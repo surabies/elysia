@@ -1,8 +1,8 @@
 // Baris tiga kotak: stand awal, stand akhir (roda angka), dan kartu Pemakaian.
-import { PanelDasbor } from "../../shared/PanelDasbor";
-import { fmtAngka, fmtBulan } from "../lib/FormatTampilan";
+import { PanelDasbor } from "@/features/dashboard/shared";
+import { fmtAngka, fmtBulan } from "../lib/format-tampilan";
 import { Odometer } from "./Odometer";
-import type { BarisRiwayat, DataCatat } from "../types/TipeInfoPelanggan";
+import type { BarisRiwayat, DataCatat } from "../types";
 
 /** Perubahan pemakaian terhadap periode sebelumnya, dalam kalimat. */
 export function bandingkan(catat: DataCatat, riwayat: BarisRiwayat[]) {

@@ -4,9 +4,9 @@
 // Tampil saat window.print() lewat portal ke document.body.
 import * as React from "react";
 import { flushSync, createPortal } from "react-dom";
-import { cn } from "@/lib/Utilitas";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
-import { LABEL_STATUS_PELANGGAN } from "../lib/LabelPelanggan";
+import { cn } from "@/lib/utils";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
+import { LABEL_STATUS_PELANGGAN } from "../lib/label-pelanggan";
 import {
   fmtAngka,
   fmtPeriode,
@@ -14,9 +14,9 @@ import {
   fmtRupiah,
   fmtTeks,
   fmtWaktu,
-} from "../lib/FormatTampilan";
+} from "../lib/format-tampilan";
 import { bandingkan } from "./PanelPembacaan";
-import type { InfoPelanggan } from "../types/TipeInfoPelanggan";
+import type { InfoPelanggan } from "../types";
 
 const NADA_STATUS: Record<string, string> = {
   AKTIF: "border-success/30 bg-success-muted text-success",

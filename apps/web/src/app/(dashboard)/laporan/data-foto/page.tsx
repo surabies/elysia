@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Lap. Data dan Foto" }
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MenuPage href="/laporan/data-foto" />
+  redirect("/meter/cek-foto");
 }

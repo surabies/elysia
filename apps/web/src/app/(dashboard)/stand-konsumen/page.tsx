@@ -1,10 +1,5 @@
-import type { Metadata } from 'next';
-import { MenuPage } from '@/components/layout/index';
-
-export const metadata: Metadata = {
-  title: 'Stand Mandiri Konsumen',
-};
+import { redirect } from "next/navigation";
 
 export default function StandKonsumenPage() {
-  return <MenuPage href="/stand-konsumen" />;
+  redirect("/verifikasi/baca-pelanggan");
 }

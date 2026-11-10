@@ -24,7 +24,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TriangleAlert } from "lucide-react"
-import { loginSchema } from "../lib/Schema"
+import { loginSchema } from "../lib/auth-schema"
 
 export function CredentialsForm({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter()

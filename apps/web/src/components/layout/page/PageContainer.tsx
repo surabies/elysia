@@ -3,7 +3,7 @@
 // Breadcrumb telah dialihkan ke Navbar utama agar tidak terjadi duplikasi.
 
 import type { ReactNode } from "react"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 export type Crumb = { label: string; href?: string }
 

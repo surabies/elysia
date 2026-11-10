@@ -2,8 +2,8 @@
 // Satu node menu: folder (label seksi + anak-anaknya) atau halaman (link).
 
 import Link from "next/link"
-import { cn } from "@/lib/Utilitas"
-import { isNavFolder, type NavNode } from "@/config/Navigasi"
+import { cn } from "@/lib/utils"
+import { isNavFolder, type NavNode } from "@/config/navigasi"
 import { getItemIcon } from "./lib/Icons"
 import { NavRowContent, type SidebarIconComponent } from "./NavRow"
 import { SECTION_LABEL, navRowClass } from "./lib/Styles"

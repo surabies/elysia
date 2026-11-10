@@ -11,7 +11,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { GeistSlash } from "../navigation/sidebar/lib/GeistIcons"
-import { findActiveNav, type NavItem } from "@/config/Navigasi"
+import { findActiveNav, type NavItem } from "@/config/navigasi"
 
 export function NavbarBreadcrumb() {
   const pathname = usePathname()

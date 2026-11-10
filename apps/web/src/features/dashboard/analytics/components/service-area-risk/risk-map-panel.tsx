@@ -4,6 +4,7 @@ import {
   ChoroplethFeatureLayer,
   ChoroplethTooltip,
 } from "@/components/charts/choropleth";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatNumber, formatPercent } from "../../lib/format";
 import {
@@ -37,24 +38,34 @@ export function RiskMapPanel({
   return (
     <section
       aria-labelledby="risk-map-title"
-      className={cn("min-w-0 rounded-[10px] bg-card p-4", className)}
+      className={cn(
+        "min-w-0 rounded-lg border border-border bg-card p-5",
+        className,
+      )}
     >
-      <h2
-        id="risk-map-title"
-        className="text-sm font-semibold tracking-tight text-foreground"
-      >
-        Peta Risiko Pembacaan per Kelurahan
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 id="risk-map-title" className="text-heading-16 text-foreground">
+            Peta Risiko Pembacaan per Kelurahan
+          </h2>
+          <p className="mt-0.5 text-copy-13 text-muted-foreground">
+            Sebaran spasial indikator risiko berdasarkan batas administrasi kelurahan.
+          </p>
+        </div>
+        <Badge variant="subtle" size="md">
+          {metric.label}
+        </Badge>
+      </div>
 
       {hasAreas ? (
         <div
-          className="mt-2"
+          className="mt-3"
           role="group"
           aria-label={`Peta ${metric.label.toLowerCase()} per kelurahan`}
         >
           <ChoroplethChart
             data={mapData}
-            className="min-h-50"
+            className="min-h-56"
             aspectRatio="16 / 9"
             center={[107.6, -6.9]}
             zoomEnabled
@@ -68,7 +79,8 @@ export function RiskMapPanel({
               strokeWidth={0.8}
               getFeatureColor={({ properties }) =>
                 getRiskColor(
-                  areaByCode.get(getFeatureCode(properties))?.[metric.rateKey] ?? null,
+                  areaByCode.get(getFeatureCode(properties))?.[metric.rateKey] ??
+                    null,
                   maxRate,
                 )
               }
@@ -76,20 +88,28 @@ export function RiskMapPanel({
             <ChoroplethTooltip
               backgroundColor="var(--popover)"
               content={({ feature }) => {
-                const area = areaByCode.get(getFeatureCode(feature.properties));
+                const area = areaByCode.get(
+                  getFeatureCode(feature.properties),
+                );
                 if (!area) return null;
 
                 return (
-                  <div className="grid gap-1">
-                    <p className="font-semibold">
-                      {area.kelurahan} · {area.kecamatan}
+                  <div className="grid gap-1 text-copy-12">
+                    <p className="text-label-13 text-foreground">
+                      {area.kelurahan} &bull; {area.kecamatan}
                     </p>
                     <p className="text-muted-foreground">
-                      {metric.label}: {formatNumber(Number(area[metric.countKey]))} (
-                      {formatPercent(area[metric.rateKey])})
+                      {metric.label}:{" "}
+                      <span className="text-label-12-mono text-foreground">
+                        {formatNumber(Number(area[metric.countKey]))} (
+                        {formatPercent(area[metric.rateKey])})
+                      </span>
                     </p>
                     <p className="text-muted-foreground">
-                      Pembacaan: {formatNumber(area.jumlahBaca)}
+                      Total Pembacaan:{" "}
+                      <span className="text-label-12-mono text-foreground">
+                        {formatNumber(area.jumlahBaca)} SL
+                      </span>
                     </p>
                   </div>
                 );
@@ -98,7 +118,7 @@ export function RiskMapPanel({
           </ChoroplethChart>
         </div>
       ) : (
-        <p className="mt-4 rounded-md border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+        <p className="mt-4 rounded-md border border-dashed border-border px-4 py-8 text-center text-copy-13 text-muted-foreground">
           Belum ada geometri area layanan yang bisa digambar. Periksa sumber
           GeoJSON sebelum mengaktifkan peta.
         </p>

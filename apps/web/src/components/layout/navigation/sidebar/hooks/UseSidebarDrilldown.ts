@@ -6,7 +6,7 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import { findActiveNav, type NavGroup } from "@/config/Navigasi"
+import { findActiveNav, type NavGroup } from "@/config/navigasi"
 import { useRbac } from "@/components/layout/shell/RbacContext"
 import type { ActiveInfo, Direction } from "../types/Tipe"
 

@@ -1,7 +1,7 @@
 import * as React from "react"
 import type { ColDef } from "ag-grid-community"
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
-import { ArrowUpDownIcon } from "@/features/dashboard/shared/icons/IkonLucide"
+import { ArrowUpDownIcon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import {
   Select,
   SelectContent,
@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { NILAI_KOSONG } from "../lib/KonstantaDataGrid"
+import { NILAI_KOSONG } from "../lib/konstanta-data-grid"
 
 /** Urutan di mode kartu — menggantikan kepala kolom yang tidak ada di ponsel. */
 export function PemilihUrut({

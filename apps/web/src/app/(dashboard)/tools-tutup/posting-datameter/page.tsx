@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { MonitoringTutupBulan } from '@/features/dashboard/closing/components/MonitoringTutupBulan';
+import { MonitoringTutupBulan } from '@/features/dashboard/closing';
 
 export const metadata: Metadata = {
-  title: 'Posting Datameter (Tahap 4) | Cater PDAM',
+  title: 'Pengesahan Bacaan Meter (Langkah 2) | Cater PDAM',
   description: 'Publikasi dan approval hasil verifikasi pembacaan meter mobile ke billing ledger',
 };
 
 export default function PostingDatameterPage() {
-  return <MonitoringTutupBulan initialTab="pipeline" highlightStage="posting-datameter" />;
+  return <MonitoringTutupBulan initialStep={2} highlightStage="posting-datameter" />;
 }

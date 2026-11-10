@@ -1,8 +1,8 @@
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
-import { FilterIcon } from "@/features/dashboard/shared/icons/IkonLucide"
-import { cn } from "@/lib/Utilitas"
+import { FilterIcon } from "@/features/dashboard/shared/icons/ikon-lucide"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { KELAS_KONTROL_AKTIF } from "../Tema"
+import { KELAS_KONTROL_AKTIF } from "../lib/tema"
 import {
   Tooltip,
   TooltipContent,

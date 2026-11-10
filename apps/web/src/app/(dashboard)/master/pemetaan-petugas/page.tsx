@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PemetaanPetugasRute } from '@/features/dashboard/master/components/PemetaanPetugasRute';
+import { PemetaanPetugasRute } from '@/features/dashboard/master';
 
 export const metadata: Metadata = {
   title: 'Pemetaan Petugas & Rute DPM | PDAM Tirtawening',

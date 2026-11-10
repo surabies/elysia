@@ -13,7 +13,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { findActiveNav, type NavItem, type NavGroup } from "@/config/Navigasi"
+import { findActiveNav, type NavItem, type NavGroup } from "@/config/navigasi"
 import { MobileSidebar } from "../navigation/MobileSidebar"
 import { Menu, ChevronRight } from "lucide-react"
 

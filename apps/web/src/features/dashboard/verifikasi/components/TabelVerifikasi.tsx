@@ -29,7 +29,7 @@ import {
   Drag01Icon,
   PencilEdit01Icon,
   UserCircleIcon,
-} from "@/features/dashboard/shared/icons/IkonLucide";
+} from "@/features/dashboard/shared/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +46,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import {
   TEMA_GRID_WADAH,
   TEMA_GRID_TABEL,
@@ -55,26 +55,26 @@ import {
   TEMA_GRID_TH_BEKU,
   TEMA_TOGGLE_ITEM,
   tentukanLatarBaris,
-} from "../lib/TemaVerifikasi";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
+} from "../lib/tema-verifikasi";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
 import {
   GAYA_TAHAP,
   GAYA_BELUM_DIBACA,
   gayaAnomali,
   tahapDari,
   type Tahap,
-} from "../types/WarnaTahap";
-import { tentukanHasilPembacaan } from "../lib/HasilPembacaan";
+} from "../lib/warna-tahap";
+import { tentukanHasilPembacaan } from "../lib/hasil-pembacaan";
 import {
   type KolomVerifikasi,
   type PreferensiKolom,
   ubahLebarKolom,
-} from "../lib/PreferensiKolom";
+} from "../lib/preferensi-kolom";
 import type {
   BarisVerifikasi,
   Kerapatan,
   ModeRing,
-} from "../types/TipeVerifikasi";
+} from "../types";
 
 const angka = (n: number | null | undefined) =>
   n === null || n === undefined ? "—" : n.toLocaleString("id-ID");

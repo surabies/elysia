@@ -56,16 +56,16 @@ export function ReadingStatusDistribution({ data }: { data: AnomalyCategory[] })
       {canToggle && (
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="mt-3 h-7 self-start px-2 text-xs text-muted-foreground"
+          className="mt-3 self-start"
           aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
         >
           {expanded ? (
-            <ChevronUp aria-hidden="true" className="size-4" />
+            <ChevronUp aria-hidden="true" className="size-3.5" />
           ) : (
-            <ChevronDown aria-hidden="true" className="size-4" />
+            <ChevronDown aria-hidden="true" className="size-3.5" />
           )}
           {expanded ? "Tampilkan ringkas" : `Lihat semua ${data.length} status`}
         </Button>

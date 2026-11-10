@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { CaterSimulatorState } from '../hooks/useCaterSimulator';
+import type { CaterSimulatorState } from '../hooks/use-cater-simulator';
 import { SelectField } from './SelectField';
 
 type Props = Pick<

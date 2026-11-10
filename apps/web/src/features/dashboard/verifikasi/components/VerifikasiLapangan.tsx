@@ -14,7 +14,7 @@
 //   Batal Baca Ulang → kembalikan baris DITOLAK ke antrean
 // Pembacaan resmi baru dibuat saat V3 — lihat laporan-harian.router.ts.
 import * as React from "react"
-import { ViewOffIcon } from "@/features/dashboard/shared/icons/IkonLucide"
+import { ViewOffIcon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,12 +37,12 @@ import {
   ambilList,
   kirimJson,
   ApiError,
-} from "@/features/dashboard/shared/api/ApiDashboard"
+} from "@/features/dashboard/shared/api/api-dashboard"
 import type {
   StatsVerifikasi,
   RingLaporanHarian,
-} from "../types/TipeVerifikasi"
-import { tahapLaporanHarian } from "../types/TipeVerifikasi"
+} from "../types"
+import { tahapLaporanHarian } from "../types"
 import { RingkasanVerifikasi } from "./RingkasanVerifikasi"
 import { PanelTabel } from "./panel/PanelTabel"
 import { PanelKosong, PanelMemuat } from "./panel/KomponenPanel"
@@ -53,13 +53,13 @@ import {
   type KeadaanMenu,
   type KunciMenu,
   type ProfilMenu,
-} from "../lib/MenuAksi"
+} from "../lib/menu-aksi"
 import {
   KELAS_JUDUL_PANEL,
   KELAS_PANEL_DETAIL,
-} from "../lib/TemaVerifikasi"
-import type { PenugasanFilter } from "../lib/PenyaringanRelasi"
-import { sertakanPenugasanPadaOpsiRute } from "../lib/PenyaringanRelasi"
+} from "../lib/tema-verifikasi"
+import type { PenugasanFilter } from "../lib/penyaringan-relasi"
+import { sertakanPenugasanPadaOpsiRute } from "../lib/penyaringan-relasi"
 import {
   ModalKoreksi,
   dataKoreksiDariBaris,

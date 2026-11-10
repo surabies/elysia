@@ -15,7 +15,7 @@
 // BARIS YANG SUDAH DIVERIFIKASI TIDAK DIHAPUS dari tabel: statusnya berubah
 // menjadi DIVERIFIKASI, tetapi stand resmi tetap dibuat lewat alur Petugas.
 import * as React from "react"
-import { ViewOffIcon } from "@/features/dashboard/shared/icons/IkonLucide"
+import { ViewOffIcon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,8 +37,8 @@ import {
   ambilSatu,
   kirimJson,
   ApiError,
-} from "@/features/dashboard/shared/api/ApiDashboard"
-import type { StatsVerifikasi } from "../types/TipeVerifikasi"
+} from "@/features/dashboard/shared/api/api-dashboard"
+import type { StatsVerifikasi } from "../types"
 import { RingkasanVerifikasi } from "./RingkasanVerifikasi"
 import { PanelKosong, PanelMemuat } from "./panel/KomponenPanel"
 import {
@@ -52,11 +52,11 @@ import {
   type KeadaanMenu,
   type KunciMenu,
   type ProfilMenu,
-} from "../lib/MenuAksi"
+} from "../lib/menu-aksi"
 import {
   KELAS_JUDUL_PANEL,
   KELAS_PANEL_DETAIL,
-} from "../lib/TemaVerifikasi"
+} from "../lib/tema-verifikasi"
 
 function bobotRole(role: string | null | undefined): number {
   switch (role) {

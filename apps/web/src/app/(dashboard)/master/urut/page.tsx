@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { KelolaUrutanRute } from '@/features/dashboard/master/components/KelolaUrutanRute';
+import { KelolaUrutanRute } from '@/features/dashboard/master';
 
 export const metadata: Metadata = {
   title: 'Urutan Langkah Rute (DPM) | PDAM Tirtawening',

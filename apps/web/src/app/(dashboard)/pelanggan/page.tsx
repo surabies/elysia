@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Info Pelanggan" }
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MenuPage href="/pelanggan" />
+  redirect("/info-pelanggan");
 }

@@ -26,10 +26,10 @@ export function Logo({ className }: LogoProps) {
         />
       </div>
       <div className="flex flex-col justify-center leading-none">
-        <span className="text-[17px] font-extrabold tracking-tight text-foreground md:text-[19px]">
+        <span className="text-[17px] font-extrabold tracking-tight text-foreground md:text-[19px] transition-colors group-has-[[data-open=true]]/header:max-md:text-white">
           TIRTAWENING
         </span>
-        <span className="mt-0.5 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+        <span className="mt-0.5 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase transition-colors group-has-[[data-open=true]]/header:max-md:text-neutral-300">
           Kota Bandung
         </span>
       </div>

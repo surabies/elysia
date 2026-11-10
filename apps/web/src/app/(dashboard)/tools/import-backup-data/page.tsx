@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Import Backup Data" }
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MenuPage href="/tools/import-backup-data" />
+  redirect("/tools/import-backup");
 }

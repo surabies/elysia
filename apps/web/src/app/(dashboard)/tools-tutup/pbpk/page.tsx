@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PbpkView } from '@/features/dashboard/closing/components/PbpkView';
+import { PbpkView } from '@/features/dashboard/closing';
 
 export const metadata: Metadata = {
   title: 'PBPK (Pasang Baru & Perubahan Kategori) | Tutup Bulan Cater PDAM',

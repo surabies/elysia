@@ -11,7 +11,7 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth/index"
-import { LoginCard } from "@/features/auth/components/MasukKartu"
+import { LoginCard } from "@/features/auth"
 
 export const metadata: Metadata = {
   // Judul lengkap dirangkai template di app/layout.tsx -> "Masuk — PERUMDA Tirtawening"

@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { versions } from "@/config/Navigasi"
+import { versions } from "@/config/navigasi"
 import { BRAND } from "@/config/site"
 
 export function NavbarBrand() {

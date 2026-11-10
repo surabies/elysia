@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 
 export type InputSize = "xs" | "sm" | "md" | "default" | "lg"
 
@@ -38,11 +38,11 @@ function Input({
   }
 
   const sizeClasses: Record<InputSize, string> = {
-    xs: "h-6 px-2 py-0.5 text-xs text-copy-12",
-    sm: "h-8 px-2.5 py-1 text-xs text-copy-13",
-    md: "h-9 px-3 py-1.5 text-sm text-copy-14",
-    default: "h-10 px-3 py-2 text-sm text-copy-14",
-    lg: "h-11 px-3.5 py-2.5 text-sm text-copy-14",
+    xs: "h-6 px-2 py-0.5 text-copy-12",
+    sm: "h-8 px-2.5 py-1 text-copy-13",
+    md: "h-9 px-3 py-1.5 text-copy-14",
+    default: "h-9 px-3 py-1.5 text-copy-14",
+    lg: "h-10 px-3.5 py-2 text-copy-14",
   }
 
   return (
@@ -52,10 +52,11 @@ function Input({
       data-slot="input"
       data-size={effectiveSize}
       className={cn(
-        "w-full min-w-0 rounded-md border border-border bg-card shadow-none transition-[border-color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-button-12 file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+        "w-full min-w-0 rounded-md border border-border bg-card shadow-none transition-[border-color,box-shadow,background-color] duration-150 outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-button-12 file:font-medium file:text-foreground placeholder:text-(--ds-gray-700) hover:border-(--ds-gray-500) disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-(--ds-gray-100) disabled:text-(--ds-gray-700) disabled:border-(--ds-gray-400)",
         sizeClasses[effectiveSize],
-        "focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring",
-        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+        "text-foreground",
+        "focus-visible:border-foreground focus-visible:ring-2 focus-visible:ring-ring/30",
+        "aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
         className
       )}
       {...props}

@@ -11,12 +11,12 @@ import {
   HourglassIcon,
   PercentCircleIcon,
   Task01Icon,
-} from "@/features/dashboard/shared/icons/IkonLucide";
-import { cn } from "@/lib/Utilitas";
+} from "@/features/dashboard/shared/icons/ikon-lucide";
+import { cn } from "@/lib/utils";
 import { NativeSelect } from "@/components/ui/native-select";
-import { formatPeriode } from "@/features/public/lib/Format";
+import { formatPeriode } from "@/features/public";
 import { StatCard, StatGrid } from "./StatKartu";
-import type { StatsVerifikasi } from "../types/TipeVerifikasi";
+import type { StatsVerifikasi } from "../types";
 
 export function PilihPeriode({
   periodes,

@@ -10,20 +10,20 @@
 // Data meter/riwayat hanya dipakai untuk informasi panel; verifikasi mandiri
 // tidak menerbitkan pembacaan resmi.
 import * as React from "react";
-import { CursorPointer01Icon } from "@/features/dashboard/shared/icons/IkonLucide";
+import { CursorPointer01Icon } from "@/features/dashboard/shared/icons/ikon-lucide";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPeriode, formatTanggal } from "@/features/public/lib/Format";
+import { formatPeriode, formatTanggal } from "@/features/public";
 import {
   ambilSatu,
   ambilList,
   ApiError,
-} from "@/features/dashboard/shared/api/ApiDashboard";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/LabelPencatatan";
+} from "@/features/dashboard/shared/api/api-dashboard";
+import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
 import type {
   LaporanMandiriDetail,
   MeterRingkas,
   PembacaanRingkas,
-} from "../../types/TipeVerifikasi";
+} from "../../types";
 import {
   PanelKosong,
   RingkasanPelanggan,

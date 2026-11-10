@@ -7,8 +7,8 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/Utilitas"
-import { mobileMenuLinks } from "@/config/Navigasi"
+import { cn } from "@/lib/utils"
+import { mobileMenuLinks } from "@/config/navigasi"
 import { MoreVertical, X } from "lucide-react"
 
 export function MobileMenu() {

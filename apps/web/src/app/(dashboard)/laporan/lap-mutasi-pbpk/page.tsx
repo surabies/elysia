@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Lap. Mutasi PB-PK" }
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MenuPage href="/laporan/lap-mutasi-pbpk" />
+  redirect("/tools-tutup/pbpk");
 }

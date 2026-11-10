@@ -12,6 +12,7 @@ export interface HeroContent {
   title: string
   description: string
   videoSrc: string
+  poster?: string
   cta: CtaLink
 }
 
@@ -56,6 +57,7 @@ export interface BenefitsContent {
 export type FeatureMedia =
   | { type: "image"; src: string; alt: string; width: number; height: number }
   | { type: "video"; src: string }
+  | { type: "mockup"; name: "lapor-meter" | "pengaduan" }
 
 export interface FeatureSectionContent {
   id: string

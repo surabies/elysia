@@ -9,12 +9,12 @@ import {
 import { PageContainer } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { IconTile } from "@/components/reui/icon-tile";
-import { DrdCharts } from "@/features/dashboard/drd/DrdCharts";
-import { DrdNavbarControls } from "@/features/dashboard/drd/DrdNavbarControls";
 import {
+  DrdCharts,
   DrdCsvExportButton,
+  DrdNavbarControls,
   DrdTable,
-} from "@/features/dashboard/drd/DrdTable";
+} from "@/features/dashboard/drd";
 import {
   drdService,
   type DrdTab,

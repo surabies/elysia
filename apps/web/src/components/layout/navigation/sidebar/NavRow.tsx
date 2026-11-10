@@ -2,7 +2,7 @@
 // Isi sebuah baris (ikon + teks + aksesori kanan) dengan ikon Geist murni hasil inspeksi Vercel.
 import * as React from "react"
 import { GeistChevronRight } from "./lib/GeistIcons"
-import { cn } from "@/lib/Utilitas"
+import { cn } from "@/lib/utils"
 
 export type SidebarIconComponent = React.ComponentType<any>
 

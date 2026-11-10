@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LaporanStandAwalAkhir } from '@/features/dashboard/laporan/components/LaporanStandAwalAkhir';
+import { LaporanStandAwalAkhir } from '@/features/dashboard/laporan';
 
 export const metadata: Metadata = {
   title: 'Laporan Stand Awal & Akhir Meter | PDAM Tirtawening',

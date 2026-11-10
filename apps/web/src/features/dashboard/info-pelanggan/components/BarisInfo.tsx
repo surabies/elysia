@@ -1,6 +1,6 @@
 // BarisInfo dan DaftarInfo menampilkan label dan nilai tanpa card tambahan.
 import type { ReactNode } from "react";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 
 export function DaftarInfo({ children }: { children: ReactNode }) {
   return <dl className="flex flex-col">{children}</dl>;

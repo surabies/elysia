@@ -19,14 +19,14 @@ if (typeof window !== "undefined" && typeof (maplibregl as any).setWorkerUrl ===
 import {
   ArrowDown01Icon,
   Location01Icon,
-} from "@/features/dashboard/shared/icons/IkonLucide";
+} from "@/features/dashboard/shared/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { KELAS_JUDUL_PANEL } from "../lib/TemaVerifikasi";
+import { KELAS_JUDUL_PANEL } from "../lib/tema-verifikasi";
 
 function PetaMini({ lat, lng }: { lat: number; lng: number }) {
   const containerRef = React.useRef<HTMLDivElement>(null);

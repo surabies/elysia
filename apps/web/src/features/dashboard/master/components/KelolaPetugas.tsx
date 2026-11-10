@@ -37,6 +37,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -170,14 +171,14 @@ export function KelolaPetugas() {
   const totalPelanggan = data.reduce((acc, p) => acc + p.totalPelanggan, 0);
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] w-full bg-background p-6 space-y-6">
+    <PageContainer className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
+          <h1 className="text-heading-20 text-foreground">
             Kelola Master Petugas Cater
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="mt-1 text-copy-13 text-muted-foreground">
             Manajemen profil, status aktif, dan nomor kontak petugas pencatat meter lapangan
           </p>
         </div>
@@ -188,67 +189,65 @@ export function KelolaPetugas() {
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="h-8 text-xs gap-1.5"
           >
-            <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+            <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
             Segarkan
           </Button>
 
           <Button
             size="sm"
             onClick={bukaModalTambah}
-            className="h-8 text-xs gap-1.5 font-semibold"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="size-3.5" />
             Tambah Petugas
           </Button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4 border bg-card/60 backdrop-blur">
-          <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center justify-between text-label-12 text-muted-foreground">
             <span>Total Petugas</span>
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="size-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-foreground">
+          <div className="mt-2 text-heading-24 font-mono tabular-nums text-foreground">
             {totalPetugas}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Petugas terdaftar di sistem</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Petugas terdaftar di sistem</p>
         </Card>
 
-        <Card className="p-4 border bg-card/60 backdrop-blur">
-          <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center justify-between text-label-12 text-muted-foreground">
             <span>Status Aktif</span>
-            <UserCheck className="h-4 w-4 text-emerald-600" />
+            <UserCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-emerald-600">
+          <div className="mt-2 text-heading-24 font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
             {aktifCount} / {totalPetugas}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Siap bertugas di lapangan</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Siap bertugas di lapangan</p>
         </Card>
 
-        <Card className="p-4 border bg-card/60 backdrop-blur">
-          <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center justify-between text-label-12 text-muted-foreground">
             <span>Rute Terdistribusi</span>
-            <Route className="h-4 w-4 text-blue-600" />
+            <Route className="size-4 text-(--ds-blue-900)" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-blue-600">
+          <div className="mt-2 text-heading-24 font-mono tabular-nums text-(--ds-blue-900)">
             {totalRute}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Rute terpetakan ke petugas</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Rute terpetakan ke petugas</p>
         </Card>
 
-        <Card className="p-4 border bg-card/60 backdrop-blur">
-          <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center justify-between text-label-12 text-muted-foreground">
             <span>Beban Pelanggan</span>
-            <Users className="h-4 w-4 text-amber-600" />
+            <Users className="size-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-amber-600">
+          <div className="mt-2 text-heading-24 font-mono tabular-nums text-amber-600 dark:text-amber-400">
             {totalPelanggan.toLocaleString('id-ID')}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Pelanggan aktif dalam rute</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">Pelanggan aktif dalam rute</p>
         </Card>
       </div>
 
@@ -256,19 +255,20 @@ export function KelolaPetugas() {
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div className="relative w-72">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
             <Input
               type="text"
+              size="sm"
               placeholder="Cari nama atau NIP petugas..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-8 text-xs bg-card"
+              className="pl-8 bg-card"
             />
           </div>
 
           <Link
             href="/master/pemetaan-petugas"
-            className="inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
+            className="inline-flex items-center gap-1.5 text-label-13 text-(--ds-blue-900) hover:underline"
           >
             Buka Pemetaan Rute &rarr;
           </Link>
@@ -276,7 +276,7 @@ export function KelolaPetugas() {
 
         <Card className="border-border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/50">
+            <TableHeader>
               <TableRow>
                 <TableHead>ID / NIP</TableHead>
                 <TableHead>Nama Petugas</TableHead>
@@ -291,12 +291,12 @@ export function KelolaPetugas() {
             <TableBody>
               {filtered.map((petugas) => (
                 <TableRow key={petugas.id}>
-                  <TableCell className="font-mono font-bold text-foreground">
+                  <TableCell className="font-mono font-medium text-foreground">
                     {petugas.id}
                   </TableCell>
-                  <TableCell className="font-semibold text-foreground">
-                    <div className="flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                  <TableCell className="font-medium text-foreground">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-7 rounded-full border border-border bg-(--ds-gray-100) text-foreground flex items-center justify-center text-label-11 shrink-0">
                         {petugas.nama.slice(0, 2).toUpperCase()}
                       </div>
                       <span>{petugas.nama}</span>
@@ -305,7 +305,7 @@ export function KelolaPetugas() {
                   <TableCell className="text-muted-foreground font-mono">
                     {petugas.noHp ? (
                       <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
+                        <Phone className="size-3" />
                         {petugas.noHp}
                       </span>
                     ) : (
@@ -316,32 +316,30 @@ export function KelolaPetugas() {
                     <Badge
                       variant={petugas.aktif ? 'outline' : 'secondary'}
                       className={cn(
-                        'text-[10px]',
                         petugas.aktif
-                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-300'
-                          : 'bg-muted text-muted-foreground'
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400'
+                          : 'bg-(--ds-gray-100) text-muted-foreground'
                       )}
                     >
                       {petugas.aktif ? 'Aktif' : 'Nonaktif'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right font-mono font-bold text-blue-600">
+                  <TableCell className="text-right font-mono tabular-nums font-medium text-(--ds-blue-900)">
                     {petugas.totalRute}
                   </TableCell>
-                  <TableCell className="text-right font-mono font-bold text-foreground">
+                  <TableCell className="text-right font-mono tabular-nums font-medium text-foreground">
                     {petugas.totalPelanggan.toLocaleString('id-ID')}
                   </TableCell>
-                  <TableCell className="max-w-xs truncate font-mono text-[11px] text-muted-foreground">
+                  <TableCell className="max-w-xs truncate font-mono text-label-12 text-muted-foreground">
                     {petugas.ruteList.join(', ') || 'Belum ada rute'}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="xs"
                       onClick={() => bukaModalEdit(petugas)}
-                      className="h-7 text-xs gap-1"
                     >
-                      <Edit2 className="h-3 w-3" />
+                      <Edit2 className="size-3" />
                       Edit
                     </Button>
                   </TableCell>
@@ -357,17 +355,17 @@ export function KelolaPetugas() {
         {modalPetugas && (
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle>
                 {modalPetugas.mode === 'tambah' ? 'Tambah Petugas Baru' : 'Edit Profil Petugas'}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription>
                 Konfigurasi profil dan penugasan pencatat meter lapangan.
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={simpanPetugas} className="space-y-4 text-xs pt-2">
-              <div>
-                <label className="font-semibold text-foreground block mb-1">
+            <form onSubmit={simpanPetugas} className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="text-label-13 text-foreground block">
                   ID / NIP Petugas
                 </label>
                 <Input
@@ -377,12 +375,12 @@ export function KelolaPetugas() {
                   disabled={modalPetugas.mode === 'edit' || saving}
                   placeholder="Misal: DADANG, AGUS01"
                   required
-                  className="font-mono uppercase text-xs"
+                  className="font-mono uppercase"
                 />
               </div>
 
-              <div>
-                <label className="font-semibold text-foreground block mb-1">
+              <div className="space-y-1.5">
+                <label className="text-label-13 text-foreground block">
                   Nama Lengkap
                 </label>
                 <Input
@@ -392,12 +390,11 @@ export function KelolaPetugas() {
                   disabled={saving}
                   placeholder="Nama petugas"
                   required
-                  className="text-xs"
                 />
               </div>
 
-              <div>
-                <label className="font-semibold text-foreground block mb-1">
+              <div className="space-y-1.5">
+                <label className="text-label-13 text-foreground block">
                   Nomor HP / WhatsApp
                 </label>
                 <Input
@@ -406,7 +403,7 @@ export function KelolaPetugas() {
                   onChange={(e) => setFormNoHp(e.target.value)}
                   disabled={saving}
                   placeholder="08123456789"
-                  className="font-mono text-xs"
+                  className="font-mono"
                 />
               </div>
 
@@ -417,19 +414,18 @@ export function KelolaPetugas() {
                   onCheckedChange={(checked) => setFormAktif(Boolean(checked))}
                   disabled={saving}
                 />
-                <label htmlFor="aktifCheck" className="font-medium text-foreground cursor-pointer select-none">
+                <label htmlFor="aktifCheck" className="text-label-13 text-foreground cursor-pointer select-none">
                   Status Aktif Bertugas
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-border/60">
+              <div className="flex justify-end gap-2 pt-4 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setModalPetugas(null)}
                   disabled={saving}
-                  className="h-8 text-xs"
                 >
                   Batal
                 </Button>
@@ -437,9 +433,8 @@ export function KelolaPetugas() {
                   type="submit"
                   size="sm"
                   disabled={saving}
-                  className="h-8 text-xs font-semibold gap-1.5"
                 >
-                  {saving && <Spinner className="h-3 w-3" />}
+                  {saving && <Spinner className="size-3.5" />}
                   Simpan Petugas
                 </Button>
               </div>
@@ -447,6 +442,6 @@ export function KelolaPetugas() {
           </DialogContent>
         )}
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

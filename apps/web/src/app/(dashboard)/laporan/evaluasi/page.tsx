@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LaporanEvaluasiPetugas } from '@/features/dashboard/laporan/components/LaporanEvaluasiPetugas';
+import { LaporanEvaluasiPetugas } from '@/features/dashboard/laporan';
 
 export const metadata: Metadata = {
   title: 'Laporan Evaluasi Kinerja Petugas Cater | PDAM Tirtawening',

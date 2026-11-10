@@ -7,7 +7,7 @@ import { FormulirPembacaan } from './FormulirPembacaan';
 import { HasilDanAudit } from './HasilDanAudit';
 import { KonteksPengujian } from './KonteksPengujian';
 import { PanelVerifikasi } from './PanelVerifikasi';
-import { useCaterSimulator } from '../hooks/useCaterSimulator';
+import { useCaterSimulator } from '../hooks/use-cater-simulator';
 
 export function SimulatorBacaMeter() {
   const state = useCaterSimulator();

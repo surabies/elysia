@@ -5,7 +5,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { PanelDasbor } from "../../shared/PanelDasbor";
+import { PanelDasbor } from "@/features/dashboard/shared";
 
 type ItemFoto = { label: string; src: string; contoh: boolean };
 

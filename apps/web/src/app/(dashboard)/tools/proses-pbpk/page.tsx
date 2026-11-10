@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
-
-export const metadata = { title: "Proses PBPK" }
+import { redirect } from "next/navigation";
 
 export default function ProsesPBPKPage() {
-  return <MenuPage href="/tools/proses-pbpk" />
+  redirect("/tools-tutup/pbpk");
 }

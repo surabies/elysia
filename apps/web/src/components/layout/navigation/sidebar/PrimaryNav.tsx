@@ -10,7 +10,7 @@ import { getPrimaryIcon } from "./lib/Icons";
 import { NavRowContent } from "./NavRow";
 import { navRowClass } from "./lib/Styles";
 import { isPrimaryActive } from "./lib/Utilitas";
-import type { NavItem } from "@/config/Navigasi";
+import type { NavItem } from "@/config/navigasi";
 
 export function PrimaryNav({ items }: { items?: NavItem[] } = {}) {
   const pathname = usePathname();

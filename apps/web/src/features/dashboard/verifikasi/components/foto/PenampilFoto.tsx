@@ -16,9 +16,9 @@ import {
   RotateLeft01Icon,
   RotateRight01Icon,
   Search01Icon,
-} from "@/features/dashboard/shared/icons/IkonLucide";
+} from "@/features/dashboard/shared/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {

@@ -5,11 +5,14 @@ import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
-import { PillButton } from "@/components/shared/PillButton"
+import { cn } from "@/lib/utils"
 import type { TicketEvent } from "@/types/home"
 
 interface SearchExperienceProps {
   events: TicketEvent[]
+  mode?: "all" | "desktop" | "mobile"
+  isMenuOpen?: boolean
+  onOpen?: () => void
 }
 
 const URL_LAYANAN: Record<string, string> = {
@@ -21,7 +24,12 @@ const URL_LAYANAN: Record<string, string> = {
   "6": "/info-gangguan",
 }
 
-export function SearchExperience({ events }: SearchExperienceProps) {
+export function SearchExperience({
+  events,
+  mode = "all",
+  isMenuOpen = false,
+  onOpen,
+}: SearchExperienceProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -69,31 +77,43 @@ export function SearchExperience({ events }: SearchExperienceProps) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={(event) => {
-          activeTriggerRef.current = event.currentTarget
-          setOpen(true)
-        }}
-        aria-label="Cari layanan"
-        className="mx-4 hidden w-60 lg:w-72 shrink items-center gap-2 rounded-full bg-surface-muted px-3.5 py-2 text-left whitespace-nowrap text-ink-muted xl:flex"
-      >
-        <Search size={18} aria-hidden="true" className="shrink-0" />
-        <span className="text-xs lg:text-sm truncate">Cari layanan, tagihan...</span>
-      </button>
+      {/* Desktop Search Trigger (xl+) */}
+      {(mode === "all" || mode === "desktop") && (
+        <button
+          type="button"
+          onClick={(event) => {
+            activeTriggerRef.current = event.currentTarget
+            onOpen?.()
+            setOpen(true)
+          }}
+          aria-label="Cari layanan"
+          className="mx-4 hidden w-60 lg:w-72 shrink items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 hover:bg-neutral-200 px-3.5 py-2 text-left whitespace-nowrap text-neutral-500 xl:flex transition-colors cursor-pointer"
+        >
+          <Search size={18} aria-hidden="true" className="shrink-0 text-neutral-600" />
+          <span className="text-xs lg:text-sm truncate">Cari layanan, tagihan...</span>
+        </button>
+      )}
 
-      <PillButton
-        type="button"
-        size="icon"
-        aria-label="Cari layanan"
-        onClick={(event) => {
-          activeTriggerRef.current = event.currentTarget
-          setOpen(true)
-        }}
-        className="ml-2 size-8 p-0 md:mx-2.5 lg:size-10 xl:hidden"
-      >
-        <Search size={20} aria-hidden="true" />
-      </PillButton>
+      {/* Mobile / Tablet Search Trigger (< xl) - Berdampingan dengan Hamburger */}
+      {(mode === "all" || mode === "mobile") && (
+        <button
+          type="button"
+          aria-label="Cari layanan"
+          onClick={(event) => {
+            activeTriggerRef.current = event.currentTarget
+            onOpen?.()
+            setOpen(true)
+          }}
+          className={cn(
+            "flex size-8 items-center justify-center rounded-full transition-all duration-200 outline-none md:size-8 xl:hidden cursor-pointer",
+            isMenuOpen
+              ? "border-2 border-white bg-white text-black shadow-md"
+              : "border-2 border-transparent bg-black text-white hover:opacity-80"
+          )}
+        >
+          <Search className="size-4" aria-hidden="true" />
+        </button>
+      )}
 
       {open && typeof document !== "undefined"
         ? createPortal(

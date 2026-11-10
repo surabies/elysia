@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { KelolaPetugas } from '@/features/dashboard/master/components/KelolaPetugas';
+import { KelolaPetugas } from '@/features/dashboard/master';
 
 export const metadata: Metadata = {
   title: 'Master Petugas Cater | PDAM Tirtawening',

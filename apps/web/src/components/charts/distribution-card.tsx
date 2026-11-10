@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface DistributionCardProps {
   title: string;
@@ -21,24 +22,21 @@ export function DistributionCard({
   return (
     <section
       aria-labelledby={titleId}
-      className="flex h-full min-w-0 flex-col rounded-[10px] border border-border bg-card p-4"
+      className="flex h-full min-w-0 flex-col rounded-lg border border-border bg-card p-5"
     >
       <header className="flex items-start justify-between gap-3">
-        <h2
-          id={titleId}
-          className="min-w-0 text-sm font-semibold tracking-tight text-foreground"
-        >
+        <h2 id={titleId} className="min-w-0 text-heading-16 text-foreground">
           {title}
         </h2>
         {summary && (
-          <div className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+          <div className="shrink-0 text-right text-label-12 tabular-nums text-muted-foreground">
             {summary}
           </div>
         )}
       </header>
 
       {isEmpty ? (
-        <p className="mt-4 flex h-48 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
+        <p className="mt-4 flex h-48 items-center justify-center rounded-md border border-dashed border-border text-copy-13 text-muted-foreground">
           {emptyMessage}
         </p>
       ) : (
@@ -65,7 +63,7 @@ interface RankedBarListProps {
   className?: string;
 }
 
-const GRID = "grid grid-cols-[minmax(0,1fr)_5.5rem_3.5rem]";
+const GRID = "grid grid-cols-[minmax(0,1fr)_5.5rem_3.75rem]";
 
 export function RankedBarList({
   rows,
@@ -82,7 +80,7 @@ export function RankedBarList({
           aria-hidden="true"
           className={cn(
             GRID,
-            "border-b border-border px-2 py-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground",
+            "border-b border-border px-2 py-2 text-label-12 text-muted-foreground",
           )}
         >
           <span>{headers.label}</span>
@@ -96,28 +94,32 @@ export function RankedBarList({
               key={row.key}
               className={cn(
                 GRID,
-                "min-h-9 flex-1 border-b border-border/70 last:border-0",
+                "min-h-9 flex-1 border-b border-border last:border-0",
               )}
             >
               <div className="relative flex min-w-0 items-center overflow-hidden px-2 py-1.5">
                 <span
                   aria-hidden="true"
-                  className="absolute inset-y-0 left-0 bg-[color-mix(in_srgb,var(--ds-blue-500)_18%,var(--card))]"
+                  className="absolute inset-y-1 left-0 rounded-r-sm bg-(--ds-blue-100) dark:bg-(--ds-blue-200)/60"
                   style={{ width: `${Math.min(100, (row.value / max) * 100)}%` }}
                 />
-                <span className="relative z-10 truncate text-xs font-medium text-foreground">
+                <span className="relative z-10 truncate text-label-13 text-foreground">
                   {row.label}
                 </span>
                 {row.badge && (
-                  <span className="relative z-10 ml-1.5 shrink-0 text-[10px] text-muted-foreground">
+                  <Badge
+                    variant="subtle"
+                    size="sm"
+                    className="relative z-10 ml-2 font-mono"
+                  >
                     {row.badge}
-                  </span>
+                  </Badge>
                 )}
               </div>
-              <span className="flex items-center justify-end px-2 py-1.5 font-mono text-xs tabular-nums text-foreground">
+              <span className="flex items-center justify-end px-2 py-1.5 text-label-13-mono tabular-nums text-foreground">
                 {row.formattedValue ?? row.value.toLocaleString("id-ID")}
               </span>
-              <span className="flex items-center justify-end px-2 py-1.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+              <span className="flex items-center justify-end px-2 py-1.5 text-label-12-mono tabular-nums text-muted-foreground">
                 {row.share}%
               </span>
             </li>

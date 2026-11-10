@@ -11,7 +11,7 @@ import { GeistPanelLeft } from "../navigation/sidebar/lib/GeistIcons";
 import { NavbarBreadcrumb } from "./NavbarBreadcrumb";
 import { useSidebar } from "../shell/SidebarContext";
 import { WorkSwitcher } from "../navigation/sidebar/WorkSwitcher";
-import { cn } from "@/lib/Utilitas";
+import { cn } from "@/lib/utils";
 
 const drdTabs = [
   { id: "ringkasan", label: "Ringkasan" },
@@ -67,7 +67,7 @@ export function Navbar() {
                 className={cn(
                   "outline-none m-0 border-0 align-baseline no-underline group/trigger relative cursor-pointer select-none",
                   "flex items-center justify-center rounded-md bg-transparent text-foreground",
-                  "hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors duration-150",
+                  "hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200) transition-colors duration-150",
                   "p-0 size-8 shrink-0"
                 )}
               >
@@ -101,8 +101,8 @@ export function Navbar() {
               <Link
                 href="/bantuan"
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors",
-                  "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-button-13 text-foreground transition-colors",
+                  "hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200)"
                 )}
                 title="Pusat Bantuan & Dokumentasi"
               >
