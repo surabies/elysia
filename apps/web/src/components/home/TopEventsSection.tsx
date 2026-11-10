@@ -86,7 +86,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
   return (
     <section
       aria-labelledby="top-events-title"
-      className="relative overflow-hidden bg-white py-16 text-black md:py-28"
+      className="relative overflow-hidden bg-white py-16 text-black md:py-24"
     >
       <svg
         width="0"
@@ -110,7 +110,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
           <div className="flex items-center justify-between mb-4.5">
             <h2
               id="top-events-title"
-              className="type-body font-bold lg:font-bold"
+              className="text-heading-20 md:text-heading-24 font-semibold tracking-tight text-black"
             >
               {content.title}
             </h2>
@@ -122,7 +122,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
                 onClick={togglePlay}
                 aria-label={isPlaying ? "Jeda animasi kartu" : "Putar animasi kartu"}
                 title={isPlaying ? "Jeda animasi" : "Putar animasi"}
-                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200"
+                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200 cursor-pointer"
               >
                 {isPlaying ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
               </button>
@@ -131,7 +131,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
                 onClick={() => handleGeser("kiri")}
                 aria-label="Geser ke kiri"
                 title="Geser sebelumnya"
-                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200"
+                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200 cursor-pointer"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -140,7 +140,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
                 onClick={() => handleGeser("kanan")}
                 aria-label="Geser ke kanan"
                 title="Geser berikutnya"
-                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200"
+                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200 cursor-pointer"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -148,7 +148,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
           </div>
 
           <div className="mb-7.5 flex flex-col gap-4.5 md:flex-row md:gap-6.25">
-            <p className="type-body md:flex-[0_0_60%] text-neutral-700">
+            <p className="text-copy-14 sm:text-copy-16 md:flex-[0_0_60%] text-neutral-700 leading-relaxed">
               {content.description}
             </p>
             <div className="flex w-full items-end justify-end">

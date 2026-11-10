@@ -17,21 +17,33 @@ export function SwipeHeading({
   as: Tag = "h1",
   className,
 }: SwipeHeadingProps) {
-  const words = text.split(" ")
+  const lines = text.split("\n")
+  let globalWordIndex = 0
 
   return (
-    <Tag className={cn("m-0 max-w-125 type-display", className)}>
-      {words.map((word, index) => (
-        <span
-          key={`${word}-${index}`}
-          style={{ "--index": index + 1 } as CSSProperties}
-          className="inline-block overflow-hidden whitespace-nowrap"
-        >
-          <span className="inline-block translate-y-full animate-swipe-up whitespace-pre motion-reduce:translate-y-0 motion-reduce:animate-none">
-            {index < words.length - 1 ? `${word} ` : word}
+    <Tag className={cn("m-0 type-display text-black", className)}>
+      {lines.map((line, lineIndex) => {
+        const words = line.trim().split(/\s+/).filter(Boolean)
+        return (
+          <span key={`line-${lineIndex}`} className="block whitespace-nowrap">
+            {words.map((word, wordIndex) => {
+              globalWordIndex += 1
+              const currentIndex = globalWordIndex
+              return (
+                <span
+                  key={`${word}-${wordIndex}`}
+                  style={{ "--index": currentIndex } as CSSProperties}
+                  className="inline-block overflow-hidden"
+                >
+                  <span className="inline-block translate-y-full animate-swipe-up whitespace-pre motion-reduce:translate-y-0 motion-reduce:animate-none">
+                    {wordIndex < words.length - 1 ? `${word} ` : word}
+                  </span>
+                </span>
+              )
+            })}
           </span>
-        </span>
-      ))}
+        )
+      })}
     </Tag>
   )
 }

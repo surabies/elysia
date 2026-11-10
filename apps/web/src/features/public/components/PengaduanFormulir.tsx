@@ -15,7 +15,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Field,
   FieldDescription,
@@ -31,7 +37,7 @@ import {
 } from "../lib/format"
 import { PemilihFoto } from "./PemilihFoto"
 import { PemilihVideo } from "./PemilihVideo"
-import { MiniPetaLokasi } from "./MiniPetaLokasi"
+import { PemilihLokasiPeta } from "./PemilihLokasiPeta"
 import { TombolUtama } from "./TombolUtama"
 import type { PetaCakupan } from "@/lib/domain/peta-tipe"
 
@@ -71,8 +77,7 @@ export function PengaduanForm({
   )
   const [jenis, setJenis] = React.useState("LAPOR_STAND_METER")
   const [koordinat, setKoordinat] = React.useState<Koordinat | null>(null)
-  const [ambilLokasi, setAmbilLokasi] = React.useState(false)
-  const [errorLokasi, setErrorLokasi] = React.useState<string | null>(null)
+  const [alamatKejadian, setAlamatKejadian] = React.useState("")
   const [fotoFile, setFotoFile] = React.useState<File | null>(null)
   const [fotoPreviewUrl, setFotoPreviewUrl] = React.useState<string | null>(
     null
@@ -129,39 +134,13 @@ export function PengaduanForm({
   // sesudah.
   const butuhLokasi = jenis === "BOCOR_PIPA_DINAS"
 
-  function mintaLokasi() {
-    setErrorLokasi(null)
-    if (!("geolocation" in navigator)) {
-      setErrorLokasi(
-        "Perangkat Anda tidak mendukung deteksi lokasi. Isi alamat kejadian selengkap mungkin."
-      )
-      return
-    }
-    setAmbilLokasi(true)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setKoordinat({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setAmbilLokasi(false)
-      },
-      (err) => {
-        setAmbilLokasi(false)
-        setErrorLokasi(
-          err.code === err.PERMISSION_DENIED
-            ? "Izin lokasi ditolak. Aktifkan izin lokasi di browser, atau tulis alamat kejadian selengkap mungkin."
-            : "Lokasi tidak terdeteksi. Coba lagi atau tulis alamat kejadian selengkap mungkin."
-        )
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-  }
-
   async function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
 
     if (butuhLokasi && !koordinat) {
       setPesanError(
-        'Untuk laporan bocor pipa dinas, tekan "Deteksi lokasi saya" agar petugas bisa menemukan titiknya.'
+        "Untuk laporan bocor pipa dinas, silakan tandai titik lokasi pada peta agar regu teknisi dapat menemukan lokasinya."
       )
       return
     }
@@ -182,12 +161,10 @@ export function PengaduanForm({
         await kirimPengaduan({
           klasifikasi,
           jenis,
-          judul: String(fd.get("judul") ?? "").trim(),
           deskripsi: String(fd.get("deskripsi") ?? "").trim(),
           pelapor: String(fd.get("pelapor") ?? "").trim(),
           kontakPelapor: normalisasiHp(kontakPelapor),
-          alamatKejadian:
-            String(fd.get("alamatKejadian") ?? "").trim() || undefined,
+          alamatKejadian: alamatKejadian.trim() || undefined,
           nomorLangganan: nomorLangganan || undefined,
           koordinat: koordinat ?? undefined,
           foto: fotoFile,
@@ -290,22 +267,24 @@ export function PengaduanForm({
       <FieldGroup className="gap-4">
         <Field>
           <FieldLabel htmlFor="klasifikasi">Klasifikasi pengaduan</FieldLabel>
-          <NativeSelect
-            id="klasifikasi"
-            name="klasifikasi"
-            className="w-full"
+          <Select
             value={klasifikasi}
-            onChange={(e) => setKlasifikasi(e.currentTarget.value)}
+            onValueChange={setKlasifikasi}
             disabled={pending}
           >
-            {Object.entries(LABEL_KLASIFIKASI_PENGADUAN).map(
-              ([nilai, label]) => (
-                <NativeSelectOption key={nilai} value={nilai}>
-                  {label}
-                </NativeSelectOption>
-              )
-            )}
-          </NativeSelect>
+            <SelectTrigger id="klasifikasi" className="w-full">
+              <SelectValue placeholder="Pilih klasifikasi pengaduan..." />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(LABEL_KLASIFIKASI_PENGADUAN).map(
+                ([nilai, label]) => (
+                  <SelectItem key={nilai} value={nilai}>
+                    {label}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
           <FieldDescription>
             Menentukan unit mana yang menindaklanjuti laporan Anda.
           </FieldDescription>
@@ -313,43 +292,37 @@ export function PengaduanForm({
 
         <Field>
           <FieldLabel htmlFor="jenis">Jenis pengaduan</FieldLabel>
-          <NativeSelect
-            id="jenis"
-            name="jenis"
-            className="w-full"
+          <Select
             value={jenis}
-            onChange={(e) => setJenis(e.currentTarget.value)}
+            onValueChange={setJenis}
             disabled={pending}
           >
-            {Object.entries(LABEL_JENIS_PENGADUAN).map(([nilai, label]) => (
-              <NativeSelectOption key={nilai} value={nilai}>
-                {label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+            <SelectTrigger id="jenis" className="w-full">
+              <SelectValue placeholder="Pilih jenis pengaduan..." />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(LABEL_JENIS_PENGADUAN).map(([nilai, label]) => (
+                <SelectItem key={nilai} value={nilai}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="judul">Judul singkat</FieldLabel>
-          <Input
-            id="judul"
-            name="judul"
-            placeholder="Pipa bocor di Jl. Asmi depan no. 1"
-            disabled={pending}
-            required
-          />
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor="deskripsi">Keterangan</FieldLabel>
+          <FieldLabel htmlFor="deskripsi">Keterangan / Detail Laporan</FieldLabel>
           <Textarea
             id="deskripsi"
             name="deskripsi"
             rows={4}
-            placeholder="KEBERATAN BAYAR"
+            placeholder="Jelaskan detail kendala, sejak kapan terjadi, patokan lokasi terdekat..."
             disabled={pending}
             required
           />
+          <FieldDescription>
+            Tuliskan kronologi singkat atau patokan agar petugas mudah menemukan lokasi.
+          </FieldDescription>
         </Field>
 
         <Field>
@@ -357,51 +330,39 @@ export function PengaduanForm({
           <Input
             id="alamatKejadian"
             name="alamatKejadian"
-            placeholder="Jl. Asmi No. 1, RT 02"
+            placeholder="Contoh: Jl. Asia Afrika No. 12, RT 02/05"
+            value={alamatKejadian}
+            onChange={(e) => setAlamatKejadian(e.target.value)}
             disabled={pending}
           />
+          <FieldDescription>
+            Patokan nomor rumah, gang, atau ruko. Otomatis terisi saat Anda menandai peta di bawah.
+          </FieldDescription>
         </Field>
 
         <Field data-invalid={butuhLokasi && !koordinat && !!pesanError}>
           <FieldLabel htmlFor="lokasi">
-            Titik lokasi{" "}
+            Titik Lokasi Kejadian{" "}
             {butuhLokasi ? (
-              <span className="text-destructive">*</span>
+              <span className="text-destructive font-medium">* (Wajib untuk bocor pipa)</span>
             ) : (
-              "(opsional)"
+              <span className="text-muted-foreground font-normal">(opsional)</span>
             )}
           </FieldLabel>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              id="lokasi"
-              variant="outline"
-              size="sm"
-              onClick={mintaLokasi}
-              disabled={pending || ambilLokasi}
-            >
-              {ambilLokasi ? <Spinner className="size-3.5" /> : <MapPin />}
-              {ambilLokasi
-                ? "Mendeteksi…"
-                : koordinat
-                  ? "Perbarui lokasi"
-                  : "Deteksi lokasi saya"}
-            </Button>
-            {koordinat && (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {koordinat.lat.toFixed(5)}, {koordinat.lng.toFixed(5)} ✓
-              </span>
-            )}
-          </div>
           <FieldDescription>
             {butuhLokasi
-              ? "Wajib untuk laporan bocor pipa dinas — petugas memakai titik ini untuk menemukan lokasinya."
-              : "Membantu petugas menemukan lokasi Anda lebih cepat."}
+              ? "Wajib untuk laporan bocor pipa dinas — klik pada peta, cari nama jalan, atau gunakan GPS."
+              : "Klik pada peta atau gunakan tombol GPS untuk menandai titik kejadian agar teknisi cepat menuju lokasi."}
           </FieldDescription>
-          {errorLokasi && (
-            <p className="text-xs text-destructive">{errorLokasi}</p>
-          )}
-          <MiniPetaLokasi peta={peta} koordinat={koordinat} />
+
+          <PemilihLokasiPeta
+            koordinat={koordinat}
+            onPilihKoordinat={setKoordinat}
+            onPilihAlamat={(alamat) => {
+              setAlamatKejadian(alamat)
+            }}
+            wajib={butuhLokasi}
+          />
         </Field>
 
         <PemilihFoto

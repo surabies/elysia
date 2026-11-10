@@ -1,10 +1,60 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
+import { eq, and } from 'drizzle-orm';
+import { db, caterMandiriPelanggan } from '@cater/db';
 import { authPlugin } from '../../plugins/auth';
 import { mandiriService } from '../../services/mandiri/mandiri.service';
 import { submitMandiriPublicBodySchema, verifikasiMandiriBodySchema } from './mandiri.schema';
 
 export const mandiriRouter = new Elysia({ prefix: '/cater/mandiri' })
   .use(authPlugin)
+
+  /**
+   * MODUL SEMENTARA TESTING (DAPAT DIHAPUS SETELAH UAT LULUS)
+   * Menyediakan daftar periode uji yang dapat dipilih warga/tester di frontend
+   * karena data seed database saat ini berada pada periode 202601 (Januari 2026).
+   */
+  .get('/public/periode-uji', async () => {
+    return {
+      success: true,
+      data: {
+        aktif: true,
+        periodes: [202601, 202602],
+        periodeDatabase: 202601,
+        catatan:
+          'MODUL SEMENTARA TESTING: Memungkinkan override periode lapor meter saat database berada di 202601. Hapus setelah UAT lulus.',
+      },
+    };
+  })
+
+  /**
+   * MODUL SEMENTARA TESTING & STATUS
+   * Mengambil status pelaporan mandiri pelanggan untuk periode tertentu.
+   */
+  .get(
+    '/public/status/:nolg',
+    async ({ params: { nolg }, query }) => {
+      const thbl = query.thbl ?? '202601';
+      const [laporan] = await db
+        .select()
+        .from(caterMandiriPelanggan)
+        .where(
+          and(
+            eq(caterMandiriPelanggan.nolg, nolg),
+            eq(caterMandiriPelanggan.thbl, thbl)
+          )
+        )
+        .limit(1);
+
+      return {
+        success: true,
+        data: laporan ?? null,
+      };
+    },
+    {
+      params: t.Object({ nolg: t.String() }),
+      query: t.Object({ thbl: t.Optional(t.String()) }),
+    }
+  )
 
   // 1. Submit Lapor Mandiri oleh Pelanggan (Public Warga - Jendela 1-25 WIB)
   .post(

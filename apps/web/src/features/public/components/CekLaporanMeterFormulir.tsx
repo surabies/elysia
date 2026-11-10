@@ -16,7 +16,21 @@ import * as React from "react"
 import { AlertCircle } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { cariPelanggan, ApiError, type PelangganPratinjau } from "../lib/api"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  cariPelanggan,
+  ambilPeriodeUjiLaporMandiri,
+  type PeriodeUjiLaporMeter,
+  ApiError,
+  type PelangganPratinjau,
+} from "../lib/api"
 import { formatPeriode } from "../lib/format"
 import { InputNomorLangganan } from "./MasukanNomorLangganan"
 import { KartuLaporanMeter } from "./KartuLaporanMeter"
@@ -30,15 +44,36 @@ export function CekLaporanMeterForm({
   )
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [periodeUji, setPeriodeUji] =
+    React.useState<PeriodeUjiLaporMeter | null>(null)
+  const [pilihanPeriode, setPilihanPeriode] = React.useState("202601")
   const pencarianTerbaru = React.useRef(0)
 
-  async function cari(nomorLangganan: string) {
+  React.useEffect(() => {
+    let batal = false
+    ambilPeriodeUjiLaporMandiri()
+      .then((data) => {
+        if (!batal) {
+          setPeriodeUji(data)
+          if (data.aktif && data.periodes.length > 0) {
+            setPilihanPeriode(String(data.periodes[0]))
+          }
+        }
+      })
+      .catch(() => {})
+    return () => {
+      batal = true
+    }
+  }, [])
+
+  async function cari(nomorLangganan: string, periode?: number) {
     const id = ++pencarianTerbaru.current
     setError(null)
     setPratinjau(null)
     setPending(true)
     try {
-      const hasil = await cariPelanggan(nomorLangganan)
+      const targetPeriode = periode ?? (Number(pilihanPeriode) || 202601)
+      const hasil = await cariPelanggan(nomorLangganan, targetPeriode)
       if (id === pencarianTerbaru.current) setPratinjau(hasil)
     } catch (err) {
       if (id === pencarianTerbaru.current)
@@ -52,6 +87,13 @@ export function CekLaporanMeterForm({
     }
   }
 
+  function ubahPeriode(nilai: string) {
+    setPilihanPeriode(nilai)
+    if (nomor.length === 11) {
+      void cari(nomor, Number(nilai) || 202601)
+    }
+  }
+
   // Taut-langsung dari layar sukses lapor-meter (?tab=cek&nomor=...): isi
   // otomatis lalu langsung cari — pola sama dengan onNomorChange di bawah.
   // Sengaja hanya sekali (dependency kosong).
@@ -59,7 +101,7 @@ export function CekLaporanMeterForm({
     // Sengaja: mengisi HASIL pencarian dari ?nomor= URL SEKALI saat
     // taut-langsung dibuka, pola sama dengan lacak-tiket-form.tsx.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (nomorAwal?.trim()) void cari(nomorAwal.trim())
+    if (nomorAwal?.trim()) void cari(nomorAwal.trim(), Number(pilihanPeriode) || 202601)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -68,7 +110,7 @@ export function CekLaporanMeterForm({
   function onNomorChange(digitBaru: string) {
     setNomor(digitBaru)
     if (digitBaru.length === 11) {
-      cari(digitBaru)
+      cari(digitBaru, Number(pilihanPeriode) || 202601)
     } else {
       pencarianTerbaru.current++ // batalkan pencarian yang sedang berjalan
       setPratinjau(null)
@@ -83,12 +125,43 @@ export function CekLaporanMeterForm({
     setError(null)
   }
 
+  /**
+   * MODUL SEMENTARA (TESTING & UAT ONLY)
+   */
+  const pemilihPeriodeUji = periodeUji?.aktif ? (
+    <div className="space-y-2 rounded-xl border border-dashed border-amber-500/60 bg-amber-500/10 p-4 text-xs">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="periode-uji-cek" className="font-semibold text-amber-900 dark:text-amber-200">
+            [MODE UJI SEMENTARA] Periode Status Laporan
+          </Label>
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-200">
+            Testing Only
+          </span>
+        </div>
+        <Select value={pilihanPeriode} onValueChange={ubahPeriode}>
+          <SelectTrigger id="periode-uji-cek" className="rounded-xl bg-white dark:bg-background border-amber-500/30">
+            <SelectValue placeholder="Pilih periode..." />
+          </SelectTrigger>
+          <SelectContent>
+            {periodeUji.periodes.map((periode) => (
+              <SelectItem key={periode} value={String(periode)}>
+                Periode Database: {formatPeriode(periode)} ({periode})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  ) : null
+
   // Ketemu -> kotak nomor & tombol cari disembunyikan otomatis, HANYA foto +
   // detail periode berjalan yang tampil (permintaan produk: riwayat
   // periode-periode lampau tidak perlu ditunjukkan).
   if (pratinjau) {
     return (
       <div className="flex flex-col gap-4">
+        {pemilihPeriodeUji}
         <div className="flex items-center justify-between gap-2">
           <p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
             {pratinjau.nama} · {pratinjau.nomorLangganan}
@@ -118,6 +191,7 @@ export function CekLaporanMeterForm({
 
   return (
     <div className="flex flex-col gap-4">
+      {pemilihPeriodeUji}
       <InputNomorLangganan
         id="nomorLanggananCek"
         nomor={nomor}

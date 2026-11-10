@@ -30,6 +30,21 @@ export const KODE_JENIS_PENGADUAN: Record<JenisPengaduan, string> = {
   LAINNYA: 'TK',
 };
 
+export const LABEL_JENIS_PENGADUAN: Record<JenisPengaduan, string> = {
+  BOCOR_PIPA_DINAS: 'Bocor Pipa Dinas',
+  LONJAKAN_PEMAKAIAN_AIR: 'Lonjakan Pemakaian Air',
+  LAPOR_STAND_METER: 'Lapor Stand Meter',
+  PENCATATAN_METER_TIDAK_SESUAI: 'Pencatatan Meter Tidak Sesuai',
+  TIDAK_ADA_AIR: 'Tidak Ada Air',
+  AIR_KERUH_BAU_BERWARNA: 'Air Keruh, Bau & Berwarna',
+  GANTI_STOP_KRAN: 'Ganti Stop Kran',
+  PASANGAN_LIAR: 'Pasangan Liar',
+  MUTASI_GOLONGAN_TARIF: 'Mutasi Golongan Tarif',
+  TIDAK_MAMPU_BAYAR: 'Tidak Mampu Bayar',
+  PINDAH_JARINGAN: 'Pindah Jaringan',
+  LAINNYA: 'Lainnya',
+};
+
 /**
  * Format Standar Nomor Tiket Terukur PDAM Tanpa Simbol/Tanda Hubung:
  * [KODE (2)][WILAYAH (2)][TANGGAL (6: YYMMDD)][URUT (4: 0001-9999)]
@@ -199,4 +214,55 @@ export function evaluasiPembuatanTiket(input: {
   }
 
   return { valid: true };
+}
+
+/**
+ * Ringkasan Status SLA Pengaduan untuk Grid & Detail View
+ */
+export interface RingkasanSla {
+  targetResponsAt: string | null;
+  targetSelesaiAt: string | null;
+  sisaMenit: number | null;
+  melanggar: boolean;
+  responsTerlambat: boolean;
+  terjeda: boolean;
+}
+
+export function ringkasSla(
+  p: {
+    status: string;
+    targetResponsAt?: Date | string | null;
+    targetSelesaiAt?: Date | string | null;
+    responsAt?: Date | string | null;
+    selesaiAt?: Date | string | null;
+    jedaMulaiAt?: Date | string | null;
+  },
+  sekarang: Date = new Date()
+): RingkasanSla {
+  const tutup = p.status === 'SELESAI' || p.status === 'DITUTUP' || p.status === 'DITOLAK';
+  const targetSelesai = p.targetSelesaiAt ? new Date(p.targetSelesaiAt) : null;
+  const targetRespons = p.targetResponsAt ? new Date(p.targetResponsAt) : null;
+  const selesai = p.selesaiAt ? new Date(p.selesaiAt) : null;
+  const terjeda = p.status === 'MENUNGGU_PELANGGAN' && Boolean(p.jedaMulaiAt);
+  const acuan = terjeda && p.jedaMulaiAt ? new Date(p.jedaMulaiAt) : sekarang;
+
+  const sisaMenit = targetSelesai
+    ? Math.round(
+        (targetSelesai.getTime() -
+          (tutup && selesai ? selesai.getTime() : acuan.getTime())) /
+          60000
+      )
+    : null;
+
+  return {
+    targetResponsAt: targetRespons ? targetRespons.toISOString() : null,
+    targetSelesaiAt: targetSelesai ? targetSelesai.toISOString() : null,
+    sisaMenit,
+    melanggar: !tutup && sisaMenit !== null && sisaMenit < 0,
+    responsTerlambat:
+      !p.responsAt &&
+      targetRespons !== null &&
+      targetRespons.getTime() < sekarang.getTime(),
+    terjeda,
+  };
 }

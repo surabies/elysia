@@ -11,14 +11,16 @@ interface HeroSectionProps {
 
 export function HeroSection({ content }: HeroSectionProps) {
   return (
-    <section className="mx-auto w-full max-w-360 px-4 lg:px-12 pt-3 md:pt-3">
+    <section className="mx-auto w-full max-w-360 px-4 lg:px-12 pt-3 md:pt-3 bg-white text-black">
       <div className="flex flex-col md:grid md:grid-cols-2 md:grid-rows-[1fr] md:gap-x-12">
         <div className="flex flex-col justify-center gap-4.5 max-md:order-2 md:gap-6.25">
-          <div className="mb-2 max-w-162">
+          <div className="mb-2 w-full max-w-full">
             <SwipeHeading text={content.title} />
           </div>
 
-          <p className="max-w-142.5 type-body text-neutral-700">{content.description}</p>
+          <p className="max-w-xl text-copy-16 md:text-copy-18 text-neutral-700 leading-relaxed font-normal">
+            {content.description}
+          </p>
 
           <div className="flex justify-end md:block">
             <PillButton asChild className="inline-flex">

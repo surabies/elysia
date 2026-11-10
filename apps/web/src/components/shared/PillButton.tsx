@@ -14,7 +14,7 @@ export function PillButton({
   return (
     <Button
       className={cn(
-        "h-10 rounded-[20px] border-2 border-transparent bg-black px-5.5 text-xs leading-4 font-bold tracking-[0.06em] text-white uppercase transition-opacity duration-200 hover:bg-black hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black",
+        "h-9.5 rounded-full px-5 text-label-13 sm:text-label-14 font-medium normal-case tracking-normal bg-black text-white transition-all duration-150 hover:bg-neutral-800 active:scale-[0.98] shadow-xs cursor-pointer",
         className
       )}
       {...props}

@@ -36,7 +36,7 @@ export function SiteHeader() {
               <li key={link.href} className="mx-2 lg:mx-3 xl:mx-4 shrink-0">
                 <Link
                   href={link.href}
-                  className="relative block text-sm leading-none outline-none font-medium text-neutral-800 transition-colors hover:text-black dark:text-neutral-200 dark:hover:text-white whitespace-nowrap before:absolute before:inset-x-0 before:-top-2 before:h-0.5 before:w-0 before:bg-current before:transition-[width] before:duration-150 before:ease-in-out hover:before:w-full focus-visible:before:w-full"
+                  className="relative block text-label-14 leading-none outline-none font-medium text-black/80 transition-colors hover:text-black whitespace-nowrap before:absolute before:inset-x-0 before:-top-2 before:h-0.5 before:w-0 before:bg-current before:transition-[width] before:duration-150 before:ease-in-out hover:before:w-full focus-visible:before:w-full"
                 >
                   {link.label}
                 </Link>

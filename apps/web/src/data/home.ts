@@ -7,7 +7,7 @@ import type {
 } from "@/types/home"
 
 export const heroContent: HeroContent = {
-  title: "URUSAN AIR DALAM GENGGAMAN",
+  title: "URUSAN AIR\nDALAM\nGENGGAMAN",
   description:
     "Layanan digital terpadu PERUMDA Tirtawening Kota Bandung. Cek tagihan rekening air, laporkan angka meter mandiri, dan sampaikan pengaduan gangguan secara cepat, transparan, serta terverifikasi 24 jam.",
   videoSrc: "/vid/hero.mp4",

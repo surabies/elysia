@@ -23,12 +23,12 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
   return (
     <section
       aria-labelledby="benefits-title"
-      className="section-white relative bg-white py-20 text-black lg:py-30"
+      className="section-white relative bg-white py-16 text-black lg:py-24"
     >
       <Container>
         <div className="lg:flex lg:flex-row-reverse lg:items-center lg:gap-21.75">
           <div className="lg:w-full">
-            <h2 id="benefits-title" className="mb-4 type-heading md:mb-6 font-semibold">
+            <h2 id="benefits-title" className="mb-6 text-heading-28 sm:text-heading-32 md:text-heading-40 font-semibold tracking-tight text-black md:mb-8">
               {content.title}
             </h2>
 
@@ -40,7 +40,7 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
                   onMouseEnter={() => setActiveIndex(index)}
                   onFocus={() => setActiveIndex(index)}
                   className={cn(
-                    "mb-7.5 last:mb-0 md:mb-0 md:cursor-pointer md:opacity-30 md:transition-opacity md:duration-150 md:ease-in",
+                    "mb-7.5 last:mb-0 md:mb-0 md:cursor-pointer md:opacity-40 md:transition-opacity md:duration-150 md:ease-in",
                     index === activeIndex && "md:opacity-100"
                   )}
                 >
@@ -51,14 +51,14 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
                   />
 
                   <div className="md:relative md:pl-10.5">
-                    <h3 className="mb-5 block w-full text-center text-[15px] leading-5 font-normal md:mb-2.5 md:flex md:text-left md:text-[28px] md:leading-8.5">
+                    <h3 className="mb-5 block w-full text-center text-heading-18 leading-snug font-semibold text-black md:mb-2.5 md:flex md:text-left md:text-heading-24 lg:text-heading-28 tracking-tight">
                       <Image
                         src={item.icon.src}
                         alt={item.icon.alt}
                         width={32}
                         height={32}
                         unoptimized
-                        className="hidden md:absolute md:top-0 md:left-0 md:block md:size-8"
+                        className="hidden md:absolute md:top-0.5 md:left-0 md:block md:size-7"
                       />
                       <span className="whitespace-pre-line">{item.title}</span>
                     </h3>

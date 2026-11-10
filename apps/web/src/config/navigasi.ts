@@ -104,6 +104,24 @@ export const standaloneTopNav: NavItem[] = [
       "VERIFIKATOR_3",
     ],
   },
+  {
+    title: "Peta Pengaduan",
+    href: "/peta-pengaduan",
+    description:
+      "Peta interaktif persebaran aduan gangguan air warga Kota Bandung.",
+    keywords: ["peta", "pengaduan", "aduan", "gis", "gangguan", "map"],
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+      "VERIFIKATOR_2",
+      "VERIFIKATOR_3",
+      "PENCATAT",
+      "PELAKSANA",
+      "USER",
+    ],
+  },
 ];
 
 // B. Tengah: Pencarian Detail Pelanggan (Aurora Bab 3.2)

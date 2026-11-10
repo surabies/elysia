@@ -20,6 +20,7 @@
     "db:seed": "bun --filter \"@cater/db\" db:seed",
     "db:seed:accounts": "bun --filter \"@cater/db\" db:seed:accounts",
     "db:seed:area-layanan": "bun --filter \"@cater/db\" db:seed:area-layanan",
+    "db:seed:pengaduan": "bun --filter \"@cater/db\" db:seed:pengaduan",
     "cater:import": "bun packages/db/src/etl/import-progres-cater.ts --all"
   },
   "dependencies": {

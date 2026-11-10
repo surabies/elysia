@@ -14,7 +14,7 @@ import {
 import { authPlugin } from "../plugins/auth";
 import { caterVerifikasiService } from "../services/cater/cater-verifikasi.service";
 import { mandiriService } from "../services/mandiri/mandiri.service";
-import { verifikasiGridService } from "../services/cater/verifikasi-grid.service";
+import { verifikasiGridService, FINAL_STATUSES } from "../services/cater/verifikasi-grid.service";
 import { manualAddMasalService } from "../services/cater/manual-add-masal.service";
 import { hitungKubikasiGantiMeter } from "../domain/gwm/gwm.engine";
 
@@ -1223,6 +1223,7 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
         .select({
           status: caterMandiriPelanggan.statusVerifikasi,
           caterId: caterBacaMeter.id,
+          caterStatus: caterBacaMeter.statusVerifikasi,
         })
         .from(caterMandiriPelanggan)
         .leftJoin(
@@ -1240,27 +1241,43 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
           },
         };
       }
-      if (row.caterId) {
+      if (
+        row.caterId &&
+        row.caterStatus &&
+        FINAL_STATUSES.includes(row.caterStatus as any)
+      ) {
         set.status = 409;
         return {
           success: false,
           error: {
             code: "LINKED_READING",
             message:
-              "Laporan sudah tersinkron ke pembacaan petugas; batalkan dari alur petugas agar data tidak terhapus.",
+              "Laporan sudah masuk tahap tagihan resmi (closing DRD); batalkan dari alur billing/petugas terlebih dahulu.",
           },
         };
       }
-      await db
-        .update(caterMandiriPelanggan)
-        .set({
-          statusVerifikasi: "PENDING",
-          alasanPenolakan: null,
-          verifiedBy: null,
-          verifiedAt: null,
-          updatedAt: new Date(),
-        })
-        .where(eq(caterMandiriPelanggan.id, params.id));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(caterMandiriPelanggan)
+          .set({
+            statusVerifikasi: "PENDING",
+            alasanPenolakan: null,
+            verifiedBy: null,
+            verifiedAt: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(caterMandiriPelanggan.id, params.id));
+
+        if (row.caterId) {
+          await tx
+            .update(caterBacaMeter)
+            .set({
+              caterMandiriId: null,
+              updatedAt: new Date(),
+            })
+            .where(eq(caterBacaMeter.id, row.caterId));
+        }
+      });
       return {
         success: true,
         data: { id: params.id, statusVerifikasi: "PENDING" },

@@ -185,8 +185,73 @@ export const masterRouter = new Elysia({ prefix: '/master' })
     return { success: true, data };
   })
 
+  // 11b. Update Peran & Status User (Hanya Superadmin & Otoritas Berwenang)
+  .put(
+    '/users/:id/role',
+    async ({ params, body, set }: any) => {
+      try {
+        const result = await masterExtendedService.updateUserRoleAndStatus(
+          params.id,
+          body.role,
+          body.status
+        );
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3'],
+      body: t.Object({
+        role: t.String(),
+        status: t.Optional(t.Union([t.Literal('AKTIF'), t.Literal('NONAKTIF')])),
+      }),
+    }
+  )
+
   // 12. Matriks Hak Akses RBAC
   .get('/otorisasi', async () => {
-    const data = masterExtendedService.getMatriksOtorisasi();
+    const data = await masterExtendedService.getMatriksOtorisasi();
     return { success: true, data };
-  });
+  })
+
+  // 13. Update Matriks Hak Akses RBAC (Hanya Superadmin & Otoritas Berwenang)
+  .put(
+    '/otorisasi',
+    async ({ body, user, set }: any) => {
+      try {
+        const result = await masterExtendedService.updateMatriksOtorisasi(
+          body.items,
+          user?.id
+        );
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3'],
+      body: t.Object({
+        items: t.Array(
+          t.Object({
+            id: t.Optional(t.String()),
+            modulKey: t.String(),
+            modulNama: t.Optional(t.String()),
+            modul: t.Optional(t.String()),
+            kategori: t.Optional(t.String()),
+            deskripsi: t.Optional(t.String()),
+            urutan: t.Optional(t.Number()),
+            superadmin: t.Boolean(),
+            staffBilling: t.Boolean(),
+            verifikator1: t.Boolean(),
+            verifikator2: t.Boolean(),
+            verifikator3: t.Boolean(),
+            executive: t.Boolean(),
+            pelaksana: t.Boolean(),
+          })
+        ),
+      }),
+    }
+  );

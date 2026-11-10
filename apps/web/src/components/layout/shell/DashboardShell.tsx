@@ -167,7 +167,7 @@ export function DashboardShell({
           </header>
 
           {/* Body Sidebar: Hirarki Menu Navigasi (sesuai inspeksi Vercel: px-2 pt-2.5) */}
-          <div className="sidebar-scroll flex-1 min-h-0 overflow-y-auto px-2 pt-2.5 pb-2 overscroll-contain">
+          <div className="sidebar-scroll flex-1 min-h-0 overflow-y-auto pl-2 pr-0.5 pt-2.5 pb-2 overscroll-contain">
             <SidebarNav />
           </div>
 
@@ -227,7 +227,7 @@ export function DashboardShell({
         <main
           id={MAIN_CONTENT_ID}
           tabIndex={-1}
-          className="flex-1 min-h-0 min-w-0 overflow-y-auto focus:outline-none bg-background"
+          className="flex flex-1 min-h-0 min-w-0 flex-col overflow-y-auto focus:outline-none bg-background"
         >
           {children}
         </main>

@@ -191,7 +191,10 @@ export interface LaporanMandiriDetail {
   pelangganId: string
   nomorLangganan: string
   periode: number
+  standAwal?: number | null
   standDilaporkan: number
+  pemakaian?: number | null
+  pemakaianLalu?: number | null
   fotoUrl: string
   nomorPelapor: string
   namaPelapor: string

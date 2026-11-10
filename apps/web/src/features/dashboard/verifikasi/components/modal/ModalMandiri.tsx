@@ -134,9 +134,30 @@ export function ModalMandiri({
         />
         <p className="text-center text-copy-13 text-muted-foreground">
           {berubah
-            ? `Angka laporan: ${detail.standDilaporkan.toLocaleString("id-ID")}.`
+            ? `Angka laporan awal: ${detail.standDilaporkan.toLocaleString("id-ID")}.`
             : "Isi sesuai angka pada foto."}
         </p>
+
+        <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
+          <div className="rounded-lg bg-muted/60 p-2.5">
+            <span className="text-muted-foreground">Stand Awal (STML):</span>
+            <p className="font-semibold text-foreground">
+              {detail.standAwal !== undefined && detail.standAwal !== null
+                ? Number(detail.standAwal).toLocaleString("id-ID")
+                : "—"}
+            </p>
+          </div>
+          <div className="rounded-lg bg-muted/60 p-2.5">
+            <span className="text-muted-foreground">Estimasi Pemakaian:</span>
+            <p className="font-semibold text-foreground">
+              {detail.standAwal !== undefined &&
+              detail.standAwal !== null &&
+              standSiap
+                ? `${Math.max(0, standNum - Number(detail.standAwal)).toLocaleString("id-ID")} m³`
+                : "—"}
+            </p>
+          </div>
+        </div>
       </Bagian>
 
       {modeTolak && (

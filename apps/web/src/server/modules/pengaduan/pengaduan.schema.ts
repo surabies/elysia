@@ -23,7 +23,7 @@ export const createPengaduanBodySchema = t.Object({
     t.Literal('PINDAH_JARINGAN'),
     t.Literal('LAINNYA'),
   ]),
-  judul: t.String({ minLength: 3, maxLength: 255 }),
+  judul: t.Optional(t.String({ maxLength: 255 })),
   deskripsi: t.String({ minLength: 5 }),
   koordinat: t.Optional(
     t.Object({

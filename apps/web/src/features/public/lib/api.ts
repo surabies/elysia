@@ -161,8 +161,43 @@ export async function cariPelanggan(
   nomorLangganan: string,
   _periodeUji?: number
 ): Promise<PelangganPratinjau> {
+  const periodeAktif = _periodeUji ?? 202601
   const res = await fetch(`/api/publik/tagihan/${encodeURIComponent(nomorLangganan)}`)
   const json = await tangani<any>(res)
+
+  // Cek apakah sudah pernah lapor mandiri di periode target
+  let sudahLaporBulanIni = false
+  let statusLaporanBulanIni: string | null = null
+  let alasanDitolak: string | null = null
+  let laporanBulanIni: DetailLaporanBulanIni | null = null
+
+  try {
+    const statusRes = await fetch(
+      `/api/cater/mandiri/public/status/${encodeURIComponent(nomorLangganan)}?thbl=${periodeAktif}`
+    )
+    if (statusRes.ok) {
+      const statusJson = await statusRes.json()
+      if (statusJson.success && statusJson.data) {
+        sudahLaporBulanIni = true
+        statusLaporanBulanIni = statusJson.data.statusVerifikasi // 'PENDING' | 'APPROVED' | 'REJECTED'
+        alasanDitolak = statusJson.data.alasanPenolakan ?? null
+        laporanBulanIni = {
+          periode: Number(statusJson.data.thbl),
+          standDilaporkan: Number(statusJson.data.stma ?? 0),
+          fotoUrl: statusJson.data.fotoMeterUrl,
+          status: statusJson.data.statusVerifikasi,
+          alasanDitolak: statusJson.data.alasanPenolakan ?? null,
+          createdAt: statusJson.data.createdAt,
+          verifiedAt: statusJson.data.verifiedAt ?? null,
+          standLalu: null,
+          standAkhir: null,
+          pemakaianM3: Number(statusJson.data.pakaiM3 ?? 0),
+        }
+      }
+    }
+  } catch {
+    // fallback jika endpoint status belum terjangkau
+  }
 
   return {
     nomorLangganan: json.pelanggan.nolg,
@@ -177,12 +212,12 @@ export async function cariPelanggan(
           kategori: json.pelanggan.tarifNama ?? json.pelanggan.tarifKode,
         }
       : null,
-    periodeBerjalan: 202601,
-    sudahLaporBulanIni: false,
-    statusLaporanBulanIni: null,
-    bisaKirimUlang: true,
-    alasanDitolak: null,
-    laporanBulanIni: null,
+    periodeBerjalan: periodeAktif,
+    sudahLaporBulanIni,
+    statusLaporanBulanIni,
+    bisaKirimUlang: statusLaporanBulanIni === "REJECTED",
+    alasanDitolak,
+    laporanBulanIni,
   }
 }
 
@@ -195,7 +230,7 @@ export interface HasilPengaduan {
 export interface InputPengaduan {
   klasifikasi: string
   jenis: string
-  judul: string
+  judul?: string
   deskripsi: string
   pelapor: string
   kontakPelapor: string
@@ -213,7 +248,7 @@ export async function kirimPengaduan(input: InputPengaduan): Promise<HasilPengad
     pelapor: input.pelapor,
     kontakPelapor: input.kontakPelapor,
     jenis: input.jenis,
-    judul: input.judul,
+    judul: input.judul || undefined,
     deskripsi: input.deskripsi,
     alamatKejadian: input.alamatKejadian || "Kota Bandung",
   }
@@ -372,17 +407,63 @@ export async function ambilJendelaLaporMandiri(): Promise<JendelaLaporMandiri> {
   return jendelaLaporMandiri()
 }
 
+/**
+ * MODUL SEMENTARA (TESTING & UAT ONLY)
+ * Catatan: Fitur ini dibuat sementara untuk menguji lapor meter mandiri karena data seed di database
+ * saat ini berada pada periode 202601 (Januari 2026), sedangkan kalender berjalan sistem berada di bulan lain.
+ * Jika tahap testing / UAT sudah selesai dan dianggap lulus, modul / endpoint ini dapat dihapus.
+ */
 export async function ambilPeriodeUjiLaporMandiri(): Promise<PeriodeUjiLaporMeter> {
-  return { aktif: false, periodes: [] }
+  try {
+    const res = await fetch("/api/cater/mandiri/public/periode-uji")
+    if (res.ok) {
+      const json = await res.json()
+      if (json.success && json.data) {
+        return json.data
+      }
+    }
+  } catch {
+    // fallback jika endpoint offline
+  }
+
+  return {
+    aktif: true,
+    periodes: [202601, 202602],
+  }
 }
 
 export async function laporMeter(form: FormData): Promise<HasilLaporMeter> {
+  const thblInput = String(
+    form.get("thbl") ||
+    form.get("periodeUji") ||
+    "202601"
+  )
+  const nolgInput = String(form.get("nomorLangganan") || form.get("nolg") || "")
+  const standInput = Number(
+    form.get("standDilaporkan") ||
+    form.get("standMeter") ||
+    form.get("angkaMeter") ||
+    0
+  )
+
+  let fotoMeterUrl = "https://placehold.co/600x400/png?text=Foto+Meter"
+  const fotoFile = form.get("foto")
+  if (fotoFile && typeof fotoFile !== "string" && "arrayBuffer" in fotoFile) {
+    try {
+      const buf = await (fotoFile as File).arrayBuffer()
+      const base64 = Buffer.from(buf).toString("base64")
+      fotoMeterUrl = `data:${(fotoFile as File).type || "image/jpeg"};base64,${base64}`
+    } catch {
+      // fallback jika pembacaan file gagal
+    }
+  }
+
   const payload = {
-    nolg: String(form.get("nomorLangganan") || form.get("nolg")),
-    thbl: "202601",
-    standMeter: Number(form.get("standMeter") || form.get("angkaMeter")),
-    noHp: String(form.get("noHp") || "081234567890"),
-    fotoUrl: "https://placehold.co/600x400/png?text=Foto+Meter",
+    nolg: nolgInput,
+    thbl: thblInput,
+    stma: standInput,
+    fotoMeterUrl,
+    channel: "WEB_PORTAL" as const,
   }
 
   const res = await fetch("/api/cater/mandiri/public", {
@@ -394,7 +475,7 @@ export async function laporMeter(form: FormData): Promise<HasilLaporMeter> {
 
   return {
     periode: Number(payload.thbl),
-    standDilaporkan: payload.standMeter,
+    standDilaporkan: payload.stma,
     status: "MENUNGGU",
     createdAt: new Date().toISOString(),
     pesan: "Laporan angka meter berhasil dikirim dan menunggu verifikasi petugas.",

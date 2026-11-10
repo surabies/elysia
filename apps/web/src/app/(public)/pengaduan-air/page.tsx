@@ -9,6 +9,7 @@ import {
   AsideBlok,
   KartuBerbingkai,
 } from "@/features/public"
+import { getPetaCakupan } from "@/server/services/geo/boundary.service"
 
 export const metadata: Metadata = {
   title: "Pengaduan",
@@ -22,7 +23,7 @@ export default async function PengaduanPage({
   searchParams: Promise<{ nomor?: string; tab?: string }>
 }) {
   const { nomor, tab } = await searchParams
-  const session = await auth()
+  const [session, peta] = await Promise.all([auth(), getPetaCakupan()])
   const tabAwal = nomor || tab === "lacak" ? "lacak" : "lapor"
 
   return (
@@ -109,7 +110,7 @@ export default async function PengaduanPage({
           </div>
 
           <TabsContent value="lapor" className="px-5 pt-2 pb-5">
-            <PengaduanForm sudahLogin={!!session?.user} peta={null} />
+            <PengaduanForm sudahLogin={!!session?.user} peta={peta} />
           </TabsContent>
 
           <TabsContent value="lacak" className="px-5 pt-2 pb-5">

@@ -193,16 +193,18 @@ export function PanelMandiri({
   const galatRiwayatAktif =
     meterId && galatRiwayat?.meterId === meterId ? galatRiwayat.pesan : null;
   const standAwal =
-    detail.pembacaan?.standLalu ?? riwayatAktif?.standLalu ?? null;
+    detail.standAwal ?? detail.pembacaan?.standLalu ?? riwayatAktif?.standLalu ?? null;
   const pemakaianCatat =
-    standAwal === null ? null : detail.standDilaporkan - standAwal;
+    standAwal === null
+      ? (detail.pemakaian ?? null)
+      : Math.max(0, detail.standDilaporkan - standAwal);
   // Pagar kedua — menu klik kanan sudah menyaring status MENUNGGU.
   const bisaModal = detail.status === "MENUNGGU";
 
   // Tiga angka di panel Mandiri selalu mengutamakan angka laporan konsumen.
   const stAkhir =
     detail.standDilaporkan ?? detail.pembacaan?.standAkhir ?? null;
-  const pakai = pemakaianCatat ?? detail.pembacaan?.pemakaianRiil ?? null;
+  const pakai = pemakaianCatat ?? detail.pemakaian ?? detail.pembacaan?.pemakaianRiil ?? null;
 
   return (
     <div className="flex min-w-0 flex-col gap-2 px-2 py-2" aria-busy={memuatDetail}>

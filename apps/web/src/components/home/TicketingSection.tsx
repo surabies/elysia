@@ -16,7 +16,7 @@ export function TicketingSection({ content }: TicketingSectionProps) {
       <Container>
         <h2
           id="ticketing-title"
-          className="mb-4 text-center type-heading md:mb-6"
+          className="mb-6 text-center text-heading-28 sm:text-heading-32 md:text-heading-40 font-semibold tracking-tight text-white md:mb-8"
         >
           {content.title}
         </h2>
@@ -32,7 +32,7 @@ export function TicketingSection({ content }: TicketingSectionProps) {
                 sizes="(min-width: 1000px) 320px, 100vw"
                 className="mb-4 aspect-square bg-neutral-800"
               />
-              <figcaption className="type-body text-balance whitespace-pre-line text-neutral-300">
+              <figcaption className="text-copy-15 md:text-copy-16 text-balance whitespace-pre-line text-neutral-300 leading-relaxed">
                 {item.description}
               </figcaption>
             </figure>

@@ -1,2 +1,5 @@
-export { publikRouter as publikModule } from './publik.router';
+export {
+  publikRouter as publikModule,
+  publicRouter as publicModule,
+} from './publik.router';
 export * from './publik.schema';

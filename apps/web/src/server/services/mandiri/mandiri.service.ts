@@ -1,9 +1,15 @@
 /**
  * Service: Lapor Mandiri Pelanggan & Approval Override DK
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM, Transaksi, & Domain Engine)
+ *
+ * PENTING (ATURAN ARSITEKTUR & BUSINESS LOGIC):
+ * Tabel `cater_mandiri_pelanggan` HANYA BOLEH diisi oleh pelaporan mandiri dari warga,
+ * baik melalui formulir web portal warga ('WEB_PORTAL') maupun aplikasi mobile warga ('MOBILE_APP').
+ * Tabel ini TIDAK BOLEH diisi oleh seed, background job, ETL, atau hasil pencatatan petugas lapangan
+ * yang memiliki keterangan kondisi catat "Stand Konsumen" (kode Z).
  */
 
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
   db,
   caterMandiriPelanggan,
@@ -96,6 +102,16 @@ export class MandiriService {
       isLokasiValid = evalGeo.isLokasiValid;
     }
 
+    // 4. Hitung Estimasi Pemakaian (pakaiM3) berdasarkan Stand Meter Lalu (stml) jika ada
+    const [caterRow] = await db
+      .select({ stml: caterBacaMeter.stml })
+      .from(caterBacaMeter)
+      .where(and(eq(caterBacaMeter.nolg, nolg), eq(caterBacaMeter.thbl, thbl)))
+      .limit(1);
+
+    const stmlLalu = caterRow ? Number(caterRow.stml) : 0;
+    const estimasiPakaiM3 = Math.max(0, stma - stmlLalu);
+
     const id = `mandiri-${thbl}-${nolg}`;
 
     await db
@@ -105,6 +121,7 @@ export class MandiriService {
         thbl,
         nolg,
         stma: String(stma),
+        pakaiM3: String(estimasiPakaiM3),
         fotoMeterUrl,
         fotoRumahUrl,
         lokasiGps: longitude && latitude ? { x: longitude, y: latitude } : null,
@@ -119,6 +136,7 @@ export class MandiriService {
         target: caterMandiriPelanggan.id,
         set: {
           stma: String(stma),
+          pakaiM3: String(estimasiPakaiM3),
           fotoMeterUrl,
           fotoRumahUrl,
           lokasiGps:
@@ -136,6 +154,7 @@ export class MandiriService {
       thbl,
       nolg,
       stma,
+      pakaiM3: estimasiPakaiM3,
       jarakDariRumahMeter: jarakMeter,
       isLokasiValid,
       statusVerifikasi: "PENDING",
@@ -170,16 +189,27 @@ export class MandiriService {
           "Alasan penolakan wajib disertakan saat menolak laporan mandiri.",
         );
       }
-      await db
-        .update(caterMandiriPelanggan)
-        .set({
-          statusVerifikasi: "REJECTED",
-          alasanPenolakan,
-          verifiedBy: userId,
-          verifiedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(caterMandiriPelanggan.id, mandiriId));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(caterMandiriPelanggan)
+          .set({
+            statusVerifikasi: "REJECTED",
+            alasanPenolakan,
+            verifiedBy: userId,
+            verifiedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(caterMandiriPelanggan.id, mandiriId));
+
+        // Bila sebelumnya pernah disetujui, putuskan tautan di cater_baca_meter
+        await tx
+          .update(caterBacaMeter)
+          .set({
+            caterMandiriId: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(caterBacaMeter.caterMandiriId, mandiriId));
+      });
 
       return {
         mandiriId,
@@ -193,32 +223,40 @@ export class MandiriService {
     const caterId = `cater-${mandiri.thbl}-${mandiri.nolg}`;
 
     await db.transaction(async (tx) => {
-      // 1. Update status laporan mandiri
+      // 1. Ambil data pembacaan eksisting bila ada untuk mendapatkan stand meter lalu (stml)
+      const [existingCater] = await tx
+        .select()
+        .from(caterBacaMeter)
+        .where(
+          and(
+            eq(caterBacaMeter.nolg, mandiri.nolg),
+            eq(caterBacaMeter.thbl, mandiri.thbl)
+          )
+        );
+
+      const stml = Number(existingCater?.stml ?? 0);
+      const pakaiM3 = Math.max(0, stmaMandiri - stml);
+      const targetCaterId = existingCater?.id ?? caterId;
+
+      // 2. Update status laporan mandiri beserta stand yang diverifikasi & kalkulasi pemakaian m3
       await tx
         .update(caterMandiriPelanggan)
         .set({
           statusVerifikasi: "APPROVED",
           stma: String(stmaMandiri),
+          pakaiM3: String(pakaiM3),
+          alasanPenolakan: null,
           verifiedBy: userId,
           verifiedAt: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(caterMandiriPelanggan.id, mandiriId));
 
-      // 2. Ambil data pembacaan eksisting bila ada
-      const [existingCater] = await tx
-        .select()
-        .from(caterBacaMeter)
-        .where(eq(caterBacaMeter.id, caterId));
-
-      const stml = Number(existingCater?.stml ?? 0);
-      const pakaiM3 = Math.max(0, stmaMandiri - stml);
-
       // 3. Simpan / Perbarui transaksi utama baca meter (Override DK -> Stand Konsumen)
       await tx
         .insert(caterBacaMeter)
         .values({
-          id: caterId,
+          id: targetCaterId,
           thbl: mandiri.thbl,
           nolg: mandiri.nolg,
           stml: String(stml),

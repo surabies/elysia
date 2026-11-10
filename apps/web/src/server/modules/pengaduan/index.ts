@@ -1,2 +1,5 @@
-export { pengaduanRouter as pengaduanModule } from './pengaduan.router';
+export {
+  pengaduanRouter as pengaduanModule,
+  pengaduanV1Router as pengaduanV1Module,
+} from './pengaduan.router';
 export * from './pengaduan.schema';

@@ -89,8 +89,8 @@ export function SearchExperience({
           aria-label="Cari layanan"
           className="mx-4 hidden w-60 lg:w-72 shrink items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 hover:bg-neutral-200 px-3.5 py-2 text-left whitespace-nowrap text-neutral-500 xl:flex transition-colors cursor-pointer"
         >
-          <Search size={18} aria-hidden="true" className="shrink-0 text-neutral-600" />
-          <span className="text-xs lg:text-sm truncate">Cari layanan, tagihan...</span>
+          <Search size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+          <span className="text-label-13 text-muted-foreground truncate">Cari layanan, tagihan...</span>
         </button>
       )}
 
@@ -152,7 +152,7 @@ export function SearchExperience({
 
                 {normalizedQuery ? (
                   <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-xl bg-white p-3 text-black shadow-2xl">
-                    <h2 className="mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    <h2 className="mb-2 text-label-11-mono font-mono text-muted-foreground uppercase tracking-wider">
                       Hasil Pencarian
                     </h2>
                     {results.length > 0 ? (
@@ -164,21 +164,21 @@ export function SearchExperience({
                               <Link
                                 href={href}
                                 onClick={close}
-                                className="flex min-h-14 items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted"
+                                className="flex min-h-14 items-center gap-3 rounded-lg p-2 transition-colors hover:bg-neutral-100"
                               >
                                 <div
                                   aria-hidden="true"
                                   className="size-11 shrink-0 rounded-md"
                                   style={{ backgroundColor: event.accentColor }}
                                 />
-                                <div className="min-w-0 text-xs leading-[1.4]">
-                                  <p className="truncate font-bold text-sm text-foreground">
+                                <div className="min-w-0">
+                                  <p className="truncate text-heading-14 font-semibold text-black">
                                     {event.title}
                                   </p>
-                                  <p className="truncate text-muted-foreground">
+                                  <p className="truncate text-copy-13 text-neutral-600">
                                     {event.date} · {event.price}
                                   </p>
-                                  <p className="truncate text-muted-foreground">
+                                  <p className="truncate text-xs text-neutral-500">
                                     {event.venue}, {event.city}
                                   </p>
                                 </div>

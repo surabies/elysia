@@ -21,12 +21,12 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex cursor-pointer appearance-none items-center bg-transparent p-0 type-caption text-current outline-none data-[state=open]:[&>svg]:rotate-180"
+            className="inline-flex cursor-pointer appearance-none items-center gap-1 bg-transparent p-0 text-label-12 font-medium text-foreground outline-none data-[state=open]:[&>svg]:rotate-180"
           >
             {currentLanguageLabel}
             <ChevronDown
-              size={24}
-              className="transition-transform duration-300"
+              size={14}
+              className="transition-transform duration-300 text-muted-foreground"
               aria-hidden="true"
             />
           </button>

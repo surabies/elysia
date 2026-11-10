@@ -30,17 +30,17 @@ export function EventCard({ event }: EventCardProps) {
           />
           <div className="flex flex-col justify-between p-4">
             <div>
-              <p className="text-xs font-bold tracking-[0.06em] uppercase text-white/80">
+              <p className="text-label-12-mono font-mono text-white/80 uppercase">
                 {event.date}
               </p>
-              <h3 className="mt-2 text-base leading-5 font-semibold group-hover:underline">
+              <h3 className="mt-2 text-heading-16 leading-snug font-semibold tracking-tight text-white group-hover:underline">
                 {event.title}
               </h3>
             </div>
-            <div className="text-xs leading-4">
-              <p className="font-medium">{event.venue}</p>
+            <div className="text-copy-12 leading-relaxed">
+              <p className="font-medium text-white/90">{event.venue}</p>
               <p className="text-white/60">{event.city}</p>
-              <p className="mt-2 font-bold text-white/90">{event.price}</p>
+              <p className="mt-2 text-label-13 font-semibold text-white">{event.price}</p>
             </div>
           </div>
         </article>

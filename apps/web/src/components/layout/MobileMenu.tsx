@@ -88,7 +88,7 @@ export function MobileMenu({
                   <Link
                     href={link.href}
                     onClick={close}
-                    className="block py-3 text-[15px] leading-5 font-medium text-black hover:text-blue-600"
+                    className="block py-3 text-label-14 font-medium text-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>

@@ -40,7 +40,7 @@ type GridQuery = {
   jenisInput?: string;
 };
 
-const FINAL_STATUSES = [
+export const FINAL_STATUSES = [
   "APPROVED_FINAL",
   "CORRECTED_POST_VERIF",
   "LOCKED_BILLING",
@@ -152,7 +152,15 @@ async function periodsFor(
     .selectDistinct({ periode: table.thbl })
     .from(table)
     .orderBy(desc(table.thbl));
-  return rows.map((row) => Number(row.periode));
+  const list = rows.map((row) => Number(row.periode));
+  if (list.length === 0 && table === caterMandiriPelanggan) {
+    const fallbackRows = await db
+      .selectDistinct({ periode: caterBacaMeter.thbl })
+      .from(caterBacaMeter)
+      .orderBy(desc(caterBacaMeter.thbl));
+    return fallbackRows.map((r) => Number(r.periode));
+  }
+  return list;
 }
 
 export class VerifikasiGridService {
@@ -622,12 +630,16 @@ export class VerifikasiGridService {
         caterPakai: caterBacaMeter.pakaiM3,
         caterPakaiLalu: caterBacaMeter.pakaiLalu,
         caterKondisi: caterBacaMeter.ketCatat,
+        caterMandiriId: caterBacaMeter.caterMandiriId,
       })
       .from(caterMandiriPelanggan)
       .innerJoin(pelanggan, eq(caterMandiriPelanggan.nolg, pelanggan.nolg))
       .leftJoin(
         caterBacaMeter,
-        eq(caterMandiriPelanggan.id, caterBacaMeter.caterMandiriId),
+        and(
+          eq(caterMandiriPelanggan.nolg, caterBacaMeter.nolg),
+          eq(caterMandiriPelanggan.thbl, caterBacaMeter.thbl),
+        ),
       )
       .where(where)
       .orderBy(desc(caterMandiriPelanggan.createdAt))
@@ -651,28 +663,36 @@ export class VerifikasiGridService {
               : final
                 ? "DIGUNAKAN"
                 : "DIVERIFIKASI";
+        const stAwal = asNumber(row.stml);
+        const stAkhir = asNumber(row.stma);
+        const pemakaian =
+          stAwal != null && stAkhir != null
+            ? Math.max(0, stAkhir - stAwal)
+            : asNumber(row.pakaiM3);
         return {
           id: row.id,
           status,
+          periode: Number(row.thbl),
           pelangganId: row.nolg,
           nomorLangganan: row.nolg,
           namaPelanggan: row.nama,
-          standAwal: asNumber(row.stml),
-          standAkhir: asNumber(row.stma),
-          standDilaporkan: asNumber(row.stma),
-          pemakaian: asNumber(row.pakaiM3),
+          standAwal: stAwal,
+          standAkhir: stAkhir,
+          standDilaporkan: stAkhir,
+          pemakaian,
           pemakaianLalu: asNumber(row.caterPakaiLalu),
           kondisi: row.caterKondisi ?? "STAND_KONSUMEN",
           tanggalCatat: toIso(row.createdAt),
           verifiedAt: toIso(row.verifiedAt),
           verifiedBy: row.verifiedBy ? { name: null } : null,
           verifiedByRole: null,
-          sudahTahapPetugas: Boolean(row.caterId),
+          sudahTahapPetugas: Boolean(row.caterMandiriId && row.caterMandiriId === row.id),
           sudahDitagih: final,
           isVerified: row.status === "APPROVED",
           pembacaanId: final ? row.caterId : null,
           alasanDitolak: row.alasanPenolakan,
           fotoUrl: row.fotoMeterUrl,
+          fotoRumahUrl: row.fotoRumahUrl,
           namaPelapor: row.nama,
           nomorPelapor: null,
           pelanggan: {
@@ -686,7 +706,7 @@ export class VerifikasiGridService {
           pembacaan: row.caterId
             ? {
                 id: row.caterId,
-                standLalu: asNumber(row.stml) ?? 0,
+                standLalu: stAwal ?? 0,
                 standAkhir: asNumber(row.caterStma) ?? 0,
                 pemakaianRiil: asNumber(row.caterPakai),
                 pemakaianM3: asNumber(row.caterPakai) ?? 0,

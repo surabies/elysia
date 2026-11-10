@@ -163,6 +163,37 @@ export const caterVerifikasiLog = pgTable(
   ]
 );
 
+// 9. Tabel Matriks Hak Akses & Perizinan Modul RBAC (Dapat Dimodifikasi)
+export const rolePermissions = pgTable(
+  'role_permissions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    modulKey: varchar('modul_key', { length: 50 }).notNull().unique(),
+    modulNama: varchar('modul_nama', { length: 100 }).notNull(),
+    kategori: varchar('kategori', { length: 50 }).notNull().default('OPERASIONAL'),
+    deskripsi: text('deskripsi'),
+    urutan: numeric('urutan', { precision: 4, scale: 0 }).notNull().default('0'),
+
+    // Perizinan per Role
+    superadmin: boolean('superadmin').notNull().default(true),
+    staffBilling: boolean('staff_billing').notNull().default(false),
+    verifikator1: boolean('verifikator_1').notNull().default(false),
+    verifikator2: boolean('verifikator_2').notNull().default(false),
+    verifikator3: boolean('verifikator_3').notNull().default(false),
+    executive: boolean('executive').notNull().default(false),
+    pelaksana: boolean('pelaksana').notNull().default(false),
+
+    updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('role_permissions_modul_key_idx').on(table.modulKey),
+    index('role_permissions_kategori_idx').on(table.kategori),
+  ]
+);
+
 // Types Inferences
 export type EmployeeLevel = (typeof employeeLevelEnum.enumValues)[number];
 export type AppRole = (typeof appRoleEnum.enumValues)[number];
@@ -176,3 +207,5 @@ export type UserWilayahScope = typeof userWilayahScope.$inferSelect;
 export type UserRuteAssignment = typeof userRuteAssignment.$inferSelect;
 export type CaterVerifikasiLog = typeof caterVerifikasiLog.$inferSelect;
 export type NewCaterVerifikasiLog = typeof caterVerifikasiLog.$inferInsert;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type NewRolePermission = typeof rolePermissions.$inferInsert;

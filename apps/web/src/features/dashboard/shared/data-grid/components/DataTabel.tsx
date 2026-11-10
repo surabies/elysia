@@ -235,7 +235,7 @@ export function DataGrid({
   advancedFilters = TANPA_FILTER_LANJUTAN,
   filterTanggal,
   extraParams,
-  tinggiClassName = "flex-1 min-h-96",
+  tinggiClassName = "flex-1 min-h-[480px]",
   onRowClicked,
   onRowContextMenu,
   idTerpilih,
@@ -691,7 +691,7 @@ export function DataGrid({
 
       <div
         className={cn(
-          "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card",
+          "flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card",
           tinggiGrid === undefined ? "flex-1" : "shrink-0",
         )}
         style={tinggiGrid === undefined ? undefined : { height: tinggiGrid }}
@@ -839,6 +839,9 @@ export function DataGrid({
               }
               onGridReady={(e) => {
                 apiRef.current = e.api;
+                if (!dataLokal && datasource) {
+                  e.api.setGridOption("datasource", datasource);
+                }
               }}
               onGridPreDestroyed={() => {
                 apiRef.current = null;

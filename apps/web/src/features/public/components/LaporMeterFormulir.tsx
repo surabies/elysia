@@ -52,7 +52,7 @@ export function LaporMeterForm() {
   const [periodeUjiError, setPeriodeUjiError] = React.useState<string | null>(
     null
   )
-  const [pilihanPeriode, setPilihanPeriode] = React.useState("kalender")
+  const [pilihanPeriode, setPilihanPeriode] = React.useState("202601")
   const [nomorLangganan, setNomorLangganan] = React.useState("")
   const [pratinjau, setPratinjau] = React.useState<PelangganPratinjau | null>(
     null
@@ -100,6 +100,9 @@ export function LaporMeterForm() {
         if (!batal) {
           setPeriodeUji(data)
           setPeriodeUjiError(null)
+          if (data.aktif && data.periodes.length > 0) {
+            setPilihanPeriode(String(data.periodes[0]))
+          }
         }
       })
       .catch((err) => {
@@ -122,10 +125,7 @@ export function LaporMeterForm() {
     }
   }, [fotoPreviewUrl])
 
-  const periodeOverride =
-    periodeUji?.aktif && pilihanPeriode !== "kalender"
-      ? Number(pilihanPeriode)
-      : undefined
+  const periodeOverride = Number(pilihanPeriode) || 202601
 
   const cari = React.useCallback(async (nomor: string, periode?: number) => {
     const id = ++pencarianTerbaru.current
@@ -133,7 +133,8 @@ export function LaporMeterForm() {
     setPratinjau(null)
     setCariPending(true)
     try {
-      const hasil = await cariPelanggan(nomor, periode)
+      const targetPeriode = periode ?? (Number(pilihanPeriode) || 202601)
+      const hasil = await cariPelanggan(nomor, targetPeriode)
       if (id === pencarianTerbaru.current) setPratinjau(hasil)
     } catch (err) {
       if (id === pencarianTerbaru.current)
@@ -145,15 +146,12 @@ export function LaporMeterForm() {
     } finally {
       if (id === pencarianTerbaru.current) setCariPending(false)
     }
-  }, [])
+  }, [pilihanPeriode])
 
   function ubahPeriode(nilai: string) {
     setPilihanPeriode(nilai)
     if (nomorLangganan.length === 11) {
-      void cari(
-        nomorLangganan,
-        nilai === "kalender" ? undefined : Number(nilai)
-      )
+      void cari(nomorLangganan, Number(nilai) || 202601)
     }
   }
 
@@ -165,7 +163,7 @@ export function LaporMeterForm() {
     const digits = value.replace(/\D/g, "").slice(0, 11)
     setNomorLangganan(digits)
     if (digits.length === 11) {
-      cari(digits, periodeOverride)
+      cari(digits, Number(pilihanPeriode) || 202601)
     } else {
       pencarianTerbaru.current++ // batalkan pencarian yang sedang berjalan
       setPratinjau(null)
@@ -203,15 +201,16 @@ export function LaporMeterForm() {
     setKirimError(null)
     setKirimPending(true)
     try {
+      const targetPeriode = Number(pilihanPeriode) || 202601
       const form = new FormData()
       form.set("nomorLangganan", pratinjau.nomorLangganan)
       form.set("standDilaporkan", standInput)
+      form.set("standMeter", standInput)
       form.set("foto", fotoFile)
       form.set("nomorPelapor", nomorPelapor.trim())
       form.set("namaPelapor", namaPelapor.trim())
-      if (periodeOverride !== undefined) {
-        form.set("periodeUji", String(periodeOverride))
-      }
+      form.set("thbl", String(targetPeriode))
+      form.set("periodeUji", String(targetPeriode))
 
       // Respons server DIPAKAI (bukan dibuang) untuk layar sukses di bawah:
       // status & createdAt di situ adalah konfirmasi SUNGGUHAN dari server,
@@ -278,29 +277,43 @@ export function LaporMeterForm() {
     )
   }
 
+  /**
+   * MODUL SEMENTARA (TESTING & UAT ONLY)
+   * Catatan Arsitektur: Komponen ini disiapkan sementara agar pengujian formulir lapor meter
+   * dapat menyasar data seed database (202601 / Januari 2026) saat kalender berjalan di November.
+   * Komponen ini dapat dihapus begitu periode database diperbarui ke periode real-time.
+   */
   const pemilihPeriodeUji = periodeUji?.aktif ? (
-    <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
-      <div className="space-y-1">
-        <Label htmlFor="periode-uji">Periode laporan (uji)</Label>
+    <div className="space-y-2 rounded-xl border border-dashed border-amber-500/60 bg-amber-500/10 p-4 text-xs">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="periode-uji" className="font-semibold text-amber-900 dark:text-amber-200">
+            [MODE UJI SEMENTARA] Pilih Periode Target
+          </Label>
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-200">
+            Testing Only
+          </span>
+        </div>
         <Select value={pilihanPeriode} onValueChange={ubahPeriode}>
-          <SelectTrigger id="periode-uji" className="rounded-xl">
-            <SelectValue />
+          <SelectTrigger id="periode-uji" className="rounded-xl bg-white dark:bg-background border-amber-500/30">
+            <SelectValue placeholder="Pilih periode uji..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="kalender">
-              Kalender · {formatPeriode(jendela.periode)}
-            </SelectItem>
             {periodeUji.periodes.map((periode) => (
               <SelectItem key={periode} value={String(periode)}>
-                {formatPeriode(periode)} · periode kerja
+                Periode Database: {formatPeriode(periode)} ({periode})
               </SelectItem>
             ))}
+            {jendela && !periodeUji.periodes.includes(jendela.periode) && (
+              <SelectItem value={String(jendela.periode)}>
+                Bulan Berjalan Kalender ({formatPeriode(jendela.periode)})
+              </SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
-      <p className="text-xs text-amber-800 dark:text-amber-300">
-        Mode uji development. Periode yang dipilih akan digunakan saat laporan
-        disimpan.
+      <p className="text-muted-foreground leading-relaxed">
+        Fitur sementara untuk pengujian: Data seed database saat ini berada di periode <strong>Januari 2026 (202601)</strong>. Modul ini dapat dilepas begitu tahap testing selesai.
       </p>
     </div>
   ) : periodeUjiError ? (
@@ -332,11 +345,11 @@ export function LaporMeterForm() {
             <p>{jendela.pesan}</p>
           </AlertDescription>
         </Alert>
-        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
-          <p className="font-medium text-black">Jadwal pelaporan</p>
+        <div className="rounded-xl border border-border bg-muted/50 p-4 text-copy-13 text-muted-foreground">
+          <p className="font-medium text-foreground">Jadwal pelaporan</p>
           <p className="mt-1">
             Setiap bulan, tanggal{" "}
-            <strong className="text-black">
+            <strong className="text-foreground">
               {jendela.tanggalBuka} sampai {jendela.tanggalTutup}
             </strong>
             . Di luar tanggal itu petugas sedang merampungkan pencatatan dan

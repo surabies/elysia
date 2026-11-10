@@ -9,8 +9,8 @@ import { caterModule } from "./modules/cater";
 import { closingModule } from "./modules/closing";
 import { mandiriModule } from "./modules/mandiri";
 import { gwmModule } from "./modules/gwm";
-import { pengaduanModule } from "./modules/pengaduan";
-import { publikModule } from "./modules/publik";
+import { pengaduanModule, pengaduanV1Module } from "./modules/pengaduan";
+import { publikModule, publicModule } from "./modules/publik";
 import { verifikasiLegacyRouter } from "./modules/verifikasi-legacy.router";
 import { drdModule } from "./modules/drd";
 import { masterRouter } from "./modules/master/master.router";
@@ -34,7 +34,9 @@ export const app = new Elysia({ prefix: "/api" })
   .use(mandiriModule)
   .use(gwmModule)
   .use(pengaduanModule)
+  .use(pengaduanV1Module)
   .use(publikModule)
+  .use(publicModule)
   .use(drdModule)
   .use(masterRouter)
   .use(verifikasiLegacyRouter);
