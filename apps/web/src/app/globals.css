@@ -1863,55 +1863,6 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
     background: transparent;
   }
 
-  /* Vercel Sidebar Scrollbar: Flush against the sidebar's right divider border, slim 3px idle, expands to 5px on hover */
-  .sidebar-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: var(--ds-gray-alpha-300) transparent;
-  }
-
-  .sidebar-scroll::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-  }
-
-  .sidebar-scroll::-webkit-scrollbar-button,
-  .sidebar-scroll::-webkit-scrollbar-button:single-button,
-  .sidebar-scroll::-webkit-scrollbar-button:vertical:start:decrement,
-  .sidebar-scroll::-webkit-scrollbar-button:vertical:end:increment {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
-
-  .sidebar-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  /* Posisi menempel langsung ke garis pembatas sidebar (border-right: 0) */
-  .sidebar-scroll::-webkit-scrollbar-thumb {
-    background-color: var(--ds-gray-alpha-300);
-    border-radius: 4px 0 0 4px;
-    border-top: 1px solid transparent;
-    border-bottom: 1px solid transparent;
-    border-left: 2px solid transparent;
-    border-right: 0px solid transparent;
-    background-clip: padding-box;
-    transition: background-color 0.15s ease, border-left 0.15s ease;
-  }
-
-  /* Saat kursor diarahkan ke area sidebar / hover scrollbar */
-  aside:hover .sidebar-scroll::-webkit-scrollbar-thumb,
-  .sidebar-scroll:hover::-webkit-scrollbar-thumb {
-    background-color: var(--ds-gray-alpha-500);
-  }
-
-  /* Saat kursor di hover langsung ke scrollbar atau saat di-drag: ukurannya membesar (lebar penuh 5px) dan warna aktif tegas */
-  .sidebar-scroll::-webkit-scrollbar-thumb:hover,
-  .sidebar-scroll::-webkit-scrollbar-thumb:active {
-    background-color: var(--ds-gray-alpha-800);
-    border-left: 0px solid transparent;
-  }
-
   body {
     @apply bg-background text-sm text-foreground font-sans;
     font-feature-settings:
@@ -2008,4 +1959,84 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
   --warning-foreground: var(--color-yellow-900);
   --invert: var(--color-zinc-900);
   --invert-foreground: var(--color-zinc-50);
+}
+
+/* ==========================================================================
+   Vercel Sidebar Custom Scrollbar (Precision Unlayered)
+   1. Hilangkan tombol panah (arrow up & down) pada scrollbar sidebar.
+   2. Menempel (flush) langsung pada garis pembatas/border sidebar agar
+      menghasilkan visual effect seperti menyatu dengan garisnya.
+   3. Ukuran default ultra-slim (2px) saat idle.
+   4. Membesar ke 6px dan berubah warna lebih gelap saat di-hover.
+   ========================================================================== */
+
+/* Hapus scrollbar-width bawaan agar Chromium tidak membatalkan custom WebKit scrollbar ke panah Windows */
+aside .sidebar-scroll,
+.sidebar-scroll {
+  scrollbar-width: none !important;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  aside .sidebar-scroll,
+  .sidebar-scroll {
+    scrollbar-width: auto !important;
+  }
+}
+
+/* 1. Hilangkan semua tombol panah atas & bawah (arrows up/down) */
+aside .sidebar-scroll::-webkit-scrollbar-button,
+.sidebar-scroll::-webkit-scrollbar-button,
+aside *::-webkit-scrollbar-button,
+aside::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+/* Track scrollbar transparan */
+aside .sidebar-scroll::-webkit-scrollbar-track,
+.sidebar-scroll::-webkit-scrollbar-track,
+aside .sidebar-scroll::-webkit-scrollbar-track-piece,
+.sidebar-scroll::-webkit-scrollbar-track-piece {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Ukuran dasar WebKit scrollbar sidebar (standar 8px Vercel) */
+aside .sidebar-scroll::-webkit-scrollbar,
+.sidebar-scroll::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+  background: transparent !important;
+}
+
+/* 2 & 3. Default state (idle & saat navigasi/scroll menu):
+   Menempel rata pada garis border sidebar, ukuran separuh/tipis (3px) tanpa membesar saat kursor berada di sidebar */
+aside .sidebar-scroll::-webkit-scrollbar-thumb,
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--ds-gray-alpha-400) !important;
+  border-radius: 4px 0 0 4px !important;
+  border-top: 0px solid transparent !important;
+  border-bottom: 0px solid transparent !important;
+  border-right: 0px solid transparent !important;
+  border-left: 5px solid transparent !important; /* 8px total - 5px transparan = 3px garis tampak (ramping menempel border) */
+  background-clip: padding-box !important;
+}
+
+/* 4. Efek Interaksi HANYA saat kursor diarahkan langsung ke objek scrollbar (hover pada thumb atau saat drag/active):
+   - Scrollbar membuka penuh menunjukkan full lebar scrollbar (8px, border-left: 0px)
+   - Warna sedikit lebih gelap dengan opacity meningkat secara soft (var(--ds-gray-alpha-600)) */
+aside .sidebar-scroll::-webkit-scrollbar-thumb:hover,
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ds-gray-alpha-600) !important;
+  border-left: 0px solid transparent !important; /* Membuka full 8px */
+  border-radius: 4px 0 0 4px !important;
+}
+
+aside .sidebar-scroll::-webkit-scrollbar-thumb:active,
+.sidebar-scroll::-webkit-scrollbar-thumb:active {
+  background-color: var(--ds-gray-alpha-700) !important;
+  border-left: 0px solid transparent !important; /* Full 8px saat di-drag */
+  border-radius: 4px 0 0 4px !important;
 }
