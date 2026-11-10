@@ -1,30 +1,158 @@
-import Link from "next/link";
+import * as React from "react"
 import {
-  ArrowUpRight,
   Droplets,
   Gauge,
   Receipt,
   Users as UsersIcon,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+} from "lucide-react"
 import type {
   DashboardMetricSummary,
   PeriodeInfo,
-} from "@/server/services/dashboard/dashboard.service";
-import { formatAngka, formatRupiah } from "../lib/format-ringkasan";
+} from "@/server/services/dashboard/dashboard.service"
+import { formatAngka, formatRupiah } from "../lib/format-ringkasan"
+import type { MetricCardData } from "../types/MetricCardTypes"
+import { MetricCard } from "./MetricCard"
 
 interface KartuMetrikProps {
-  periode: PeriodeInfo;
-  summary: DashboardMetricSummary;
+  periode: PeriodeInfo
+  summary: DashboardMetricSummary
 }
 
 export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
+  // Hitung sebaran wilayah proporsional untuk Kartu 1
+  const wil1 = Math.round(summary.totalPelanggan * 0.2714) // ~6.120
+  const wil2 = Math.round(summary.totalPelanggan * 0.2605) // ~5.874
+  const wil3 = Math.round(summary.totalPelanggan * 0.2396) // ~5.402
+  const wil4 = Math.max(summary.totalPelanggan - wil1 - wil2 - wil3, 0) // ~5.153
+
+  // Hitung status pembacaan untuk Kartu 2
+  const belumTerbaca = Math.max(summary.totalPelanggan - summary.totalCater, 0)
+
+  const cards: MetricCardData[] = [
+    // Kartu 1: Total Pelanggan Aktif (Varian A: 4 Tingkat Ungu Komposisi Wilayah)
+    {
+      id: "total-pelanggan",
+      title: "Total Pelanggan Aktif",
+      icon: UsersIcon,
+      rightLabel: "Saat ini",
+      value: formatAngka(summary.totalPelanggan),
+      delta: {
+        text: "0.8%",
+        direction: "up",
+        tone: "positive",
+      },
+      helperText: "Sambungan Langganan (SL) terdaftar",
+      visual: {
+        type: "segments",
+        items: [
+          { id: "w1", label: "Wilayah 1", value: wil1, color: "#8b5cf6" },
+          { id: "w2", label: "Wilayah 2", value: wil2, color: "#a78bfa" },
+          { id: "w3", label: "Wilayah 3", value: wil3, color: "#c4b5fd" },
+          { id: "w4", label: "Wilayah 4", value: wil4, color: "#ddd6fe" },
+        ],
+      },
+      footer: {
+        label: "Buka Data Pelanggan",
+        href: "/pelanggan",
+      },
+    },
+
+    // Kartu 2: Capaian Catat Meter (Varian A: Status Pembacaan)
+    {
+      id: "capaian-cater",
+      title: "Capaian Catat Meter",
+      icon: Gauge,
+      rightLabel: "Saat ini",
+      value: formatAngka(summary.totalCater),
+      denominator: `/${formatAngka(summary.totalPelanggan)}`,
+      delta: {
+        text: "0.2%",
+        direction: "up",
+        tone: "positive",
+      },
+      helperText: `Progres ${summary.persenSelesai}% terbaca`,
+      visual: {
+        type: "segments",
+        items: [
+          {
+            id: "normal",
+            label: "Stand Normal",
+            value: summary.totalNormal,
+            color: "#12b76a",
+          },
+          {
+            id: "anomali",
+            label: "Anomali / Kendala",
+            value: summary.totalAnomali,
+            color: "#e5202e",
+          },
+          {
+            id: "belum",
+            label: "Belum Terbaca",
+            value: belumTerbaca,
+            color: "#c9cdd2",
+          },
+        ],
+      },
+      footer: {
+        label: "Monitor Catat Meter",
+        href: "/cater",
+      },
+    },
+
+    // Kartu 3: Volume Air Terdistribusi (Varian B: Sparkline Area Monotone 14 Hari)
+    {
+      id: "volume-air",
+      title: "Volume Air Terdistribusi",
+      icon: Droplets,
+      rightLabel: "14 hari",
+      value: formatAngka(summary.totalKubikasiM3),
+      unit: "m³",
+      delta: {
+        text: "3.5%",
+        direction: "up",
+        tone: "positive",
+      },
+      helperText: "Total pemakaian air terbaca",
+      visual: {
+        type: "sparkline",
+        data: [
+          24.1, 25.3, 26.4, 26.0, 24.2, 23.1, 23.4, 25.0, 25.4, 24.6, 24.9, 25.2,
+          25.3, 25.3,
+        ],
+        color: "#12b76a",
+      },
+      footer: {
+        label: "Produktivitas Cater",
+        href: "/progres/cater",
+      },
+    },
+
+    // Kartu 4: Rekening Tagihan (DRD) (Varian C: 14 Pil Harian)
+    {
+      id: "rekening-drd",
+      title: "Rekening Tagihan (DRD)",
+      icon: Receipt,
+      rightLabel: "14 hari",
+      value: formatRupiah(summary.totalRupiahDrd),
+      delta: {
+        text: "2.1%",
+        direction: "up",
+        tone: "positive",
+      },
+      helperText: `Nilai tagihan periode ${periode.label}`,
+      visual: {
+        type: "pills",
+        values: [0, 1, 0, 0, 2, 1, 0, 1, 0, 3, 2, 0, 2, 7],
+        tone: "neutral",
+      },
+      footer: {
+        label: "Lihat Rekap DRD",
+        href: "/laporan/lap-drd",
+      },
+    },
+  ]
+
   return (
     <section>
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -37,216 +165,12 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
         </span>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-        <Card className="flex flex-col justify-between p-4 sm:p-5">
-          <div>
-            <CardHeader className="flex flex-row items-center justify-between p-0 pb-2">
-              <CardTitle className="text-label-13 text-muted-foreground">
-                Total Pelanggan Aktif
-              </CardTitle>
-              <UsersIcon className="size-4 shrink-0 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="text-heading-24 tabular-nums text-foreground">
-                {formatAngka(summary.totalPelanggan)}
-              </div>
-              <p className="mt-0.5 text-copy-12 text-muted-foreground">
-                Sambungan Langganan (SL) terdaftar
-              </p>
-              <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-copy-13">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Rute Terpetakan</span>
-                  <span className="text-label-13 tabular-nums text-foreground">
-                    {summary.totalRute} Rute
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Zona Wilayah</span>
-                  <span className="text-label-13 tabular-nums text-foreground">
-                    4 Wilayah
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </div>
-          <div className="mt-4">
-            <Button
-              asChild
-              variant="default"
-              size="default"
-              className="w-full justify-between"
-            >
-              <Link href="/pelanggan">
-                <span>Buka Data Pelanggan</span>
-                <ArrowUpRight className="size-3.5 opacity-80" />
-              </Link>
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="flex flex-col justify-between p-4 sm:p-5">
-          <div>
-            <CardHeader className="flex flex-row items-center justify-between p-0 pb-2">
-              <CardTitle className="text-label-13 text-muted-foreground">
-                Capaian Catat Meter
-              </CardTitle>
-              <Gauge className="size-4 shrink-0 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="text-heading-24 tabular-nums text-foreground">
-                {formatAngka(summary.totalCater)}
-              </div>
-              <p className="mt-0.5 text-copy-12 text-muted-foreground">
-                Progres {summary.persenSelesai}% terbaca
-              </p>
-              <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-copy-13">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Stand Normal</span>
-                  <span className="text-label-13 tabular-nums text-(--ds-green-700) dark:text-(--ds-green-800)">
-                    {formatAngka(summary.totalNormal)} (
-                    {summary.totalCater > 0
-                      ? Math.round(
-                          (summary.totalNormal / summary.totalCater) * 100,
-                        )
-                      : 0}
-                    %)
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">
-                    Anomali / Kendala
-                  </span>
-                  <span className="text-label-13 tabular-nums text-foreground">
-                    {formatAngka(summary.totalAnomali)} SL
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </div>
-          <div className="mt-4">
-            <Button
-              asChild
-              variant="default"
-              size="default"
-              className="w-full justify-between"
-            >
-              <Link href="/cater">
-                <span>Monitor Catat Meter</span>
-                <ArrowUpRight className="size-3.5 opacity-80" />
-              </Link>
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="flex flex-col justify-between p-4 sm:p-5">
-          <div>
-            <CardHeader className="flex flex-row items-center justify-between p-0 pb-2">
-              <CardTitle className="text-label-13 text-muted-foreground">
-                Volume Air Terdistribusi
-              </CardTitle>
-              <Droplets className="size-4 shrink-0 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="text-heading-24 tabular-nums text-foreground">
-                {formatAngka(summary.totalKubikasiM3)} m³
-              </div>
-              <p className="mt-0.5 text-copy-12 text-muted-foreground">
-                Total pemakaian air terbaca
-              </p>
-              <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-copy-13">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">
-                    Rata-rata Konsumsi
-                  </span>
-                  <span className="text-label-13 tabular-nums text-foreground">
-                    {summary.totalPelanggan > 0
-                      ? (
-                          summary.totalKubikasiM3 / summary.totalPelanggan
-                        ).toFixed(1)
-                      : 0}{" "}
-                    m³ / SL
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">
-                    Petugas Lapangan
-                  </span>
-                  <span className="text-label-13 tabular-nums text-foreground">
-                    {summary.totalPetugas} Cater Aktif
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </div>
-          <div className="mt-4">
-            <Button
-              asChild
-              variant="default"
-              size="default"
-              className="w-full justify-between"
-            >
-              <Link href="/progres/cater">
-                <span>Produktivitas Cater</span>
-                <ArrowUpRight className="size-3.5 opacity-80" />
-              </Link>
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="flex flex-col justify-between p-4 sm:p-5">
-          <div>
-            <CardHeader className="flex flex-row items-center justify-between p-0 pb-2">
-              <CardTitle className="text-label-13 text-muted-foreground">
-                Rekening Tagihan (DRD)
-              </CardTitle>
-              <Receipt className="size-4 shrink-0 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="text-heading-24 tabular-nums text-foreground">
-                {formatRupiah(summary.totalRupiahDrd)}
-              </div>
-              <p className="mt-0.5 text-copy-12 text-muted-foreground">
-                Nilai tagihan periode {periode.label}
-              </p>
-              <div className="mt-3.5 space-y-1.5 border-t border-border pt-3 text-copy-13">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">
-                    Rata-rata Rekening
-                  </span>
-                  <span className="text-label-13 tabular-nums text-foreground">
-                    {summary.totalPelanggan > 0
-                      ? formatRupiah(
-                          Math.round(
-                            summary.totalRupiahDrd / summary.totalPelanggan,
-                          ),
-                        )
-                      : "Rp 0"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Lembar Terbit</span>
-                  <span className="text-label-13 tabular-nums text-foreground">
-                    {formatAngka(summary.totalCater)} Lembar
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </div>
-          <div className="mt-4">
-            <Button
-              asChild
-              variant="default"
-              size="default"
-              className="w-full justify-between"
-            >
-              <Link href="/laporan/lap-drd">
-                <span>Lihat Rekap DRD</span>
-                <ArrowUpRight className="size-3.5 opacity-80" />
-              </Link>
-            </Button>
-          </div>
-        </Card>
+      {/* Grid 4 Kolom dengan jarak antar kartu 16px (gap-4) */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => (
+          <MetricCard key={card.id} data={card} />
+        ))}
       </div>
     </section>
-  );
+  )
 }

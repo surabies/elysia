@@ -1,0 +1,225 @@
+.popup {
+  z-index: 4;
+}
+
+.popup :global(.maplibregl-popup-content) {
+  width: min(330px, calc(100vw - 40px));
+  max-height: min(62vh, 540px);
+  overflow: auto;
+  padding: 0 !important;
+  border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
+  border-radius: 16px;
+  background: color-mix(in oklch, var(--card) 96%, transparent) !important;
+  color: var(--card-foreground) !important;
+  box-shadow:
+    0 24px 64px rgb(0 0 0 / 22%),
+    0 2px 8px rgb(0 0 0 / 12%);
+  backdrop-filter: blur(18px);
+}
+
+.popup:global(.maplibregl-popup-anchor-bottom) :global(.maplibregl-popup-tip) {
+  border-top-color: var(--card);
+}
+
+.popup:global(.maplibregl-popup-anchor-top) :global(.maplibregl-popup-tip) {
+  border-bottom-color: var(--card);
+}
+
+.popup:global(.maplibregl-popup-anchor-left) :global(.maplibregl-popup-tip) {
+  border-right-color: var(--card);
+}
+
+.popup:global(.maplibregl-popup-anchor-right) :global(.maplibregl-popup-tip) {
+  border-left-color: var(--card);
+}
+
+.popup :global(.maplibregl-popup-close-button) {
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: color-mix(in oklch, var(--card) 78%, transparent);
+  color: var(--muted-foreground);
+  font-size: 18px;
+  line-height: 1;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.popup :global(.maplibregl-popup-close-button):hover {
+  border-color: var(--border);
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.popup :global(.maplibregl-popup-close-button):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.card {
+  --popup-accent: var(--info);
+}
+
+.pelanggan {
+  --popup-accent: #0d9488;
+}
+
+.kebocoran {
+  --popup-accent: var(--destructive);
+}
+
+.rute {
+  --popup-accent: #7c3aed;
+}
+
+.potensi {
+  --popup-accent: #2563eb;
+}
+
+.eksPelanggan {
+  --popup-accent: #64748b;
+}
+
+.pengaduan {
+  --popup-accent: var(--destructive);
+}
+
+.kelurahan {
+  --popup-accent: var(--chart-1);
+}
+
+.kecamatan {
+  --popup-accent: var(--info);
+}
+
+.header {
+  position: relative;
+  padding: 16px 48px 14px 17px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(
+    118deg,
+    color-mix(in oklch, var(--popup-accent) 14%, var(--card)),
+    color-mix(in oklch, var(--card) 96%, transparent) 72%
+  );
+}
+
+.label {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--foreground);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.badge {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.badge[data-tone="sukses"] {
+  border-color: color-mix(in oklch, #10b981 40%, var(--border));
+  background: color-mix(in oklch, #10b981 12%, var(--card));
+  color: #10b981;
+}
+
+.badge[data-tone="bahaya"] {
+  border-color: color-mix(in oklch, var(--destructive) 40%, var(--border));
+  background: color-mix(in oklch, var(--destructive) 12%, var(--card));
+  color: var(--destructive);
+}
+
+.badge[data-tone="peringatan"] {
+  border-color: color-mix(in oklch, #f59e0b 40%, var(--border));
+  background: color-mix(in oklch, #f59e0b 12%, var(--card));
+  color: #f59e0b;
+}
+
+.badge[data-tone="info"] {
+  border-color: color-mix(in oklch, #3b82f6 40%, var(--border));
+  background: color-mix(in oklch, #3b82f6 12%, var(--card));
+  color: #3b82f6;
+}
+
+.details {
+  display: grid;
+  gap: 7px;
+  padding: 14px 17px;
+}
+
+.detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.detailLabel {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.detailValue {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 17px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in oklch, var(--muted) 35%, transparent);
+}
+
+.locationDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--popup-accent);
+}
+
+.coordinates {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--muted-foreground);
+}

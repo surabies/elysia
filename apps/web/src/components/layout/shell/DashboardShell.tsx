@@ -106,6 +106,17 @@ export function DashboardShell({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen, setIsOpen]);
 
+  // Cegah window terangkat ke atas jika terjadi auto-scroll fokus browser
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const userRoles = React.useMemo(() => {
     if (user?.roles && user.roles.length > 0) return user.roles;
     if (user?.role) return [user.role];

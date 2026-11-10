@@ -11,6 +11,7 @@
 // pilihan jumlah baris. Baris tab hanya memuat tab, ringkasan sebaris, dan sisa kerja.
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
   Task01Icon,
@@ -107,8 +108,20 @@ export function PanelTabel({
 }) {
   const [tab, setTab] = React.useState<"laporan" | "belum">("laporan");
   const [kerapatan, setKerapatan] = React.useState<Kerapatan>("normal");
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams?.get("nolg") || searchParams?.get("q") || "";
   const preferensiKolom = usePreferensiKolom();
-  const [filter, setFilter] = React.useState<FilterVerifikasi>(FILTER_AWAL);
+  const [filter, setFilter] = React.useState<FilterVerifikasi>(() => ({
+    ...FILTER_AWAL,
+    q: urlQuery,
+  }));
+
+  React.useEffect(() => {
+    const qParam = searchParams?.get("nolg") || searchParams?.get("q");
+    if (qParam && qParam !== filter.q) {
+      setFilter((f) => ({ ...f, q: qParam }));
+    }
+  }, [searchParams]);
   const [rows, setRows] = React.useState<BarisVerifikasi[]>([]);
   const [total, setTotal] = React.useState(0);
   const [memuat, setMemuat] = React.useState(false);

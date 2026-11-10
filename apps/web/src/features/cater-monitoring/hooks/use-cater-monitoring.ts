@@ -1,30 +1,60 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   fetchCaterOverviewData,
   fetchCaterPeriodData,
 } from '../lib/cater-monitoring-api';
 import type {
+  AnomaliKPI,
   CaterStats,
   PetugasProgress,
   ReadingReviewItem,
   RouteSummary,
 } from '../types';
+import type { ItemRuteBaca } from '../types/RiwayatPembacaanTypes';
 
-export function useCaterMonitoring() {
-  const [stats, setStats] = useState<CaterStats | null>(null);
-  const [routes, setRoutes] = useState<RouteSummary[]>([]);
-  const [overviewLoading, setOverviewLoading] = useState(true);
+export interface UseCaterMonitoringOptions {
+  initialStats?: CaterStats | null;
+  initialRoutes?: RouteSummary[];
+  initialRiwayatSesi?: ItemRuteBaca[];
+  initialExtremeReadings?: ReadingReviewItem[];
+  initialZeroReadings?: ReadingReviewItem[];
+  initialDownReadings?: ReadingReviewItem[];
+  initialMonth?: string;
+}
+
+export function useCaterMonitoring(options: UseCaterMonitoringOptions = {}) {
+  const [stats, setStats] = useState<CaterStats | null>(options.initialStats ?? null);
+  const [routes, setRoutes] = useState<RouteSummary[]>(options.initialRoutes ?? []);
+  const [overviewLoading, setOverviewLoading] = useState(!options.initialStats);
   const [overviewError, setOverviewError] = useState<string | null>(null);
-  const [month, setMonth] = useState('');
+  const [month, setMonth] = useState(options.initialMonth || '2026-01');
   const [petugasProgress, setPetugasProgress] = useState<PetugasProgress[]>([]);
-  const [extremeReadings, setExtremeReadings] = useState<ReadingReviewItem[]>([]);
-  const [zeroReadings, setZeroReadings] = useState<ReadingReviewItem[]>([]);
+  const [riwayatSesiList, setRiwayatSesiList] = useState<ItemRuteBaca[]>(
+    options.initialRiwayatSesi ?? []
+  );
+  const [extremeReadings, setExtremeReadings] = useState<ReadingReviewItem[]>(
+    options.initialExtremeReadings ?? []
+  );
+  const [zeroReadings, setZeroReadings] = useState<ReadingReviewItem[]>(
+    options.initialZeroReadings ?? []
+  );
+  const [downReadings, setDownReadings] = useState<ReadingReviewItem[]>(
+    options.initialDownReadings ?? []
+  );
+  const [allAnomaliItems, setAllAnomaliItems] = useState<ReadingReviewItem[]>([]);
+  const [anomaliKPI, setAnomaliKPI] = useState<AnomaliKPI>({
+    totalAnomali: 0,
+    totalEkstrim: 0,
+    totalNol: 0,
+    totalTurun: 0,
+  });
   const [periodLoading, setPeriodLoading] = useState(false);
   const [periodError, setPeriodError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (options.initialStats && options.initialRoutes) return;
     let active = true;
     fetchCaterOverviewData()
       .then(({ stats: nextStats, routes: nextRoutes }) => {
@@ -34,11 +64,6 @@ export function useCaterMonitoring() {
         const latestPeriod = nextStats.periodeTerakhir;
         if (latestPeriod && /^\d{6}$/.test(latestPeriod)) {
           setMonth(`${latestPeriod.slice(0, 4)}-${latestPeriod.slice(4)}`);
-        } else {
-          const now = new Date();
-          setMonth(
-            `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
-          );
         }
       })
       .catch((error: unknown) => {
@@ -54,34 +79,48 @@ export function useCaterMonitoring() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [options.initialStats, options.initialRoutes]);
 
-  useEffect(() => {
-    if (!month) return;
-    let active = true;
-    const period = month.replace('-', '');
+  const loadPeriodData = useCallback((targetMonth: string) => {
+    if (!targetMonth) return;
+    const period = targetMonth.replace('-', '');
     setPeriodLoading(true);
     setPeriodError(null);
     fetchCaterPeriodData(period)
-      .then(({ petugasProgress: progress, extremeReadings: extreme, zeroReadings: zero }) => {
-        if (!active) return;
-        setPetugasProgress(progress);
-        setExtremeReadings(extreme);
-        setZeroReadings(zero);
-      })
+      .then(
+        ({
+          petugasProgress: progress,
+          extremeReadings: extreme,
+          zeroReadings: zero,
+          downReadings: down,
+          anomaliKPI: kpi,
+          allAnomaliItems: allItems,
+          riwayatSesi,
+        }) => {
+          if (progress && progress.length > 0) setPetugasProgress(progress);
+          setExtremeReadings(extreme ?? []);
+          setZeroReadings(zero ?? []);
+          setDownReadings(down ?? []);
+          setAllAnomaliItems(allItems ?? []);
+          setAnomaliKPI(kpi);
+          if (riwayatSesi && riwayatSesi.length > 0) {
+            setRiwayatSesiList(riwayatSesi);
+          }
+        }
+      )
       .catch((error: unknown) => {
-        if (active)
-          setPeriodError(
-            error instanceof Error ? error.message : 'Gagal memuat periode.',
-          );
+        setPeriodError(
+          error instanceof Error ? error.message : 'Gagal memuat periode.',
+        );
       })
       .finally(() => {
-        if (active) setPeriodLoading(false);
+        setPeriodLoading(false);
       });
-    return () => {
-      active = false;
-    };
-  }, [month]);
+  }, []);
+
+  useEffect(() => {
+    loadPeriodData(month);
+  }, [month, loadPeriodData]);
 
   return {
     stats,
@@ -91,9 +130,14 @@ export function useCaterMonitoring() {
     month,
     setMonth,
     petugasProgress,
+    riwayatSesiList,
     extremeReadings,
     zeroReadings,
+    downReadings,
+    allAnomaliItems,
+    anomaliKPI,
     periodLoading,
     periodError,
+    refetchPeriod: () => loadPeriodData(month),
   };
 }

@@ -1,21 +1,28 @@
 /**
  * Service: Monitoring Progres Lapangan Real-Time Petugas Cater
- * Lapisan: 2. Service Layer (Agregasi Beban Catat & Realisasi Pembacaan)
+ * Lapisan: 2. Service Layer (Agregasi Beban Catat & Realisasi Pembacaan Nyata Database)
  */
 
-import { eq, and, sql, desc, inArray } from 'drizzle-orm';
-import { db, caterBacaMeter, petugasCater, daftarCatat, ruteCater, wilayahAdministrasi, pelanggan } from '@cater/db';
+import { eq, and, sql, desc } from 'drizzle-orm';
+import { db, caterBacaMeter, petugasCater, pelanggan } from '@cater/db';
 
 export interface PetugasProgresItem {
   petugasId: string;
   nama: string;
   wilayahKode: string | null;
   ruteList: string[];
+  totalRute: number;
   target: number;
   terbaca: number;
   sisa: number;
   persentase: number;
+  totalM3: number;
   anomali: number;
+  totalNol: number;
+  totalEkstrim: number;
+  totalTurun: number;
+  mulaiCatat: string | null;
+  selesaiCatat: string | null;
   terakhirCatat: string | null;
   durasiRataRataDetik: number;
   statusKerja: 'AKTIF_LAPANGAN' | 'ISTIRAHAT' | 'SELESAI' | 'BELUM_MULAI';
@@ -29,23 +36,37 @@ export interface MonitoringProgresResult {
     totalTerbaca: number;
     totalSisa: number;
     readRatePersen: number;
+    totalM3: number;
     totalAnomali: number;
+    totalEkstrim: number;
+    totalNol: number;
+    totalTurun: number;
     petugasAktif: number;
     totalPetugas: number;
+    totalRute: number;
   };
   petugas: PetugasProgresItem[];
 }
 
 export class CaterProgresService {
   async getMonitoringProgres(thbl: string = '202601'): Promise<MonitoringProgresResult> {
-    // 1. Ambil agregasi pembacaan nyata dari caterBacaMeter per petugas
+    // 1. Ambil agregasi komprehensif riil pembacaan dari caterBacaMeter per petugas
     const readingStats = await db
       .select({
         petugasId: caterBacaMeter.petugasId,
         terbaca: sql<number>`count(*)::int`,
-        anomali: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} like '%ANOMALY%' or ${caterBacaMeter.pakaiM3}::numeric < 0 or (${caterBacaMeter.ketCatat} is not null and lower(${caterBacaMeter.ketCatat}) not in ('normal', 'nihil', '')) then 1 end)::int`,
-        tglAwal: sql<string>`min(${caterBacaMeter.tglCatat})`,
-        tglAkhir: sql<string>`max(${caterBacaMeter.tglCatat})`,
+        totalM3: sql<number>`round(coalesce(sum(${caterBacaMeter.pakaiM3}::float), 0))::int`,
+        totalNol: sql<number>`count(case when ${caterBacaMeter.pakaiM3}::float = 0 then 1 end)::int`,
+        totalEkstrim: sql<number>`count(case when (
+          (${caterBacaMeter.pakaiLalu}::float > 0 and ${caterBacaMeter.pakaiM3}::float >= ${caterBacaMeter.pakaiLalu}::float * 2)
+          or (${caterBacaMeter.pakaiLalu}::float > 0 and (${caterBacaMeter.pakaiM3}::float - ${caterBacaMeter.pakaiLalu}::float) >= 30)
+          or (${caterBacaMeter.pakaiM3}::float > 75)
+          or (${caterBacaMeter.statusVerifikasi} in ('ANOMALY', 'ANOMALY_HIGH'))
+        ) then 1 end)::int`,
+        totalTurun: sql<number>`count(case when ${caterBacaMeter.pakaiLalu} is not null and ${caterBacaMeter.pakaiLalu}::float >= 10 and (${caterBacaMeter.pakaiM3}::float <= ${caterBacaMeter.pakaiLalu}::float * 0.5) then 1 end)::int`,
+        totalRute: sql<number>`count(distinct ${caterBacaMeter.ruteKode})::int`,
+        tglAwal: sql<string>`to_char(min(${caterBacaMeter.tglCatat}), 'YYYY-MM-DD HH24:MI')`,
+        tglAkhir: sql<string>`to_char(max(${caterBacaMeter.tglCatat}), 'YYYY-MM-DD HH24:MI')`,
         durasiRataRata: sql<number>`coalesce(round(avg(${caterBacaMeter.durasiDetik})::numeric, 0), 45)::int`,
         ruteCodes: sql<string>`string_agg(distinct ${caterBacaMeter.ruteKode}, ', ')`,
       })
@@ -53,12 +74,11 @@ export class CaterProgresService {
       .where(eq(caterBacaMeter.thbl, thbl))
       .groupBy(caterBacaMeter.petugasId);
 
-    // 2. Ambil master petugas cater
+    // 2. Ambil master data petugas
     const masterPetugas = await db.select().from(petugasCater);
     const petugasMap = new Map(masterPetugas.map((p) => [p.id, p]));
 
-    // 3. Hitung target riil per petugas dari jumlah pelanggan di rute yang ditugaskan
-    // a. Pemetaan rute ke petugas
+    // 3. Hitung target riil per petugas dari jumlah pelanggan di rute binaan
     const rutePetugasRows = await db
       .selectDistinct({
         ruteKode: caterBacaMeter.ruteKode,
@@ -67,7 +87,6 @@ export class CaterProgresService {
       .from(caterBacaMeter)
       .where(eq(caterBacaMeter.thbl, thbl));
 
-    // b. Hitung total pelanggan per rute di tabel pelanggan
     const pelangganPerRute = await db
       .select({
         ruteKode: pelanggan.ruteKode,
@@ -78,7 +97,6 @@ export class CaterProgresService {
 
     const pelRuteMap = new Map(pelangganPerRute.map((r) => [r.ruteKode, r.total]));
 
-    // c. Agregasikan target pelanggan riil per petugas
     const targetMap = new Map<string, number>();
     for (const rp of rutePetugasRows) {
       if (!rp.petugasId || !rp.ruteKode) continue;
@@ -88,18 +106,21 @@ export class CaterProgresService {
 
     let globalTarget = 0;
     let globalTerbaca = 0;
-    let globalAnomali = 0;
-    let petugasAktifCount = 0;
+    let globalM3 = 0;
+    let globalNol = 0;
+    let globalEkstrim = 0;
+    let globalTurun = 0;
+    let globalRuteCount = 0;
 
     const list: PetugasProgresItem[] = readingStats.map((stat) => {
       const pid = stat.petugasId ?? 'UNKNOWN';
       const prof = petugasMap.get(pid);
       const nama = prof?.nama ?? pid;
 
-      // Target pelanggan riil dari database
-      const target = targetMap.get(pid) ?? stat.terbaca;
+      const target = Math.max(stat.terbaca, targetMap.get(pid) ?? stat.terbaca);
       const sisa = Math.max(0, target - stat.terbaca);
       const persentase = target > 0 ? Number(((stat.terbaca / target) * 100).toFixed(1)) : 100;
+      const anomaliPetugas = stat.totalEkstrim + stat.totalNol + stat.totalTurun;
 
       let statusKerja: PetugasProgresItem['statusKerja'] = 'AKTIF_LAPANGAN';
       if (persentase >= 100) {
@@ -108,12 +129,15 @@ export class CaterProgresService {
         statusKerja = 'BELUM_MULAI';
       } else {
         statusKerja = 'AKTIF_LAPANGAN';
-        petugasAktifCount++;
       }
 
       globalTarget += target;
       globalTerbaca += stat.terbaca;
-      globalAnomali += stat.anomali;
+      globalM3 += stat.totalM3;
+      globalNol += stat.totalNol;
+      globalEkstrim += stat.totalEkstrim;
+      globalTurun += stat.totalTurun;
+      globalRuteCount += stat.totalRute;
 
       const rutes = stat.ruteCodes
         ? stat.ruteCodes.split(', ').map((r) => r.trim()).filter(Boolean)
@@ -122,25 +146,33 @@ export class CaterProgresService {
       return {
         petugasId: pid,
         nama,
-        wilayahKode: (prof as any)?.wilayahKode ?? 'WIL-BARAT',
-        ruteList: rutes.slice(0, 8),
+        wilayahKode: (prof as any)?.wilayahKode ?? 'WIL-KOTA',
+        ruteList: rutes,
+        totalRute: stat.totalRute,
         target,
         terbaca: stat.terbaca,
         sisa,
         persentase,
-        anomali: stat.anomali,
-        terakhirCatat: stat.tglAkhir ? new Date(stat.tglAkhir).toISOString() : null,
+        totalM3: stat.totalM3,
+        anomali: anomaliPetugas,
+        totalNol: stat.totalNol,
+        totalEkstrim: stat.totalEkstrim,
+        totalTurun: stat.totalTurun,
+        mulaiCatat: stat.tglAwal,
+        selesaiCatat: stat.tglAkhir,
+        terakhirCatat: stat.tglAkhir,
         durasiRataRataDetik: stat.durasiRataRata,
         statusKerja,
       };
     });
 
-    // Urutkan berdasarkan nama petugas
-    list.sort((a, b) => a.nama.localeCompare(b.nama));
+    // Urutkan berdasarkan total pembacaan terbanyak
+    list.sort((a, b) => b.terbaca - a.terbaca);
 
-    const readRatePersen = globalTarget > 0
-      ? Number(((globalTerbaca / globalTarget) * 100).toFixed(1))
-      : 100;
+    const readRatePersen =
+      globalTarget > 0 ? Number(((globalTerbaca / globalTarget) * 100).toFixed(1)) : 100;
+
+    const totalAnomali = globalEkstrim + globalNol + globalTurun;
 
     return {
       periode: thbl,
@@ -150,9 +182,14 @@ export class CaterProgresService {
         totalTerbaca: globalTerbaca,
         totalSisa: Math.max(0, globalTarget - globalTerbaca),
         readRatePersen,
-        totalAnomali: globalAnomali,
-        petugasAktif: petugasAktifCount > 0 ? petugasAktifCount : list.length,
+        totalM3: globalM3,
+        totalAnomali,
+        totalEkstrim: globalEkstrim,
+        totalNol: globalNol,
+        totalTurun: globalTurun,
+        petugasAktif: list.length,
         totalPetugas: list.length,
+        totalRute: globalRuteCount,
       },
       petugas: list,
     };

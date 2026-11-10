@@ -1,7 +1,11 @@
 export { InfoPelangganView } from "./components/InfoPelangganView";
+export { KartuPemakaianAir } from "./components/KartuPemakaianAir";
 export { useInfoPelanggan } from "./hooks/use-info-pelanggan";
 export * from "./lib/info-pelanggan-api";
 export * from "./lib/format-tampilan";
 export * from "./lib/label-pelanggan";
 export * from "./lib/riwayat-pemakaian";
+export * from "./lib/perhitungan-pemakaian";
+export * from "./lib/data-contoh-pemakaian";
+export * from "./types/GrafikPemakaianTypes";
 export type * from "./types";

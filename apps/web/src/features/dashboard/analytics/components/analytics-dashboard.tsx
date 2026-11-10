@@ -26,19 +26,27 @@ export function AnalyticsDashboard({ data, generatedAt }: AnalyticsDashboardProp
 
       <KpiGrid items={buildKpis(data)} />
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div id="tren-harian" className="grid gap-4 xl:grid-cols-2 scroll-mt-6">
         <DailyReadingsChart data={data.dailyTrends} totalReadings={data.totalBaca} />
         <RegionalReadingsChart data={data.regionalTrends} />
       </div>
 
-      <ServiceAreaRisk data={data.serviceAreaRisks} />
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <ConsumptionDistribution data={data.consumptionBuckets} />
-        <ReadingStatusDistribution data={data.anomalies} />
+      <div id="risiko-wilayah" className="scroll-mt-6">
+        <ServiceAreaRisk data={data.serviceAreaRisks} />
       </div>
 
-      <OfficerProductivityTable data={data.officers} />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div id="kelompok-konsumsi" className="scroll-mt-6">
+          <ConsumptionDistribution data={data.consumptionBuckets} />
+        </div>
+        <div id="status-pembacaan" className="scroll-mt-6">
+          <ReadingStatusDistribution data={data.anomalies} />
+        </div>
+      </div>
+
+      <div id="produktivitas-petugas" className="scroll-mt-6">
+        <OfficerProductivityTable data={data.officers} />
+      </div>
     </PageContainer>
   );
 }

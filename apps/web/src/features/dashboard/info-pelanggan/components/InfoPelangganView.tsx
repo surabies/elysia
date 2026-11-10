@@ -13,6 +13,7 @@ import { PanelDasbor } from "@/features/dashboard/shared";
 import { fmtPeriode } from "../lib/format-tampilan";
 import { GaleriFoto } from "./GaleriFoto";
 import { KartuGrafik } from "./KartuGrafik";
+import { KartuPemakaianAir } from "./KartuPemakaianAir";
 import { KerangkaMemuat } from "./KerangkaMemuat";
 import { LembarCetak } from "./LembarCetak";
 import { PanelPembacaan } from "./PanelPembacaan";
@@ -162,6 +163,16 @@ export function InfoPelangganView() {
           <>
             <ProfilPelanggan pelanggan={data.pelanggan} />
             <PanelPembacaan catat={data.catat} riwayat={data.riwayat} />
+            <KartuPemakaianAir
+              infoSambungan={{
+                nomorSambungan: data.pelanggan.nosl,
+                nomorMeterDefault: data.catat?.nometer || "MTR-48210",
+                namaPelanggan: data.pelanggan.nama,
+                alamat: data.pelanggan.alamat,
+                golonganTarif: data.pelanggan.kodegol,
+                batasWajarM3: 30,
+              }}
+            />
             {data.catat && (
               <div className="grid gap-3 lg:grid-cols-2">
                 <KartuGrafik catat={data.catat} riwayat={data.riwayat} />

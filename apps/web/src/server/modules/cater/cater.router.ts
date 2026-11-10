@@ -467,6 +467,23 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     }
   )
 
+  // 19b. Progress - Riwayat Sesi Harian Petugas Lapangan
+  .get(
+    '/progress/riwayat-sesi/:thbl',
+    async ({ params: { thbl }, set }) => {
+      try {
+        const data = await caterProgressService.getRiwayatSesiPetugas(thbl);
+        return { success: true, data };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      params: thblParamsSchema,
+    }
+  )
+
   // 20. Progress - Ikhtisar Pemakaian Ekstrim > 100 m3 (Menu 5.5)
   .get(
     '/progress/ekstrim/:thbl',
@@ -480,7 +497,6 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
-      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3', 'EXECUTIVE'],
       params: thblParamsSchema,
       query: ikhtisarQuerySchema,
     }
@@ -499,7 +515,24 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
-      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3', 'EXECUTIVE'],
+      params: thblParamsSchema,
+      query: ikhtisarQuerySchema,
+    }
+  )
+
+  // 21b. Progress - Ikhtisar Pemakaian Turun Drastis (Menu 5.8)
+  .get(
+    '/progress/turun/:thbl',
+    async ({ params: { thbl }, query, set }) => {
+      try {
+        const data = await caterProgressService.getIkhtisarTurun(thbl, query.limit);
+        return { success: true, count: data.length, data };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    },
+    {
       params: thblParamsSchema,
       query: ikhtisarQuerySchema,
     }

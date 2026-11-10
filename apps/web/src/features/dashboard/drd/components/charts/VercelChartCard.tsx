@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -141,7 +141,6 @@ export function VercelChartCard({
   emptyMessage = "Belum ada data pada periode ini.",
 }: VercelChartCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const radioGroupName = useId();
   // Only display tabs when the data genuinely supports 2 or more options
   const hasTabs = Boolean(tabs && tabs.length > 1);
 
@@ -200,30 +199,29 @@ export function VercelChartCard({
             <div className="flex flex-row items-center justify-between gap-3 mb-4 min-h-[36px]">
               <div className="flex items-center">
                 {hasTabs && (
-                  <div className="flex bg-[var(--ds-background-100)] p-1 rounded-[6px] [box-shadow:0_0_0_1px_var(--ds-gray-alpha-400)] h-9 items-center">
+                  <div
+                    role="tablist"
+                    aria-label={title}
+                    className="flex bg-[var(--ds-background-100)] p-1 rounded-[6px] [box-shadow:0_0_0_1px_var(--ds-gray-alpha-400)] h-9 items-center gap-0.5"
+                  >
                     {tabs!.map((tab) => {
                       const isChecked = tab.value === activeTab;
                       return (
-                        <label key={tab.value} className="flex self-stretch">
-                          <input
-                            className="sr-only peer"
-                            type="radio"
-                            name={radioGroupName}
-                            value={tab.value}
-                            checked={isChecked}
-                            onChange={() => onTabChange?.(tab.value)}
-                          />
-                          <div
-                            className={cn(
-                              "flex items-center justify-center transition-colors duration-150 cursor-pointer font-medium text-[13px] px-3 h-7 no-underline select-none",
-                              isChecked
-                                ? "text-[var(--ds-gray-1000)] bg-[var(--ds-gray-100)] dark:bg-[var(--ds-gray-300)] rounded-[4px]"
-                                : "text-muted-foreground hover:text-[var(--ds-gray-1000)] rounded-[2px]"
-                            )}
-                          >
-                            {tab.label}
-                          </div>
-                        </label>
+                        <button
+                          key={tab.value}
+                          type="button"
+                          role="tab"
+                          aria-selected={isChecked}
+                          onClick={() => onTabChange?.(tab.value)}
+                          className={cn(
+                            "flex items-center justify-center transition-colors duration-150 cursor-pointer font-medium text-[13px] px-3 h-7 no-underline select-none border-none outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                            isChecked
+                              ? "text-[var(--ds-gray-1000)] bg-[var(--ds-gray-100)] dark:bg-[var(--ds-gray-300)] rounded-[4px] shadow-xs"
+                              : "text-muted-foreground hover:text-[var(--ds-gray-1000)] rounded-[2px] bg-transparent"
+                          )}
+                        >
+                          {tab.label}
+                        </button>
                       );
                     })}
                   </div>

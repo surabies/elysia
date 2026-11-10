@@ -108,67 +108,80 @@ export function DrdNavbarControls({
       <form
         ref={formRef}
         action="/laporan/lap-drd"
-        className="flex w-full min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2"
+        className="flex w-full min-w-0 items-center justify-end gap-2"
       >
         <input type="hidden" name="tab" value={tab} />
-        <div className="flex min-w-0 items-center gap-2 max-sm:w-full">
-          <Select
-            name="periode"
-            defaultValue={period}
-            onValueChange={submitFilter}
-          >
-            <SelectTrigger
-              id="drd-navbar-period"
-              size="sm"
-              aria-label="Filter periode laporan"
-              className="h-8 w-32 shrink-0 px-2.5 text-xs"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" align="start">
-              {periods.length ? (
-                periods.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {new Date(
-                      Number(item.slice(0, 4)),
-                      Number(item.slice(4, 6)) - 1,
-                      1,
-                    ).toLocaleDateString("id-ID", {
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value={period}>{period}</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
 
-          {!isSummary && (
-            <InputGroup className="h-8 w-[min(42vw,220px)] min-w-0 shrink-0 bg-card sm:w-52">
-              <InputGroupAddon
-                align="inline-start"
-                className="py-0 pl-2.5 pr-0"
-              >
-                <Search aria-hidden="true" className="size-3.5" />
-              </InputGroupAddon>
-              <InputGroupInput
-                id="drd-navbar-search"
-                name="q"
-                type="search"
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Cari data DRD"
-                aria-label="Cari data DRD"
-                className="h-full px-2 py-1 text-copy-13"
-              />
-            </InputGroup>
-          )}
-        </div>
-
+        {/* 1. Kotak Pencarian (Hanya di tab data) */}
         {!isSummary && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2 max-sm:w-full">
+          <InputGroup
+            size="sm"
+            className="h-8 w-36 sm:w-44 md:w-48 min-w-0 shrink-0 bg-card border-border"
+          >
+            <InputGroupAddon
+              align="inline-start"
+              className="py-0 pl-2.5 pr-0 text-muted-foreground"
+            >
+              <Search aria-hidden="true" className="size-3.5" />
+            </InputGroupAddon>
+            <InputGroupInput
+              id="drd-navbar-search"
+              name="q"
+              type="search"
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              placeholder="Cari data..."
+              aria-label="Cari data DRD"
+              className="h-full px-2 py-0 text-xs text-foreground placeholder:text-muted-foreground"
+            />
+          </InputGroup>
+        )}
+
+        {/* 2. Filter Periode (Selalu ada di semua tab) */}
+        <Select
+          name="periode"
+          defaultValue={period}
+          onValueChange={submitFilter}
+        >
+          <SelectTrigger
+            id="drd-navbar-period"
+            size="sm"
+            aria-label="Filter periode laporan"
+            className="h-8 w-32 shrink-0 px-2.5 text-xs bg-card border-border"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" align="start">
+            {periods.length ? (
+              periods.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {new Date(
+                    Number(item.slice(0, 4)),
+                    Number(item.slice(4, 6)) - 1,
+                    1,
+                  ).toLocaleDateString("id-ID", {
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value={period}>{period}</SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+
+        {/* 3. Aksi Ekspor (Hanya di tab data) */}
+        {!isSummary && exportAction}
+
+        {/* Divider pemisah kontrol data & navigasi halaman */}
+        {!isSummary && (
+          <div className="h-4 w-px bg-border shrink-0 mx-0.5" aria-hidden="true" />
+        )}
+
+        {/* 4. Page Size & 5. Navigasi Halaman */}
+        {!isSummary && (
+          <div className="flex shrink-0 items-center gap-1.5">
             <Select
               name="pageSize"
               defaultValue={String(pageSize)}
@@ -178,7 +191,7 @@ export function DrdNavbarControls({
                 id="drd-navbar-page-size"
                 size="sm"
                 aria-label="Jumlah baris per halaman"
-                className="h-8 w-28 px-2.5 text-xs"
+                className="h-8 w-24 sm:w-28 shrink-0 px-2.5 text-xs bg-card border-border"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -192,7 +205,7 @@ export function DrdNavbarControls({
             </Select>
 
             <nav
-              className="flex shrink-0 items-center gap-1"
+              className="flex shrink-0 items-center gap-0.5"
               aria-label="Navigasi halaman DRD"
             >
               {page <= 1 ? (
@@ -202,7 +215,7 @@ export function DrdNavbarControls({
                   variant="ghost"
                   disabled
                   aria-label="Halaman sebelumnya"
-                  className="size-8"
+                  className="size-8 text-muted-foreground"
                 >
                   <ChevronLeft aria-hidden="true" className="size-4" />
                 </Button>
@@ -220,7 +233,7 @@ export function DrdNavbarControls({
                 </Button>
               )}
               <span
-                className="min-w-12 whitespace-nowrap text-center text-xs tabular-nums text-muted-foreground"
+                className="min-w-10 whitespace-nowrap px-1 text-center text-xs tabular-nums text-muted-foreground"
                 aria-label={`Halaman ${page} dari ${Math.max(1, totalPages)}; baris ${firstRow} sampai ${lastRow} dari ${total}`}
               >
                 {page} / {Math.max(1, totalPages)}
@@ -232,7 +245,7 @@ export function DrdNavbarControls({
                   variant="ghost"
                   disabled
                   aria-label="Halaman berikutnya"
-                  className="size-8"
+                  className="size-8 text-muted-foreground"
                 >
                   <ChevronRight aria-hidden="true" className="size-4" />
                 </Button>
@@ -250,7 +263,6 @@ export function DrdNavbarControls({
                 </Button>
               )}
             </nav>
-            {exportAction}
           </div>
         )}
       </form>

@@ -146,7 +146,7 @@ export const thblParamsSchema = t.Object({
 });
 
 export const ikhtisarQuerySchema = t.Object({
-  limit: t.Optional(t.Numeric({ default: 50, minimum: 1, maximum: 200 })),
+  limit: t.Optional(t.Numeric({ default: 50, minimum: 1, maximum: 1000 })),
 });
 
 // 13. Visualisasi Spasial (Menu 6.1)

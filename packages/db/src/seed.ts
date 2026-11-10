@@ -3,6 +3,7 @@ import { places, pelanggan } from './schema';
 import { seedAccounts } from './seed-accounts';
 import { seedMasterKondisi } from './seed-kondisi';
 import { importProgresCater } from './etl/import-progres-cater';
+import { syncAreaLayanan21Kelurahan, seedDataVerifikasi } from './seed-data-verifikasi';
 import { count } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import path from 'path';
@@ -68,6 +69,14 @@ async function seed() {
     } else {
       console.log(`Pelanggan already populated (${existing.total} records). Skipping ETL.`);
     }
+
+    // 5. Sync Area Layanan (7 Kecamatan, 21 Kelurahan Resmi)
+    console.log('5. Syncing Area Layanan (7 Kecamatan, 21 Kelurahan)...');
+    await syncAreaLayanan21Kelurahan();
+
+    // 6. Update Koordinat Pelanggan dari Data Verifikasi Survei Lapangan mWater
+    console.log('6. Seeding Data Verifikasi Spasial mWater...');
+    await seedDataVerifikasi();
 
     console.log('=== SEEDING COMPLETED SUCCESSFULLY! ===');
     process.exit(0);

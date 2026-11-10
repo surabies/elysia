@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { auth } from "@/lib/auth/index";
 import {
   VerifikasiLapangan,
@@ -11,5 +12,15 @@ export const metadata: Metadata = {
 
 export default async function VerifikasiPetugasPage() {
   const session = await auth();
-  return <VerifikasiLapangan role={roleVerifikasi(session?.user?.role)} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full w-full items-center justify-center p-8 text-sm text-muted-foreground">
+          Memuat panel verifikasi petugas…
+        </div>
+      }
+    >
+      <VerifikasiLapangan role={roleVerifikasi(session?.user?.role)} />
+    </Suspense>
+  );
 }

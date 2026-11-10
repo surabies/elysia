@@ -10,6 +10,7 @@
 // berbeda dari V3 resmi pada tabel bersama.
 // Tombol tampilan ada di toolbar, sebaris dengan pilihan jumlah baris.
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   CalendarDaysIcon,
   Cancel01Icon,
@@ -184,6 +185,12 @@ export function PanelTabelMandiri({
   const sedangMemuatRef = React.useRef(false);
   const [terpilih, setTerpilih] = React.useState<Set<string>>(new Set());
   const jangkarRef = React.useRef<number | null>(null);
+  const [targetPortal, setTargetPortal] = React.useState<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    const el = document.getElementById("verifikasi-navbar-controls");
+    if (el) setTargetPortal(el);
+  }, []);
 
   // Pencarian ditunda 350 ms — mengetik nomor tidak boleh = satu permintaan per digit.
   React.useEffect(() => {
@@ -324,115 +331,137 @@ export function PanelTabelMandiri({
 
   const adaFilter = filter.q !== "" || filter.status !== "";
 
+  const toolbarContent = (
+    <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-visible py-1">
+      {/* 1. Kotak Pencarian */}
+      <KotakCari
+        nilai={cari}
+        onUbah={setCari}
+        placeholder="Cari no. langganan / nama"
+        className="w-36 sm:w-44 shrink-0"
+      />
+
+      {/* 2. Filter Periode */}
+      <FilterPilihan
+        filter={{
+          param: "periode",
+          label: "Periode",
+          opsi: periodes.map((p) => ({
+            value: String(p),
+            label: formatPeriode(p),
+          })),
+        }}
+        nilai={periode == null ? "" : String(periode)}
+        onUbah={(v) => onPeriode(v === "" ? null : Number(v))}
+        ikon={
+          <HugeiconsIcon
+            icon={CalendarDaysIcon}
+            strokeWidth={2}
+            className="size-3.5"
+            aria-hidden
+          />
+        }
+        labelIkonSaja
+      />
+
+      {/* 3. Filter Status */}
+      <FilterPilihan
+        filter={{
+          param: "status",
+          label: "Status",
+          opsi: OPSI_STATUS_LAPORAN_MANDIRI,
+        }}
+        nilai={filter.status}
+        onUbah={(v) => setFilter((f) => ({ ...f, status: v }))}
+        ikon={
+          <HugeiconsIcon
+            icon={Task01Icon}
+            strokeWidth={2}
+            className="size-3.5"
+            aria-hidden
+          />
+        }
+        ringkas
+      />
+
+      {/* 4. Reset Filter */}
+      {adaFilter && (
+        <TombolIkonVerifikasi
+          label="Bersihkan filter"
+          onClick={() => {
+            setCari("");
+            setFilter((f) => ({ ...f, q: "", status: "" }));
+          }}
+          ikon={
+            <HugeiconsIcon
+              icon={Cancel01Icon}
+              strokeWidth={2}
+              className="size-3.5"
+              aria-hidden
+            />
+          }
+        />
+      )}
+
+      {/* Separator Antar Saringan & Paginasi */}
+      <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" aria-hidden="true" />
+
+      {/* 5. Status Baris */}
+      <span className="text-label-12 text-muted-foreground tabular-nums whitespace-nowrap">
+        {memuat
+          ? "Memuat…"
+          : `${rows.length.toLocaleString("id-ID")} dari ${total.toLocaleString("id-ID")}`}
+      </span>
+
+      {/* 6. Ukuran Baris per Halaman */}
+      <Select
+        value={String(filter.pageSize)}
+        onValueChange={(v) =>
+          setFilter((f) => ({ ...f, pageSize: Number(v) }))
+        }
+      >
+        <SelectTrigger
+          size="sm"
+          aria-label="Baris per halaman"
+          className="w-auto h-8 text-xs shrink-0"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent position="popper" align="end" className="z-50">
+          {PILIHAN_UKURAN.map((n) => (
+            <SelectItem key={n} value={String(n)}>
+              {n.toLocaleString("id-ID")} baris
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Separator Antar Paginasi & Kontrol Tampilan */}
+      <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" aria-hidden="true" />
+
+      {/* 7. Kontrol Tampilan */}
+      <KontrolTampilan
+        ringkasanTerbuka={ringkasanTerbuka}
+        onRingkasan={onRingkasan}
+        padat={kerapatan === "padat"}
+        onPadat={(p) => setKerapatan(p ? "padat" : "normal")}
+        aksiTambahan={
+          <KontrolKolomVerifikasi
+            preferensi={preferensiKolom.preferensiKolom}
+            onVisibilitas={preferensiKolom.ubahVisibilitasKolom}
+            onPindah={preferensiKolom.pindahKolom}
+            onReset={preferensiKolom.resetKolom}
+          />
+        }
+      />
+    </div>
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
-      <div className="flex shrink-0 flex-wrap items-center gap-1">
-        <KotakCari
-          nilai={cari}
-          onUbah={setCari}
-          placeholder="Cari no. langganan atau nama"
-        />
-        <FilterPilihan
-          filter={{
-            param: "periode",
-            label: "Periode",
-            opsi: periodes.map((p) => ({
-              value: String(p),
-              label: formatPeriode(p),
-            })),
-          }}
-          nilai={periode == null ? "" : String(periode)}
-          onUbah={(v) => onPeriode(v === "" ? null : Number(v))}
-          ikon={
-            <HugeiconsIcon
-              icon={CalendarDaysIcon}
-              strokeWidth={2}
-              className="size-3.5"
-              aria-hidden
-            />
-          }
-          labelIkonSaja
-        />
-        <FilterPilihan
-          filter={{
-            param: "status",
-            label: "Status",
-            opsi: OPSI_STATUS_LAPORAN_MANDIRI,
-          }}
-          nilai={filter.status}
-          onUbah={(v) => setFilter((f) => ({ ...f, status: v }))}
-          ikon={
-            <HugeiconsIcon
-              icon={Task01Icon}
-              strokeWidth={2}
-              className="size-3.5"
-              aria-hidden
-            />
-          }
-          ringkas
-        />
-        {adaFilter && (
-          <TombolIkonVerifikasi
-            label="Bersihkan filter"
-            onClick={() => {
-              setCari("");
-              setFilter((f) => ({ ...f, q: "", status: "" }));
-            }}
-            ikon={
-              <HugeiconsIcon
-                icon={Cancel01Icon}
-                strokeWidth={2}
-                className="size-3.5"
-                aria-hidden
-              />
-            }
-          />
-        )}
-
-        <div className="ml-auto flex items-center gap-2">
-          {/* Terlipat = angka ringkasan pindah ke sini, tidak hilang. */}
-          {!ringkasanTerbuka && <RingkasanSebaris stats={stats} />}
-          <span className="text-label-12 text-muted-foreground tabular-nums">
-            {memuat
-              ? "Memuat…"
-              : `${rows.length.toLocaleString("id-ID")} dari ${total.toLocaleString("id-ID")}`}
-          </span>
-          <Select
-            value={String(filter.pageSize)}
-            onValueChange={(v) =>
-              setFilter((f) => ({ ...f, pageSize: Number(v) }))
-            }
-          >
-            <SelectTrigger
-              size="default"
-              aria-label="Baris per halaman"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" align="end">
-              {PILIHAN_UKURAN.map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  {n.toLocaleString("id-ID")} baris
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <KontrolTampilan
-            ringkasanTerbuka={ringkasanTerbuka}
-            onRingkasan={onRingkasan}
-            padat={kerapatan === "padat"}
-            onPadat={(p) => setKerapatan(p ? "padat" : "normal")}
-            aksiTambahan={
-              <KontrolKolomVerifikasi
-                preferensi={preferensiKolom.preferensiKolom}
-                onVisibilitas={preferensiKolom.ubahVisibilitasKolom}
-                onPindah={preferensiKolom.pindahKolom}
-                onReset={preferensiKolom.resetKolom}
-              />
-            }
-          />
-        </div>
-      </div>
+      {targetPortal ? createPortal(toolbarContent, targetPortal) : (
+        <div className="shrink-0">{toolbarContent}</div>
+      )}
 
       <div className="min-h-0 flex-1">
         <TabelVerifikasi

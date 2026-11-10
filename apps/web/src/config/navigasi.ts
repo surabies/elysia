@@ -90,6 +90,21 @@ export const standaloneTopNav: NavItem[] = [
     ],
   },
   {
+    title: "Scorecard KPI",
+    href: "/kpi",
+    description:
+      "Strategy Scorecard, target kinerja tahunan, metrik finansial, dan retensi tim.",
+    keywords: ["kpi", "scorecard", "strategy", "goals", "target", "kinerja"],
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+      "VERIFIKATOR_2",
+      "VERIFIKATOR_3",
+    ],
+  },
+  {
     title: "Peta Spasial",
     href: "/places",
     description:
@@ -102,6 +117,24 @@ export const standaloneTopNav: NavItem[] = [
       "VERIFIKATOR_1",
       "VERIFIKATOR_2",
       "VERIFIKATOR_3",
+    ],
+  },
+  {
+    title: "Peta Wilayah",
+    href: "/peta-wilayah",
+    description:
+      "Visualisasi peta batas wilayah administrasi, rute, pelanggan, dan antrean kebocoran pipa dinas.",
+    keywords: ["peta", "wilayah", "spasial", "kelurahan", "kecamatan", "rute", "gis", "map"],
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+      "VERIFIKATOR_2",
+      "VERIFIKATOR_3",
+      "PENCATAT",
+      "PELAKSANA",
+      "USER",
     ],
   },
   {

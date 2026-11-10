@@ -60,6 +60,7 @@ export interface AnomaliKubikasiItem {
   pakaiLalu: number;
   selisihM3: number;
   persenDeviasi: number;
+  rataRataHistoris?: number;
   ketCatat: string | null;
   statusVerifikasi: string;
   jenisAnomali: JenisAnomali;
@@ -234,38 +235,52 @@ export class CaterProgressService {
   }
 
   /**
-   * Monitoring Anomali Kubikasi (Lonjakan Ekstrem, Pemakaian 0, Turun Drastis)
+   * Monitoring Anomali Kubikasi (Lonjakan Ekstrem, Pemakaian 0, Turun Drastis, Kendala Lapangan)
+   * Logika sinkron 100% dengan aturan Tabel Verifikasi dan dinamis berbasis riwayat Pakai vs Lalu
    */
   async getAnomaliKubikasi(
     thbl: string = '202601',
-    jenis?: 'all' | 'ekstrim' | 'nol' | 'turun',
+    jenis?: 'all' | 'ekstrim' | 'nol' | 'turun' | 'kendala',
     limit: number = 100,
     search?: string
   ): Promise<AnomaliKubikasiResult> {
-    // 1. Hitung ringkasan KPI untuk semua anomali di periode aktif
+    // 1. Hitung ringkasan KPI untuk semua anomali di periode aktif berbasis Pakai vs Lalu
     const kpiRows = await db
       .select({
-        totalEkstrim: sql<number>`count(case when ${caterBacaMeter.pakaiM3}::float > 50 then 1 end)::int`,
-        totalNol: sql<number>`count(case when ${caterBacaMeter.pakaiM3}::float = 0 then 1 end)::int`,
-        totalTurun: sql<number>`count(case when ${caterBacaMeter.pakaiLalu} is not null and ${caterBacaMeter.pakaiLalu}::float > 10 and (${caterBacaMeter.pakaiM3}::float < ${caterBacaMeter.pakaiLalu}::float * 0.5) then 1 end)::int`,
+        totalEkstrim: sql<number>`count(case when (
+          (${caterBacaMeter.pakaiLalu}::float > 0 and ${caterBacaMeter.pakaiM3}::float >= ${caterBacaMeter.pakaiLalu}::float * 2)
+          or (${caterBacaMeter.pakaiLalu}::float > 0 and (${caterBacaMeter.pakaiM3}::float - ${caterBacaMeter.pakaiLalu}::float) >= 30)
+          or (${caterBacaMeter.pakaiM3}::float > 75)
+          or (${caterBacaMeter.statusVerifikasi} in ('ANOMALY', 'ANOMALY_HIGH'))
+        ) then 1 end)::int`,
+        totalNol: sql<number>`count(case when ${caterBacaMeter.pakaiM3}::float = 0 or ${caterBacaMeter.statusVerifikasi} = 'ANOMALY_LOW' then 1 end)::int`,
+        totalTurun: sql<number>`count(case when ${caterBacaMeter.pakaiLalu} is not null and ${caterBacaMeter.pakaiLalu}::float >= 10 and (${caterBacaMeter.pakaiM3}::float <= ${caterBacaMeter.pakaiLalu}::float * 0.5) then 1 end)::int`,
+        totalKendala: sql<number>`count(case when ${caterBacaMeter.ketCatat} is not null and lower(${caterBacaMeter.ketCatat}) not in ('normal', 'nihil', '') then 1 end)::int`,
       })
       .from(caterBacaMeter)
       .where(eq(caterBacaMeter.thbl, thbl));
 
-    const kpiData = kpiRows[0] ?? { totalEkstrim: 0, totalNol: 0, totalTurun: 0 };
+    const kpiData = kpiRows[0] ?? { totalEkstrim: 0, totalNol: 0, totalTurun: 0, totalKendala: 0 };
     const totalAnomali = kpiData.totalEkstrim + kpiData.totalNol + kpiData.totalTurun;
 
-    // 2. Bangun filter kondisi SQL berdasarkan tab yang dipilih
+    // 2. Bangun filter kondisi SQL berbasis perbandingan riil Pakai vs Lalu
     let condition = eq(caterBacaMeter.thbl, thbl);
 
-    const ekstrimSql = sql`${caterBacaMeter.pakaiM3}::float > 50`;
-    const nolSql = sql`${caterBacaMeter.pakaiM3}::float = 0`;
-    const turunSql = sql`${caterBacaMeter.pakaiLalu} is not null and ${caterBacaMeter.pakaiLalu}::float > 10 and (${caterBacaMeter.pakaiM3}::float < ${caterBacaMeter.pakaiLalu}::float * 0.5)`;
+    const ekstrimSql = sql`(
+      (${caterBacaMeter.pakaiLalu}::float > 0 and ${caterBacaMeter.pakaiM3}::float >= ${caterBacaMeter.pakaiLalu}::float * 2)
+      or (${caterBacaMeter.pakaiLalu}::float > 0 and (${caterBacaMeter.pakaiM3}::float - ${caterBacaMeter.pakaiLalu}::float) >= 30)
+      or (${caterBacaMeter.pakaiM3}::float > 75)
+      or (${caterBacaMeter.statusVerifikasi} in ('ANOMALY', 'ANOMALY_HIGH'))
+    )`;
+    const nolSql = sql`(${caterBacaMeter.pakaiM3}::float = 0 or ${caterBacaMeter.statusVerifikasi} = 'ANOMALY_LOW')`;
+    const turunSql = sql`(${caterBacaMeter.pakaiLalu} is not null and ${caterBacaMeter.pakaiLalu}::float >= 10 and (${caterBacaMeter.pakaiM3}::float <= ${caterBacaMeter.pakaiLalu}::float * 0.5))`;
+    const kendalaSql = sql`(${caterBacaMeter.ketCatat} is not null and lower(${caterBacaMeter.ketCatat}) not in ('normal', 'nihil', ''))`;
 
-    let typeFilter = or(ekstrimSql, nolSql, turunSql);
+    let typeFilter = or(ekstrimSql, nolSql, turunSql, kendalaSql);
     if (jenis === 'ekstrim') typeFilter = ekstrimSql;
     else if (jenis === 'nol') typeFilter = nolSql;
     else if (jenis === 'turun') typeFilter = turunSql;
+    else if (jenis === 'kendala') typeFilter = kendalaSql;
 
     const baseWhere = and(condition, typeFilter);
 
@@ -301,6 +316,16 @@ export class CaterProgressService {
         fotoMeterUrl: caterBacaMeter.fotoMeterUrl,
         fotoRumahUrl: caterBacaMeter.fotoRumahUrl,
         tglCatat: caterBacaMeter.tglCatat,
+        rataRataHistoris: sql<number>`coalesce(
+          (
+            select round(avg(c_hist.pakai_m3::float))::int
+            from cater_baca_meter c_hist
+            where c_hist.nolg = ${caterBacaMeter.nolg}
+              and c_hist.thbl < ${thbl}
+          ),
+          round(${caterBacaMeter.pakaiLalu}::float)::int,
+          0
+        )`,
       })
       .from(caterBacaMeter)
       .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
@@ -317,8 +342,18 @@ export class CaterProgressService {
       const persenDeviasi = lalu > 0 ? Math.round(((m3 - lalu) / lalu) * 100) : m3 > 0 ? 100 : 0;
 
       let jenisItem: JenisAnomali = 'EKSTRIM';
-      if (m3 === 0) jenisItem = 'NOL';
-      else if (lalu > 10 && m3 < lalu * 0.5) jenisItem = 'TURUN';
+      if (m3 === 0) {
+        jenisItem = 'NOL';
+      } else if (lalu >= 10 && m3 <= lalu * 0.5) {
+        jenisItem = 'TURUN';
+      } else if (
+        (lalu > 0 && m3 >= lalu * 2) ||
+        (lalu > 0 && selisihM3 >= 30) ||
+        m3 > 75 ||
+        r.statusVerifikasi === 'ANOMALY_HIGH'
+      ) {
+        jenisItem = 'EKSTRIM';
+      }
 
       return {
         id: r.id,
@@ -326,7 +361,7 @@ export class CaterProgressService {
         nolg: r.nolg,
         nama: r.nama,
         alamat: r.alamat,
-        ruteKode: ruteCater ? r.ruteKode : null,
+        ruteKode: r.ruteKode ?? null,
         kelurahanNama: r.kelurahanNama ?? null,
         petugasNama: r.petugasNama ?? null,
         stml: Number(r.stml ?? 0),
@@ -335,6 +370,7 @@ export class CaterProgressService {
         pakaiLalu: lalu,
         selisihM3,
         persenDeviasi,
+        rataRataHistoris: Number(r.rataRataHistoris ?? lalu),
         ketCatat: r.ketCatat ?? null,
         statusVerifikasi: r.statusVerifikasi ?? 'SUBMITTED',
         jenisAnomali: jenisItem,
@@ -483,6 +519,11 @@ export class CaterProgressService {
     return res.items;
   }
 
+  async getIkhtisarTurun(thbl: string, limit: number = 50) {
+    const res = await this.getAnomaliKubikasi(thbl, 'turun', limit);
+    return res.items;
+  }
+
   async getProgressPerCater(thbl: string) {
     return db
       .select({
@@ -502,6 +543,142 @@ export class CaterProgressService {
         )
       )
       .groupBy(petugasCater.id, petugasCater.nama);
+  }
+
+  /**
+   * Mengambil riwayat seluruh sesi harian siklus pembacaan petugas dari database nyata
+   */
+  async getRiwayatSesiPetugas(thbl: string = '202601') {
+    // 1. Ambil seluruh tanggal siklus kerja catat di periode ini (dinamis, tanpa batasan 20 sesi)
+    const dateRows = await db.execute<{ tanggal: string }>(sql`
+      SELECT DISTINCT to_char(tgl_catat, 'YYYY-MM-DD') as tanggal
+      FROM cater_baca_meter
+      WHERE thbl = ${thbl}
+      ORDER BY tanggal ASC
+    `);
+    const dates = dateRows.map((d) => d.tanggal);
+
+    // 2. Ambil data ringkasan tiap petugas
+    const officers = await db.execute<{
+      id: string;
+      nama: string;
+      total_baca: number;
+      total_rute: number;
+    }>(sql`
+      SELECT 
+        p.id,
+        p.nama,
+        count(c.id)::int as total_baca,
+        count(distinct c.rute_kode)::int as total_rute
+      FROM petugas_cater p
+      JOIN cater_baca_meter c ON p.id = c.petugas_id AND c.thbl = ${thbl}
+      GROUP BY p.id, p.nama
+      ORDER BY total_baca DESC
+    `);
+
+    // 3. Ambil data sesi per tanggal untuk semua petugas
+    const sessionRows = await db.execute<{
+      petugas_id: string;
+      tanggal: string;
+      meter_terbaca: number;
+      rentang_menit: number;
+      anomali: number;
+    }>(sql`
+      SELECT 
+        c.petugas_id,
+        to_char(c.tgl_catat, 'YYYY-MM-DD') as tanggal,
+        count(c.id)::int as meter_terbaca,
+        round(coalesce(extract(epoch from (max(c.tgl_catat) - min(c.tgl_catat))) / 60, 0))::int as rentang_menit,
+        count(case when c.ket_catat != 'Normal' or c.pakai_m3::float > 50 or c.pakai_m3::float = 0 then 1 end)::int as anomali
+      FROM cater_baca_meter c
+      WHERE c.thbl = ${thbl}
+      GROUP BY c.petugas_id, to_char(c.tgl_catat, 'YYYY-MM-DD')
+    `);
+
+    const sessionMap = new Map<string, typeof sessionRows[0]>();
+    for (const s of sessionRows) {
+      sessionMap.set(`${s.petugas_id}_${s.tanggal}`, s);
+    }
+
+    const formatTgl = (tglStr: string) => {
+      const parts = tglStr.split('-');
+      if (parts.length < 3) return tglStr;
+      const day = parts[2];
+      const monthNum = parseInt(parts[1]!, 10);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      return `${day} ${months[monthNum - 1] || 'Bln'}`;
+    };
+
+    return officers.map((off) => {
+      // Target harian dihitung proporsional dari total beban dibagi jumlah hari siklus kerja
+      const targetHarian = Math.max(
+        Math.round(off.total_baca / Math.max(dates.length, 1)),
+        50
+      );
+
+      const sesiList = dates.map((tgl, sIdx) => {
+        const key = `${off.id}_${tgl}`;
+        const s = sessionMap.get(key);
+        const isTerakhir = sIdx === dates.length - 1;
+
+        if (!s || s.meter_terbaca === 0) {
+          return {
+            id: `sesi-${off.id}-${sIdx + 1}`,
+            tanggal: formatTgl(tgl),
+            status: 'Dilewati' as const,
+            durasiMenit: 0,
+            meterTerbaca: 0,
+            totalMeter: targetHarian,
+            petugasNama: off.nama,
+            waktuSelesaiTeks: isTerakhir ? 'Libur / Tidak ada jadwal' : `${dates.length - sIdx} hari lalu`,
+          };
+        }
+
+        const terbaca = s.meter_terbaca;
+
+        // Perhitungan durasi kerja lapangan (wajar 1–6 jam):
+        // Jika rentang_menit wajar (30 - 420 menit), gunakan rentang_menit.
+        // Jika terdapat anomali jam upload sistem (misal > 7 jam), hitung durasi efektif berbasis volume bacaan (~1.4 menit/SL).
+        let durasiMenit = s.rentang_menit;
+        if (durasiMenit <= 0 || durasiMenit > 420) {
+          durasiMenit = Math.min(360, Math.max(75, Math.round(terbaca * 1.4)));
+        }
+
+        let status: 'Tuntas' | 'Terlambat' | 'Gagal' | 'Dilewati' = 'Tuntas';
+        if (durasiMenit > 360) {
+          status = 'Terlambat';
+        } else if (terbaca < Math.round(targetHarian * 0.8)) {
+          status = 'Terlambat';
+        } else if (s.anomali > terbaca * 0.5) {
+          status = 'Terlambat';
+        } else {
+          status = 'Tuntas';
+        }
+
+        return {
+          id: `sesi-${off.id}-${sIdx + 1}`,
+          tanggal: formatTgl(tgl),
+          status,
+          durasiMenit,
+          meterTerbaca: terbaca,
+          totalMeter: targetHarian,
+          petugasNama: off.nama,
+          waktuSelesaiTeks: isTerakhir
+            ? `Sesi ${formatTgl(tgl)}`
+            : `${dates.length - sIdx} hari lalu`,
+        };
+      });
+
+      return {
+        id: `petugas-${off.id}`,
+        nama: `Petugas ${off.nama}`,
+        seksiWilayah: `wilayah operasional · ${off.total_rute} rute binaan`,
+        jumlahPelanggan: off.total_baca,
+        petugasDefault: off.nama,
+        isNonaktif: false,
+        sesiList,
+      };
+    });
   }
 }
 

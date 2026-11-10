@@ -259,37 +259,37 @@ export function ToolbarVerifikasi({
 
   return (
     <>
-      <div className="flex w-full min-w-0 items-center justify-between gap-2 overflow-visible">
-        {/* KIRI: Kelompok Filter */}
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-visible py-1">
-          <KotakCari
-            nilai={cari}
-            onUbah={setCari}
-            placeholder="Cari no. langganan / nama"
-            className="w-44 max-w-56 shrink-0"
-          />
+      <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-visible py-1">
+        {/* 1. Kotak Pencarian */}
+        <KotakCari
+          nilai={cari}
+          onUbah={setCari}
+          placeholder="Cari no. langganan / nama"
+          className="w-36 sm:w-44 shrink-0"
+        />
 
-          <FilterPilihan
-            filter={{
-              param: "periode",
-              label: "Periode",
-              opsi: periodes.map((p) => ({
-                value: String(p),
-                label: formatPeriode(p),
-              })),
-            }}
-            nilai={filter.periode === null ? "" : String(filter.periode)}
-            onUbah={(v) => set("periode", v === "" ? null : Number(v))}
-            ikon={
-              <HugeiconsIcon
-                icon={CalendarDaysIcon}
-                strokeWidth={2}
-                className="size-3.5"
-                aria-hidden
-              />
-            }
-            labelIkonSaja
-          />
+        {/* 2. Filter Periode */}
+        <FilterPilihan
+          filter={{
+            param: "periode",
+            label: "Periode",
+            opsi: periodes.map((p) => ({
+              value: String(p),
+              label: formatPeriode(p),
+            })),
+          }}
+          nilai={filter.periode === null ? "" : String(filter.periode)}
+          onUbah={(v) => set("periode", v === "" ? null : Number(v))}
+          ikon={
+            <HugeiconsIcon
+              icon={CalendarDaysIcon}
+              strokeWidth={2}
+              className="size-3.5"
+              aria-hidden
+            />
+          }
+          labelIkonSaja
+        />
 
           {!modeBelumDibaca && (
             <PenyaringTanggal
@@ -563,14 +563,12 @@ export function ToolbarVerifikasi({
               }
             />
           )}
-        </div>
 
-        {/* Separator Antar Kolom */}
-        <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" />
+        {/* Separator Antar Saringan & Paginasi */}
+        <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" aria-hidden="true" />
 
-        {/* KANAN: Status Baris, Baris per Halaman & Kontrol Tampilan */}
-        <div className="flex shrink-0 items-center justify-end gap-1.5">
-          <span className="text-label-12 text-muted-foreground tabular-nums whitespace-nowrap">
+        {/* Status Baris */}
+        <span className="text-label-12 text-muted-foreground tabular-nums whitespace-nowrap">
             {memuat
               ? "Memuat…"
               : `${jumlahTampil.toLocaleString("id-ID")} dari ${jumlahTotal.toLocaleString("id-ID")}`}
@@ -597,10 +595,9 @@ export function ToolbarVerifikasi({
           </Select>
 
           {/* Separator Antar Kontrol Tampilan */}
-          <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" />
+          <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" aria-hidden="true" />
 
           {aksiKanan}
-        </div>
       </div>
 
       {/* Dirender hanya saat dibuka — state isian selalu mulai bersih. */}

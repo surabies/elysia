@@ -1,0 +1,5 @@
+export { PetaWilayahView } from "./PetaWilayahView"
+export { PetaClientWrapper } from "./components/PetaClientWrapper"
+export { PetaWilayah } from "./components/PetaWilayah"
+export { PanelPeta } from "./components/PanelPeta"
+export type * from "./types/TipePetaWilayah"

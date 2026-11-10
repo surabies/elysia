@@ -83,7 +83,7 @@ export function Navbar() {
             className={cn(
               "flex w-full min-w-0 items-center max-w-full",
               isDrdPage
-                ? "flex-wrap justify-between gap-x-3 gap-y-2"
+                ? "justify-between gap-x-3"
                 : "justify-center"
             )}
           >
@@ -91,7 +91,7 @@ export function Navbar() {
             {isDrdPage && (
               <div
                 id="drd-navbar-controls"
-                className="min-w-0 basis-full sm:basis-0 sm:flex-1"
+                className="min-w-0 flex-1 flex items-center justify-end"
               />
             )}
           </nav>

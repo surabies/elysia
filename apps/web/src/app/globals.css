@@ -1961,6 +1961,14 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
   --invert-foreground: var(--color-zinc-50);
 }
 
+/* Kunci window & document level scroll di dalam dashboard shell agar layout tidak pernah terangkat ke atas */
+html:has(#main-content),
+body:has(#main-content) {
+  overflow: hidden !important;
+  height: 100% !important;
+  overscroll-behavior: none !important;
+}
+
 /* ==========================================================================
    Vercel Sidebar Custom Scrollbar (Precision Unlayered)
    1. Hilangkan tombol panah (arrow up & down) pada scrollbar sidebar.

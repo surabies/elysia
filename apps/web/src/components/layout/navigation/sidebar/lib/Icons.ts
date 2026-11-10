@@ -76,6 +76,7 @@ import {
   FolderDot,
   Compass,
   Settings,
+  Target,
 } from "lucide-react";
 
 // ----------------------------------------------------------------------------
@@ -84,7 +85,10 @@ import {
 export const PRIMARY_ICONS: Record<string, SidebarIconComponent> = {
   "/dashboard": GeistProjects,
   "/analytics": GeistAnalytics,
+  "/kpi": Target,
   "/places": Compass,
+  "/peta-wilayah": Map,
+  "/peta-pengaduan": MapPinned,
   "/pelanggan": Users,
   "/info-pelanggan": Contact,
   "/tools-tutup/monitoring-tutup-bulan": Lock,
@@ -132,6 +136,10 @@ const ITEM_ICONS: Record<string, SidebarIconComponent> = {
   "peta spasial": MapPinned,
   "peta monitoring spasial": MapPinned,
   places: MapPinned,
+  "peta wilayah": Map,
+  "peta wilayah operasional": Map,
+  "scorecard kpi": Target,
+  kpi: Target,
   "peta pengaduan": Map,
   "peta pengaduan air": Map,
   "progres wilayah": Building2,

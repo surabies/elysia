@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { tentukanLatarBaris } from '../apps/web/src/features/dashboard/verifikasi/lib/TemaVerifikasi';
+import { tentukanLatarBaris } from '../apps/web/src/features/dashboard/verifikasi/lib/tema-verifikasi';
 
 describe('Warna baris tabel verifikasi', () => {
   it('menggunakan warna dan hover yang sesuai untuk tiap tahap', () => {

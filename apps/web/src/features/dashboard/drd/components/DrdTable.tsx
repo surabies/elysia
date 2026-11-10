@@ -8,7 +8,7 @@ import type {
 } from "ag-grid-community";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { IconTile } from "@/components/reui/icon-tile";
+import { Button } from "@/components/ui/button";
 import { useRbac } from "@/components/layout/shell/RbacContext";
 import {
   DataGrid,
@@ -394,21 +394,18 @@ export function DrdCsvExportButton({
   }, [columns, period, rows, tab]);
 
   return (
-    <IconTile
-      render={
-        <button
-          type="button"
-          onClick={exportCsv}
-          disabled={rows.length === 0}
-          aria-label="Ekspor CSV"
-          title="Ekspor CSV"
-        />
-      }
-      variant="frame"
+    <Button
+      type="button"
+      variant="outline"
       size="sm"
-      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+      onClick={exportCsv}
+      disabled={rows.length === 0}
+      aria-label="Ekspor CSV"
+      title="Unduh seluruh baris sebagai file CSV"
+      className="h-8 gap-1.5 px-2.5 text-xs font-medium bg-card border-border text-foreground hover:bg-accent shrink-0 disabled:opacity-50"
     >
-      <Download aria-hidden="true" />
-    </IconTile>
+      <Download aria-hidden="true" className="size-3.5 text-muted-foreground" />
+      <span className="hidden sm:inline">Ekspor</span>
+    </Button>
   );
 }
