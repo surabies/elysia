@@ -7,8 +7,8 @@ export const DRD_TABS = [
   "domestik",
   "tarif",
   "taa-kelurahan",
-  "cakupan",
   "taa",
+  "cakupan",
   "tagihan",
   "pelanggan",
 ] as const;

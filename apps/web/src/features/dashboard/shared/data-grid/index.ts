@@ -6,7 +6,8 @@ export { PenyaringTanggal } from "./toolbar/PenyaringTanggal"
 export {
   KELAS_KONTROL_AKTIF,
   KELAS_KONTROL_PANEL,
-} from "./lib/kelas-kontrol"
+  temaVercelGrid,
+} from "./lib/tema"
 export type {
   BarisData,
   DataGridProps,

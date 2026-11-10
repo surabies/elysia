@@ -12,6 +12,7 @@ import { IconTile } from "@/components/reui/icon-tile";
 import { useRbac } from "@/components/layout/shell/RbacContext";
 import {
   DataGrid,
+  temaVercelGrid,
   type BarisData,
 } from "@/features/dashboard/shared/data-grid";
 import { kirimJson } from "@/features/dashboard/shared/api/api-dashboard";
@@ -108,6 +109,44 @@ function escapeCsv(value: unknown) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
+const TAB_METADATA: Record<
+  Exclude<DrdTab, "ringkasan">,
+  { title: string; subtitle: string }
+> = {
+  kelurahan: {
+    title: "Rekapitulasi Tagihan per Kelurahan",
+    subtitle: "Rincian lembar rekening, kubikasi pemakaian, dan total tagihan per wilayah",
+  },
+  domestik: {
+    title: "Segmentasi Sambungan Domestik",
+    subtitle: "Rincian tagihan kelompok rumah tangga (1A, 2A1, 2A2, 2A3)",
+  },
+  tarif: {
+    title: "Distribusi per Golongan Tarif",
+    subtitle: "Analisis pendapatan dan volume per kode golongan tarif pelanggan",
+  },
+  "taa-kelurahan": {
+    title: "Rekapitulasi TAA",
+    subtitle: "Sebaran rekening tanpa air / anomali pencatatan per wilayah kelurahan",
+  },
+  taa: {
+    title: "Detail Anomali TAA",
+    subtitle: "Daftar rekening terindikasi kelainan catat yang memerlukan verifikasi lapangan",
+  },
+  cakupan: {
+    title: "Cakupan Layanan",
+    subtitle: "Rasio jiwa terlayani terhadap proyeksi jumlah penduduk per kelurahan",
+  },
+  tagihan: {
+    title: "Buku Besar Daftar Rekening Ditagih (DRD)",
+    subtitle: "Data terperinci lembar rekening pelanggan periode aktif",
+  },
+  pelanggan: {
+    title: "Data Induk Pelanggan",
+    subtitle: "Daftar pelanggan aktif beserta nomor sambungan dan status meter",
+  },
+};
+
 export function DrdTable({
   columns,
   rows,
@@ -117,10 +156,11 @@ export function DrdTable({
 }: DrdTableProps) {
   const { isSuperAdmin } = useRbac();
   const canEditPopulation = isSuperAdmin && tab === "cakupan";
-  const rowHeight =
-    rows.length >= 6 && rows.length <= 10
-      ? Math.min(56, Math.max(40, Math.floor(480 / rows.length)))
-      : 40;
+  const tabMeta = TAB_METADATA[tab] ?? {
+    title: `Laporan DRD ${tab}`,
+    subtitle: "Rincian data laporan rekening ditagih",
+  };
+  const rowHeight = 42;
   const gridRows = React.useMemo(
     () =>
       rows.map((row, index) => {
@@ -186,13 +226,18 @@ export function DrdTable({
             node?.rowPinned && (value == null || value === "")
               ? ""
               : formatValue(value, column.format),
-          cellStyle: numeric ? { textAlign: "right" } : undefined,
+          cellStyle: (params) => {
+            const style: Record<string, string | number> = {};
+            if (numeric) style.textAlign = "right";
+            if (params.node?.rowPinned) style.fontWeight = 600;
+            return Object.keys(style).length > 0 ? style : undefined;
+          },
           cellClass: editable
-            ? "drd-population-editable text-right tabular-nums"
+            ? "drd-population-editable text-right tabular-nums font-mono font-medium"
             : numeric
-              ? "text-right tabular-nums"
+              ? "text-right tabular-nums font-mono text-[13px]"
               : column.key === "nomorLangganan" || column.key === "tarif"
-                ? "font-mono"
+                ? "font-mono font-medium text-xs text-foreground"
                 : undefined,
           tooltipField: column.key === "alamat" ? column.key : undefined,
         };
@@ -223,7 +268,7 @@ export function DrdTable({
       }
       definitions.push({
         headerName: group,
-        headerClass: "drd-coverage-group border-b border-border",
+        headerClass: "drd-coverage-group border-b border-border font-semibold text-xs",
         marryChildren: true,
         children,
       });
@@ -278,23 +323,47 @@ export function DrdTable({
     [],
   );
 
+  const headerTabel = (
+    <div className="flex flex-row items-center justify-between border-b border-border bg-[var(--table-head)] px-4 py-3 shrink-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <h3 className="text-sm font-semibold text-foreground truncate">
+          {tabMeta.title}
+        </h3>
+        <span className="text-muted-foreground/40 shrink-0">•</span>
+        <span className="tabular-nums font-mono text-xs text-muted-foreground shrink-0">
+          {rows.length.toLocaleString("id-ID")} baris data
+        </span>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="text-xs font-mono text-muted-foreground">
+          Periode {period}
+        </span>
+      </div>
+    </div>
+  );
+
   return (
-    <DataGrid
-      judul="Data DRD"
-      rowData={gridRows}
-      columnDefs={columnDefs}
-      columnGroupDefs={columnGroupDefs}
-      pinnedBottomRowData={footer ? [footer] : undefined}
-      rowHeight={rowHeight}
-      onCellValueChanged={onCellValueChanged}
-      checkbox
-      showToolbar={false}
-      tinggiClassName={
-        tab === "cakupan"
-          ? "flex-1 min-h-0 [&_.drd-coverage-group_.ag-header-group-cell-label]:justify-center [&_.drd-coverage-subheader_button]:justify-center [&_.drd-coverage-subheader_button]:text-center [&_.drd-coverage-subheader_button_span]:text-center [&_.drd-population-editable]:cursor-text [&_.drd-population-editable]:underline [&_.drd-population-editable]:decoration-dotted [&_.drd-population-editable]:underline-offset-4"
-          : "flex-1 min-h-0"
-      }
-    />
+    <div className="flex flex-1 min-h-0 flex-col p-3 sm:p-5 lg:p-6 overflow-hidden">
+      <DataGrid
+        judul={tabMeta.title}
+        rowData={gridRows}
+        columnDefs={columnDefs}
+        columnGroupDefs={columnGroupDefs}
+        pinnedBottomRowData={footer ? [footer] : undefined}
+        rowHeight={rowHeight}
+        onCellValueChanged={onCellValueChanged}
+        checkbox={true}
+        showToolbar={false}
+        theme={temaVercelGrid}
+        headerTabel={headerTabel}
+        sesuaikanTinggiDenganBaris={true}
+        tinggiClassName={
+          tab === "cakupan"
+            ? "flex-1 min-h-0 [&_.drd-coverage-group_.ag-header-group-cell-label]:justify-center [&_.drd-coverage-subheader_button]:justify-center [&_.drd-coverage-subheader_button]:text-center [&_.drd-coverage-subheader_button_span]:text-center [&_.drd-population-editable]:cursor-text [&_.drd-population-editable]:underline [&_.drd-population-editable]:decoration-dotted [&_.drd-population-editable]:underline-offset-4 [&_.ag-row-pinned]:bg-[var(--table-head)] [&_.ag-row-pinned]:font-semibold [&_.ag-row-pinned]:text-foreground"
+            : "flex-1 min-h-0 [&_.ag-row-pinned]:bg-[var(--table-head)] [&_.ag-row-pinned]:font-semibold [&_.ag-row-pinned]:text-foreground"
+        }
+      />
+    </div>
   );
 }
 

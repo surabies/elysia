@@ -58,6 +58,58 @@ export const temaGrid = themeQuartz.withParams({
   scrollbarTrackColor: "transparent",
 })
 
+/**
+ * Tema AG Grid gaya murni Vercel Geist:
+ * - Bebas dari garis kolom vertikal kaku (borderless vertical columns).
+ * - Header bersih berwarna subtle dengan pemisah horizontal tunggal.
+ * - Spasi sel proporsional dan hover lembut.
+ */
+export const temaVercelGrid = themeQuartz.withParams({
+  accentColor: "var(--ring)",
+  backgroundColor: "var(--card)",
+  foregroundColor: "var(--foreground)",
+  borderColor: "var(--border)",
+  headerBackgroundColor: "var(--card)", // Header tabel putih bersih (sesuai gaya Vercel)
+  headerTextColor: "var(--foreground)",
+  cellTextColor: "var(--foreground)",
+  headerFontWeight: 600,
+  fontFamily: "var(--font-geist-sans)",
+  cellFontFamily: "var(--font-geist-sans)",
+  fontSize: 13,
+  cellFontSize: 13,
+  cellFontWeight: 400,
+  headerFontSize: 12,
+  borderRadius: 0,
+  wrapperBorderRadius: 0,
+  wrapperBorder: false,
+  columnBorder: false, // Bebas sekat vertikal (pure Vercel design)
+  headerColumnBorder: false, // Bebas sekat vertikal di kepala kolom
+  pinnedColumnBorder: false, // Hilangkan sekat vertikal pada kolom pinned/checkbox
+  rowBorder: garisTabel(),
+  headerRowBorder: garisTabel(),
+  headerColumnResizeHandleColor: "var(--ds-gray-alpha-400)",
+  rowHeight: 42,
+  cellHorizontalPadding: 16,
+  spacing: 8,
+  oddRowBackgroundColor: "transparent",
+  rowHoverColor: "var(--table-hover)",
+  selectedRowBackgroundColor: "var(--table-accent)",
+  checkboxBorderRadius: 4,
+  checkboxBorderWidth: 1,
+  checkboxUncheckedBackgroundColor: "var(--card)",
+  checkboxUncheckedBorderColor: "var(--input)",
+  checkboxCheckedBackgroundColor: "var(--primary)",
+  checkboxCheckedBorderColor: "var(--primary)",
+  checkboxCheckedShapeColor: "var(--primary-foreground)",
+  checkboxIndeterminateBackgroundColor: "var(--primary)",
+  checkboxIndeterminateBorderColor: "var(--primary)",
+  checkboxIndeterminateShapeColor: "var(--primary-foreground)",
+  browserColorScheme: "inherit",
+  scrollbarWidth: "thin",
+  scrollbarThumbColor: "var(--ds-gray-alpha-400)",
+  scrollbarTrackColor: "transparent",
+})
+
 export const KELAS_AREA_GRID =
   // min-h-0: AG Grid perlu ruang terukur agar bisa menggulir di panel.
   "min-h-0 [&_.ag-header]:border-b-0 " +

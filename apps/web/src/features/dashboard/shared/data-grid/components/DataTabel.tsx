@@ -217,6 +217,12 @@ type PropTambahan = {
   checkbox?: boolean;
   /// Dipanggil saat pilihan checkbox berubah (hanya baris yang termuat).
   onSelectionChanged?: (baris: BarisData[]) => void;
+  /// Tema AG Grid khusus (opsional, bawaan: temaGrid; alternatif: temaVercelGrid).
+  theme?: any;
+  /// Header kustom yang dirender di dalam bingkai card (tepat di atas tabel).
+  headerTabel?: React.ReactNode;
+  /// Kelas CSS tambahan untuk bingkai card tabel.
+  bingkaiClassName?: string;
 };
 
 export function DataGrid({
@@ -248,6 +254,9 @@ export function DataGrid({
   toolbarModal = false,
   checkbox = true,
   onSelectionChanged,
+  theme,
+  headerTabel,
+  bingkaiClassName,
 }: DataGridProps & PropTambahan) {
   const dataLokal = rowData !== undefined;
   if (!dataLokal && !endpoint) {
@@ -339,30 +348,43 @@ export function DataGrid({
       ? daftarKartu.total
       : total;
   const sesuaikanGridDesktop = sesuaikanTinggiDenganBaris && !mobil;
+  const jumlahBarisFooter = pinnedBottomRowData ? pinnedBottomRowData.length : 0;
+  const tinggiHeaderKustom = headerTabel ? 48 : 0;
+  const tinggiHeaderGrid = columnGroupDefs ? 76 : 38;
+  const tinggiSatuBaris = rowHeight ?? 40;
+  const tinggiKontenTotal =
+    tinggiHeaderKustom +
+    tinggiHeaderGrid +
+    ((totalTampil ?? 0) + jumlahBarisFooter) * tinggiSatuBaris +
+    6;
+
   const tinggiGrid = sesuaikanGridDesktop
-    ? Math.min(tinggiTersedia, Math.max(84, 40 + (totalTampil ?? 0) * 44))
+    ? Math.min(
+        tinggiTersedia > 0 ? tinggiTersedia : Infinity,
+        Math.max(120, tinggiKontenTotal),
+      )
     : undefined;
 
   React.useEffect(() => {
     if (!sesuaikanGridDesktop) return;
 
     const section = sectionRef.current;
-    const toolbar = toolbarRef.current;
-    if (!section || !toolbar) return;
+    if (!section) return;
 
     const ukur = () => {
+      const tinggiToolbar = toolbarRef.current?.offsetHeight ?? 0;
       const tinggiKonten = contentBeforeGridRef.current?.offsetHeight ?? 0;
-      setTinggiTersedia(
-        Math.max(
-          0,
-          section.clientHeight - toolbar.offsetHeight - tinggiKonten - 16,
-        ),
-      );
+      const sisa =
+        section.clientHeight -
+        tinggiToolbar -
+        tinggiKonten -
+        (tinggiToolbar > 0 ? 8 : 0);
+      setTinggiTersedia(Math.max(0, sisa));
     };
 
     const observer = new ResizeObserver(ukur);
     observer.observe(section);
-    observer.observe(toolbar);
+    if (toolbarRef.current) observer.observe(toolbarRef.current);
     if (contentBeforeGridRef.current)
       observer.observe(contentBeforeGridRef.current);
     ukur();
@@ -528,7 +550,10 @@ export function DataGrid({
     <section
       ref={sectionRef}
       aria-label={judul}
-      className="flex h-full w-full max-w-full min-w-0 flex-col gap-2 overflow-hidden"
+      className={cn(
+        "flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden",
+        showToolbar && "gap-2",
+      )}
     >
       {showToolbar && (
         <div
@@ -691,11 +716,13 @@ export function DataGrid({
 
       <div
         className={cn(
-          "flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card",
-          tinggiGrid === undefined ? "flex-1" : "shrink-0",
+          "flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xs",
+          tinggiGrid === undefined ? "flex-1 min-h-[420px]" : "shrink-0",
+          bingkaiClassName,
         )}
         style={tinggiGrid === undefined ? undefined : { height: tinggiGrid }}
       >
+        {headerTabel}
         {toolbarModal && filterBuka && (
           <ModalFilter
             onBuka={setFilterBuka}
@@ -752,7 +779,7 @@ export function DataGrid({
             )}
           >
             <AgGridReact
-              theme={temaGrid}
+              theme={theme ?? temaGrid}
               scrollbarWidth={8}
               columnDefs={columnGroupDefs ?? defsTampil}
               rowHeight={rowHeight}

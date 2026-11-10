@@ -18,9 +18,9 @@ const drdTabs = [
   { id: "kelurahan", label: "Kelurahan" },
   { id: "domestik", label: "Domestik" },
   { id: "tarif", label: "Tarif" },
-  { id: "taa-kelurahan", label: "TAA per kelurahan" },
-  { id: "cakupan", label: "Cakupan layanan" },
-  { id: "taa", label: "TAA" },
+  { id: "taa-kelurahan", label: "TAA" },
+  { id: "taa", label: "Detail TAA" },
+  { id: "cakupan", label: "Cakupan Layanan" },
   { id: "tagihan", label: "Tagihan" },
   { id: "pelanggan", label: "Pelanggan" },
 ] as const;
@@ -37,7 +37,7 @@ export function Navbar() {
   const period = searchParams.get("periode");
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
+    <header className="shrink-0 sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
       {isVerifikasiPage ? (
         <div className="flex h-14 items-center justify-between px-4 gap-3 overflow-visible">
           <div className="flex items-center min-w-0 shrink-0">

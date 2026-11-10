@@ -114,7 +114,7 @@ export function DashboardShell({
 
   return (
     <RbacProvider roles={userRoles}>
-      <div className="flex h-dvh w-full overflow-hidden bg-background">
+      <div className="fixed inset-0 flex h-full w-full overflow-hidden bg-background overscroll-none">
       {/* Lompat ke konten untuk navigasi aksesibilitas */}
       <a
         href={`#${MAIN_CONTENT_ID}`}
@@ -147,7 +147,7 @@ export function DashboardShell({
             minWidth: isOpen ? "var(--sidebar-width, 256px)" : undefined,
           }}
           className={cn(
-            "fixed inset-y-0 left-0 z-40 flex h-full flex-col border-r border-border bg-sidebar lg:relative",
+            "fixed inset-y-0 left-0 z-40 flex h-full flex-col border-r border-border bg-sidebar lg:relative lg:h-full lg:shrink-0",
             isResizing || !mounted
               ? "transition-none select-none"
               : "transition-[width,transform,opacity] duration-200 ease-in-out",
@@ -227,7 +227,7 @@ export function DashboardShell({
         <main
           id={MAIN_CONTENT_ID}
           tabIndex={-1}
-          className="flex flex-1 min-h-0 min-w-0 flex-col overflow-y-auto focus:outline-none bg-background"
+          className="flex flex-1 min-h-0 min-w-0 flex-col overflow-y-auto overscroll-contain focus:outline-none bg-background"
         >
           {children}
         </main>

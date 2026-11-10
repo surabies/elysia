@@ -486,6 +486,17 @@
   --ds-gray-900: #666666;
   --ds-gray-1000: #171717;
 
+  /* Accents (Geist Legacy & Visx Aliases) */
+  --accents-1: var(--ds-gray-100);
+  --accents-2: var(--ds-gray-200);
+  --accents-3: var(--ds-gray-400);
+  --accents-4: var(--ds-gray-600);
+  --accents-5: var(--ds-gray-700);
+  --accents-6: var(--ds-gray-800);
+  --accents-7: var(--ds-gray-900);
+  --accents-8: var(--ds-gray-1000);
+  --geist-link-color: var(--ds-blue-700);
+
   /* Gray Alpha */
   --ds-gray-alpha-100: rgba(0, 0, 0, 0.05);
   --ds-gray-alpha-200: rgba(0, 0, 0, 0.08);
@@ -760,6 +771,17 @@
   --ds-gray-800: #7d7d7d;
   --ds-gray-900: #a1a1a1;
   --ds-gray-1000: #ededed;
+
+  /* Accents (Geist Legacy & Visx Aliases - Dark Mode) */
+  --accents-1: var(--ds-gray-100);
+  --accents-2: var(--ds-gray-200);
+  --accents-3: var(--ds-gray-400);
+  --accents-4: var(--ds-gray-600);
+  --accents-5: var(--ds-gray-700);
+  --accents-6: var(--ds-gray-800);
+  --accents-7: var(--ds-gray-900);
+  --accents-8: var(--ds-gray-1000);
+  --geist-link-color: var(--ds-blue-600);
 
   /* Gray Alpha */
   --ds-gray-alpha-100: rgba(255, 255, 255, 0.06);
@@ -1730,6 +1752,73 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
 }
 
 /* ==========================================================================
+   AG Grid Selection Column & Checkbox Precision Alignment
+   - Eliminates harsh vertical border in checkbox / pinned left columns.
+   - Perfectly centers checkboxes in both header and rows to the exact same axis.
+   - Removes empty cell value offset that caused row checkboxes to distort.
+   ========================================================================== */
+.ag-pinned-left-header,
+.ag-pinned-left-cols-container,
+.ag-pinned-left-cols-container .ag-cell,
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"],
+.ag-cell[col-id="ag-Grid-SelectionColumn"] {
+  border-right: none !important;
+  border-left: none !important;
+  box-shadow: none !important;
+}
+
+/* Header selection column */
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"] .ag-header-cell-comp-wrapper,
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"] .ag-cell-label-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"] .ag-header-select-all {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Row selection column */
+.ag-cell[col-id="ag-Grid-SelectionColumn"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.ag-cell[col-id="ag-Grid-SelectionColumn"] .ag-cell-wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ag-cell[col-id="ag-Grid-SelectionColumn"] .ag-selection-checkbox {
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
+}
+
+.ag-cell[col-id="ag-Grid-SelectionColumn"] .ag-cell-value {
+  display: none !important;
+}
+
+/* ==========================================================================
    Base Layer Overrides & Global Scrollbar System
    Standardized 8px pill scrollbar matching the verification screen across
    all pages, tables, sidebars, modals, and containers.
@@ -1907,4 +1996,16 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
   .lembar-cetak section {
     break-inside: avoid;
   }
+}
+
+:root {
+  --destructive-foreground: var(--color-red-800);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-900);
+  --info: var(--color-violet-500);
+  --info-foreground: var(--color-violet-900);
+  --warning: var(--color-yellow-500);
+  --warning-foreground: var(--color-yellow-900);
+  --invert: var(--color-zinc-900);
+  --invert-foreground: var(--color-zinc-50);
 }
