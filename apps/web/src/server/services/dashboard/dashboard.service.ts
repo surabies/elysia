@@ -94,8 +94,8 @@ export class DashboardService {
       SELECT
         (SELECT count(*) FROM pelanggan)::int AS total_pelanggan,
         (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl})::int AS total_cater,
-        (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl} AND (tmss = '01' OR tmss = ' ' OR tmss = '' OR tmss = '-'))::int AS total_normal,
-        (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl} AND tmss NOT IN ('01', ' ', '', '-'))::int AS total_anomali,
+        (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl} AND (upper(trim(coalesce(ket_catat, 'NORMAL'))) = 'NORMAL' AND (tmss IS NULL OR tmss IN ('01', ' ', '', '-'))))::int AS total_normal,
+        (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl} AND (upper(trim(coalesce(ket_catat, 'NORMAL'))) <> 'NORMAL' OR (tmss IS NOT NULL AND tmss NOT IN ('01', ' ', '', '-'))))::int AS total_anomali,
         (SELECT coalesce(sum(pakai_m3), 0)::float FROM cater_baca_meter WHERE thbl = ${targetThbl}) AS total_kubikasi,
         (SELECT coalesce(sum(total_tagihan), 0)::float FROM rekening_drd WHERE thbl = ${targetThbl}) AS total_rupiah,
         (SELECT count(*) FROM rute_cater)::int AS total_rute,
@@ -197,7 +197,7 @@ export class DashboardService {
     const raw = await db.execute(sql`
       SELECT
         (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl} AND status_verifikasi = 'SUBMITTED')::int AS verif_menunggu,
-        (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl} AND (status_verifikasi = 'ANOMALY' OR tmss NOT IN ('01', ' ', '', '-')))::int AS verif_anomali,
+        (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl} AND (status_verifikasi = 'ANOMALY' OR upper(trim(coalesce(ket_catat, 'NORMAL'))) <> 'NORMAL' OR (tmss IS NOT NULL AND tmss NOT IN ('01', ' ', '', '-'))))::int AS verif_anomali,
         (SELECT count(*) FROM cater_mandiri_pelanggan WHERE status_verifikasi = 'MENUNGGU')::int AS mandiri_menunggu
     `);
 

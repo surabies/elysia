@@ -33,6 +33,7 @@
     "ag-grid-react": "^36.3.0",
     "better-auth": "^1.7.18",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.11.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "cn": "^0.5.2",

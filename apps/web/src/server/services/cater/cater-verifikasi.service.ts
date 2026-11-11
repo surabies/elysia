@@ -1,6 +1,7 @@
 import { eq, desc } from "drizzle-orm";
 import { db, caterBacaMeter, caterVerifikasiLog } from "@cater/db";
 import { evaluasiPemakaianMeter } from "../../domain/cater/cater-anomali.engine";
+import { isCloudinaryConfigured, uploadToCloudinary } from "../../lib/cloudinary";
 
 export interface SubmitReadingInput {
   thbl: string;
@@ -91,6 +92,42 @@ export class CaterVerifikasiService {
       .filter(Boolean)
       .join(' | ') || null;
 
+    // Standardisasi & Upload Cloudinary jika input adalah Base64 DataURL
+    let processedFotoMeter = fotoMeterUrl;
+    let processedFotoRumah = fotoRumahUrl;
+
+    if (isCloudinaryConfigured()) {
+      if (fotoMeterUrl && fotoMeterUrl.startsWith('data:image/')) {
+        try {
+          const res = await uploadToCloudinary({
+            file: fotoMeterUrl,
+            modul: 'cater',
+            jenis: 'stand',
+            identifier: nolg,
+            thbl,
+          });
+          processedFotoMeter = res.secureUrl;
+        } catch (err) {
+          console.error('[CLOUDINARY_CATER_METER_UPLOAD_ERR]', err);
+        }
+      }
+
+      if (fotoRumahUrl && fotoRumahUrl.startsWith('data:image/')) {
+        try {
+          const res = await uploadToCloudinary({
+            file: fotoRumahUrl,
+            modul: 'cater',
+            jenis: 'rumah',
+            identifier: nolg,
+            thbl,
+          });
+          processedFotoRumah = res.secureUrl;
+        } catch (err) {
+          console.error('[CLOUDINARY_CATER_RUMAH_UPLOAD_ERR]', err);
+        }
+      }
+    }
+
     await db
       .insert(caterBacaMeter)
       .values({
@@ -106,8 +143,8 @@ export class CaterVerifikasiService {
         ketCatat: kondisiCatat || "Normal",
         metodeCatat: (metodeCatat as any) || "ONSITE",
         sumberCatat: sumberCatat || "PETUGAS_ONSITE",
-        fotoMeterUrl,
-        fotoRumahUrl,
+        fotoMeterUrl: processedFotoMeter,
+        fotoRumahUrl: processedFotoRumah,
         durasiDetik: durasiDetik || 0,
         statusVerifikasi: evaluasi.statusVerifikasi,
         catatan: catatanBaca,
@@ -125,8 +162,8 @@ export class CaterVerifikasiService {
           ketCatat: kondisiCatat || "Normal",
           metodeCatat: (metodeCatat as any) || "ONSITE",
           sumberCatat: sumberCatat || "PETUGAS_ONSITE",
-          fotoMeterUrl,
-          fotoRumahUrl,
+          fotoMeterUrl: processedFotoMeter,
+          fotoRumahUrl: processedFotoRumah,
           lokasiGps,
           durasiDetik: durasiDetik || 0,
           statusVerifikasi: evaluasi.statusVerifikasi,

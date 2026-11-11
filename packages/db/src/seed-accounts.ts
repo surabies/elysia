@@ -1,7 +1,16 @@
 import { db } from './client';
-import { user, account, userRoles } from './schema';
+import { user, account, session, userRoles } from './schema';
 import { hashPassword } from 'better-auth/crypto';
 import type { AppRole } from './schema/rbac';
+import { eq, and, inArray } from 'drizzle-orm';
+import * as dotenv from 'dotenv';
+import path from 'path';
+
+// Pastikan environment lokal termuat saat dijalankan langsung maupun lewat workspace
+dotenv.config({ path: path.resolve(__dirname, '../../../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
+export const FALLBACK_SEED_PASSWORD = 'wiskaprayoga12';
 
 export interface SeedAccountDef {
   id: string;
@@ -17,6 +26,8 @@ export const SEED_MANAGEMENT_ACCOUNTS: SeedAccountDef[] = [
     id: 'user-superadmin',
     name: 'Super Admin PDAM',
     email: 'superadmin@pdam.co.id',
+    // Anda bisa menentukan password khusus di sini (min 12 char) jika ingin berbeda dari .env:
+    // password: 'CustomSuperadmin123!',
     roles: ['SUPERADMIN', 'STAFF_ADMIN_BILLING', 'VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3'],
   },
   {
@@ -63,16 +74,45 @@ export const SEED_PENCATAT_ACCOUNTS: SeedAccountDef[] = [
   { id: 'user-pencatat-edi', name: 'Edi (Pencatat)', email: 'edi@cater.pdam.co.id', roles: ['PENCATAT'], petugasId: 'EDI' },
 ];
 
-export async function seedAccounts(defaultPassword: string) {
-  if (defaultPassword.length < 12) {
-    throw new Error('The seed password must be at least 12 characters long.');
+/**
+ * Melakukan seed atau reset akun user resmi dan kredensial Better-Auth.
+ * Prioritas password tiap akun:
+ * 1. Password spesifik di kode akun (acc.password) jika didefinisikan.
+ * 2. Parameter defaultPassword atau process.env.SEED_DEFAULT_PASSWORD.
+ * 3. FALLBACK_SEED_PASSWORD ('wiskaprayoga12').
+ */
+export async function seedAccounts(defaultPassword?: string) {
+  const effectiveDefaultPassword =
+    defaultPassword ||
+    process.env.SEED_DEFAULT_PASSWORD ||
+    FALLBACK_SEED_PASSWORD;
+
+  if (effectiveDefaultPassword.length < 12) {
+    throw new Error('Default seed password must be at least 12 characters long.');
   }
 
-  console.log('Seeding official accounts (5 Management/Roles + 9 Pencatat Lapangan)...');
+  console.log('Seeding official accounts (5 Management/Roles + 9 Pencatat Lapangan + Demo)...');
   const allAccounts = [...SEED_MANAGEMENT_ACCOUNTS, ...SEED_PENCATAT_ACCOUNTS];
-  const hashedPassword = await hashPassword(defaultPassword);
+
+  // Cache hash agar tidak perlu menghitung ulang password yang sama
+  const hashCache = new Map<string, string>();
+  async function getHashedPassword(plain: string): Promise<string> {
+    if (hashCache.has(plain)) {
+      return hashCache.get(plain)!;
+    }
+    const hashed = await hashPassword(plain);
+    hashCache.set(plain, hashed);
+    return hashed;
+  }
 
   for (const acc of allAccounts) {
+    const rawPassword = acc.password || effectiveDefaultPassword;
+    if (rawPassword.length < 12) {
+      throw new Error(`The seed password for ${acc.email} must be at least 12 characters long.`);
+    }
+
+    const hashedPassword = await getHashedPassword(rawPassword);
+
     // 1. Upsert User
     await db
       .insert(user)
@@ -88,10 +128,11 @@ export async function seedAccounts(defaultPassword: string) {
           name: acc.name,
           email: acc.email,
           emailVerified: true,
+          updatedAt: new Date(),
         },
       });
 
-    // 2. Upsert Account (Password)
+    // 2. Upsert Account (Password) berdasarkan account.id
     const accountId = `acc-${acc.id}`;
     await db
       .insert(account)
@@ -101,13 +142,29 @@ export async function seedAccounts(defaultPassword: string) {
         providerId: 'credential',
         userId: acc.id,
         password: hashedPassword,
+        updatedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: account.id,
         set: {
           password: hashedPassword,
+          updatedAt: new Date(),
         },
       });
+
+    // Pastikan jika ada rekod kredensial lain untuk userId ini, passwordnya ikut disinkronkan
+    await db
+      .update(account)
+      .set({
+        password: hashedPassword,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(account.userId, acc.id),
+          eq(account.providerId, 'credential')
+        )
+      );
 
     // 3. Insert Roles
     for (const r of acc.roles) {
@@ -119,20 +176,32 @@ export async function seedAccounts(defaultPassword: string) {
         })
         .onConflictDoNothing();
     }
+
+    const passwordSource = acc.password
+      ? 'code override'
+      : process.env.SEED_DEFAULT_PASSWORD
+        ? 'env (SEED_DEFAULT_PASSWORD)'
+        : 'fallback default';
+
+    console.log(`  ✓ [${acc.email}] password reset successfully (source: ${passwordSource})`);
   }
 
-  console.log(`Successfully seeded ${allAccounts.length} user accounts.`);
+  // 4. Bersihkan session lama untuk akun seed agar sesi login yang stale tidak menggantung
+  const userIds = allAccounts.map((a) => a.id);
+  const deletedSessions = await db
+    .delete(session)
+    .where(inArray(session.userId, userIds))
+    .returning({ id: session.id });
+
+  if (deletedSessions.length > 0) {
+    console.log(`  ✓ Cleared ${deletedSessions.length} stale session(s) to enforce fresh login.`);
+  }
+
+  console.log(`Successfully seeded & synchronized ${allAccounts.length} user accounts.`);
 }
 
 if (import.meta.main) {
-  const seedPassword = process.env.SEED_DEFAULT_PASSWORD;
-  if (!seedPassword || seedPassword.length < 12) {
-    console.error(
-      'Set SEED_DEFAULT_PASSWORD to a unique password of at least 12 characters before seeding accounts.'
-    );
-    process.exit(1);
-  }
-
+  const seedPassword = process.env.SEED_DEFAULT_PASSWORD || FALLBACK_SEED_PASSWORD;
   seedAccounts(seedPassword)
     .then(() => {
       console.log('Finished seeding accounts.');

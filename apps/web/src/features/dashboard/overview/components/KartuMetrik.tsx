@@ -154,23 +154,10 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
   ]
 
   return (
-    <section>
-      <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-heading-14 text-foreground">
-          Metrik Operasional Utama
-        </h2>
-        <span className="text-label-12-mono tabular-nums text-muted-foreground sm:text-right">
-          {formatAngka(summary.totalRute)} Rute &bull; {summary.totalPetugas}{" "}
-          Petugas Aktif
-        </span>
-      </div>
-
-      {/* Grid 4 Kolom dengan jarak antar kartu 16px (gap-4) */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <MetricCard key={card.id} data={card} />
-        ))}
-      </div>
-    </section>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <MetricCard key={card.id} data={card} />
+      ))}
+    </div>
   )
 }

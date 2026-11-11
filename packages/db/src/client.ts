@@ -8,6 +8,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 dotenv.config();
 
 const databaseUrl =

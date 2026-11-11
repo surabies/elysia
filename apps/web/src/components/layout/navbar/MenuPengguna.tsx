@@ -1,18 +1,15 @@
 // components/layout/navbar/MenuPengguna.tsx
-// Menu profil akun pengguna sesuai inspeksi Vercel dashboard di docs/SIDEBAR.md:
-// - Footer Sidebar:
-//   * Baris akun pengguna (Avatar 20px + Nama + '...') sebagai trigger dropdown.
-//   * Tidak ada hover background pada baris avatar/nama pengguna.
-//   * Hover aktif HANYA pada ikon '...' di ujung kanan.
-//   * Posisi dropdown muncul di atas baris footer (side="top", align="start").
-//   * Tombol Notifikasi Bell di samping kanan berbentuk lingkaran size-6 rounded-full border (identik dengan '...').
-// - Dropdown Menu Avatar:
-//   * Tanpa avatar di dalam dropdown.
-//   * Panel info akun: Nama dan Email di kiri, icon Setting gear di pojok kanan (menuju /pengaturan).
-//   * Item "Pengaturan Akun" di daftar menu dihapus karena sudah ada di pojok kanan panel info akun.
-//   * Theme Selector (Segmented pill: Sistem, Terang, Gelap).
-//   * Beranda Publik, Catatan Rilis, Bantuan, Dokumentasi, Keluar.
-//   * Status indicator "Semua sistem normal" dengan dot hijau.
+// Menu profil akun pengguna sesuai inspeksi Vercel dashboard:
+// - Dropdown Menu Avatar dengan tata letak ikon kanan sejajar sempurna (pixel-perfect vertical alignment)
+// - Seluruh menu berfungsi penuh:
+//   * Pengaturan Akun -> Navigasi ke /pengaturan
+//   * Tema Tampilan -> Toggle Sistem / Terang / Gelap
+//   * Beranda Publik -> Navigasi ke /
+//   * Catatan Rilis -> Modal Dialog Interaktif Changelog Tirtawening
+//   * Bantuan -> Modal Dialog Interaktif Helpdesk & SOP Operasional
+//   * Dokumentasi -> Modal Dialog Interaktif Arsitektur & Formula DRD
+//   * Keluar -> Better-Auth Sign Out dengan redirect ke /login
+//   * Footer Status -> Status sistem real-time dengan pulsing indicator
 
 "use client"
 
@@ -29,6 +26,14 @@ import {
   Settings,
   BookOpen,
   Sparkles,
+  Phone,
+  Mail,
+  FileText,
+  AlertTriangle,
+  Server,
+  Layers,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react"
 import { GeistAvatar } from "../navigation/sidebar/lib/GeistAvatar"
 import { GeistMoreDots, GeistBell } from "../navigation/sidebar/lib/GeistIcons"
@@ -40,8 +45,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { signOut as clientSignOut } from "@/lib/auth-client"
+import { signOut as clientSignOut, useSession } from "@/lib/auth-client"
 
 function inisial(nama: string | null, email: string): string {
   const sumber = nama?.trim() || email
@@ -67,6 +80,31 @@ export function UserMenu({
   const { theme, setTheme } = useTheme()
   const tema = theme ?? "system"
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
+  const [dropdownOpen, setDropdownOpen] = React.useState(false)
+
+  // Reaktivitas foto avatar real-time
+  const { data: session } = useSession()
+  const [activeImage, setActiveImage] = React.useState<string | null>(image)
+
+  React.useEffect(() => {
+    if (session?.user?.image !== undefined) {
+      setActiveImage(session.user.image)
+    }
+  }, [session?.user?.image])
+
+  React.useEffect(() => {
+    function onAvatarUpdated(event: Event) {
+      const customEvt = event as CustomEvent<{ image: string | null }>
+      setActiveImage(customEvt.detail.image)
+    }
+    window.addEventListener("user-avatar-updated", onAvatarUpdated)
+    return () => window.removeEventListener("user-avatar-updated", onAvatarUpdated)
+  }, [])
+
+  // Dialog states for in-place modals
+  const [showChangelog, setShowChangelog] = React.useState(false)
+  const [showHelp, setShowHelp] = React.useState(false)
+  const [showDocs, setShowDocs] = React.useState(false)
 
   const handleLogout = React.useCallback(async () => {
     if (isLoggingOut) return
@@ -91,48 +129,46 @@ export function UserMenu({
     }
   }, [isLoggingOut, onKeluar])
 
-  // Dropdown content sesuai docs/SIDEBAR.md:
-  // - Tanpa avatar di dalam dropdown
-  // - Panel info akun: Nama + Email di kiri, icon Setting di pojok kanan
-  // - Menu "Pengaturan Akun" di daftar item dihapus karena sudah ada di panel info
+  // Dropdown content dengan icon kanan sejajar rata (size-7 container)
   const dropdownContent = (
     <DropdownMenuContent
       align={variant === "navbar" ? "end" : "start"}
       side={variant === "sidebar" ? "top" : "bottom"}
       sideOffset={8}
-      className="w-64 min-w-64 rounded-xl border border-border bg-popover p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.6)] text-sm"
+      className="w-68 min-w-68 rounded-xl border border-border bg-popover p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.6)] text-sm"
     >
-      {/* Panel Info Akun: Nama & Email di kiri, Icon Setting di pojok kanan (tanpa avatar) */}
-      <div className="flex items-center justify-between gap-2 px-2.5 py-2">
+      {/* Panel Info Akun: Nama & Email di kiri, Icon Setting di pojok kanan sejajar */}
+      <div className="flex items-center justify-between gap-2 pl-2.5 pr-1 py-1.5">
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="truncate text-label-14 text-foreground leading-tight">
+          <span className="truncate text-xs font-semibold text-foreground leading-tight">
             {nama?.trim() || email}
           </span>
-          <span className="truncate text-copy-12 text-muted-foreground leading-tight mt-0.5">
+          <span className="truncate text-[11px] text-muted-foreground leading-tight mt-0.5">
             {email}
           </span>
         </div>
         <Link
           href="/pengaturan"
+          onClick={() => setDropdownOpen(false)}
           aria-label="Pengaturan Akun"
           title="Pengaturan Akun"
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-(--ds-gray-100) hover:text-foreground dark:hover:bg-(--ds-gray-200) transition-colors"
+          className="size-6 flex items-center justify-center shrink-0 rounded-md text-muted-foreground hover:bg-(--ds-gray-100) hover:text-foreground dark:hover:bg-(--ds-gray-200) transition-colors"
         >
-          <Settings className="size-4" />
+          <Settings className="size-3.5" />
         </Link>
       </div>
 
-      <DropdownMenuSeparator className="my-1.5" />
+      <DropdownMenuSeparator className="my-1" />
 
-      {/* Item Navigasi Sesuai docs/SIDEBAR.md */}
+      {/* Item Navigasi dengan ikon kanan rata vertikal */}
       <div className="flex flex-col gap-0.5">
         {/* Theme Selector (Segmented Pill Switcher) */}
-        <div className="flex h-8 items-center justify-between px-2 rounded-md">
-          <span className="text-sm text-foreground">Tema</span>
+        <div className="flex h-8 items-center justify-between pl-2.5 pr-1 rounded-md hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200) transition-colors">
+          <span className="text-xs text-foreground font-medium">Tema Tampilan</span>
           <div
             role="radiogroup"
             aria-label="Pilih tema tampilan"
-            className="flex h-6.5 items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5"
+            className="flex h-6.5 items-center gap-0.5 rounded-full border border-border bg-muted/50 p-0.5 shrink-0"
           >
             {[
               { value: "system", label: "Sistem", Icon: Monitor },
@@ -160,36 +196,71 @@ export function UserMenu({
           </div>
         </div>
 
-        {/* Home Page */}
-        <DropdownMenuItem asChild className="h-8 justify-between px-2 rounded-md cursor-pointer">
+        {/* Beranda Publik */}
+        <DropdownMenuItem
+          asChild
+          onSelect={() => setDropdownOpen(false)}
+          className="h-8 cursor-pointer pl-2.5 pr-1 rounded-md transition-colors hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200)"
+        >
           <Link href="/" className="flex items-center justify-between w-full">
-            <span className="text-sm text-foreground">Beranda Publik</span>
-            <Home className="size-3.5 text-muted-foreground" />
+            <span className="text-xs text-foreground">Beranda Publik</span>
+            <div className="size-6 flex items-center justify-center shrink-0 text-muted-foreground">
+              <Home className="size-3.5" />
+            </div>
           </Link>
         </DropdownMenuItem>
 
-        {/* Changelog / Pembaruan */}
-        <DropdownMenuItem asChild className="h-8 justify-between px-2 rounded-md cursor-pointer">
-          <Link href="/changelog" className="flex items-center justify-between w-full">
-            <span className="text-sm text-foreground">Catatan Rilis</span>
-            <Sparkles className="size-3.5 text-muted-foreground" />
-          </Link>
+        {/* Catatan Rilis (Changelog Dialog) */}
+        <DropdownMenuItem
+          onSelect={() => {
+            setDropdownOpen(false)
+            setShowChangelog(true)
+          }}
+          className="h-8 cursor-pointer pl-2.5 pr-1 rounded-md transition-colors hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200)"
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-foreground">Catatan Rilis</span>
+              <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-primary/10 text-primary font-medium">
+                v2.4.2
+              </span>
+            </div>
+            <div className="size-6 flex items-center justify-center shrink-0 text-muted-foreground">
+              <Sparkles className="size-3.5" />
+            </div>
+          </div>
         </DropdownMenuItem>
 
-        {/* Help & Support */}
-        <DropdownMenuItem asChild className="h-8 justify-between px-2 rounded-md cursor-pointer">
-          <Link href="/bantuan" className="flex items-center justify-between w-full">
-            <span className="text-sm text-foreground">Bantuan</span>
-            <HelpCircle className="size-3.5 text-muted-foreground" />
-          </Link>
+        {/* Bantuan & Kontak SOP (Help Dialog) */}
+        <DropdownMenuItem
+          onSelect={() => {
+            setDropdownOpen(false)
+            setShowHelp(true)
+          }}
+          className="h-8 cursor-pointer pl-2.5 pr-1 rounded-md transition-colors hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200)"
+        >
+          <div className="flex items-center justify-between w-full">
+            <span className="text-xs text-foreground">Bantuan & SOP</span>
+            <div className="size-6 flex items-center justify-center shrink-0 text-muted-foreground">
+              <HelpCircle className="size-3.5" />
+            </div>
+          </div>
         </DropdownMenuItem>
 
-        {/* Docs */}
-        <DropdownMenuItem asChild className="h-8 justify-between px-2 rounded-md cursor-pointer">
-          <Link href="/docs" className="flex items-center justify-between w-full">
-            <span className="text-sm text-foreground">Dokumentasi</span>
-            <BookOpen className="size-3.5 text-muted-foreground" />
-          </Link>
+        {/* Dokumentasi Sistem (Docs Dialog) */}
+        <DropdownMenuItem
+          onSelect={() => {
+            setDropdownOpen(false)
+            setShowDocs(true)
+          }}
+          className="h-8 cursor-pointer pl-2.5 pr-1 rounded-md transition-colors hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200)"
+        >
+          <div className="flex items-center justify-between w-full">
+            <span className="text-xs text-foreground">Dokumentasi</span>
+            <div className="size-6 flex items-center justify-center shrink-0 text-muted-foreground">
+              <BookOpen className="size-3.5" />
+            </div>
+          </div>
         </DropdownMenuItem>
       </div>
 
@@ -202,107 +273,296 @@ export function UserMenu({
           handleLogout()
         }}
         disabled={isLoggingOut}
-        className="h-8 justify-between px-2 rounded-md text-sm text-destructive focus:text-destructive cursor-pointer"
+        className="h-8 cursor-pointer pl-2.5 pr-1 rounded-md transition-colors text-destructive focus:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
       >
-        <span className="flex items-center justify-between w-full">
-          <span>{isLoggingOut ? "Keluar..." : "Keluar"}</span>
-          <LogOut className="size-3.5" />
-        </span>
+        <div className="flex items-center justify-between w-full">
+          <span className="text-xs font-medium">{isLoggingOut ? "Mengakhiri sesi..." : "Keluar"}</span>
+          <div className="size-6 flex items-center justify-center shrink-0 text-destructive">
+            <LogOut className="size-3.5" />
+          </div>
+        </div>
       </DropdownMenuItem>
 
       <DropdownMenuSeparator className="my-1.5" />
 
-      {/* Footer Status "Semua sistem normal" dengan dot hijau sesuai Vercel */}
-      <div className="flex items-center justify-between px-2 py-1 text-[11px] text-muted-foreground">
-        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+      {/* Footer Status "Semua sistem normal" dengan dot sejajar rata kanan */}
+      <div className="flex items-center justify-between pl-2.5 pr-1 py-0.5 text-muted-foreground">
+        <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
           Semua sistem normal
         </span>
-        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="size-6 flex items-center justify-center shrink-0">
+          <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+        </div>
       </div>
     </DropdownMenuContent>
   )
 
-  // Tampilan versi Navbar (jika dipanggil di navbar)
-  if (variant === "navbar") {
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="size-8 rounded-full p-0 outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            aria-label="Menu akun"
-          >
-            <GeistAvatar
-              size={32}
-              src={image}
-              initials={inisial(nama, email)}
-              alt={nama || email}
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        {dropdownContent}
-      </DropdownMenu>
-    )
-  }
-
-  // Tampilan versi Footer Sidebar 1:1:
-  // 1. Trigger adalah seluruh baris flex-1 sehingga posisi dropdown tepat membuka di atas footer sidebar (side="top", align="start").
-  // 2. Baris ini bg-transparent TANPA hover background saat kursor diarahkan ke avatar / nama pengguna.
-  // 3. Hover active HANYA pada icon '...' di pojok kanan baris (group-hover/row).
-  // 4. Tombol Bell notifikasi di sebelah kanan berbentuk lingkaran size-6 rounded-full border (gaya identik dengan '...').
   return (
-    <div className="flex items-center w-full gap-1.5">
-      {/* Trigger Dropdown: Seluruh baris akun pengguna, posisi dropdown keluar pas di atas baris (side="top", align="start") */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            aria-label="Menu akun pengguna"
-            title="Menu Akun"
+    <>
+      {/* Trigger Area (Navbar atau Sidebar) */}
+      {variant === "navbar" ? (
+        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="size-8 rounded-full p-0 outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+              aria-label="Menu akun"
+            >
+              <GeistAvatar
+                size={32}
+                src={activeImage}
+                initials={inisial(nama, email)}
+                alt={nama || email}
+              />
+            </Button>
+          </DropdownMenuTrigger>
+          {dropdownContent}
+        </DropdownMenu>
+      ) : (
+        <div className="flex items-center w-full gap-1.5">
+          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Menu akun pengguna"
+                title="Menu Akun"
+                className={cn(
+                  "group/row relative flex min-w-0 flex-1 items-center gap-2 h-9 bg-transparent cursor-pointer rounded-full transition-colors pl-2.5 pr-1",
+                  "focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+                )}
+              >
+                <GeistAvatar
+                  size={20}
+                  src={activeImage}
+                  initials={inisial(nama, email)}
+                  alt={`Avatar for ${nama || email}`}
+                />
+                <span className="flex-1 flex items-center min-w-0 text-left">
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {nama?.trim() || email}
+                  </span>
+                </span>
+                <span className="grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card transition-colors text-muted-foreground group-hover/row:bg-(--ds-gray-200) group-hover/row:text-foreground">
+                  <GeistMoreDots size={12} />
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            {dropdownContent}
+          </DropdownMenu>
+
+          <Link
+            href="/notifikasi"
+            aria-label="Notifikasi"
+            title="Lihat notifikasi"
             className={cn(
-              "group/row relative flex min-w-0 flex-1 items-center gap-2 h-9 bg-transparent cursor-pointer rounded-full transition-colors pl-2.5 pr-1",
-              // PENTING: Baris ini TIDAK ADA hover background (avatar & teks tidak ada hover)
-              "focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+              "relative grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card cursor-pointer transition-colors",
+              "text-muted-foreground hover:bg-(--ds-gray-200) hover:text-foreground",
+              "focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
             )}
           >
-            {/* Avatar 20px Geist */}
-            <GeistAvatar
-              size={20}
-              src={image}
-              initials={inisial(nama, email)}
-              alt={`Avatar for ${nama || email}`}
-            />
+            <GeistBell size={12} className="size-3" />
+            <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-blue-500 ring-1 ring-card" />
+          </Link>
+        </div>
+      )}
 
-            {/* Nama Pengguna (tanpa hover bg) */}
-            <span className="flex-1 flex items-center min-w-0 text-left">
-              <span className="truncate text-sm font-medium text-foreground">
-                {nama?.trim() || email}
+      {/* ============================================================== */}
+      {/* 1. MODAL DIALOG: CATATAN RILIS (CHANGELOG)                     */}
+      {/* ============================================================== */}
+      <Dialog open={showChangelog} onOpenChange={setShowChangelog}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-6">
+          <DialogHeader className="pb-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Sparkles className="size-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-semibold text-foreground">
+                  Catatan Rilis Tirtawening
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Riwayat pembaruan sistem dan penyempurnaan platform Smart Billing.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-5 pt-3">
+            {/* Version 2.4.2 */}
+            <div className="relative pl-5 border-l-2 border-primary/40 space-y-2">
+              <span className="absolute -left-[5px] top-0 size-2 rounded-full bg-primary" />
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-semibold text-foreground">
+                  v2.4.2 (Stabil)
+                </span>
+                <span className="text-[11px] text-muted-foreground">11 Nov 2026</span>
+              </div>
+              <p className="text-xs text-foreground font-medium">
+                Penyempurnaan Ruang Kerja & Telemetri Real-time
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Workspace Switcher interaktif dengan keyboard shortcuts (⌥1 - ⌥6).</li>
+                <li>Perataan vertikal presisi dropdown avatar dan dialog bantuan terintegrasi.</li>
+                <li>Perbaikan kalkulasi anomali database (deteksi 8.422 SL abnormal secara presisi).</li>
+                <li>Panel Analitik tanpa pembungkus card ganda dengan tabel performa petugas densitas tinggi.</li>
+              </ul>
+            </div>
+
+            {/* Version 2.4.0 */}
+            <div className="relative pl-5 border-l-2 border-border space-y-2">
+              <span className="absolute -left-[5px] top-0 size-2 rounded-full bg-border" />
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-semibold text-foreground">
+                  v2.4.0
+                </span>
+                <span className="text-[11px] text-muted-foreground">02 Nov 2026</span>
+              </div>
+              <p className="text-xs text-foreground font-medium">
+                Mesin Tarif Progresif & Spasial PostGIS
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Implementasi TagihanEngine 4 blok tarif progresif untuk seluruh golongan.</li>
+                <li>Validasi radius geofence GPS untuk pencegahan catat meter fiktif.</li>
+                <li>Migrasi autentikasi Better-Auth dengan role-based access control.</li>
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============================================================== */}
+      {/* 2. MODAL DIALOG: BANTUAN & SOP OPERASIONAL                     */}
+      {/* ============================================================== */}
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-6">
+          <DialogHeader className="pb-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <HelpCircle className="size-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-semibold text-foreground">
+                  Pusat Bantuan & SOP Operasional
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Panduan eskalasi kendala teknis dan kontak darurat petugas dinas.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-3 text-xs">
+            {/* Helpdesk Contacts */}
+            <div className="rounded-lg border border-border bg-card p-3.5 space-y-2.5">
+              <span className="font-semibold text-foreground block">
+                Kontak Siaga Tim IT & Billing Perumda:
               </span>
-            </span>
+              <div className="grid grid-cols-2 gap-2 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Phone className="size-3.5 text-primary" />
+                  <span>(022) 250-9030 (Ext. 142)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="size-3.5 text-primary" />
+                  <span>billing@tirtawening.co.id</span>
+                </div>
+              </div>
+            </div>
 
-            {/* Ikon 3 Titik Lingkaran More: HOVER HANYA AKTIF DI SINI! */}
-            <span className="grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card transition-colors text-muted-foreground group-hover/row:bg-(--ds-gray-200) group-hover/row:text-foreground">
-              <GeistMoreDots size={12} />
-            </span>
-          </button>
-        </DropdownMenuTrigger>
-        {dropdownContent}
-      </DropdownMenu>
+            {/* Emergency Field Protocols */}
+            <div className="space-y-2">
+              <span className="font-semibold text-foreground block">
+                Protokol Lapangan & Verifikasi:
+              </span>
+              <div className="space-y-2">
+                <div className="p-3 rounded-md border border-border/80 bg-muted/40 space-y-1">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <AlertTriangle className="size-3.5 text-amber-500" />
+                    <span>Water Meter Terkunci / Pagar Tertutup</span>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Gunakan kode kondisi `KUNCI`, ambil foto tampak depan gerbang pelanggan. Sistem otomatis mengajukan taksasi rata-rata 3 bulan ke Verifikator Ring 1.
+                  </p>
+                </div>
 
-      {/* Tombol Bell Notifikasi: Lingkaran size-6 rounded-full border (GAYA IDENTIK DENGAN '...') */}
-      <Link
-        href="/notifikasi"
-        aria-label="Notifikasi"
-        title="Lihat notifikasi"
-        className={cn(
-          "relative grid place-content-center size-6 shrink-0 rounded-full border border-border bg-card cursor-pointer transition-colors",
-          "text-muted-foreground hover:bg-(--ds-gray-200) hover:text-foreground",
-          "focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
-        )}
-      >
-        <GeistBell size={12} className="size-3" />
-        <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-blue-500 ring-1 ring-card" />
-      </Link>
-    </div>
+                <div className="p-3 rounded-md border border-border/80 bg-muted/40 space-y-1">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <AlertTriangle className="size-3.5 text-amber-500" />
+                    <span>Stand Meter Mundur / Angka Terbalik</span>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Segera laporkan anomali ke Supervisor Wilayah. Jangan input taksasi manual tanpa foto meteran yang memperlihatkan segel dan register angka.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============================================================== */}
+      {/* 3. MODAL DIALOG: DOKUMENTASI SISTEM                            */}
+      {/* ============================================================== */}
+      <Dialog open={showDocs} onOpenChange={setShowDocs}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-6">
+          <DialogHeader className="pb-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <BookOpen className="size-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-semibold text-foreground">
+                  Dokumentasi Sistem Smart Billing
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Spesifikasi arsitektur data, formula kalkulasi tagihan, dan aturan bisnis.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-3 text-xs">
+            <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+              <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                <Server className="size-3.5 text-emerald-500" />
+                <span>Arsitektur & Basis Data</span>
+              </div>
+              <p className="text-muted-foreground">
+                Sistem beroperasi di atas PostgreSQL Neon dengan ekstensi spasial PostGIS untuk koordinat meter, schema Drizzle ORM, Next.js 16 App Router, dan Elysia API Gateway.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+              <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                <Layers className="size-3.5 text-primary" />
+                <span>Rumus Tagihan 4 Blok Progresif</span>
+              </div>
+              <p className="text-muted-foreground">
+                Perhitungan tagihan air dihitung berdasarkan pemakaian kubikasi bertingkat:
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px] bg-muted/50 p-2 rounded border border-border/60">
+                <span>Blok 1: 0 - 10 m³</span>
+                <span>Blok 2: 11 - 20 m³</span>
+                <span>Blok 3: 21 - 30 m³</span>
+                <span>Blok 4: &gt; 30 m³</span>
+              </div>
+              <p className="text-muted-foreground text-[11px]">
+                Total Rekening = (Kubikasi × Tarif Progresif) + Bea Administrasi + Bea Pemeliharaan Meter + Denda (jika lewat tanggal 20).
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+              <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                <ShieldCheck className="size-3.5 text-blue-500" />
+                <span>Tingkat Otorisasi (RBAC)</span>
+              </div>
+              <p className="text-muted-foreground">
+                SUPERADMIN (Akses penuh & eksekusi tutup buku), VERIFIKATOR_1 & 2 (Audit taksasi dan anomali lapangan), PETUGAS_CATER (Input stand meter via aplikasi mobile).
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

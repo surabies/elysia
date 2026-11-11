@@ -59,7 +59,7 @@ export function MetricCard({ data }: MetricCardProps) {
   }
 
   return (
-    <div className="flex h-[220px] w-full flex-col justify-between overflow-hidden rounded-[6px] border border-border bg-card shadow-none select-none transition-colors">
+    <div className="flex h-[220px] w-full flex-col justify-between overflow-hidden rounded-lg border border-border/80 bg-card shadow-none select-none transition-all hover:border-foreground/20 hover:shadow-xs">
       {/* Bagian Atas: Header, Nilai, Teks Bantu, dan Visual */}
       <div className="flex flex-1 flex-col px-4 pt-3.5 pb-2">
         {/* 1. Baris Judul (Ikon 16px di kiri + Judul 15px/500 + Label Kanan 12.5px) */}

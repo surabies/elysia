@@ -39,6 +39,7 @@ export default async function DashboardPage() {
         role={session.user.role}
         periode={periode}
         tanggalHariIni={tanggalHariIni}
+        summary={summary}
       />
       <KartuMetrik periode={periode} summary={summary} />
       <DistribusiWilayahTarif wilayah={wilayah} tarif={tarif} />

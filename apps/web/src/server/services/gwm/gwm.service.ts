@@ -19,6 +19,7 @@ import {
   hitungNeracaAir,
   type HasilNeracaAir,
 } from '../../domain/gwm/gwm.engine';
+import { isCloudinaryConfigured, uploadToCloudinary } from '../../lib/cloudinary';
 
 export interface CatatMutasiGantiMeterInput {
   nolg: string;
@@ -137,6 +138,42 @@ export class GwmService {
       );
     }
 
+    // Standardisasi & Upload Cloudinary jika input adalah Base64 DataURL
+    let processedFotoStandAngkat = fotoStandAngkat;
+    let processedFotoMeterBaru = fotoMeterBaru;
+
+    if (isCloudinaryConfigured()) {
+      if (fotoStandAngkat && fotoStandAngkat.startsWith('data:image/')) {
+        try {
+          const res = await uploadToCloudinary({
+            file: fotoStandAngkat,
+            modul: 'gwm',
+            jenis: 'angkat',
+            identifier: nolg,
+            thbl: String(periode),
+          });
+          processedFotoStandAngkat = res.secureUrl;
+        } catch (err) {
+          console.error('[CLOUDINARY_GWM_ANGKAT_UPLOAD_ERR]', err);
+        }
+      }
+
+      if (fotoMeterBaru && fotoMeterBaru.startsWith('data:image/')) {
+        try {
+          const res = await uploadToCloudinary({
+            file: fotoMeterBaru,
+            modul: 'gwm',
+            jenis: 'pasang',
+            identifier: nolg,
+            thbl: String(periode),
+          });
+          processedFotoMeterBaru = res.secureUrl;
+        } catch (err) {
+          console.error('[CLOUDINARY_GWM_PASANG_UPLOAD_ERR]', err);
+        }
+      }
+    }
+
     await db
       .insert(waterMeterMutasi)
       .values({
@@ -147,13 +184,13 @@ export class GwmService {
         keterangan,
         noMeterLama,
         standAngkat,
-        fotoStandAngkat,
+        fotoStandAngkat: processedFotoStandAngkat,
         noMeterBaru,
         merkBaru,
         ukuranBaru,
         standPasang,
         noSegelBaru,
-        fotoMeterBaru,
+        fotoMeterBaru: processedFotoMeterBaru,
         petugasPasang,
         statusVerifikasi: 'PENDING',
       })
@@ -164,7 +201,7 @@ export class GwmService {
           keterangan,
           noMeterLama,
           standAngkat,
-          fotoStandAngkat,
+          fotoStandAngkat: processedFotoStandAngkat,
           noMeterBaru,
           merkBaru,
           ukuranBaru,

@@ -131,8 +131,8 @@ export class AnalyticsService {
         to_char(tgl_catat, 'YYYY-MM-DD') as tanggal,
         to_char(tgl_catat, 'DD') as hari,
         count(*)::int as total,
-        count(CASE WHEN tmss = '01' OR tmss = ' ' OR tmss = '' OR tmss = '-' THEN 1 END)::int as normal,
-        count(CASE WHEN tmss NOT IN ('01', ' ', '', '-') THEN 1 END)::int as anomali,
+        count(CASE WHEN (upper(trim(coalesce(ket_catat, 'NORMAL'))) = 'NORMAL' AND (tmss IS NULL OR tmss IN ('01', ' ', '', '-'))) THEN 1 END)::int as normal,
+        count(CASE WHEN (upper(trim(coalesce(ket_catat, 'NORMAL'))) <> 'NORMAL' OR (tmss IS NOT NULL AND tmss NOT IN ('01', ' ', '', '-'))) THEN 1 END)::int as anomali,
         coalesce(sum(pakai_m3), 0)::float as kubikasi
       FROM cater_baca_meter
       WHERE thbl = ${thbl} AND tgl_catat IS NOT NULL
@@ -239,7 +239,7 @@ export class AnalyticsService {
         p.nama,
         count(c.nolg)::int as total_baca,
         coalesce(sum(c.pakai_m3), 0)::float as total_kubikasi,
-        count(CASE WHEN c.tmss NOT IN ('01', ' ', '', '-') THEN 1 END)::int as anomali_count
+        count(CASE WHEN (upper(trim(coalesce(c.ket_catat, 'NORMAL'))) <> 'NORMAL' OR (c.tmss IS NOT NULL AND c.tmss NOT IN ('01', ' ', '', '-'))) THEN 1 END)::int as anomali_count
       FROM petugas_cater p
       LEFT JOIN cater_baca_meter c ON c.petugas_id = p.id AND c.thbl = ${thbl}
       WHERE p.aktif = true

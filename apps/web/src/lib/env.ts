@@ -4,6 +4,8 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 dotenv.config();
@@ -29,6 +31,10 @@ const envSchema = z.object({
     .enum(['development', 'test', 'production'])
     .default('development'),
   CORS_ALLOWED_ORIGINS: z.string().optional(),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  CLOUDINARY_URL: z.string().optional(),
 });
 
 export const env = envSchema.parse({
@@ -38,4 +44,8 @@ export const env = envSchema.parse({
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NODE_ENV: process.env.NODE_ENV,
   CORS_ALLOWED_ORIGINS: process.env.CORS_ALLOWED_ORIGINS,
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  CLOUDINARY_URL: process.env.CLOUDINARY_URL,
 });

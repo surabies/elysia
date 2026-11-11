@@ -24,6 +24,7 @@ import {
   KODE_JENIS_PENGADUAN,
   LABEL_JENIS_PENGADUAN,
 } from '../../domain/pengaduan/alur-pengaduan.engine';
+import { isCloudinaryConfigured, uploadToCloudinary } from '../../lib/cloudinary';
 import type {
   JenisPengaduan,
   KlasifikasiPengaduan,
@@ -139,6 +140,24 @@ export class PengaduanService {
       const autoJudul = `${labelJenis}${ringkasanAlamat} — ${cuplikanDeskripsi}`;
       const finalJudul = (input.judul?.trim() || autoJudul).slice(0, 255);
 
+      let processedFotoUrl = input.fotoUrl;
+      let fotoPublicId: string | null = null;
+
+      if (isCloudinaryConfigured() && input.fotoUrl && input.fotoUrl.startsWith('data:image/')) {
+        try {
+          const res = await uploadToCloudinary({
+            file: input.fotoUrl,
+            modul: 'pengaduan',
+            jenis: 'aduan',
+            identifier: nomorTiket,
+          });
+          processedFotoUrl = res.secureUrl;
+          fotoPublicId = res.publicId;
+        } catch (err) {
+          console.error('[CLOUDINARY_ADUAN_UPLOAD_ERR]', err);
+        }
+      }
+
       const [row] = await tx
         .insert(pengaduan)
         .values({
@@ -156,7 +175,8 @@ export class PengaduanService {
           status: 'BARU',
           pelapor: input.pelapor.trim(),
           kontakPelapor: input.kontakPelapor,
-          fotoUrl: input.fotoUrl,
+          fotoUrl: processedFotoUrl,
+          fotoPublicId,
           videoUrl: input.videoUrl,
           targetResponsAt: sla.targetResponsAt,
           targetSelesaiAt: sla.targetSelesaiAt,
@@ -282,6 +302,28 @@ export class PengaduanService {
       throw new Error('Penyelesaian tiket wajib menyertakan foto bukti atau catatan pekerjaan.');
     }
 
+    let processedFotoPenyelesaian = input.fotoPenyelesaianUrl;
+    let fotoPenyelesaianPublicId: string | null = null;
+
+    if (
+      isCloudinaryConfigured() &&
+      input.fotoPenyelesaianUrl &&
+      input.fotoPenyelesaianUrl.startsWith('data:image/')
+    ) {
+      try {
+        const res = await uploadToCloudinary({
+          file: input.fotoPenyelesaianUrl,
+          modul: 'pengaduan',
+          jenis: 'selesai',
+          identifier: row.nomorTiket,
+        });
+        processedFotoPenyelesaian = res.secureUrl;
+        fotoPenyelesaianPublicId = res.publicId;
+      } catch (err) {
+        console.error('[CLOUDINARY_PENYELESAIAN_UPLOAD_ERR]', err);
+      }
+    }
+
     return db.transaction(async (tx) => {
       const updateData: Partial<PengaduanRow> = {
         status: statusKe,
@@ -291,7 +333,10 @@ export class PengaduanService {
       if (statusKe === 'SELESAI') {
         updateData.selesaiAt = new Date();
         updateData.catatanPenyelesaian = input.catatan;
-        updateData.fotoPenyelesaianUrl = input.fotoPenyelesaianUrl;
+        updateData.fotoPenyelesaianUrl = processedFotoPenyelesaian;
+        if (fotoPenyelesaianPublicId) {
+          updateData.fotoPenyelesaianPublicId = fotoPenyelesaianPublicId;
+        }
       }
 
       const [updated] = await tx
@@ -307,7 +352,7 @@ export class PengaduanService {
         statusKe,
         petugasId: input.petugasId,
         catatan: input.catatan,
-        fotoUrl: input.fotoPenyelesaianUrl,
+        fotoUrl: processedFotoPenyelesaian,
         isPublik: true,
       });
 

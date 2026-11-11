@@ -1,6 +1,6 @@
 import { db } from './client';
 import { places, pelanggan } from './schema';
-import { seedAccounts } from './seed-accounts';
+import { seedAccounts, FALLBACK_SEED_PASSWORD } from './seed-accounts';
 import { seedMasterKondisi } from './seed-kondisi';
 import { importProgresCater } from './etl/import-progres-cater';
 import { syncAreaLayanan21Kelurahan, seedDataVerifikasi } from './seed-data-verifikasi';
@@ -14,12 +14,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 async function seed() {
   console.log('=== STARTING UNIFIED DATABASE SEED ===');
   try {
-    const seedPassword = process.env.SEED_DEFAULT_PASSWORD;
-    if (!seedPassword || seedPassword.length < 12) {
-      throw new Error(
-        'Set SEED_DEFAULT_PASSWORD to a unique password of at least 12 characters before seeding accounts.'
-      );
-    }
+    const seedPassword = process.env.SEED_DEFAULT_PASSWORD || FALLBACK_SEED_PASSWORD;
 
     const userId = 'seed-user-1';
 

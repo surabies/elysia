@@ -28,7 +28,7 @@ export function PageContainer({
     <div
       className={cn(
         "mx-auto w-full min-w-0",
-        !penuh && "px-3 pt-4 pb-2.5 sm:px-5 sm:pt-5 sm:pb-3 lg:px-8",
+        !penuh && "px-4 pt-4 pb-8 sm:px-6 sm:pt-5 sm:pb-12 lg:px-8 lg:pt-6 lg:pb-16",
         className
       )}
     >

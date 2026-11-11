@@ -21,6 +21,7 @@ import {
   periksaJendelaLaporMandiri,
   evaluasiGeofenceMandiri,
 } from "../../domain/mandiri/mandiri.engine";
+import { isCloudinaryConfigured, uploadToCloudinary } from "../../lib/cloudinary";
 
 export interface SubmitLaporanMandiriInput {
   thbl: string;
@@ -114,6 +115,42 @@ export class MandiriService {
 
     const id = `mandiri-${thbl}-${nolg}`;
 
+    // Standardisasi & Upload Cloudinary jika input adalah Base64 DataURL
+    let processedFotoMeter = fotoMeterUrl;
+    let processedFotoRumah = fotoRumahUrl;
+
+    if (isCloudinaryConfigured()) {
+      if (fotoMeterUrl && fotoMeterUrl.startsWith('data:image/')) {
+        try {
+          const res = await uploadToCloudinary({
+            file: fotoMeterUrl,
+            modul: 'mandiri',
+            jenis: 'stand',
+            identifier: nolg,
+            thbl,
+          });
+          processedFotoMeter = res.secureUrl;
+        } catch (err) {
+          console.error('[CLOUDINARY_MANDIRI_METER_UPLOAD_ERR]', err);
+        }
+      }
+
+      if (fotoRumahUrl && fotoRumahUrl.startsWith('data:image/')) {
+        try {
+          const res = await uploadToCloudinary({
+            file: fotoRumahUrl,
+            modul: 'mandiri',
+            jenis: 'rumah',
+            identifier: nolg,
+            thbl,
+          });
+          processedFotoRumah = res.secureUrl;
+        } catch (err) {
+          console.error('[CLOUDINARY_MANDIRI_RUMAH_UPLOAD_ERR]', err);
+        }
+      }
+    }
+
     await db
       .insert(caterMandiriPelanggan)
       .values({
@@ -122,8 +159,8 @@ export class MandiriService {
         nolg,
         stma: String(stma),
         pakaiM3: String(estimasiPakaiM3),
-        fotoMeterUrl,
-        fotoRumahUrl,
+        fotoMeterUrl: processedFotoMeter,
+        fotoRumahUrl: processedFotoRumah,
         lokasiGps: longitude && latitude ? { x: longitude, y: latitude } : null,
         jarakDariRumahMeter: String(jarakMeter),
         isLokasiValid,
@@ -137,8 +174,8 @@ export class MandiriService {
         set: {
           stma: String(stma),
           pakaiM3: String(estimasiPakaiM3),
-          fotoMeterUrl,
-          fotoRumahUrl,
+          fotoMeterUrl: processedFotoMeter,
+          fotoRumahUrl: processedFotoRumah,
           lokasiGps:
             longitude && latitude ? { x: longitude, y: latitude } : null,
           jarakDariRumahMeter: String(jarakMeter),
