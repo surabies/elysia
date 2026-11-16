@@ -10,6 +10,9 @@ import {
   Send,
   TriangleAlert,
   UserPlus,
+  BadgeCheck,
+  ArrowRight,
+  Clock,
 } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -86,6 +89,26 @@ export function PengaduanForm({
   const [videoPreviewUrl, setVideoPreviewUrl] = React.useState<string | null>(
     null
   )
+  const [disalin, setDisalin] = React.useState(false)
+
+  function salinTiket(nomor: string) {
+    if (navigator.clipboard) {
+      void navigator.clipboard.writeText(nomor)
+      setDisalin(true)
+      setTimeout(() => setDisalin(false), 2000)
+    }
+  }
+
+  function resetForm() {
+    setHasil(null)
+    setKlasifikasi("BUKAN_NILAI_TAGIHAN_REKENING")
+    setJenis("LAPOR_STAND_METER")
+    setKoordinat(null)
+    setAlamatKejadian("")
+    hapusFoto()
+    hapusVideo()
+    setPesanError(null)
+  }
 
   // Blob URL adalah alokasi memori yang bertahan sampai dicabut — tanpa ini
   // media yang diganti berkali-kali menumpuk sampai tab ditutup.
@@ -183,81 +206,130 @@ export function PengaduanForm({
 
   if (hasil) {
     return (
-      <div className="flex flex-col gap-3">
-        <Alert>
-          <CheckCircle2 />
-          <AlertDescription className="flex flex-col gap-3">
-            <span>{hasil.pesan}</span>
-            <span className="flex flex-wrap items-center gap-2">
-              {/* Ukuran & tracking dilebihkan sengaja: ini satu-satunya hal di
-                  layar ini yang WAJIB dibawa pulang pelapor — kecuali ia
-                  sedang login (lihat blok di bawah), tiket ini SUDAH
-                  tersimpan di akunnya juga. */}
-              <code className="rounded-md border border-border bg-muted px-3 py-1.5 font-mono text-base font-semibold tracking-wider">
-                {hasil.nomorTiket}
-              </code>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => navigator.clipboard?.writeText(hasil.nomorTiket)}
-              >
-                <Copy />
-                Salin
-              </Button>
+      <div className="space-y-6">
+        {/* Radiant Success Badge Header */}
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="relative flex size-16 sm:size-20 items-center justify-center">
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl animate-pulse"
+            />
+            <span className="relative flex size-16 sm:size-20 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-50 text-emerald-600 shadow-md">
+              <BadgeCheck className="size-8 sm:size-10" />
             </span>
-            {hasil.targetSelesaiAt && (
-              <span className="text-xs text-muted-foreground">
-                Target penanganan:{" "}
-                <strong className="text-foreground">
-                  {formatWaktu(hasil.targetSelesaiAt)} WIB
-                </strong>
-                .
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground">
-              {sudahLogin
-                ? "Nomor tiket ini tetap berguna sebagai referensi, tapi Anda tidak wajib menyimpannya sendiri."
-                : "Nomor tiket ini satu-satunya cara memantau laporan Anda — simpan baik-baik."}
-            </span>
-          </AlertDescription>
-        </Alert>
+          </div>
 
-        {/* Beda pesan tergantung status login — supaya CTA-nya selalu masuk
-            akal: warga yang belum punya akun diajak mendaftar (baru dibuat
-            di akun-warga.router.ts, tiket ini SENDIRI TIDAK ikut tertaut
-            karena dibuat sebelum akunnya ada); yang sudah login diberi tahu
-            laporannya sudah otomatis tersimpan. */}
+          <div className="space-y-1">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900">
+              Pengaduan Berhasil Terkirim
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-600 max-w-md">
+              {hasil.pesan}
+            </p>
+          </div>
+        </div>
+
+        {/* Digital Ticket Key Section (Tanpa nested card) */}
+        <div className="space-y-3 border-y border-neutral-100 py-4">
+          <div className="flex items-center justify-between pb-1 text-[10px] sm:text-[11px] text-neutral-400 font-mono uppercase tracking-wider">
+            <span>Nomor Tiket Pengaduan</span>
+            <span className="text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+              Kunci Pelacakan
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-neutral-50/70 p-3.5 rounded-2xl border border-neutral-200/80">
+            <code className="font-mono text-xl sm:text-2xl font-extrabold tracking-wider text-blue-700">
+              {hasil.nomorTiket}
+            </code>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-xl text-xs font-semibold self-start sm:self-auto gap-1.5 min-h-[38px] bg-white"
+              onClick={() => salinTiket(hasil.nomorTiket)}
+            >
+              {disalin ? (
+                <>
+                  <CheckCircle2 className="size-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-semibold">Tersalin!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="size-3.5" />
+                  <span>Salin Tiket</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="space-y-2 text-xs pt-1">
+            {hasil.targetSelesaiAt && (
+              <div className="flex items-center justify-between border-b border-dashed border-neutral-100 pb-2">
+                <span className="flex items-center gap-1.5 text-neutral-500">
+                  <Clock className="size-3.5 text-blue-600" />
+                  Target Penanganan (SLA)
+                </span>
+                <span className="font-mono font-semibold text-neutral-900">
+                  {formatWaktu(hasil.targetSelesaiAt)} WIB
+                </span>
+              </div>
+            )}
+            <p className="text-[11px] text-neutral-500 leading-relaxed pt-1">
+              {sudahLogin
+                ? "Laporan ini otomatis tersimpan di riwayat akun Anda."
+                : "Simpan nomor tiket ini untuk memantau progres tindakan teknisi lapangan kapan saja."}
+            </p>
+          </div>
+        </div>
+
+        {/* Akun Helper Note */}
         {sudahLogin ? (
-          <Alert>
-            <CheckCircle2 />
-            <AlertDescription>
-              Laporan ini otomatis tersimpan di akun Anda.{" "}
-              <Link
-                href="/akun"
-                className="underline underline-offset-4 hover:text-foreground"
-              >
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs text-emerald-800">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+            <p>
+              Laporan otomatis terarsip di akun Anda.{" "}
+              <Link href="/akun" className="font-semibold underline underline-offset-2">
                 Lihat semua laporan saya
               </Link>
               .
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
         ) : (
-          <Alert>
-            <UserPlus />
-            <AlertDescription>
-              Punya banyak laporan? Buat akun supaya semuanya tersimpan otomatis
-              dan tidak perlu mengingat nomor tiket satu per satu.{" "}
-              <Link
-                href="/daftar?callbackUrl=/akun"
-                className="underline underline-offset-4 hover:text-foreground"
-              >
-                Daftar akun
-              </Link>
-              .
-            </AlertDescription>
-          </Alert>
+          <div className="flex items-start gap-2.5 rounded-xl border border-blue-500/25 bg-blue-500/10 p-3 text-xs text-blue-800">
+            <UserPlus className="mt-0.5 size-4 shrink-0 text-blue-600" />
+            <p>
+              Punya beberapa aduan?{" "}
+              <Link href="/daftar?callbackUrl=/akun" className="font-semibold underline underline-offset-2">
+                Daftar akun warga
+              </Link>{" "}
+              agar seluruh riwayat tersimpan otomatis tanpa perlu mencatat nomor tiket satu per satu.
+            </p>
+          </div>
         )}
+
+        {/* Mobile-Friendly CTAs */}
+        <div className="flex flex-col gap-2.5 sm:flex-row">
+          <div className="min-w-0 flex-1">
+            <TombolUtama asChild size="lg" className="w-full font-semibold rounded-xl min-h-[44px]">
+              <Link href={`/pengaduan-air?tab=lacak&nomor=${hasil.nomorTiket}`}>
+                <span>Lacak Tiket Ini Sekarang</span>
+                <ArrowRight className="size-4" />
+              </Link>
+            </TombolUtama>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <Button
+              onClick={resetForm}
+              variant="outline"
+              size="lg"
+              className="w-full rounded-xl min-h-[44px] text-xs sm:text-sm font-medium"
+            >
+              Buat Laporan Baru
+            </Button>
+          </div>
+        </div>
       </div>
     )
   }

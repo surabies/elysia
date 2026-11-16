@@ -1,0 +1,168 @@
+import type { BroadcastGangguanItem } from '@/types/broadcast'
+
+export const DAFTAR_BROADCAST_AWAL: BroadcastGangguanItem[] = [
+  {
+    id: 'bc-001',
+    judul: 'Pekerjaan Darurat Pipa Transmisi Cisangkuy Ø 400mm',
+    ringkasan: 'Penurunan tekanan hingga penghentian sementara aliran air bersih di wilayah Bandung Tengah & Selatan.',
+    kategori: 'DARURAT',
+    status: 'DALAM_PENGERJAAN',
+    progresPersen: 70,
+    prioritas: 'TINGGI',
+    waktuMulai: 'Hari ini, 06.30 WIB',
+    estimasiSelesai: 'Hari ini, 17.00 WIB (Normalisasi Bertahap)',
+    penyebab: 'Pergeseran tanah yang memicu kebocoran sambungan pipa transmisi utama jalur Cisangkuy.',
+    dampak: 'Aliran air mengecil atau terhenti sementara pada jam beban puncak.',
+    tindakanPenanganan: 'Tim Reaksi Cepat Wilayah Selatan sedang melakukan penggantian flange & pengelasan sleeve pipa.',
+    wilayahTerdampak: [
+      {
+        kecamatan: 'Sumur Bandung',
+        kelurahan: ['Braga', 'Kebon Pisang', 'Merdeka', 'Babakan Ciamis'],
+      },
+      {
+        kecamatan: 'Regol',
+        kelurahan: ['Balonggede', 'Ciateul', 'Pungkur', 'Pasirluyu'],
+      },
+      {
+        kecamatan: 'Lengkong',
+        kelurahan: ['Malabar', 'Burangrang', 'Paledang', 'Turangga'],
+      },
+    ],
+    kontakBantuan: {
+      label: 'Layanan Tangki Air Darurat Gratis',
+      nomor: '0811-222-7771',
+      waLink: 'https://wa.me/628112227771?text=Halo%20Tirtawening,%20mohon%20bantuan%20tangki%20air%20darurat%20di%20wilayah%20saya',
+    },
+    gambarUtama: '/images/meter/petugas.jpg',
+    tipeGambarUtama: 'FOTO_KEGIATAN',
+    galeriMedia: [
+      {
+        url: '/images/meter/petugas.jpg',
+        judul: 'Dokumentasi Tim Reaksi Cepat Lapangan',
+        keterangan: 'Teknisi perpipaan sedang melakukan pengelasan sleeve dan pemasangan flange baru.',
+        tipe: 'FOTO_KEGIATAN',
+      },
+      {
+        url: '/images/features/jaringan-bandung.png',
+        judul: 'Peta Skematik Jalur & Area Gangguan',
+        keterangan: 'Zona transmisi Cisangkuy dan tandon distribusi wilayah Bandung Selatan & Tengah.',
+        tipe: 'PETA_AREA',
+      },
+    ],
+    aktif: true,
+    diperbaruiPada: '10 menit lalu',
+  },
+  {
+    id: 'bc-002',
+    judul: 'Pemeliharaan Berkala Pompa Distribusi IPA Badaksinga',
+    ringkasan: 'Peningkatan keandalan mesin pompa air minum zona Bandung Utara.',
+    kategori: 'PEMELIHARAAN',
+    status: 'TERJADWAL',
+    progresPersen: 20,
+    prioritas: 'SEDANG',
+    waktuMulai: 'Besok, 22.00 WIB',
+    estimasiSelesai: 'Lusa, 04.00 WIB',
+    penyebab: 'Penggantian bearing dan kalibrasi otomatisasi inverter pompa tekanan tinggi.',
+    dampak: 'Penurunan tekanan air di lantai 2 ke atas tanpa pompa pendorong mandiri.',
+    tindakanPenanganan: 'Pekerjaan sengaja dilakukan pada malam hari untuk meminimalkan dampak aktivitas harian warga.',
+    wilayahTerdampak: [
+      {
+        kecamatan: 'Coblong',
+        kelurahan: ['Dago', 'Lebak Siliwangi', 'Sadang Serang', 'Sekeloa'],
+      },
+      {
+        kecamatan: 'Sukajadi',
+        kelurahan: ['Pasteur', 'Cipedes', 'Sukawarna'],
+      },
+    ],
+    kontakBantuan: {
+      label: 'Call Center 24 Jam',
+      nomor: '(022) 2509030',
+    },
+    gambarUtama: '/images/features/Pusat-Kendali.png',
+    tipeGambarUtama: 'FOTO_KEGIATAN',
+    galeriMedia: [
+      {
+        url: '/images/features/Pusat-Kendali.png',
+        judul: 'Monitoring Pusat Kendali Telemetri IPA Badaksinga',
+        keterangan: 'Pengawasan otomatis tekanan transmisi dan laju alir air minum.',
+        tipe: 'FOTO_KEGIATAN',
+      },
+      {
+        url: '/images/layanan/peta.png',
+        judul: 'Peta Zonasi Distribusi Bandung Utara',
+        keterangan: 'Wilayah distribusi suplai air dari IPA Badaksinga.',
+        tipe: 'PETA_AREA',
+      },
+    ],
+    aktif: true,
+    diperbaruiPada: '1 jam lalu',
+  },
+  {
+    id: 'bc-003',
+    judul: 'Promo Gebyar Sambungan Baru & Bebas Biaya Balik Nama',
+    ringkasan: 'Diskon biaya pemasangan sambungan rumah tangga baru hingga 35% dan bebas biaya balik nama selama bulan ini.',
+    kategori: 'EVENT',
+    status: 'DALAM_PENGERJAAN',
+    progresPersen: 100,
+    prioritas: 'NORMAL',
+    waktuMulai: '1 November 2026',
+    estimasiSelesai: '30 November 2026',
+    penyebab: 'Program percepatan cakupan air minum 100% perpipaan higienis Pemkot Bandung.',
+    dampak: 'Peluang penghematan biaya registrasi dan instalasi meter air baru bagi seluruh warga.',
+    tindakanPenanganan: 'Pendaftaran dapat dilakukan langsung secara online melalui menu Pasang Baru di website resmi ini.',
+    wilayahTerdampak: [
+      {
+        kecamatan: 'Seluruh Wilayah Kota Bandung',
+        kelurahan: ['Semua Kelurahan Terjangkau Jaringan Pipa Tirtawening'],
+      },
+    ],
+    kontakBantuan: {
+      label: 'Konsultasi Layanan Sambungan Baru',
+      nomor: '0811-222-7771',
+      waLink: 'https://wa.me/628112227771?text=Halo%20Tirtawening,%20saya%20tertarik%20dengan%20Promo%20Gebyar%20Sambungan%20Baru',
+    },
+    gambarUtama: '/images/brosur-gebyar.svg',
+    tipeGambarUtama: 'BROSUR',
+    galeriMedia: [
+      {
+        url: '/images/brosur-gebyar.svg',
+        judul: 'Brosur Resmi Gebyar Sambungan Baru 2026',
+        keterangan: 'Program diskon biaya sambungan pipa dan gratis biaya administrasi balik nama.',
+        tipe: 'BROSUR',
+      },
+      {
+        url: '/images/hero.jpg',
+        judul: 'Sosialisasi & Layanan Loket Terpadu Tirtawening',
+        keterangan: 'Pemberian asistensi langsung dan konsultasi syarat pendaftaran warga.',
+        tipe: 'FOTO_KEGIATAN',
+      },
+    ],
+    promoDetails: {
+      highlightDiskon: 'Diskon Pasang Baru s.d. 35% & Bebas Balik Nama',
+      periode: '1 November – 30 November 2026',
+      keunggulan: [
+        'Diskon Biaya Penyambungan Pipa Rumah Tangga s.d. 35%',
+        'Bebas Biaya Balik Nama Rekening Air 100% (Gratis Administrasi)',
+        'Fasilitas Cicilan Biaya Pasang 0% hingga 6 Bulan',
+        'Pemasangan Meter Air Digital Berstandar SNI & Uji Kualitas',
+      ],
+      syaratKetentuan: [
+        'Warga Kota Bandung dengan menunjukkan fotokopi KTP/KK pemohon',
+        'Fotokopi bukti kepemilikan persil/rumah atau PBB tahun terakhir',
+        'Jaringan pipa distribusi Tirtawening telah tersedia di depan persil/rumah',
+        'Tidak memiliki tunggakan rekening air pada persil bersangkutan',
+      ],
+      langkahDaftar: [
+        'Buka menu Pasang Baru pada portal web resmi Tirtawening',
+        'Isi data identitas diri, alamat persil, dan unggah foto KTP',
+        'Tim teknisi Tirtawening melakukan survei lokasi & verifikasi jaringan (1-2 hari kerja)',
+        'Pemasangan meter air resmi oleh teknisi bersertifikat dan aliran air siap digunakan',
+      ],
+      ctaLink: '/pasang-baru',
+      ctaText: 'Daftar Pasang Baru Sekarang',
+    },
+    aktif: true,
+    diperbaruiPada: '2 hari lalu',
+  },
+]

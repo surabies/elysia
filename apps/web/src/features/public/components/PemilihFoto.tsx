@@ -84,7 +84,7 @@ export function PemilihFoto({
         disabled={disabled}
       />
       {previewUrl ? (
-        <div className="relative">
+        <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-950 shadow-md">
           {/* Frame rasio tetap; blob: lokal jadi tanpa dialog zoom. */}
           <BingkaiFoto
             src={previewUrl}
@@ -95,22 +95,43 @@ export function PemilihFoto({
           />
           <button
             onClick={onHapus}
-            className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white"
+            className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-neutral-950/80 text-white shadow-md backdrop-blur-sm transition-transform hover:scale-105 active:scale-95"
             aria-label="Hapus foto"
             type="button"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         </div>
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border py-6 hover:bg-muted/50"
+          className="group relative flex w-full flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50/60 p-6 sm:p-8 text-neutral-700 transition-all hover:border-blue-500 hover:bg-blue-50/30 active:scale-[0.99]"
           type="button"
           disabled={disabled}
         >
-          <Camera className="h-7 w-7 text-muted-foreground" />
-          <p className="text-sm">Ambil foto</p>
+          {/* Viewfinder Target Corner Accents */}
+          <div className="absolute top-2 left-2 size-3 border-t-2 border-l-2 border-neutral-300 rounded-tl-sm group-hover:border-blue-500 transition-colors" />
+          <div className="absolute top-2 right-2 size-3 border-t-2 border-r-2 border-neutral-300 rounded-tr-sm group-hover:border-blue-500 transition-colors" />
+          <div className="absolute bottom-2 left-2 size-3 border-b-2 border-l-2 border-neutral-300 rounded-bl-sm group-hover:border-blue-500 transition-colors" />
+          <div className="absolute bottom-2 right-2 size-3 border-b-2 border-r-2 border-neutral-300 rounded-br-sm group-hover:border-blue-500 transition-colors" />
+
+          {/* Camera Icon Pill */}
+          <div className="flex size-13 items-center justify-center rounded-2xl bg-white shadow-xs ring-1 ring-neutral-200/90 transition-transform group-hover:scale-105 group-hover:ring-blue-400">
+            <Camera className="size-6 text-blue-600" />
+          </div>
+
+          <div className="text-center">
+            <p className="text-xs sm:text-sm font-semibold text-neutral-900">
+              Ambil Foto / Pilih dari Galeri
+            </p>
+            <p className="mt-0.5 text-[11px] sm:text-xs text-neutral-500">
+              Ketuk untuk membuka kamera ponsel Anda
+            </p>
+          </div>
+
+          <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200/80 bg-white px-2.5 py-0.5 text-[10px] font-medium text-neutral-600 shadow-2xs">
+            JPG, PNG, WEBP · Otomatis Teroptimasi
+          </span>
         </button>
       )}
       {deskripsi && <FieldDescription>{deskripsi}</FieldDescription>}

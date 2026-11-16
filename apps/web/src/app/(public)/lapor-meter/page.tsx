@@ -1,36 +1,38 @@
 import type { Metadata } from "next"
-import { CalendarClock, Upload } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CalendarClock, Upload, Camera, CheckCircle2 } from "lucide-react"
 import {
   LaporMeterForm,
   CekLaporanMeterForm,
   HalamanPublik,
   AsideBlok,
   LangkahList,
-  KartuBerbingkai,
+  PillTabs,
+  PillTabsList,
+  PillTabsTrigger,
+  PillTabsContent,
 } from "@/features/public"
 
 export const metadata: Metadata = {
-  title: "Lapor meter mandiri",
+  title: "Lapor Stand Meter Mandiri",
   description:
-    "Laporkan sendiri angka meter air Anda ke PERUMDA Tirtawening Kota Bandung",
+    "Laporkan sendiri angka meter air Anda ke PERUMDA Tirtawening Kota Bandung secara akurat, transparan, dan terverifikasi.",
 }
 
 const LANGKAH = [
   {
-    judul: "Cari nomor langganan Anda",
+    judul: "Input Nomor Langganan",
     detail:
-      "Ketik 11 digit nomor — identitas sambungan muncul otomatis untuk dicocokkan.",
+      "Ketik 11 digit nomor — nama dan data sambungan pelanggan akan terverifikasi otomatis.",
   },
   {
-    judul: "Foto meter & isi angkanya",
+    judul: "Foto Meter & Catat Angka",
     detail:
-      "Potret angka hitam pada meter air sebagai bukti, lalu tulis angkanya.",
+      "Ambil foto meteran air dengan jelas, lalu catat angka meter (hanya angka hitam).",
   },
   {
-    judul: "Petugas memverifikasi",
+    judul: "Verifikasi Petugas Cater",
     detail:
-      "Laporan berstatus menunggu sampai foto dicek petugas — baru menjadi dasar tagihan.",
+      "Laporan dicek oleh petugas verifikasi sebagai dasar penerbitan rekening bulan berjalan.",
   },
 ] as const
 
@@ -45,72 +47,87 @@ export default async function LaporMeterPage({
   return (
     <HalamanPublik
       eyebrow="Layanan Mandiri · 24 Jam"
-      judul="Laporkan angka meter Anda — biar tagihan sesuai pemakaian."
-      lede="Petugas tidak sempat mampir bulan ini? Kirim sendiri angka meter beserta foto bukti. Satu laporan per bulan, diverifikasi petugas sebelum dipakai menghitung tagihan."
+      judul="Laporkan angka meter Anda — biar tagihan presisi sesuai pemakaian."
+      lede="Petugas pencatat meter belum sempat mampir ke rumah bulan ini? Anda dapat mengirimkan foto dan angka stand meter mandiri. Laporan diverifikasi petugas sebelum menjadi dasar perhitungan tagihan."
       aside={
         <>
-          <AsideBlok label="Cara kerjanya">
+          <AsideBlok label="Panduan Membaca Angka Meter">
+            <div className="space-y-3">
+              <p className="text-neutral-600">
+                Pada meter air analog terdapat 2 warna penunjuk angka:
+              </p>
+              {/* Visual Meter Roll Demo */}
+              <div className="rounded-xl border border-neutral-200 bg-neutral-900 p-3 text-white shadow-inner">
+                <div className="flex items-center justify-between pb-1.5 text-[10px] font-mono text-neutral-400 uppercase">
+                  <span>Angka Hitam (m³)</span>
+                  <span className="text-red-400">Merah (Liter)</span>
+                </div>
+                <div className="flex items-center justify-center gap-1 font-mono text-lg font-bold">
+                  {/* Angka Hitam */}
+                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">0</span>
+                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">1</span>
+                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">4</span>
+                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">2</span>
+                  <span className="text-neutral-500 font-normal">,</span>
+                  {/* Angka Merah */}
+                  <span className="flex size-7 items-center justify-center rounded bg-red-950 text-red-400 border border-red-800/50">8</span>
+                  <span className="flex size-7 items-center justify-center rounded bg-red-950 text-red-400 border border-red-800/50">5</span>
+                </div>
+              </div>
+              <ul className="space-y-1.5 text-xs text-neutral-600">
+                <li className="flex items-start gap-1.5">
+                  <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                  <span><strong>Laporkan angka hitam</strong> saja (satuan meter kubik).</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="size-1.5 rounded-full bg-neutral-300 shrink-0 mt-1.5 ml-1" />
+                  <span>Abaikan angka merah (satuan liter / desimal).</span>
+                </li>
+              </ul>
+            </div>
+          </AsideBlok>
+
+          <AsideBlok label="Cara Kerjanya">
             <LangkahList langkah={LANGKAH} />
           </AsideBlok>
 
-          <AsideBlok label="Syarat foto">
-            <ul className="list-inside space-y-1.5">
-              <li>Angka pada meter terbaca jelas, tidak buram.</li>
-              <li>
-                Format JPG, PNG, atau WEBP — foto besar dikecilkan otomatis.
-              </li>
-              <li>Abaikan angka merah; yang dilaporkan angka hitam.</li>
-            </ul>
+          <AsideBlok label="Standar Mutu Foto">
+            <div className="flex items-start gap-3">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Camera className="size-4" />
+              </div>
+              <ul className="space-y-1.5 text-xs text-neutral-600">
+                <li>• Seluruh angka pada dial meter terbaca jelas tanpa blur.</li>
+                <li>• Kaca meteran bersih dari lumut, air tergenang, atau debu.</li>
+                <li>• Format JPG, PNG, atau WEBP (dikompresi otomatis secara aman).</li>
+              </ul>
+            </div>
           </AsideBlok>
         </>
       }
     >
-      <KartuBerbingkai
-        label="Formulir · Lapor Meter"
-        chip="1 Laporan / Bulan"
-        className="p-0"
-      >
-        <Tabs
-          key={`${tabAwal}-${nomor ?? ""}`}
-          defaultValue={tabAwal}
-          className="flex w-full flex-col"
-        >
-          <div className="px-5 pt-4 pb-2.5">
-            <TabsList
-              style={{
-                width: "100%",
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-              }}
-              className="h-9 border border-neutral-200 bg-neutral-100 text-neutral-700"
-            >
-              <TabsTrigger
-                value="lapor"
-                className="gap-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-black"
-              >
-                <Upload size={13} />
-                Lapor meter
-              </TabsTrigger>
-              <TabsTrigger
-                value="cek"
-                className="gap-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-black"
-              >
-                <CalendarClock size={13} />
-                Cek laporan
-              </TabsTrigger>
-            </TabsList>
-            <div className="mt-2.5 h-px bg-neutral-200" />
-          </div>
+      <div className="rounded-3xl border border-neutral-200/90 bg-white p-4 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <PillTabs defaultValue={tabAwal} key={`${tabAwal}-${nomor ?? ""}`}>
+          <PillTabsList>
+            <PillTabsTrigger value="lapor">
+              <Upload className="size-4 shrink-0 text-blue-600" />
+              <span>Lapor Stand Meter</span>
+            </PillTabsTrigger>
+            <PillTabsTrigger value="cek">
+              <CalendarClock className="size-4 shrink-0 text-neutral-500" />
+              <span>Cek Status Laporan</span>
+            </PillTabsTrigger>
+          </PillTabsList>
 
-          <TabsContent value="lapor" className="px-5 pt-2 pb-5">
+          <PillTabsContent value="lapor">
             <LaporMeterForm />
-          </TabsContent>
+          </PillTabsContent>
 
-          <TabsContent value="cek" className="px-5 pt-2 pb-5">
+          <PillTabsContent value="cek">
             <CekLaporanMeterForm nomorAwal={nomor} />
-          </TabsContent>
-        </Tabs>
-      </KartuBerbingkai>
+          </PillTabsContent>
+        </PillTabs>
+      </div>
     </HalamanPublik>
   )
 }

@@ -162,27 +162,37 @@ export function CekLaporanMeterForm({
     return (
       <div className="flex flex-col gap-4">
         {pemilihPeriodeUji}
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
-            {pratinjau.nama} · {pratinjau.nomorLangganan}
-          </p>
+        <div className="flex items-center justify-between gap-2 border-b border-neutral-100 pb-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
+              Pelanggan
+            </p>
+            <p className="truncate text-sm font-bold text-neutral-900">
+              {pratinjau.nama} <span className="font-mono font-medium text-xs text-neutral-500">· {pratinjau.nomorLangganan}</span>
+            </p>
+          </div>
           <Button
             type="button"
             variant="ghost"
             size="sm"
+            className="rounded-lg text-xs font-semibold text-neutral-600 hover:text-neutral-900 shrink-0"
             onClick={cekNomorLain}
           >
-            Cek nomor lain
+            Ganti nomor
           </Button>
         </div>
 
         {pratinjau.laporanBulanIni ? (
           <KartuLaporanMeter laporan={pratinjau.laporanBulanIni} />
         ) : (
-          <div className="rounded-lg bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
-            Belum ada laporan periode {formatPeriode(pratinjau.periodeBerjalan)}{" "}
-            atas nama {pratinjau.nama}. Kirim lewat tab{" "}
-            <strong>Lapor meter</strong> di sebelah.
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs text-amber-800 space-y-1.5">
+            <p className="font-semibold text-amber-900">
+              Belum Ada Laporan Periode {formatPeriode(pratinjau.periodeBerjalan)}
+            </p>
+            <p>
+              Belum ada data stand meter yang dikirim untuk sambungan ini pada bulan berjalan.
+              Silakan kirimkan laporan Anda melalui tab <strong>Lapor Stand Meter</strong> di atas.
+            </p>
           </div>
         )}
       </div>

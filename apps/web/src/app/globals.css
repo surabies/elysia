@@ -2048,3 +2048,27 @@ aside .sidebar-scroll::-webkit-scrollbar-thumb:active,
   border-left: 0px solid transparent !important; /* Full 8px saat di-drag */
   border-radius: 4px 0 0 4px !important;
 }
+
+/* ==========================================================================
+   Running Text / Marquee Ticker Keyframes
+   ========================================================================== */
+@keyframes broadcast-ticker {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-broadcast-ticker {
+  animation: broadcast-ticker var(--ticker-duration, 38s) linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-broadcast-ticker {
+    animation: none !important;
+  }
+}
+

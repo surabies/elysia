@@ -8,6 +8,7 @@ import { Logo } from "@/components/layout/Logo"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 import { SearchExperience } from "@/components/layout/SearchExperience"
 import { PillButton } from "@/components/shared/PillButton"
+import { BroadcastGangguanBanner } from "@/components/home/BroadcastGangguanBanner"
 import { downloadAppLink, mainNavLinks } from "@/config/site"
 import { topEventsContent } from "@/data/home"
 
@@ -16,6 +17,10 @@ export function SiteHeader() {
 
   return (
     <AutoHideHeader>
+      {/* 1. Ambient Live Disruption / Outage Broadcast Banner on Very Top */}
+      <BroadcastGangguanBanner />
+
+      {/* 2. Main Navigation Bar */}
       <nav
         aria-label="Navigasi Utama"
         className="mx-auto flex max-w-360 items-center justify-between p-4 flex-nowrap lg:px-12 lg:py-5"

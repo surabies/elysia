@@ -6,6 +6,12 @@ export {
   LangkahList,
   KartuBerbingkai,
 } from "./components/HalamanPublik"
+export {
+  PillTabs,
+  PillTabsList,
+  PillTabsTrigger,
+  PillTabsContent,
+} from "./components/PillTabs"
 export { CekTagihanForm } from "./components/CekTagihanFormulir"
 export { LaporMeterForm } from "./components/LaporMeterFormulir"
 export { CekLaporanMeterForm } from "./components/CekLaporanMeterFormulir"

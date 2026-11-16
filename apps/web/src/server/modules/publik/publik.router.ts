@@ -1,6 +1,11 @@
 import { Elysia, t } from 'elysia';
 import { eq, and } from 'drizzle-orm';
-import { db, caterMandiriPelanggan } from '@cater/db';
+import { db, caterMandiriPelanggan, golonganTarif, tarifBlok } from '@cater/db';
+import {
+  hitungRincianHargaAir,
+  hitungTotalTagihan,
+  type HargaBlok,
+} from '../../domain/tagihan/tagihan.engine';
 import { inquiryTagihanService } from '../../services/publik/inquiry-tagihan.service';
 import { pengaduanService } from '../../services/pengaduan/pengaduan.service';
 import { mandiriService } from '../../services/mandiri/mandiri.service';
@@ -256,6 +261,101 @@ const publikRoutes = new Elysia()
     {
       params: t.Object({ nolg: t.String() }),
       query: t.Object({ thbl: t.Optional(t.String()) }),
+    }
+  )
+
+  // 10. Master Tarif Air & Blok Progresif untuk Publik & Simulator
+  .get('/tarif', async () => {
+    const daftarGolongan = await db.select().from(golonganTarif);
+    const daftarBlok = await db.select().from(tarifBlok);
+
+    const data = daftarGolongan.map((g) => {
+      const blokTerkait = daftarBlok
+        .filter((b) => b.tarifKode === g.kode)
+        .sort((a, b) => a.blok - b.blok)
+        .map((b) => ({
+          blok: b.blok,
+          batasAwalM3: b.batasAwalM3,
+          batasAkhirM3: b.batasAkhirM3,
+          hargaPerM3: Number(b.hargaPerM3),
+        }));
+
+      return {
+        kode: g.kode,
+        nama: g.nama,
+        beaBeban: Number(g.beaBeban ?? 0),
+        beaAdmin: Number(g.beaAdmin ?? 0),
+        airKotor: Number(g.airKotor ?? 0),
+        lainLain: Number(g.lainLain ?? 0),
+        blok: blokTerkait,
+      };
+    });
+
+    return { success: true, data };
+  })
+
+  // 11. Hitung Simulasi Tagihan Air Berdasarkan Database & Domain Engine
+  .get(
+    '/tarif/hitung',
+    async ({ query: { kode, volume } }) => {
+      const vol = Math.max(0, Number(volume) || 0);
+      const [gol] = await db
+        .select()
+        .from(golonganTarif)
+        .where(eq(golonganTarif.kode, kode))
+        .limit(1);
+
+      if (!gol) {
+        return { success: false, error: `Golongan tarif ${kode} tidak ditemukan.` };
+      }
+
+      const blokRows = await db
+        .select()
+        .from(tarifBlok)
+        .where(eq(tarifBlok.tarifKode, kode));
+
+      const hargaBlokList: HargaBlok[] = blokRows.map((b) => ({
+        blok: b.blok,
+        batasAwalM3: b.batasAwalM3,
+        batasAkhirM3: b.batasAkhirM3,
+        hargaPerM3: Number(b.hargaPerM3),
+      }));
+
+      const rincianHargaAir = hitungRincianHargaAir(vol, hargaBlokList);
+      const beaBeban = Number(gol.beaBeban ?? 0);
+      const beaAdmin = Number(gol.beaAdmin ?? 0);
+      const airKotor = Number(gol.airKotor ?? 0);
+      const lainLain = Number(gol.lainLain ?? 0);
+
+      const totalTagihan = hitungTotalTagihan({
+        jmlHargaAir: rincianHargaAir.total,
+        beaBeban,
+        beaAdmin,
+        airKotor,
+        lainLain,
+      });
+
+      return {
+        success: true,
+        data: {
+          kode: gol.kode,
+          nama: gol.nama,
+          volumeM3: vol,
+          hargaAir: rincianHargaAir.total,
+          rincianBlok: rincianHargaAir.rincian,
+          beaBeban,
+          beaAdmin,
+          airKotor,
+          lainLain,
+          totalTagihan,
+        },
+      };
+    },
+    {
+      query: t.Object({
+        kode: t.String(),
+        volume: t.String(),
+      }),
     }
   );
 

@@ -155,6 +155,23 @@ export const standaloneTopNav: NavItem[] = [
       "USER",
     ],
   },
+  {
+    title: "Siaran & Info Gangguan",
+    href: "/broadcast",
+    description:
+      "Kelola siaran darurat pipa, pemeliharaan, dan event di landing page publik.",
+    keywords: ["broadcast", "siaran", "gangguan", "banner", "pengumuman", "event"],
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+      "VERIFIKATOR_2",
+      "VERIFIKATOR_3",
+      "PELAKSANA",
+      "USER",
+    ],
+  },
 ];
 
 // B. Tengah: Pencarian Detail Pelanggan (Aurora Bab 3.2)

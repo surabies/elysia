@@ -89,6 +89,7 @@ export const PRIMARY_ICONS: Record<string, SidebarIconComponent> = {
   "/places": Compass,
   "/peta-wilayah": Map,
   "/peta-pengaduan": MapPinned,
+  "/broadcast": Radio,
   "/pelanggan": Users,
   "/info-pelanggan": Contact,
   "/tools-tutup/monitoring-tutup-bulan": Lock,
@@ -180,6 +181,9 @@ const ITEM_ICONS: Record<string, SidebarIconComponent> = {
   "pengaduan air": LifeBuoy,
   "monitoring pengaduan air": LifeBuoy,
   pengaduan: LifeBuoy,
+  "siaran & info gangguan": Radio,
+  "siaran gangguan": Radio,
+  broadcast: Radio,
   "info pelanggan": Contact,
   pelanggan: Contact,
 

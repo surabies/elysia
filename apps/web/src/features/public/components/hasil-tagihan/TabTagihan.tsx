@@ -106,19 +106,37 @@ export function TabTagihan({ hasil }: { hasil: HasilCekTagihan }) {
         </div>
       </div>
 
-      <div className="rounded-lg bg-muted/40 px-4 py-3">
-        <div className="flex items-center justify-between">
+      <div className="relative overflow-hidden rounded-2xl bg-neutral-950 p-5 text-white shadow-xl">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-12 -top-12 size-36 rounded-full bg-cyan-500/10 blur-2xl"
+        />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-              Total tagihan
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold tracking-widest text-neutral-400 uppercase">
+                Total Tagihan Air
+              </span>
+              <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 font-mono text-[10px] text-cyan-300">
+                {t.pemakaianM3} m³
+              </span>
+            </div>
+            <p className="mt-1 font-mono text-3xl font-extrabold tracking-tight text-white">
+              {formatRupiah(t.totalTagihan)}
             </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              {formatPeriode(t.periode)}
+            <p className="mt-1 text-xs text-neutral-400">
+              Periode {formatPeriode(t.periode)} · Jatuh tempo {formatTanggal(t.tanggalJatuhTempo)}
             </p>
           </div>
-          <p className="font-mono text-2xl font-bold tracking-tight text-foreground">
-            {formatRupiah(t.totalTagihan)}
-          </p>
+
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <a
+              href="/cara-pembayaran"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-xs font-semibold text-neutral-950 transition-all hover:bg-neutral-100 hover:shadow-sm text-center"
+            >
+              Panduan Bayar
+            </a>
+          </div>
         </div>
       </div>
     </div>

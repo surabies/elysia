@@ -37,7 +37,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-white text-black font-sans">
       <SiteHeader />
-      <main className="flex flex-1 flex-col pt-22 [&_.section-white+.section-white]:pt-0">
+      <main className="flex flex-1 flex-col pt-26 md:pt-30 [&_.section-white+.section-white]:pt-0">
         {children}
       </main>
       <SiteFooter />

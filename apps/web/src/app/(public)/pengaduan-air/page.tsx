@@ -1,21 +1,30 @@
 import type { Metadata } from "next"
-import { MessageSquare, Ticket } from "lucide-react"
+import Link from "next/link"
+import { MessageSquare, Ticket, AlertTriangle, ShieldCheck, MapPin, ArrowUpRight, Clock } from "lucide-react"
 import { auth } from "@/lib/auth/index"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   PengaduanForm,
   LacakTiketForm,
   HalamanPublik,
   AsideBlok,
-  KartuBerbingkai,
+  PillTabs,
+  PillTabsList,
+  PillTabsTrigger,
+  PillTabsContent,
 } from "@/features/public"
 import { getPetaCakupan } from "@/server/services/geo/boundary.service"
 
 export const metadata: Metadata = {
-  title: "Pengaduan",
+  title: "Pengaduan Gangguan Air & Lacak Tiket",
   description:
-    "Laporkan kebocoran, air mati, atau keluhan layanan PERUMDA Tirtawening Kota Bandung",
+    "Sampaikan laporan kebocoran pipa, air keruh, atau gangguan meteran air PERUMDA Tirtawening Kota Bandung secara cepat dan pantau progres penanganan secara transparan.",
 }
+
+const SLA_LIST = [
+  { tipe: "Pipa Distribusi Bocor (TRC)", target: "< 6 Jam", badge: "Prioritas 1" },
+  { tipe: "Air Keruh / Aliran Terhenti", target: "< 12 Jam", badge: "Prioritas 2" },
+  { tipe: "Meter Rusak / Akurasi", target: "1 - 2 Hari", badge: "Jadwal" },
+]
 
 export default async function PengaduanPage({
   searchParams,
@@ -28,96 +37,107 @@ export default async function PengaduanPage({
 
   return (
     <HalamanPublik
-      eyebrow="Pengaduan & Pelacakan"
+      eyebrow="Pengaduan & Pelacakan GIS"
       judul="Gangguan air bukan urusan Anda sendirian."
-      lede="Pipa bocor, air keruh, meter rusak, atau keluhan layanan — laporkan di sini dan pantau penanganannya lewat nomor tiket. Terbuka untuk siapa saja, tidak harus pelanggan."
+      lede="Pipa bocor di jalan, air keruh, aliran terhenti, atau meter rusak — laporkan di sini dan pantau penanganannya lewat nomor tiket. Terbuka untuk seluruh warga Bandung, tidak wajib memiliki nomor langganan."
       aside={
         <>
-          <AsideBlok label="Tidak harus pelanggan">
-            <p>
-              Melihat pipa bocor di jalan? Laporkan saja — kolom nomor langganan
-              boleh dikosongkan. Yang penting petugas tahu lokasinya.
-            </p>
+          <AsideBlok label="Prioritas Reaksi Cepat (TRC)">
+            <div className="flex items-start gap-3">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <AlertTriangle className="size-4" />
+              </div>
+              <div className="space-y-1.5 text-xs text-neutral-600">
+                <p>
+                  Melihat kebocoran pipa air di jalan raya atau pemukiman?
+                </p>
+                <p>
+                  <strong>Kolom nomor langganan boleh dikosongkan.</strong> Cukup
+                  tandai titik lokasi peta dan unggah foto agar regu lapangan dapat
+                  langsung menuju sasaran.
+                </p>
+              </div>
+            </div>
           </AsideBlok>
 
-          <AsideBlok label="Kebocoran diprioritaskan">
-            <p>
-              Laporan kebocoran otomatis masuk antrean prioritas tinggi dan
-              meminta titik lokasi, supaya regu lapangan langsung menuju
-              sasaran.
-            </p>
+          <AsideBlok label="Target Kecepatan Respons (SLA)">
+            <div className="space-y-2">
+              {SLA_LIST.map((item) => (
+                <div
+                  key={item.tipe}
+                  className="flex items-center justify-between rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-1.5 text-xs"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="size-3 text-neutral-400" />
+                    <span className="font-medium text-neutral-800">{item.tipe}</span>
+                  </div>
+                  <span className="font-mono text-[11px] font-semibold text-blue-700">
+                    {item.target}
+                  </span>
+                </div>
+              ))}
+              <p className="pt-1 text-[11px] text-neutral-500">
+                Target waktu penanganan ditampilkan di pelacakan tiket secara transparan.
+              </p>
+            </div>
           </AsideBlok>
 
-          <AsideBlok label="Ada target waktunya">
-            <p>
-              Setiap tiket punya target penanganan sesuai tingkat kegawatannya —
-              dan target itu ikut ditampilkan di halaman pelacakan, termasuk
-              saat kami melewatinya.
-            </p>
+          <AsideBlok label="Peta Kendali Spasial">
+            <div className="flex items-start gap-3">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+                <MapPin className="size-4" />
+              </div>
+              <div className="space-y-2 text-xs text-neutral-600">
+                <p>
+                  Ingin memantau persebaran titik perbaikan pipa dan info gangguan di seluruh Kota Bandung?
+                </p>
+                <Link
+                  href="/peta-pengaduan"
+                  className="inline-flex items-center gap-1 font-semibold text-blue-600 hover:underline"
+                >
+                  Buka Peta Pengaduan GIS <ArrowUpRight className="size-3" />
+                </Link>
+              </div>
+            </div>
           </AsideBlok>
 
-          <AsideBlok label="Anda yang menutup tiket">
-            <p>
-              Petugas hanya bisa menandai laporan <em>selesai</em>. Tiket baru
-              benar-benar ditutup setelah Anda mengonfirmasi — kalau masalahnya
-              belum beres, buka kembali tiket yang sama.
-            </p>
-          </AsideBlok>
-
-          <AsideBlok label="Simpan nomor tiket">
-            <p>
-              Setiap laporan mendapat nomor tiket unik — satu-satunya kunci
-              memantau perkembangan penanganan. Catat atau salin begitu muncul.
-            </p>
-            <p className="mt-3 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 font-mono text-xs tracking-wider text-neutral-800">
-              TW-2607-4F2A9K
-            </p>
+          <AsideBlok label="Hak Konfirmasi Pelapor">
+            <div className="flex items-start gap-3">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <ShieldCheck className="size-4" />
+              </div>
+              <p className="text-xs text-neutral-600">
+                Petugas hanya bisa menandai status <em>Perbaikan Selesai</em>. Tiket baru
+                benar-benar ditutup setelah Anda mengonfirmasi bahwa air sudah mengalir
+                normal kembali.
+              </p>
+            </div>
           </AsideBlok>
         </>
       }
     >
-      <KartuBerbingkai
-        label="Layanan · Pengaduan"
-        chip="Terbuka Umum"
-        className="p-0"
-      >
-        <Tabs defaultValue={tabAwal} className="flex w-full flex-col">
-          <div className="px-5 pt-4 pb-2.5">
-            <TabsList
-              style={{
-                width: "100%",
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-              }}
-              className="h-9 border border-neutral-200 bg-neutral-100 text-neutral-700"
-            >
-              <TabsTrigger
-                value="lapor"
-                className="gap-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-black"
-              >
-                <MessageSquare size={13} />
-                Buat pengaduan
-              </TabsTrigger>
-              <TabsTrigger
-                value="lacak"
-                className="gap-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-black"
-              >
-                <Ticket size={13} />
-                Lacak tiket
-              </TabsTrigger>
-            </TabsList>
-            <div className="mt-2.5 h-px bg-neutral-200" />
-          </div>
+      <div className="rounded-3xl border border-neutral-200/90 bg-white p-4 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <PillTabs defaultValue={tabAwal} key={`${tabAwal}-${nomor ?? ""}`}>
+          <PillTabsList>
+            <PillTabsTrigger value="lapor">
+              <MessageSquare className="size-4 shrink-0 text-blue-600" />
+              <span>Buat Pengaduan Baru</span>
+            </PillTabsTrigger>
+            <PillTabsTrigger value="lacak">
+              <Ticket className="size-4 shrink-0 text-neutral-500" />
+              <span>Lacak Tiket Aduan</span>
+            </PillTabsTrigger>
+          </PillTabsList>
 
-          <TabsContent value="lapor" className="px-5 pt-2 pb-5">
+          <PillTabsContent value="lapor">
             <PengaduanForm sudahLogin={!!session?.user} peta={peta} />
-          </TabsContent>
+          </PillTabsContent>
 
-          <TabsContent value="lacak" className="px-5 pt-2 pb-5">
+          <PillTabsContent value="lacak">
             <LacakTiketForm nomorAwal={nomor} />
-          </TabsContent>
-        </Tabs>
-      </KartuBerbingkai>
+          </PillTabsContent>
+        </PillTabs>
+      </div>
     </HalamanPublik>
   )
 }

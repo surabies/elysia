@@ -10,25 +10,49 @@
 // menyebut "Belum dibayar" pada yang sudah adalah tuduhan. Halaman ini
 // menampilkan RIWAYAT TAGIHAN dan pemakaiannya saja; kebenaran pembayaran
 // ada di loket.
+import { CheckCircle2, User, MapPin } from "@/components/ui/hugeicons-compat"
 import type { HasilCekTagihan } from "../../lib/api"
 
 export function HasilTagihanHeader({ hasil }: { hasil: HasilCekTagihan }) {
   const { pelanggan } = hasil
 
   return (
-    <div className="px-5 py-4">
-      <div className="min-w-0 space-y-0.5">
-        <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-          No. Pelanggan
-        </p>
-        <p className="font-mono text-base font-bold text-foreground">
-          {pelanggan.nomorLangganan}
-        </p>
-        <p className="truncate text-sm text-muted-foreground">
-          {pelanggan.nama}
-        </p>
+    <div className="border-b border-neutral-100 bg-gradient-to-r from-blue-50/40 via-white to-sky-50/30 px-6 py-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold tracking-widest text-neutral-500 uppercase">
+              No. Langganan
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+              <CheckCircle2 className="size-3 text-emerald-600" /> Sambungan Aktif
+            </span>
+          </div>
+
+          <p className="font-mono text-xl font-bold tracking-tight text-neutral-900">
+            {pelanggan.nomorLangganan}
+          </p>
+
+          <div className="flex items-center gap-1.5 text-sm text-neutral-600 font-medium">
+            <User className="size-3.5 text-neutral-400" />
+            <span className="truncate">{pelanggan.nama}</span>
+          </div>
+        </div>
+
+        {pelanggan.tarifGolongan && (
+          <div className="self-start rounded-xl border border-neutral-200/80 bg-white px-3.5 py-2 shadow-xs sm:self-auto sm:text-right">
+            <p className="text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
+              Golongan Tarif
+            </p>
+            <p className="font-mono text-xs font-bold text-neutral-900">
+              {pelanggan.tarifGolongan.kodeAsli}
+            </p>
+            <p className="text-[11px] text-neutral-500">
+              {pelanggan.tarifGolongan.kategori}
+            </p>
+          </div>
+        )}
       </div>
-      <div className="mt-4 h-px bg-border/60" />
     </div>
   )
 }
