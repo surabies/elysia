@@ -165,11 +165,11 @@ export function InfoPelangganView() {
             <PanelPembacaan catat={data.catat} riwayat={data.riwayat} />
             <KartuPemakaianAir
               infoSambungan={{
-                nomorSambungan: data.pelanggan.nosl,
-                nomorMeterDefault: data.catat?.nometer || "MTR-48210",
+                nomorSambungan: data.pelanggan.nomorLangganan,
+                nomorMeterDefault: data.pelanggan.nomorMeter || "MTR-48210",
                 namaPelanggan: data.pelanggan.nama,
-                alamat: data.pelanggan.alamat,
-                golonganTarif: data.pelanggan.kodegol,
+                alamat: data.pelanggan.alamat || "",
+                golonganTarif: data.pelanggan.golongan || "-",
                 batasWajarM3: 30,
               }}
             />

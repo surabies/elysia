@@ -59,7 +59,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { IconPlaceholder } from "@/app/(create)/components/icon-placeholder"
+
+function IconPlaceholder(_props: Record<string, any>) {
+  return null
+}
 
 interface IData {
   id: string
@@ -271,19 +274,17 @@ function ActionsCell({ row }: { row: Row<DataGridFeatures, IData> }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button className="size-7" size="icon" variant="ghost">
-            <IconPlaceholder
-              lucide="MoreHorizontalIcon"
-              tabler="IconDots"
-              hugeicons="MoreHorizontalCircle01Icon"
-              phosphor="DotsThreeIcon"
-              remixicon="RiMoreLine"
-            />
-          </Button>
-        }
-      />
+      <DropdownMenuTrigger asChild>
+        <Button className="size-7" size="icon" variant="ghost">
+          <IconPlaceholder
+            lucide="MoreHorizontalIcon"
+            tabler="IconDots"
+            hugeicons="MoreHorizontalCircle01Icon"
+            phosphor="DotsThreeIcon"
+            remixicon="RiMoreLine"
+          />
+        </Button>
+      </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="start">
         <DropdownMenuItem onClick={() => {}}>Edit</DropdownMenuItem>
         <DropdownMenuItem onClick={handleCopyId}>Copy ID</DropdownMenuItem>
@@ -592,25 +593,23 @@ export function Pattern() {
               )}
             </InputGroup>
             <Popover>
-              <PopoverTrigger
-                render={
-                  <Button variant="outline">
-                    <IconPlaceholder
-                      lucide="FunnelIcon"
-                      tabler="IconFilter"
-                      hugeicons="FilterIcon"
-                      phosphor="FunnelIcon"
-                      remixicon="RiFilter2Line"
-                    />
-                    Status
-                    {selectedStatuses.length > 0 && (
-                      <Badge size="sm" variant="info-outline">
-                        {selectedStatuses.length}
-                      </Badge>
-                    )}
-                  </Button>
-                }
-              />
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  <IconPlaceholder
+                    lucide="FunnelIcon"
+                    tabler="IconFilter"
+                    hugeicons="FilterIcon"
+                    phosphor="FunnelIcon"
+                    remixicon="RiFilter2Line"
+                  />
+                  Status
+                  {selectedStatuses.length > 0 && (
+                    <Badge size="sm" variant="info-outline">
+                      {selectedStatuses.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
               <PopoverContent className="w-40" align="start">
                 <div className="space-y-3">
                   <div className="text-muted-foreground text-xs font-medium">

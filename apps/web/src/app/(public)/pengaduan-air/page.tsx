@@ -29,11 +29,13 @@ const SLA_LIST = [
 export default async function PengaduanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ nomor?: string; tab?: string }>
+  searchParams: Promise<{ nomor?: string; tab?: string; tiket?: string; nosamb?: string }>
 }) {
-  const { nomor, tab } = await searchParams
+  const { nomor, tab, tiket, nosamb } = await searchParams
   const [session, peta] = await Promise.all([auth(), getPetaCakupan()])
-  const tabAwal = nomor || tab === "lacak" ? "lacak" : "lapor"
+  const rawNomor = (nomor ?? tiket ?? nosamb ?? "").trim()
+  const nomorAwal = rawNomor || undefined
+  const tabAwal = nomorAwal || tab === "lacak" ? "lacak" : "lapor"
 
   return (
     <HalamanPublik
@@ -117,7 +119,7 @@ export default async function PengaduanPage({
       }
     >
       <div className="rounded-3xl border border-neutral-200/90 bg-white p-4 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <PillTabs defaultValue={tabAwal} key={`${tabAwal}-${nomor ?? ""}`}>
+        <PillTabs defaultValue={tabAwal} key={`${tabAwal}-${nomorAwal ?? ""}`}>
           <PillTabsList>
             <PillTabsTrigger value="lapor">
               <MessageSquare className="size-4 shrink-0 text-blue-600" />
@@ -134,7 +136,7 @@ export default async function PengaduanPage({
           </PillTabsContent>
 
           <PillTabsContent value="lacak">
-            <LacakTiketForm nomorAwal={nomor} />
+            <LacakTiketForm nomorAwal={nomorAwal} />
           </PillTabsContent>
         </PillTabs>
       </div>

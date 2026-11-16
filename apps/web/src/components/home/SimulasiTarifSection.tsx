@@ -10,9 +10,15 @@ import {
   TrendingUp,
   Info,
   ArrowRight,
-  Database,
   CheckCircle2,
 } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export interface BlokTarifItem {
   blok: number
@@ -237,12 +243,6 @@ export function SimulasiTarifSection() {
                   <Calculator className="h-3.5 w-3.5" />
                   <span>Simulasi Tagihan Air Resmi</span>
                 </div>
-                <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300 border border-emerald-500/30">
-                  <Database className="h-3 w-3" />
-                  <span>
-                    {isDbLoaded ? 'Live PostgreSQL Terkoneksi' : 'Master Tarif Database'}
-                  </span>
-                </div>
               </div>
 
               <h2
@@ -258,7 +258,7 @@ export function SimulasiTarifSection() {
               </p>
             </div>
 
-            {/* Pilihan Golongan Tarif dari Database */}
+            {/* Pilihan Golongan Tarif dari Database Menggunakan Shadcn UI Select */}
             <div className="space-y-2">
               <label
                 htmlFor="select-golongan"
@@ -266,18 +266,26 @@ export function SimulasiTarifSection() {
               >
                 Pilih Golongan Tarif Pelanggan:
               </label>
-              <select
-                id="select-golongan"
-                value={golonganKode}
-                onChange={(e) => setGolonganKode(e.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-800/90 px-4 py-3 text-sm font-medium text-white shadow-inner focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-              >
-                {daftarGolongan.map((g) => (
-                  <option key={g.kode} value={g.kode} className="bg-slate-900 text-white">
-                    [{g.kode}] {g.nama}
-                  </option>
-                ))}
-              </select>
+              <Select value={golonganKode} onValueChange={setGolonganKode}>
+                <SelectTrigger
+                  id="select-golongan"
+                  className="w-full h-12 rounded-2xl border-slate-700/80 bg-slate-800/95 px-4 text-sm font-medium text-white shadow-inner hover:bg-slate-700/80 hover:text-white focus:bg-slate-800 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 transition-all [&_svg]:text-slate-400 [&_svg]:size-4 cursor-pointer data-[placeholder]:text-slate-400"
+                >
+                  <SelectValue placeholder="Pilih golongan tarif pelanggan" />
+                </SelectTrigger>
+                <SelectContent className="border border-slate-700 bg-slate-900 text-white max-h-72 z-50 rounded-xl shadow-2xl p-1">
+                  {daftarGolongan.map((g) => (
+                    <SelectItem
+                      key={g.kode}
+                      value={g.kode}
+                      className="text-slate-200 hover:bg-slate-800 hover:text-cyan-300 focus:bg-slate-800 focus:text-cyan-300 data-[highlighted]:bg-slate-800 data-[highlighted]:text-cyan-300 cursor-pointer py-2.5 px-3 rounded-lg text-sm transition-colors"
+                    >
+                      <span className="font-mono text-cyan-400 font-semibold mr-2">[{g.kode}]</span>
+                      <span>{g.nama}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Slider Volume Pemakaian */}

@@ -22,8 +22,7 @@ import { TombolUtama } from "./TombolUtama"
 import { cn } from "@/lib/utils"
 
 export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
-  // nomorAwal datang dari ?nomor= (form cek cepat di landing) — hanya
-  // mengisi input, tidak auto-submit; lihat catatan di page.tsx-nya.
+  // nomorAwal datang dari ?nomor= (form cek cepat di landing)
   const [nomorLangganan, setNomorLangganan] = React.useState(nomorAwal ?? "")
   const [pending, setPending] = React.useState(false)
   const [pesanError, setPesanError] = React.useState<string | null>(null)
@@ -31,8 +30,8 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
 
   const isLengkap = nomorLangganan.length === 11
 
-  async function cari() {
-    const nomor = nomorLangganan.trim()
+  async function cari(targetNomor?: string) {
+    const nomor = (targetNomor ?? nomorLangganan).trim()
     if (nomor.length !== 11) {
       setPesanError("Nomor langganan harus 11 digit.")
       return
@@ -51,6 +50,14 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
       setPending(false)
     }
   }
+
+  // Auto-search langsung jika ada nomorAwal dari URL/Landing Hero
+  React.useEffect(() => {
+    if (nomorAwal && nomorAwal.trim().length === 11) {
+      void cari(nomorAwal.trim())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nomorAwal])
 
   return (
     <div className="flex flex-col gap-6">
@@ -110,7 +117,7 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
             )}
           </div>
           <TombolUtama
-            onClick={cari}
+            onClick={() => void cari()}
             disabled={pending || !isLengkap}
             size="lg"
             className="w-full sm:w-auto px-6 rounded-xl font-medium shadow-sm transition-all"

@@ -23,7 +23,7 @@ export const topEventsContent: TopEventsContent = {
   events: [
     {
       id: "1",
-      title: "Cek Tagihan Rekening Air",
+      title: "Cek Tagihan Air",
       venue: "Layanan Mandiri 24 Jam",
       city: "Kota Bandung",
       date: "Online 24 Jam",
@@ -32,7 +32,7 @@ export const topEventsContent: TopEventsContent = {
     },
     {
       id: "2",
-      title: "Lapor Stand Meter Mandiri",
+      title: "Lapor Stand Meter",
       venue: "Pembacaan Mandiri",
       city: "Kota Bandung",
       date: "Tgl 1 - 20 Tiap Bulan",
@@ -41,7 +41,7 @@ export const topEventsContent: TopEventsContent = {
     },
     {
       id: "3",
-      title: "Pengaduan Gangguan & Kebocoran",
+      title: "Pengaduan Air",
       venue: "Tim Reaksi Cepat",
       city: "Kota Bandung",
       date: "Respon Cepat",
@@ -50,7 +50,7 @@ export const topEventsContent: TopEventsContent = {
     },
     {
       id: "4",
-      title: "Peta Kendali Pengaduan Spasial",
+      title: "Peta Gangguan Air",
       venue: "Sistem GIS Operasional",
       city: "Kota Bandung",
       date: "Live Monitoring",
@@ -59,7 +59,7 @@ export const topEventsContent: TopEventsContent = {
     },
     {
       id: "5",
-      title: "Pendaftaran Sambungan Baru",
+      title: "Pasang Sambungan Baru",
       venue: "Pelayanan Pasang Baru",
       city: "Kota Bandung",
       date: "Senin - Jumat",
@@ -68,7 +68,7 @@ export const topEventsContent: TopEventsContent = {
     },
     {
       id: "6",
-      title: "Info Pemeliharaan & Gangguan",
+      title: "Info Pemeliharaan",
       venue: "Pusat Distribusi Jaringan",
       city: "Kota Bandung",
       date: "Pembaruan Real-Time",

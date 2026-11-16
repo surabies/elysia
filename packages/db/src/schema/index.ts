@@ -15,3 +15,4 @@ export * from './dpm';
 export * from './gwm';
 export * from './pengaduan';
 export * from './kpi';
+export * from './broadcast';

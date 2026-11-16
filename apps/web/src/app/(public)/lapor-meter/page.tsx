@@ -39,10 +39,12 @@ const LANGKAH = [
 export default async function LaporMeterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ nomor?: string; tab?: string }>
+  searchParams: Promise<{ nomor?: string; tab?: string; nosamb?: string }>
 }) {
-  const { nomor, tab } = await searchParams
-  const tabAwal = nomor || tab === "cek" ? "cek" : "lapor"
+  const { nomor: rawNomor, tab, nosamb } = await searchParams
+  const raw = (rawNomor ?? nosamb ?? "").replace(/\D/g, "")
+  const nomor = raw.length === 11 ? raw : (raw || undefined)
+  const tabAwal = tab === "cek" ? "cek" : "lapor"
 
   return (
     <HalamanPublik
@@ -120,7 +122,7 @@ export default async function LaporMeterPage({
           </PillTabsList>
 
           <PillTabsContent value="lapor">
-            <LaporMeterForm />
+            <LaporMeterForm nomorAwal={nomor} />
           </PillTabsContent>
 
           <PillTabsContent value="cek">

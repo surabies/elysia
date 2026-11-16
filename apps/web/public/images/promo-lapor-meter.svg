@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
+  <defs>
+    <linearGradient id="bgP3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18112e" />
+      <stop offset="50%" stop-color="#28174f" />
+      <stop offset="100%" stop-color="#150d30" />
+    </linearGradient>
+    <linearGradient id="purpleGradP3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+    <linearGradient id="badgeGradP3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#9333ea" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="675" fill="url(#bgP3)" />
+
+  <!-- Ambient Glows -->
+  <circle cx="1080" cy="110" r="290" fill="#a855f7" opacity="0.12" />
+  <circle cx="110" cy="570" r="250" fill="#3b82f6" opacity="0.1" />
+
+  <!-- Top Ribbon -->
+  <rect x="70" y="45" width="460" height="42" rx="21" fill="#ffffff" fill-opacity="0.1" stroke="#ffffff" stroke-opacity="0.2" />
+  <circle cx="95" cy="66" r="7" fill="#c084fc" />
+  <text x="115" y="72" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#e0f2fe" letter-spacing="2">
+    PERUMDA TIRTAWENING KOTA BANDUNG
+  </text>
+
+  <!-- Badge Promo -->
+  <rect x="830" y="45" width="300" height="42" rx="21" fill="url(#badgeGradP3)" />
+  <text x="980" y="72" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#ffffff" letter-spacing="1.5">
+    GERAKAN DIGITALISASI 2026
+  </text>
+
+  <!-- Main Headline Title -->
+  <text x="70" y="160" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#c084fc" letter-spacing="3">
+    GEBYAR DIGITAL MANDIRI
+  </text>
+  <text x="70" y="230" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="900" fill="#ffffff" letter-spacing="-1">
+    Lapor Stand Meter Mandiri
+  </text>
+  <text x="70" y="290" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="800" fill="url(#purpleGradP3)">
+    &amp; Raih Reward Pelanggan Teladan
+  </text>
+
+  <!-- Subheadline -->
+  <text x="70" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="400" fill="#cbd5e1">
+    Foto angka meteran air sendiri setiap tgl 1-20, tagihan dijamin presisi tanpa estimasi taksiran.
+  </text>
+
+  <!-- Feature Cards Grid -->
+  <g transform="translate(70, 385)">
+    <rect x="0" y="0" width="320" height="110" rx="16" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15" />
+    <text x="24" y="42" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#c084fc">
+      TAGIHAN AKURAT
+    </text>
+    <text x="24" y="76" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#ffffff">
+      100% Pemakaian Riil
+    </text>
+  </g>
+
+  <g transform="translate(415, 385)">
+    <rect x="0" y="0" width="320" height="110" rx="16" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15" />
+    <text x="24" y="42" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#38bdf8">
+      REWARD &amp; CASHBACK
+    </text>
+    <text x="24" y="76" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#ffffff">
+      Undian Tiap Periode
+    </text>
+  </g>
+
+  <g transform="translate(760, 385)">
+    <rect x="0" y="0" width="370" height="110" rx="16" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15" />
+    <text x="24" y="42" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#34d399">
+      CEPAT &amp; PRAKTIS
+    </text>
+    <text x="24" y="76" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#ffffff">
+      Kirim Foto Dalam 1 Menit
+    </text>
+  </g>
+
+  <!-- Footer Watermark & Period -->
+  <line x1="70" y1="540" x2="1130" y2="540" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1" />
+  <text x="70" y="585" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600" fill="#94a3b8">
+    PERIODE PELAPORAN: TANGGAL 1 S.D. 20 SETIAP BULAN BERJALAN
+  </text>
+  <text x="1130" y="585" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#c084fc">
+    LAPOR VIA MENU LAPOR METER
+  </text>
+</svg>

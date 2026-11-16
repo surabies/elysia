@@ -53,9 +53,13 @@ export type JenisFoto =
   | 'selesai' // Foto bukti penyelesaian perbaikan / SPK
   | 'angkat'  // Foto water meter lama saat diangkat/dicabut
   | 'pasang'  // Foto water meter baru saat dipasang
-  | 'avatar'; // Foto profil akun / avatar pengguna
+  | 'avatar'  // Foto profil akun / avatar pengguna
+  | 'banner'  // Foto / banner siaran & promo
+  | 'brosur'  // Brosur promosi gebyar
+  | 'kegiatan'// Dokumentasi tim perbaikan pipa lapangan
+  | 'peta';   // Skematik peta zona terdampak
 
-export type ModulFoto = 'cater' | 'mandiri' | 'gwm' | 'pengaduan' | 'avatars';
+export type ModulFoto = 'cater' | 'mandiri' | 'gwm' | 'pengaduan' | 'avatars' | 'broadcast';
 
 /**
  * Standarisasi Penamaan File Sesuai Format:

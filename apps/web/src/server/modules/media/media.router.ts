@@ -79,6 +79,7 @@ export const mediaRouter = new Elysia({ prefix: '/media' })
           t.Literal('gwm'),
           t.Literal('pengaduan'),
           t.Literal('avatars'),
+          t.Literal('broadcast'),
         ]),
         jenis: t.Union([
           t.Literal('stand'),
@@ -89,6 +90,10 @@ export const mediaRouter = new Elysia({ prefix: '/media' })
           t.Literal('angkat'),
           t.Literal('pasang'),
           t.Literal('avatar'),
+          t.Literal('banner'),
+          t.Literal('brosur'),
+          t.Literal('kegiatan'),
+          t.Literal('peta'),
         ]),
         identifier: t.String({ description: 'NOLG / Nomor Tiket / User ID' }),
         thbl: t.Optional(t.String({ description: 'THBL 6 digit, contoh: 202610' })),

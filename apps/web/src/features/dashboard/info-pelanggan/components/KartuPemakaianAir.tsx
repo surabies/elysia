@@ -634,8 +634,9 @@ export function KartuPemakaianAir({
                       getY(item.totalM3) - 4
                     }`}
                     className="fill-foreground"
-                    title="Outlier: Menyimpang dari pola historis"
-                  />
+                  >
+                    <title>Outlier: Menyimpang dari pola historis</title>
+                  </polygon>
                 )}
 
                 {/* Penanda Kejadian (misal: Meter diganti 12 Agu 2026) */}

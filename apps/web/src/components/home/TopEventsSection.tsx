@@ -14,10 +14,6 @@ interface TopEventsSectionProps {
   content: TopEventsContent
 }
 
-/** Path clip tiket (koordinat 0–1) — dipakai oleh `EventCard`. */
-const TICKET_CLIP_PATH =
-  "M0.4666666666666667 4.0797391304347825e-8C0.4666666666666667 0.01920994202898551 0.4822405797101449 0.034782608695652174 0.5014492753623189 0.034782608695652174C0.5206579710144927 0.034782608695652174 0.5362318840579711 0.01920994202898551 0.5362318840579711 4.6878840579710144e-8L0.9710144927536232 2.1097420289855072e-7C0.9870231884057972 2.1381420289855074e-7 1 0.012977449275362318 1 0.028985797101449273L1 0.9710144927536232C1 0.9870231884057972 0.9870231884057972 1 0.9710144927536232 1L0.5362318840579711 1C0.5362318840579711 0.980791304347826 0.5206579710144927 0.9652173913043478 0.5014492753623189 0.9652173913043478C0.4822405797101449 0.9652173913043478 0.4666666666666667 0.980791304347826 0.4666666666666667 1L0.028985507246376812 1C0.012977304347826088 1 4.1434202898550726e-8 0.9870231884057972 4.212376811594203e-8 0.9710144927536232L8.592260869565217e-8 0.028985507246376812C8.732231884057972e-8 0.012977304347826088 0.012977333333333332 3.9834202898550725e-8 0.028985507246376812 4.123391304347826e-8L0.4666666666666667 4.0797391304347825e-8Z"
-
 export function TopEventsSection({ content }: TopEventsSectionProps) {
   const x = useMotionValue(0)
   const xPos = React.useRef(0)
@@ -27,7 +23,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
   const singleSetRef = React.useRef<HTMLUListElement>(null)
   const singleSetWidthRef = React.useRef(0)
 
-  // Ukur lebar satu set kartu tiket setelah mount dan saat resize window
+  // Ukur lebar satu set kartu layanan setelah mount dan saat resize window
   React.useEffect(() => {
     function ukur() {
       if (singleSetRef.current) {
@@ -46,8 +42,8 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
     const singleWidth = singleSetWidthRef.current
     if (singleWidth <= 0) return
 
-    // Kecepatan 38 pixel per detik (halus dan nyaman dibaca)
-    const speed = 38
+    // Kecepatan 34 pixel per detik (halus dan nyaman dibaca)
+    const speed = 34
     xPos.current -= (speed * delta) / 1000
 
     // Wrap mulus saat mencapai ujung satu set kartu
@@ -60,7 +56,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
   // Tombol navigasi manual geser maju/mundur
   const handleGeser = (arah: "kiri" | "kanan") => {
     const singleWidth = singleSetWidthRef.current
-    const step = 316 // Lebar kartu + gap
+    const step = 326 // Lebar kartu HoloCard (310px) + gap (16px)
     if (arah === "kiri") {
       xPos.current += step
       if (xPos.current > 0 && singleWidth > 0) {
@@ -86,20 +82,8 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
   return (
     <section
       aria-labelledby="top-events-title"
-      className="relative overflow-hidden bg-white py-16 text-black md:py-24"
+      className="section-white relative overflow-hidden bg-white py-12 md:py-16 text-black border-t border-neutral-100"
     >
-      <svg
-        width="0"
-        height="0"
-        aria-hidden="true"
-        focusable="false"
-        className="absolute"
-      >
-        <clipPath id="ticket-clip-path" clipPathUnits="objectBoundingBox">
-          <path d={TICKET_CLIP_PATH} />
-        </clipPath>
-      </svg>
-
       <Container>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -107,22 +91,34 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center justify-between mb-4.5">
-            <h2
-              id="top-events-title"
-              className="text-heading-20 md:text-heading-24 font-semibold tracking-tight text-black"
-            >
-              {content.title}
-            </h2>
+          {/* Header Seksi Layanan Unggulan */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-label-12-mono font-mono text-neutral-500 uppercase tracking-wider">
+                  Kanal Mandiri Tirtawening
+                </span>
+                <span className="h-1 w-1 rounded-full bg-neutral-300" />
+                <span className="text-[11px] font-mono text-neutral-500">
+                  {content.events.length} Layanan Aktif
+                </span>
+              </div>
+              <h2
+                id="top-events-title"
+                className="text-heading-22 sm:text-heading-26 md:text-heading-30 font-bold tracking-tight text-neutral-900"
+              >
+                {content.title}
+              </h2>
+            </div>
 
             {/* Kontrol Navigasi & Motion Tracker */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={togglePlay}
                 aria-label={isPlaying ? "Jeda animasi kartu" : "Putar animasi kartu"}
                 title={isPlaying ? "Jeda animasi" : "Putar animasi"}
-                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200 cursor-pointer"
+                className="flex size-9 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-700 shadow-2xs transition hover:bg-neutral-100 active:scale-95 cursor-pointer"
               >
                 {isPlaying ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
               </button>
@@ -131,7 +127,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
                 onClick={() => handleGeser("kiri")}
                 aria-label="Geser ke kiri"
                 title="Geser sebelumnya"
-                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200 cursor-pointer"
+                className="flex size-9 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-700 shadow-2xs transition hover:bg-neutral-100 active:scale-95 cursor-pointer"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -140,18 +136,18 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
                 onClick={() => handleGeser("kanan")}
                 aria-label="Geser ke kanan"
                 title="Geser berikutnya"
-                className="flex size-8 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition hover:bg-neutral-200 cursor-pointer"
+                className="flex size-9 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-700 shadow-2xs transition hover:bg-neutral-100 active:scale-95 cursor-pointer"
               >
                 <ChevronRight className="size-4" />
               </button>
             </div>
           </div>
 
-          <div className="mb-7.5 flex flex-col gap-4.5 md:flex-row md:gap-6.25">
-            <p className="text-copy-14 sm:text-copy-16 md:flex-[0_0_60%] text-neutral-700 leading-relaxed">
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <p className="text-copy-14 sm:text-copy-15 max-w-2xl text-neutral-600 leading-relaxed">
               {content.description}
             </p>
-            <div className="flex w-full items-end justify-end">
+            <div className="shrink-0">
               <PillButton asChild>
                 <Link href={content.cta.href}>{content.cta.label}</Link>
               </PillButton>

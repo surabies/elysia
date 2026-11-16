@@ -43,7 +43,7 @@ import { LaporMeterSukses, type HasilLaporanTampilan } from "./LaporMeterSukses"
 import { InputNomorLangganan } from "./MasukanNomorLangganan"
 import { TombolUtama } from "./TombolUtama"
 
-export function LaporMeterForm() {
+export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
   const [jendela, setJendela] = React.useState<JendelaLaporMandiri | null>(null)
   const [jendelaPending, setJendelaPending] = React.useState(true)
   const [jendelaError, setJendelaError] = React.useState<string | null>(null)
@@ -53,7 +53,7 @@ export function LaporMeterForm() {
     null
   )
   const [pilihanPeriode, setPilihanPeriode] = React.useState("202601")
-  const [nomorLangganan, setNomorLangganan] = React.useState("")
+  const [nomorLangganan, setNomorLangganan] = React.useState(nomorAwal ?? "")
   const [pratinjau, setPratinjau] = React.useState<PelangganPratinjau | null>(
     null
   )
@@ -147,6 +147,15 @@ export function LaporMeterForm() {
       if (id === pencarianTerbaru.current) setCariPending(false)
     }
   }, [pilihanPeriode])
+
+  // Auto-search langsung jika ada nomorAwal dari URL/Landing Hero
+  React.useEffect(() => {
+    const clean = (nomorAwal ?? "").replace(/\D/g, "")
+    if (clean.length === 11) {
+      void cari(clean, periodeOverride)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nomorAwal])
 
   function ubahPeriode(nilai: string) {
     setPilihanPeriode(nilai)

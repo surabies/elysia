@@ -20,7 +20,7 @@ const globalForDb = globalThis as unknown as {
   conn: postgres.Sql | undefined;
 };
 
-const conn =
+export const conn =
   globalForDb.conn ??
   postgres(databaseUrl, {
     prepare: false,

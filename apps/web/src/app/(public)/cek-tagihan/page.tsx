@@ -24,10 +24,11 @@ const METODE_BAYAR = [
 export default async function CekTagihanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ nomor?: string }>
+  searchParams: Promise<{ nomor?: string; nosamb?: string }>
 }) {
-  const { nomor } = await searchParams
-  const nomorAwal = /^\d{11}$/.test(nomor ?? "") ? nomor : undefined
+  const { nomor, nosamb } = await searchParams
+  const rawNomor = (nomor ?? nosamb ?? "").replace(/\D/g, "")
+  const nomorAwal = rawNomor.length === 11 ? rawNomor : undefined
 
   return (
     <HalamanPublik

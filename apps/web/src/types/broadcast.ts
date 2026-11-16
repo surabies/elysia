@@ -20,6 +20,7 @@ export interface MediaBroadcastItem {
   judul: string
   keterangan?: string
   tipe: TipeMediaBroadcast
+  publicId?: string
 }
 
 export interface WilayahTerdampakItem {
@@ -58,10 +59,14 @@ export interface BroadcastGangguanItem {
   }
   // Media Visual: Foto kegiatan, brosur gebyar, gambar area terdampak
   gambarUtama?: string
+  gambarUtamaPublicId?: string
   tipeGambarUtama?: TipeMediaBroadcast
   galeriMedia?: MediaBroadcastItem[]
   // Khusus Event / Iklan / Promo
   promoDetails?: PromoDetailsItem
   aktif: boolean
+  tampilkanDiTicker?: boolean
+  tampilkanDiSpotlight?: boolean
+  urutan?: number
   diperbaruiPada: string
 }

@@ -9,6 +9,7 @@ import {
 import { inquiryTagihanService } from '../../services/publik/inquiry-tagihan.service';
 import { pengaduanService } from '../../services/pengaduan/pengaduan.service';
 import { mandiriService } from '../../services/mandiri/mandiri.service';
+import { broadcastService } from '../../services/broadcast/broadcast.service';
 import { submitMandiriPublicBodySchema } from '../mandiri/mandiri.schema';
 import {
   inquiryTagihanParamsSchema,
@@ -357,7 +358,13 @@ const publikRoutes = new Elysia()
         volume: t.String(),
       }),
     }
-  );
+  )
+
+  // 6. Siaran Gangguan & Banner Iklan Publik
+  .get('/broadcast', async () => {
+    const data = await broadcastService.getPublicBroadcasts();
+    return { success: true, data };
+  });
 
 export const publikRouter = new Elysia({ prefix: '/publik' }).use(publikRoutes);
 export const publicRouter = new Elysia({ prefix: '/public' }).use(publikRoutes);

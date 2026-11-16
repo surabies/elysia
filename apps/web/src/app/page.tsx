@@ -2,8 +2,7 @@ import {
   BenefitsSection,
   FeatureSection,
   HeroSection,
-  LiveTelemetryStrip,
-  RadarWilayahSection,
+  PromoBannerSpotlight,
   SimulasiTarifSection,
   TicketingSection,
   TopEventsSection,
@@ -22,20 +21,20 @@ export default function HomePage() {
       {/* 1. Hero Section with Integrated Command Hub */}
       <HeroSection content={heroContent} />
 
-      {/* 2. Real-time Operational Telemetry Pulse Strip */}
-      <LiveTelemetryStrip />
+      {/* 2. Featured Promo / Iklan Spotlight Banner (Gebyar Sambungan Baru & Event PDAM) */}
+      <PromoBannerSpotlight />
 
-      {/* 3. Interactive Regional Water Radar Preview (Pelayanan Wilayah 1-6 & Zonasi) */}
-      <RadarWilayahSection />
-
-      {/* 4. Featured Services Ribbon Carousel */}
+      {/* 3. Featured Services Ribbon Carousel */}
       <TopEventsSection content={topEventsContent} />
 
-      {/* 5. Interactive Tariff & Consumption Simulator */}
+      {/* 4. Interactive Tariff & Consumption Simulator */}
       <SimulasiTarifSection />
 
-      {/* 6. Key Benefits Grid */}
+      {/* 5. Key Benefits Grid */}
       <TicketingSection content={ticketingContent} />
+
+      {/* 6. Mengapa Layanan Digital Tirtawening? */}
+      <BenefitsSection content={benefitsContent} />
 
       {/* 7. Feature Deep-dives */}
       {featureSections.map((section) => (
