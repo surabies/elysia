@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 import { PillButton } from "@/components/shared/PillButton"
+import { usePwa } from "@/components/pwa/PwaProvider"
 import { downloadAppLink, mainNavLinks } from "@/config/site"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +25,7 @@ export function MobileMenu({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : uncontrolledOpen
+  const { promptInstall, isInstalled } = usePwa()
 
   const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
     const nextVal = typeof next === "function" ? next(open) : next
@@ -96,10 +98,15 @@ export function MobileMenu({
               ))}
             </ul>
 
-            <PillButton asChild className="mt-3 h-9 w-full">
-              <Link href={downloadAppLink.href} onClick={close}>
-                {downloadAppLink.label}
-              </Link>
+            <PillButton
+              type="button"
+              onClick={() => {
+                close()
+                promptInstall()
+              }}
+              className="mt-3 h-9 w-full cursor-pointer"
+            >
+              {isInstalled ? "BUKA APP" : downloadAppLink.label}
             </PillButton>
           </div>
         </>

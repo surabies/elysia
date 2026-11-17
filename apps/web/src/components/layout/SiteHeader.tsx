@@ -9,11 +9,13 @@ import { MobileMenu } from "@/components/layout/MobileMenu"
 import { SearchExperience } from "@/components/layout/SearchExperience"
 import { PillButton } from "@/components/shared/PillButton"
 import { BroadcastGangguanBanner } from "@/components/home/BroadcastGangguanBanner"
+import { usePwa } from "@/components/pwa/PwaProvider"
 import { downloadAppLink, mainNavLinks } from "@/config/site"
 import { topEventsContent } from "@/data/home"
 
 export function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const { promptInstall, isInstalled } = usePwa()
 
   return (
     <AutoHideHeader>
@@ -65,10 +67,11 @@ export function SiteHeader() {
 
           {/* Tombol Unduh App (md+) */}
           <PillButton
-            asChild
-            className="ml-2 hidden last:mr-0 md:inline-flex shrink-0 whitespace-nowrap"
+            type="button"
+            onClick={promptInstall}
+            className="ml-2 hidden last:mr-0 md:inline-flex shrink-0 whitespace-nowrap cursor-pointer"
           >
-            <Link href={downloadAppLink.href}>{downloadAppLink.label}</Link>
+            {isInstalled ? "BUKA APP" : downloadAppLink.label}
           </PillButton>
         </div>
       </nav>

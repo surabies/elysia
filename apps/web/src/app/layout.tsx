@@ -1,10 +1,11 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { fontBody, fontDisplay } from '@/lib/fonts';
 import { ThemeProvider } from '@/components/PenyediaTema';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingShell } from '@/components/layout/LandingShell';
+import { PwaProvider } from '@/components/pwa/PwaProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -14,6 +15,32 @@ export const metadata: Metadata = {
   },
   description:
     'Sistem Enterprise Baca Meter (Cater), Pelanggan, dan Penagihan PERUMDA Tirtawening Kota Bandung.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Tirtawening',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -41,7 +68,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <LandingShell>{children}</LandingShell>
+          <PwaProvider>
+            <LandingShell>{children}</LandingShell>
+          </PwaProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
