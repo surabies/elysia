@@ -86,10 +86,10 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
     >
       <Container>
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Header Seksi Layanan Unggulan */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">

@@ -16,12 +16,15 @@ export function HlsVideo({ src, className, poster }: HlsVideoProps) {
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
-    video.src = src
+    if (video.src !== src && !video.currentSrc.endsWith(src)) {
+      video.src = src
+    }
   }, [src])
 
   return (
     <video
       ref={videoRef}
+      src={src}
       className={className}
       poster={poster}
       autoPlay

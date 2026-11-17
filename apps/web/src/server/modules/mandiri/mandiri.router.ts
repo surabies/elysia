@@ -17,11 +17,11 @@ export const mandiriRouter = new Elysia({ prefix: '/cater/mandiri' })
     return {
       success: true,
       data: {
-        aktif: true,
+        aktif: false,
         periodes: [202601, 202602],
         periodeDatabase: 202601,
         catatan:
-          'MODUL SEMENTARA TESTING: Memungkinkan override periode lapor meter saat database berada di 202601. Hapus setelah UAT lulus.',
+          'Fitur periode uji dinonaktifkan karena tahap pengujian/UAT telah selesai.',
       },
     };
   })

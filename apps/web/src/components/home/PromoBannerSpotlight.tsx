@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import useEmblaCarousel from 'embla-carousel-react'
+import { motion } from 'motion/react'
 import { ChevronLeft, ChevronRight, Maximize2, Tag, Check, Images, Calendar } from 'lucide-react'
 
 import { PillButton } from '@/components/shared/PillButton'
@@ -351,8 +352,14 @@ export function PromoBannerSpotlight() {
       onMouseLeave={() => setIsPaused(false)}
       className="section-white relative bg-white pt-2 md:pt-4 pb-14 md:pb-20 text-black overflow-hidden"
     >
-      {/* Kontainer Sejajar Lebar Navbar (max-w-360 / 1440px) */}
-      <div className="mx-auto w-full max-w-360 px-4 lg:px-12">
+      {/* Kontainer Sejajar Lebar Navbar (max-w-360 / 1440px) dengan Scroll-In-View Motion */}
+      <motion.div
+        initial={{ opacity: 0, y: 32 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="mx-auto w-full max-w-360 px-4 lg:px-12"
+      >
         {/* Header Seksi Ringkas & Elegan */}
         <div className="flex items-center justify-between gap-4 mb-5">
           <div className="flex items-center gap-3">
@@ -446,7 +453,7 @@ export function PromoBannerSpotlight() {
             ))}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Modal Detail & Brosur Utuh Saat Di-klik */}
       <BroadcastDetailModal

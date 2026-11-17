@@ -1,7 +1,10 @@
-import { Container } from "@/components/shared/Container"
-import { ImageFrame } from "@/components/shared/ImageFrame"
-import { MobileSlider } from "@/components/shared/MobileSlider"
-import type { TicketingContent } from "@/types/home"
+'use client'
+
+import { motion } from 'motion/react'
+import { Container } from '@/components/shared/Container'
+import { ImageFrame } from '@/components/shared/ImageFrame'
+import { MobileSlider } from '@/components/shared/MobileSlider'
+import type { TicketingContent } from '@/types/home'
 
 interface TicketingSectionProps {
   content: TicketingContent
@@ -14,17 +17,25 @@ export function TicketingSection({ content }: TicketingSectionProps) {
       className="relative bg-black pt-7.5 pb-10 text-white md:pt-15 md:pb-20"
     >
       <Container>
-        <h2
+        <motion.h2
           id="ticketing-title"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mb-6 text-center text-heading-28 sm:text-heading-32 md:text-heading-40 font-semibold tracking-tight text-white md:mb-8"
         >
           {content.title}
-        </h2>
+        </motion.h2>
 
         <MobileSlider className="md:grid md:grid-cols-3 md:gap-10">
-          {content.items.map((item) => (
-            <figure
+          {content.items.map((item, idx) => (
+            <motion.figure
               key={item.description}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.6, delay: idx * 0.12, ease: [0.16, 1, 0.3, 1] }}
               className="m-0 block w-full text-center"
             >
               <ImageFrame
@@ -35,7 +46,7 @@ export function TicketingSection({ content }: TicketingSectionProps) {
               <figcaption className="text-copy-15 md:text-copy-16 text-balance whitespace-pre-line text-neutral-300 leading-relaxed">
                 {item.description}
               </figcaption>
-            </figure>
+            </motion.figure>
           ))}
         </MobileSlider>
       </Container>

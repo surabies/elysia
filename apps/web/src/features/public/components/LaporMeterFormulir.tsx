@@ -125,7 +125,9 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
     }
   }, [fotoPreviewUrl])
 
-  const periodeOverride = Number(pilihanPeriode) || 202601
+  const periodeOverride = periodeUji?.aktif
+    ? Number(pilihanPeriode) || 202601
+    : undefined
 
   const cari = React.useCallback(async (nomor: string, periode?: number) => {
     const id = ++pencarianTerbaru.current

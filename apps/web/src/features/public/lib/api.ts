@@ -427,7 +427,7 @@ export async function ambilPeriodeUjiLaporMandiri(): Promise<PeriodeUjiLaporMete
   }
 
   return {
-    aktif: true,
+    aktif: false,
     periodes: [202601, 202602],
   }
 }

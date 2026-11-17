@@ -7,6 +7,7 @@ import {
   TicketingSection,
   TopEventsSection,
 } from '@/components/home'
+import { ScrollProgressBar } from '@/components/shared/ScrollProgressBar'
 import {
   benefitsContent,
   featureSections,
@@ -18,6 +19,9 @@ import {
 export default function HomePage() {
   return (
     <>
+      {/* 0. Top Scroll Progress Indicator */}
+      <ScrollProgressBar />
+
       {/* 1. Hero Section with Integrated Command Hub */}
       <HeroSection content={heroContent} />
 

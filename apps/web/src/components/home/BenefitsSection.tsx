@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useState } from "react"
+import { motion } from "motion/react"
 
 import { Container } from "@/components/shared/Container"
 import { ImageFrame } from "@/components/shared/ImageFrame"
@@ -26,7 +27,13 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
       className="section-white relative bg-white py-16 text-black lg:py-24"
     >
       <Container>
-        <div className="lg:flex lg:flex-row-reverse lg:items-center lg:gap-21.75">
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="lg:flex lg:flex-row-reverse lg:items-center lg:gap-21.75"
+        >
           <div className="lg:w-full">
             <h2 id="benefits-title" className="mb-6 text-heading-28 sm:text-heading-32 md:text-heading-40 font-semibold tracking-tight text-black md:mb-8">
               {content.title}
@@ -82,7 +89,7 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
               />
             ))}
           </div>
-        </div>
+        </motion.div>
       </Container>
     </section>
   )

@@ -11,7 +11,6 @@ export const heroContent: HeroContent = {
   description:
     "Layanan digital terpadu PERUMDA Tirtawening Kota Bandung. Cek tagihan rekening air, laporkan angka meter mandiri, dan sampaikan pengaduan gangguan secara cepat, transparan, serta terverifikasi 24 jam.",
   videoSrc: "/vid/hero.mp4",
-  poster: "/images/hero.jpg",
   cta: { label: "Cek Tagihan Air", href: "/cek-tagihan" },
 }
 

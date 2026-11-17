@@ -1,5 +1,8 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
+import { motion } from "motion/react"
 
 import { Container } from "@/components/shared/Container"
 import { PillButton } from "@/components/shared/PillButton"
@@ -63,7 +66,11 @@ export function FeatureSection({ section }: FeatureSectionProps) {
       className="section-white relative bg-white py-16 text-black lg:py-24"
     >
       <Container>
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
             "flex flex-col md:gap-21.75",
             mediaPosition === "right" ? "md:flex-row-reverse" : "md:flex-row"
@@ -96,7 +103,7 @@ export function FeatureSection({ section }: FeatureSectionProps) {
               </div>
             ) : null}
           </div>
-        </div>
+        </motion.div>
       </Container>
     </section>
   )

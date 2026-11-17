@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { motion } from 'motion/react'
+import NumberFlow from '@number-flow/react'
 import {
   Calculator,
   Droplets,
@@ -223,7 +225,13 @@ export function SimulasiTarifSection() {
       aria-labelledby="simulasi-tarif-title"
       className="mx-auto w-full max-w-360 px-4 lg:px-12 py-12 md:py-16 bg-white text-black"
     >
-      <div className="rounded-3xl border border-slate-200/90 bg-slate-900 text-white p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-2xl">
+      <motion.div
+        initial={{ opacity: 0, y: 36 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+        className="rounded-3xl border border-slate-200/90 bg-slate-900 text-white p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-2xl"
+      >
         {/* Ambient Glow */}
         <div
           aria-hidden="true"
@@ -298,7 +306,7 @@ export function SimulasiTarifSection() {
                   Estimasi Volume Pemakaian Bulanan:
                 </label>
                 <div className="flex items-baseline gap-1 bg-cyan-500/20 border border-cyan-500/40 px-3 py-1 rounded-xl text-cyan-300 font-mono font-bold text-base">
-                  <span>{volume}</span>
+                  <NumberFlow value={volume} />
                   <span className="text-xs">m³</span>
                 </div>
               </div>
@@ -369,8 +377,9 @@ export function SimulasiTarifSection() {
                   {golongan.kode}
                 </span>
               </div>
-              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-cyan-300 tracking-tight">
-                {formatRupiah(totalTagihan)}
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-cyan-300 tracking-tight flex items-baseline gap-1">
+                <span className="text-2xl sm:text-3xl text-cyan-400">Rp</span>
+                <NumberFlow value={totalTagihan} format={{ useGrouping: true }} />
               </div>
               <span className="text-xs text-slate-400 mt-1 block">
                 1 Bulan Pemakaian ({volume} m³)
@@ -384,8 +393,9 @@ export function SimulasiTarifSection() {
                   <Droplets className="h-3.5 w-3.5 text-cyan-400" />
                   Harga Air Progresif
                 </span>
-                <span className="font-mono font-semibold text-white">
-                  {formatRupiah(totalHargaAir)}
+                <span className="font-mono font-semibold text-white flex items-baseline gap-1">
+                  <span>Rp</span>
+                  <NumberFlow value={totalHargaAir} format={{ useGrouping: true }} />
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-400">
@@ -419,7 +429,7 @@ export function SimulasiTarifSection() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   )
 }
