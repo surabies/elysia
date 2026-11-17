@@ -167,7 +167,17 @@ export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
     }
   })
 
-  // 7. Hapus broadcast
+  // 7. Reset data ke default Tirtawening
+  .post('/reset', async () => {
+    const data = await broadcastService.resetToDefault();
+    return {
+      success: true,
+      message: 'Data siaran berhasil di-reset ke default Tirtawening',
+      data,
+    };
+  })
+
+  // 8. Hapus broadcast
   .delete('/:id', async ({ params: { id }, set }) => {
     try {
       const success = await broadcastService.deleteBroadcast(id);

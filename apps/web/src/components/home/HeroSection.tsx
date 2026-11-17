@@ -11,7 +11,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ content }: HeroSectionProps) {
   return (
-    <section className="section-white mx-auto w-full max-w-360 px-4 lg:px-12 pt-3 md:pt-4 bg-white text-black">
+    <section className="section-white mx-auto w-full max-w-360 px-4 lg:px-12 pt-4 md:pt-6 pb-12 md:pb-18 lg:pb-24 bg-white text-black">
       <div className="flex flex-col md:grid md:grid-cols-2 md:grid-rows-[1fr] md:gap-x-12 items-center">
         {/* Kolom Teks & Fast Command Hub */}
         <div className="w-full flex flex-col justify-center gap-5 max-md:order-2 md:gap-6 py-2">

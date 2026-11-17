@@ -349,7 +349,7 @@ export function PromoBannerSpotlight() {
       aria-labelledby="promo-spotlight-title"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="section-white relative bg-white py-10 md:py-14 text-black border-t border-neutral-100 overflow-hidden"
+      className="section-white relative bg-white pt-2 md:pt-4 pb-14 md:pb-20 text-black overflow-hidden"
     >
       {/* Kontainer Sejajar Lebar Navbar (max-w-360 / 1440px) */}
       <div className="mx-auto w-full max-w-360 px-4 lg:px-12">

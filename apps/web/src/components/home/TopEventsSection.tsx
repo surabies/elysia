@@ -82,7 +82,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
   return (
     <section
       aria-labelledby="top-events-title"
-      className="section-white relative overflow-hidden bg-white py-12 md:py-16 text-black border-t border-neutral-100"
+      className="section-white relative overflow-hidden bg-white py-12 md:py-16 text-black"
     >
       <Container>
         <motion.div

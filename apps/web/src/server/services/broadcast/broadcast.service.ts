@@ -85,14 +85,12 @@ class BroadcastService {
         .where(eq(broadcast.aktif, true))
         .orderBy(asc(broadcast.urutan), desc(broadcast.updatedAt));
 
-      if (rows.length > 0) {
-        return rows.map(mapDbToItem);
-      }
+      return rows.map(mapDbToItem);
     } catch (err) {
       console.error('[BROADCAST_GET_PUBLIC_ERR]', err);
+      // Fallback if db error / connection issue
+      return DAFTAR_BROADCAST_AWAL.filter((b) => b.aktif);
     }
-    // Fallback if db error / connection issue
-    return DAFTAR_BROADCAST_AWAL.filter((b) => b.aktif);
   }
 
   async getAllBroadcasts(): Promise<BroadcastGangguanItem[]> {
@@ -103,14 +101,12 @@ class BroadcastService {
         .from(broadcast)
         .orderBy(asc(broadcast.urutan), desc(broadcast.updatedAt));
 
-      if (rows.length > 0) {
-        return rows.map(mapDbToItem);
-      }
+      return rows.map(mapDbToItem);
     } catch (err) {
       console.error('[BROADCAST_GET_ALL_ERR]', err);
+      // Fallback if db error
+      return DAFTAR_BROADCAST_AWAL;
     }
-    // Fallback if db error
-    return DAFTAR_BROADCAST_AWAL;
   }
 
   async getBroadcastById(id: string): Promise<BroadcastGangguanItem | null> {
@@ -233,6 +229,44 @@ class BroadcastService {
     } catch (err) {
       console.error('[BROADCAST_DELETE_DB_ERR]', err);
       return false;
+    }
+  }
+
+  async resetToDefault(): Promise<BroadcastGangguanItem[]> {
+    try {
+      await db.delete(broadcast);
+      for (let i = 0; i < DAFTAR_BROADCAST_AWAL.length; i++) {
+        const item = DAFTAR_BROADCAST_AWAL[i];
+        await db.insert(broadcast).values({
+          id: item.id,
+          judul: item.judul,
+          ringkasan: item.ringkasan,
+          kategori: item.kategori,
+          status: item.status,
+          progresPersen: item.progresPersen,
+          prioritas: item.prioritas,
+          waktuMulai: item.waktuMulai,
+          estimasiSelesai: item.estimasiSelesai,
+          penyebab: item.penyebab,
+          dampak: item.dampak,
+          tindakanPenanganan: item.tindakanPenanganan,
+          wilayahTerdampak: item.wilayahTerdampak,
+          kontakBantuan: item.kontakBantuan,
+          gambarUtama: item.gambarUtama,
+          tipeGambarUtama: item.tipeGambarUtama,
+          galeriMedia: item.galeriMedia || [],
+          promoDetails: item.promoDetails,
+          aktif: item.aktif,
+          tampilkanDiTicker: true,
+          tampilkanDiSpotlight: true,
+          urutan: i,
+          diperbaruiPada: item.diperbaruiPada,
+        });
+      }
+      return await this.getAllBroadcasts();
+    } catch (err) {
+      console.error('[BROADCAST_RESET_ERR]', err);
+      return DAFTAR_BROADCAST_AWAL;
     }
   }
 }
