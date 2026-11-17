@@ -56,9 +56,13 @@ export function AutoHideHeader({ children }: AutoHideHeaderProps) {
       ref={headerRef}
       onFocusCapture={revealHeader}
       data-scrolled={scrolled ? "true" : "false"}
-      className={`group/header fixed inset-x-0 top-0 z-40 bg-background/88 text-foreground backdrop-blur-md border-b border-border transition-[transform,background-color,box-shadow,border-color] duration-300 ease-in-out motion-reduce:transition-none has-data-[open=true]:max-md:bg-transparent has-data-[open=true]:max-md:backdrop-blur-none ${
+      style={{
+        backgroundImage:
+          "linear-gradient(90deg, rgba(0, 112, 243, 0.04) 0%, rgba(16, 185, 129, 0.03) 50%, rgba(0, 112, 243, 0.035) 100%)",
+      }}
+      className={`group/header sticky inset-x-0 top-0 z-40 bg-background/82 text-foreground backdrop-blur-xl border-b border-border/80 transition-transform duration-300 ease-in-out motion-reduce:transition-none has-data-[open=true]:max-md:bg-transparent has-data-[open=true]:max-md:backdrop-blur-none ${
         scrolled
-          ? "shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_-4px_rgba(0,112,243,0.05)] bg-background/92"
+          ? "shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_-4px_rgba(0,112,243,0.06)] bg-background/90"
           : "shadow-[0_1px_0_0_rgba(0,0,0,0.02)]"
       } ${hidden ? "pointer-events-none -translate-y-full" : ""}`}
     >

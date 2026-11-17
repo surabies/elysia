@@ -26,45 +26,31 @@ export function HeroSection({ content }: HeroSectionProps) {
   return (
     <section
       ref={sectionRef}
-      className="section-white relative isolate w-full overflow-hidden bg-background text-foreground"
+      className="section-white relative isolate w-full overflow-hidden bg-transparent text-foreground"
     >
       {/* ====================================================================
-          ARCHITECTURAL PREMIUM BACKGROUND (Vercel / Next.js Geist Style)
-          Subtle Swiss Grid + Diffused Radial Light Field + Corner Crosshairs
+          HERO AMBIENT BLUE + EMERALD GLOW & CROSSHAIR ANCHORS
+          Menyatu langsung dengan garis kisi 64px global di LandingShell
           ==================================================================== */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
       >
-        {/* 1. Ambient Diffused Radial Light Field (Menyambung dari atas Navbar ke Hero) */}
+        {/* 1. Ambient Diffused Radial Light Field (Biru Vercel #0070f3 + Hijau Emerald #10b981 seimbang di mobile & desktop) */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(80% 32% at 50% 0%, rgba(0, 112, 243, 0.06) 0%, transparent 100%), radial-gradient(65% 55% at 74% 38%, rgba(0, 112, 243, 0.07) 0%, rgba(14, 165, 233, 0.03) 45%, transparent 100%), radial-gradient(50% 45% at 18% 18%, rgba(0, 112, 243, 0.04) 0%, transparent 75%)',
+              'radial-gradient(62% 55% at 74% 40%, rgba(0, 112, 243, 0.07) 0%, rgba(16, 185, 129, 0.035) 48%, transparent 100%), radial-gradient(48% 42% at 24% 25%, rgba(0, 112, 243, 0.045) 0%, rgba(16, 185, 129, 0.03) 55%, transparent 100%)',
           }}
         />
 
-        {/* 2. Precision 64px Hairline Architectural Grid with Radial Vignette Mask */}
-        <div
-          className="absolute inset-0 opacity-85"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, var(--ds-gray-alpha-100) 1px, transparent 1px), linear-gradient(to bottom, var(--ds-gray-alpha-100) 1px, transparent 1px)',
-            backgroundSize: '64px 64px',
-            maskImage:
-              'radial-gradient(ellipse 85% 75% at 52% 42%, #000 35%, transparent 95%)',
-            WebkitMaskImage:
-              'radial-gradient(ellipse 85% 75% at 52% 42%, #000 35%, transparent 95%)',
-          }}
-        />
-
-        {/* 3. Subtle Structural Guide Rails & Crosshairs (Next.js / Geist Framing) */}
+        {/* 2. Corner Crosshair Markers (+) menempel pada tiang garis vertikal */}
         <div className="mx-auto h-full max-w-360 px-4 lg:px-12 relative">
-          <div className="h-full w-full border-x border-dashed border-border/60 relative">
+          <div className="h-full w-full relative">
             {/* Top-left crosshair */}
             <svg
-              className="absolute -left-[5px] top-3 size-[9px] text-muted-foreground/60"
+              className="absolute -left-[4.5px] top-3 size-[9px] text-muted-foreground/60"
               viewBox="0 0 9 9"
               fill="none"
             >
@@ -76,7 +62,7 @@ export function HeroSection({ content }: HeroSectionProps) {
             </svg>
             {/* Top-right crosshair */}
             <svg
-              className="absolute -right-[5px] top-3 size-[9px] text-muted-foreground/60"
+              className="absolute -right-[4.5px] top-3 size-[9px] text-muted-foreground/60"
               viewBox="0 0 9 9"
               fill="none"
             >
@@ -88,13 +74,10 @@ export function HeroSection({ content }: HeroSectionProps) {
             </svg>
           </div>
         </div>
-
-        {/* 4. Soft Bottom Fade into Background */}
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-background via-background/80 to-transparent" />
       </div>
 
       {/* Main Content Container */}
-      <div className="mx-auto w-full max-w-360 px-4 lg:px-12 pt-2 md:pt-3 pb-10 md:pb-16 lg:pb-20">
+      <div className="mx-auto w-full max-w-360 px-4 lg:px-12 pt-4 md:pt-6 pb-10 md:pb-16 lg:pb-20">
         <div className="flex flex-col md:grid md:grid-cols-2 md:grid-rows-[1fr] md:gap-x-12 items-center">
           {/* Kolom Teks & Fast Command Hub */}
           <motion.div
@@ -134,10 +117,10 @@ export function HeroSection({ content }: HeroSectionProps) {
             style={{ y: videoY, scale: videoScale }}
             className="relative w-full flex justify-center md:justify-end max-md:order-1 max-md:mb-6"
           >
-            {/* Soft Ambient Halo Behind Video Frame */}
+            {/* Soft Ambient Blue & Emerald Halo Behind Video Frame */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-4 rounded-4xl bg-linear-to-tr from-[#0070f3]/10 via-sky-400/5 to-transparent blur-2xl"
+              className="pointer-events-none absolute -inset-4 rounded-4xl bg-linear-to-tr from-[#0070f3]/12 via-emerald-500/8 to-transparent blur-2xl"
             />
             <div className="relative w-full aspect-4/5 rounded-3xl overflow-hidden bg-neutral-950 shadow-2xl shadow-neutral-950/15 ring-1 ring-neutral-900/10 md:h-[calc(100vh-140px)] md:max-h-220 md:w-auto">
               <HlsVideo

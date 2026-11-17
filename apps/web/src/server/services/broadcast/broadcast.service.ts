@@ -1,7 +1,17 @@
 import { eq, desc, asc } from 'drizzle-orm';
-import { db, broadcast, type NewBroadcastModel, type BroadcastModel } from '@cater/db';
+import { db, broadcast, pengaturanKonten, type NewBroadcastModel, type BroadcastModel } from '@cater/db';
 import { DAFTAR_BROADCAST_AWAL } from '@/data/broadcast';
+import { ticketingContent, benefitsContent, featureSections } from '@/data/home';
 import type { BroadcastGangguanItem } from '@/types/broadcast';
+import type { LandingSectionsCMS } from '@/types/home';
+
+const KUNCI_LANDING_CMS = 'landing_sections_cms';
+
+export const DEFAULT_LANDING_CMS: LandingSectionsCMS = {
+  ticketing: ticketingContent,
+  benefits: benefitsContent,
+  features: featureSections,
+};
 
 function mapDbToItem(row: BroadcastModel): BroadcastGangguanItem {
   return {
@@ -273,6 +283,79 @@ class BroadcastService {
       console.error('[BROADCAST_RESET_ERR]', err);
       return DAFTAR_BROADCAST_AWAL;
     }
+  }
+
+  async getLandingCMS(): Promise<LandingSectionsCMS> {
+    try {
+      const [row] = await db
+        .select()
+        .from(pengaturanKonten)
+        .where(eq(pengaturanKonten.kunci, KUNCI_LANDING_CMS))
+        .limit(1);
+
+      if (row && row.nilai && typeof row.nilai === 'object') {
+        const val = row.nilai as Partial<LandingSectionsCMS>;
+        return {
+          ticketing: val.ticketing || DEFAULT_LANDING_CMS.ticketing,
+          benefits: val.benefits || DEFAULT_LANDING_CMS.benefits,
+          features: Array.isArray(val.features) && val.features.length > 0
+            ? val.features
+            : DEFAULT_LANDING_CMS.features,
+        };
+      }
+
+      await db
+        .insert(pengaturanKonten)
+        .values({
+          kunci: KUNCI_LANDING_CMS,
+          nilai: DEFAULT_LANDING_CMS,
+          kategori: 'landing_cms',
+          keterangan: 'Konten dinamis seksi Kemudahan Layanan, Keunggulan, dan Fitur Utama Landing Page',
+          updatedAt: new Date(),
+        })
+        .onConflictDoNothing();
+
+      return DEFAULT_LANDING_CMS;
+    } catch (err) {
+      console.warn('[LANDING_CMS_GET_WARN]', err);
+      return DEFAULT_LANDING_CMS;
+    }
+  }
+
+  async updateLandingCMS(payload: Partial<LandingSectionsCMS>): Promise<LandingSectionsCMS> {
+    const current = await this.getLandingCMS();
+    const merged: LandingSectionsCMS = {
+      ticketing: payload.ticketing ?? current.ticketing,
+      benefits: payload.benefits ?? current.benefits,
+      features: payload.features ?? current.features,
+    };
+
+    try {
+      await db
+        .insert(pengaturanKonten)
+        .values({
+          kunci: KUNCI_LANDING_CMS,
+          nilai: merged,
+          kategori: 'landing_cms',
+          keterangan: 'Konten dinamis seksi Kemudahan Layanan, Keunggulan, dan Fitur Utama Landing Page',
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: pengaturanKonten.kunci,
+          set: {
+            nilai: merged,
+            updatedAt: new Date(),
+          },
+        });
+    } catch (err) {
+      console.error('[LANDING_CMS_UPDATE_ERR]', err);
+    }
+
+    return merged;
+  }
+
+  async resetLandingCMS(): Promise<LandingSectionsCMS> {
+    return this.updateLandingCMS(DEFAULT_LANDING_CMS);
   }
 }
 

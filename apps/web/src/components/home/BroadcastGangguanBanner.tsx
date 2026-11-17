@@ -22,7 +22,6 @@ interface BroadcastGangguanBannerProps {
 export function BroadcastGangguanBanner({
   daftarBroadcast = DAFTAR_BROADCAST_AWAL,
 }: BroadcastGangguanBannerProps) {
-  const [mounted, setMounted] = React.useState(false);
   const [isDismissed, setIsDismissed] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
   const [modalBuka, setModalBuka] = React.useState(false);
@@ -33,8 +32,6 @@ export function BroadcastGangguanBanner({
     React.useState<BroadcastGangguanItem[]>(daftarBroadcast);
 
   React.useEffect(() => {
-    setMounted(true);
-
     try {
       const tersimpan = localStorage.getItem("elysia_broadcast_items");
       if (tersimpan) {
@@ -112,7 +109,7 @@ export function BroadcastGangguanBanner({
 
   const tickerDuration = Math.max(30, displayItems.length * 15);
 
-  if (!mounted || isDismissed || broadcastAktif.length === 0) {
+  if (isDismissed || broadcastAktif.length === 0) {
     return null;
   }
 

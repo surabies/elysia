@@ -34,23 +34,31 @@ export interface TopEventsContent {
 }
 
 export interface TicketingItem {
+  title?: string
+  badge?: string
   description: string
+  href?: string
+  ctaLabel?: string
   image?: ImageAsset
 }
 
 export interface TicketingContent {
   title: string
+  subtitle?: string
   items: TicketingItem[]
 }
 
 export interface BenefitItem {
   title: string
+  description?: string
+  metric?: string
   icon: ImageAsset
   image?: ImageAsset
 }
 
 export interface BenefitsContent {
   title: string
+  subtitle?: string
   items: BenefitItem[]
 }
 
@@ -61,9 +69,18 @@ export type FeatureMedia =
 
 export interface FeatureSectionContent {
   id: string
+  badge?: string
   title: string
   description: string
+  highlights?: string[]
+  stats?: { label: string; value: string }[]
   media: FeatureMedia
   mediaPosition: "left" | "right"
   cta?: CtaLink
+}
+
+export interface LandingSectionsCMS {
+  ticketing: TicketingContent
+  benefits: BenefitsContent
+  features: FeatureSectionContent[]
 }

@@ -19,9 +19,9 @@ export function HalamanPublik({
   children: React.ReactNode
 }) {
   return (
-    <div className="w-full bg-background text-foreground font-sans">
-      {/* Header Banner - Mobile-First dengan Ambient Glow Mewah */}
-      <section className="relative overflow-hidden border-b border-border bg-[radial-gradient(ellipse_80%_60%_at_50%_-15%,rgba(0,112,243,0.10),transparent)] bg-background">
+    <div className="w-full bg-transparent text-foreground font-sans">
+      {/* Header Banner - Mobile-First dengan Ambient Glow Biru + Hijau Emerald Tipis */}
+      <section className="relative overflow-hidden border-b border-border/70 bg-[radial-gradient(ellipse_75%_60%_at_50%_-15%,rgba(0,112,243,0.09),rgba(16,185,129,0.04)_45%,transparent)]">
         {/* Subtle Decorative Grid Pattern */}
         <div
           aria-hidden="true"
@@ -56,7 +56,7 @@ export function HalamanPublik({
       </section>
 
       {/* Main Grid Content - Mobile optimized layout */}
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 sm:py-8 md:px-8 lg:grid-cols-12 lg:gap-8 lg:py-12 bg-background">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 sm:py-8 md:px-8 lg:grid-cols-12 lg:gap-8 lg:py-12 bg-transparent">
         <div className="min-w-0 lg:col-span-7 lg:col-start-6">{children}</div>
         <aside className="lg:order-first lg:col-span-4 lg:col-start-1 lg:row-start-1">
           <div className="flex flex-col gap-4 sm:gap-6 lg:sticky lg:top-24">{aside}</div>

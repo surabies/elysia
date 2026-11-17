@@ -351,7 +351,7 @@ export function DokumentasiKegiatanSection() {
     <section
       id="dokumentasi-wilayah-5"
       aria-labelledby="dokumentasi-wilayah-title"
-      className="section-white relative overflow-hidden py-14 sm:py-20 bg-background text-foreground"
+      className="section-white relative overflow-hidden py-14 sm:py-20 bg-transparent text-foreground"
     >
       <Container className="max-w-360 px-4 lg:px-12">
         <motion.div

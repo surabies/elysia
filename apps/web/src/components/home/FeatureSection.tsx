@@ -1,8 +1,10 @@
 "use client"
 
+import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "motion/react"
+import { Check, ArrowRight, Activity } from "lucide-react"
 
 import { Container } from "@/components/shared/Container"
 import { PillButton } from "@/components/shared/PillButton"
@@ -26,15 +28,24 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
 
   if (media.type === "image") {
     return (
-      <Image
-        src={media.src}
-        alt={media.alt}
-        width={media.width}
-        height={media.height}
-        unoptimized
-        sizes="(min-width: 1280px) 516px, (min-width: 768px) 50vw, 100vw"
-        className="h-auto w-full rounded-4 object-cover"
-      />
+      <div className="group relative overflow-hidden rounded-3xl border border-border bg-neutral-950 shadow-xl">
+        <Image
+          src={media.src}
+          alt={media.alt}
+          width={media.width}
+          height={media.height}
+          unoptimized
+          sizes="(min-width: 1280px) 516px, (min-width: 768px) 50vw, 100vw"
+          className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-103"
+        />
+        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/30 to-transparent p-4 text-white flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-mono font-semibold">Jaringan Distribusi Aktif</span>
+          </div>
+          <span className="text-[11px] font-mono text-neutral-300">Kota Bandung</span>
+        </div>
+      </div>
     )
   }
 
@@ -47,7 +58,7 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
         muted
         playsInline
         aria-hidden="true"
-        className="aspect-4/5 h-auto w-full rounded-4 object-cover"
+        className="aspect-4/5 h-auto w-full rounded-3xl border border-border object-cover shadow-xl"
       />
     )
   }
@@ -55,50 +66,138 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
   return null
 }
 
-/** Blok gambar/video + teks. Posisi media bergantian lewat `mediaPosition`. */
-export function FeatureSection({ section }: FeatureSectionProps) {
-  const { id, title, description, media, mediaPosition, cta } = section
+export function FeatureSection({ section: initialSection }: FeatureSectionProps) {
+  const [section, setSection] = React.useState<FeatureSectionContent>(initialSection)
+
+  // Sinkronisasi dinamis dengan backend & dashboard (/broadcast)
+  React.useEffect(() => {
+    function applyFromData(featuresList?: FeatureSectionContent[]) {
+      if (!Array.isArray(featuresList)) return
+      const found = featuresList.find((f) => f.id === initialSection.id)
+      if (found) setSection((prev) => ({ ...prev, ...found }))
+    }
+
+    try {
+      const cached = localStorage.getItem("elysia_landing_cms")
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        applyFromData(parsed?.features)
+      }
+    } catch {}
+
+    fetch("/api/broadcast/landing-sections")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data?.features) {
+          applyFromData(json.data.features)
+        }
+      })
+      .catch(() => {})
+
+    function handleCmsUpdate() {
+      try {
+        const cached = localStorage.getItem("elysia_landing_cms")
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          applyFromData(parsed?.features)
+        }
+      } catch {}
+    }
+
+    window.addEventListener("storage", handleCmsUpdate)
+    window.addEventListener("elysia:landing-cms-updated", handleCmsUpdate)
+    return () => {
+      window.removeEventListener("storage", handleCmsUpdate)
+      window.removeEventListener("elysia:landing-cms-updated", handleCmsUpdate)
+    }
+  }, [initialSection.id])
+
+  const { id, badge, title, description, highlights, stats, media, mediaPosition, cta } = section
   const titleId = `${id}-title`
 
   return (
     <section
       aria-labelledby={titleId}
-      className="section-white relative bg-background py-16 text-foreground lg:py-24"
+      className="section-white relative bg-transparent py-12 text-foreground lg:py-18"
     >
-      <Container>
+      <Container className="max-w-360 px-4 lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 32 }}
+          initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
-            "flex flex-col md:gap-21.75",
+            "flex flex-col gap-8 rounded-3xl border border-border bg-card/85 backdrop-blur-xs p-5 sm:p-8 lg:p-10 shadow-xs md:items-center lg:gap-12",
             mediaPosition === "right" ? "md:flex-row-reverse" : "md:flex-row"
           )}
         >
-          <div className="mb-4 flex flex-1 overflow-hidden rounded-4 md:mb-0">
+          {/* Kolom Media */}
+          <div className="w-full md:w-5/12 lg:w-5/12 shrink-0 overflow-hidden rounded-3xl">
             <SwipeRevealMedia>
               <FeatureMediaView media={media} />
             </SwipeRevealMedia>
           </div>
 
-          {/* Mobile: elemen melebur agar judul bisa tampil di atas media. */}
-          <div className="contents md:flex md:flex-1 md:flex-col md:justify-center md:gap-6.25">
+          {/* Kolom Konten Interaktif */}
+          <div className="flex flex-1 flex-col justify-center space-y-5">
+            {badge && (
+              <div className="inline-flex items-center gap-2 self-start rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-mono font-semibold text-foreground">
+                <Activity className="size-3.5 text-[#0070f3]" />
+                <span>{badge}</span>
+              </div>
+            )}
+
             <h2
               id={titleId}
-              className="text-heading-28 sm:text-heading-32 md:text-heading-40 max-md:order-first max-md:mb-4 font-semibold tracking-tight text-foreground"
+              className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground leading-tight"
             >
               {title}
             </h2>
 
-            <p className="max-w-xl text-copy-15 md:text-copy-16 whitespace-pre-line text-muted-foreground leading-relaxed">
+            <p className="text-copy-14 sm:text-copy-15 whitespace-pre-line text-muted-foreground leading-relaxed">
               {description}
             </p>
 
+            {/* Daftar Poin Keunggulan */}
+            {highlights && highlights.length > 0 && (
+              <div className="space-y-2.5 pt-1">
+                {highlights.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 text-copy-13 text-foreground/90">
+                    <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                      <Check className="size-3 stroke-[2.5]" />
+                    </span>
+                    <span className="leading-snug">{item}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Baris Statistik Ringkas */}
+            {stats && stats.length > 0 && (
+              <div className="grid grid-cols-3 gap-2.5 pt-2">
+                {stats.map((st, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-2xl border border-border bg-muted/40 px-3 py-2.5"
+                  >
+                    <p className="font-mono text-sm sm:text-base font-bold text-foreground">
+                      {st.value}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {st.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {cta ? (
-              <div className="flex justify-end max-md:mt-4.5 md:block">
-                <PillButton asChild className="inline-flex">
-                  <Link href={cta.href}>{cta.label}</Link>
+              <div className="pt-2">
+                <PillButton asChild className="inline-flex items-center gap-2">
+                  <Link href={cta.href}>
+                    <span>{cta.label}</span>
+                    <ArrowRight className="size-3.5" />
+                  </Link>
                 </PillButton>
               </div>
             ) : null}

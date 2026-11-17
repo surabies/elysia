@@ -20,6 +20,45 @@ export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
     };
   })
 
+  // 2b. Ambil & Simpan Konten Seksi Landing Page (CMS Dinamis: Kemudahan, Mengapa, & 3 Fitur Utama)
+  .get('/landing-sections', async () => {
+    const data = await broadcastService.getLandingCMS();
+    return {
+      success: true,
+      data,
+    };
+  })
+  .put(
+    '/landing-sections',
+    async ({ body, set }) => {
+      try {
+        const data = await broadcastService.updateLandingCMS(body as any);
+        return {
+          success: true,
+          message: 'Konten seksi Landing Page berhasil disimpan ke database',
+          data,
+        };
+      } catch (err: any) {
+        set.status = 400;
+        return {
+          success: false,
+          error: err.message || 'Gagal menyimpan konten seksi Landing Page',
+        };
+      }
+    },
+    {
+      body: t.Any(),
+    }
+  )
+  .post('/landing-sections/reset', async () => {
+    const data = await broadcastService.resetLandingCMS();
+    return {
+      success: true,
+      message: 'Konten seksi Landing Page berhasil di-reset ke default',
+      data,
+    };
+  })
+
   // 3. Detail broadcast spesifik
   .get('/:id', async ({ params: { id }, set }) => {
     const item = await broadcastService.getBroadcastById(id);
