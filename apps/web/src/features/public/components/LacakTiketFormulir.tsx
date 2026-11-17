@@ -1,17 +1,5 @@
 "use client"
 
-// features/public/components/LacakTiketFormulir.tsx — pantau status pengaduan
-// lewat nomor tiket.
-//
-// TANPA verifikasi identitas, dan itu aman KARENA `nomorTiket` berformat
-// TW-YYMM-XXXXXX dengan 6 karakter ACAK (≈1,07 miliar kemungkinan per
-// bulan) — bukan nomor urut. Nomor tiket berperan sebagai kunci pembawa:
-// yang memegangnya berhak melihat, menutup, dan membuka kembali tiketnya.
-//
-// KALAU FORMAT NOMOR TIKET SUATU SAAT DIBUAT BERURUTAN, form ini WAJIB
-// dikasih faktor kedua (mis. nomor HP pelapor) lebih dulu — kalau tidak,
-// halaman ini berubah jadi alat memanen aduan seluruh warga. Lihat
-// server/modules/pengaduan/tiket.ts.
 import * as React from "react"
 import { Search, TriangleAlert, Ticket, Sparkles } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -71,12 +59,12 @@ export function LacakTiketForm({ nomorAwal }: { nomorAwal?: string } = {}) {
             <div className="flex items-center justify-between">
               <FieldLabel
                 htmlFor="nomorTiket"
-                className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-neutral-700 uppercase"
+                className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-foreground uppercase"
               >
-                <Ticket className="size-3.5 text-blue-600" />
+                <Ticket className="size-3.5 text-blue-600 dark:text-sky-400" />
                 Nomor Tiket Pengaduan
               </FieldLabel>
-              <span className="font-mono text-[11px] text-neutral-400">
+              <span className="font-mono text-[11px] text-muted-foreground">
                 Format: TW-YYMM-XXXXXX
               </span>
             </div>
@@ -95,13 +83,13 @@ export function LacakTiketForm({ nomorAwal }: { nomorAwal?: string } = {}) {
                   disabled={pending}
                   required
                   size="lg"
-                  className="font-mono text-base tracking-wider uppercase rounded-xl border-neutral-300 focus-visible:ring-blue-500/20 focus-visible:border-blue-600 pr-9"
+                  className="font-mono text-base tracking-wider uppercase rounded-xl border-border focus-visible:ring-blue-500/20 focus-visible:border-blue-600 pr-9"
                 />
                 {nomor.length > 0 && !pending && (
                   <button
                     type="button"
                     onClick={() => setNomor("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-neutral-400 hover:text-neutral-700 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                     title="Hapus"
                   >
                     ✕
@@ -119,14 +107,14 @@ export function LacakTiketForm({ nomorAwal }: { nomorAwal?: string } = {}) {
               </TombolUtama>
             </div>
 
-            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-500">
-              <FieldDescription className="text-xs text-neutral-500">
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+              <FieldDescription className="text-xs text-muted-foreground">
                 Kunci pelacakan yang terbit setelah pengaduan dikirimkan.
               </FieldDescription>
               <button
                 type="button"
                 onClick={() => setNomor("TW-2607-4F2A9K")}
-                className="inline-flex items-center gap-1 rounded-md border border-neutral-200/90 bg-neutral-50 px-2 py-0.5 font-mono text-[11px] text-blue-700 hover:bg-blue-50/80 transition-colors"
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] text-blue-600 dark:text-sky-400 hover:bg-muted transition-colors"
               >
                 <Sparkles className="size-3 text-amber-500" />
                 Contoh: TW-2607-4F2A9K
@@ -144,7 +132,7 @@ export function LacakTiketForm({ nomorAwal }: { nomorAwal?: string } = {}) {
       </form>
 
       {tiket && (
-        <div className="rounded-2xl border border-neutral-200/90 bg-white shadow-[0_8px_30px_-6px_rgba(0,0,0,0.06)] overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card text-card-foreground shadow-[0_8px_30px_-6px_rgba(0,0,0,0.06)] overflow-hidden">
           <KartuTiket tiket={tiket} onPerbarui={() => ambil(tiket.nomorTiket)} />
         </div>
       )}

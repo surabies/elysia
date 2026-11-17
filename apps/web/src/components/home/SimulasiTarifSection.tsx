@@ -223,14 +223,14 @@ export function SimulasiTarifSection() {
   return (
     <section
       aria-labelledby="simulasi-tarif-title"
-      className="mx-auto w-full max-w-360 px-4 lg:px-12 py-12 md:py-16 bg-white text-black"
+      className="mx-auto w-full max-w-360 px-4 lg:px-12 py-12 md:py-16 bg-background text-foreground"
     >
       <motion.div
         initial={{ opacity: 0, y: 36 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-3xl border border-slate-200/90 bg-slate-900 text-white p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-2xl"
+        className="rounded-3xl border border-border bg-slate-900 text-white p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-2xl"
       >
         {/* Ambient Glow */}
         <div

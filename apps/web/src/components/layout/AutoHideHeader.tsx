@@ -11,6 +11,8 @@ export function AutoHideHeader({ children }: AutoHideHeaderProps) {
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [hidden, setHidden] = useState(false)
 
+  const [scrolled, setScrolled] = useState(false)
+
   const revealHeader = useCallback(() => {
     if (hideTimeoutRef.current !== null) {
       clearTimeout(hideTimeoutRef.current)
@@ -21,9 +23,11 @@ export function AutoHideHeader({ children }: AutoHideHeaderProps) {
 
   useEffect(() => {
     let previousScrollY = window.scrollY
+    setScrolled(previousScrollY > 8)
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY
+      setScrolled(currentScrollY > 8)
       const menuOpen = headerRef.current?.querySelector('[data-open="true"]')
 
       if (currentScrollY <= 0 || currentScrollY < previousScrollY || menuOpen) {
@@ -51,9 +55,12 @@ export function AutoHideHeader({ children }: AutoHideHeaderProps) {
     <header
       ref={headerRef}
       onFocusCapture={revealHeader}
-      className={`group/header fixed inset-x-0 top-0 z-40 bg-white/85 text-black backdrop-blur-[6px] transition-transform duration-300 ease-in-out motion-reduce:transition-none has-data-[open=true]:max-md:bg-transparent has-data-[open=true]:max-md:backdrop-blur-none md:bg-white/80 md:backdrop-blur-sm ${
-        hidden ? "pointer-events-none -translate-y-full" : ""
-      }`}
+      data-scrolled={scrolled ? "true" : "false"}
+      className={`group/header fixed inset-x-0 top-0 z-40 bg-background/88 text-foreground backdrop-blur-md border-b border-border transition-[transform,background-color,box-shadow,border-color] duration-300 ease-in-out motion-reduce:transition-none has-data-[open=true]:max-md:bg-transparent has-data-[open=true]:max-md:backdrop-blur-none ${
+        scrolled
+          ? "shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_-4px_rgba(0,112,243,0.05)] bg-background/92"
+          : "shadow-[0_1px_0_0_rgba(0,0,0,0.02)]"
+      } ${hidden ? "pointer-events-none -translate-y-full" : ""}`}
     >
       {children}
     </header>

@@ -55,7 +55,7 @@ export function SiteFooter() {
   }, [])
 
   return (
-    <footer className="bg-white px-4 pt-15 pb-8 text-black lg:p-12.5 border-t border-neutral-200">
+    <footer className="bg-background px-4 pt-15 pb-8 text-foreground lg:p-12.5 border-t border-border">
       {/* Footer utama */}
       <div className="mx-auto flex max-w-7xl flex-wrap pb-2 lg:pb-8">
         <div className="mb-15 w-full lg:w-auto">
@@ -71,19 +71,19 @@ export function SiteFooter() {
                 />
               </div>
               <div>
-                <p className="font-extrabold text-heading-16 tracking-tight leading-tight text-black">
+                <p className="font-extrabold text-heading-16 tracking-tight leading-tight text-foreground">
                   PERUMDA
                   <br />
                   TIRTAWENING
                 </p>
-                <p className="text-label-11-mono font-mono text-neutral-500 uppercase tracking-wider">
+                <p className="text-label-11-mono font-mono text-muted-foreground uppercase tracking-wider">
                   Kota Bandung
                 </p>
               </div>
             </div>
           </Link>
-          <div className="mt-4 max-w-xs text-copy-13 text-neutral-600 leading-relaxed">
-            <p className="font-semibold text-black">Kantor Pusat:</p>
+          <div className="mt-4 max-w-xs text-copy-13 text-muted-foreground leading-relaxed">
+            <p className="font-semibold text-foreground">Kantor Pusat:</p>
             <p>{infoKontak.alamat}</p>
             <p className="mt-1">Call Center: {infoKontak.callCenter}</p>
             <p>WhatsApp: {infoKontak.whatsapp}</p>
@@ -103,13 +103,13 @@ export function SiteFooter() {
       </div>
 
       {/* Footer sekunder */}
-      <div className="mx-auto flex max-w-7xl flex-col border-t border-neutral-200 pt-8 lg:flex-row lg:flex-wrap lg:items-center lg:pt-6">
+      <div className="mx-auto flex max-w-7xl flex-col border-t border-border pt-8 lg:flex-row lg:flex-wrap lg:items-center lg:pt-6">
         <LanguageSwitcher className="lg:mx-12.5" />
 
         <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-center lg:justify-end">
           {legalLinks.map((link) => (
             <div key={link.href} className="mt-6 lg:mt-0 lg:mr-6">
-              <Link href={link.href} className="text-copy-13 text-neutral-600 hover:text-black transition-colors">
+              <Link href={link.href} className="text-copy-13 text-muted-foreground hover:text-foreground transition-colors">
                 {link.label}
               </Link>
             </div>
@@ -125,7 +125,7 @@ export function SiteFooter() {
                   aria-label={social.label}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-black/70 hover:text-black transition-colors"
+                  className="text-foreground/70 hover:text-foreground transition-colors"
                 >
                   <Icon className="block size-6" />
                 </a>
@@ -139,10 +139,10 @@ export function SiteFooter() {
           buttonClassName="uppercase"
         />
 
-        <span className="my-3 block text-copy-13 lg:order-first lg:m-0 font-medium text-black">
+        <span className="my-3 block text-copy-13 lg:order-first lg:m-0 font-medium text-foreground">
           {siteConfig.copyright}
         </span>
-        <span className="block w-full text-copy-12 text-neutral-500 lg:mt-7">
+        <span className="block w-full text-copy-12 text-muted-foreground lg:mt-7">
           {siteConfig.trademark}
         </span>
       </div>

@@ -96,11 +96,11 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onOpenModal(item)}
-      className="group relative flex flex-col justify-between rounded-3xl border border-neutral-200/90 bg-white p-4 sm:p-5 shadow-xs transition-all duration-300 hover:border-neutral-300 hover:shadow-md cursor-pointer select-none"
+      className="group relative flex flex-col justify-between rounded-3xl border border-border bg-card p-4 sm:p-5 shadow-xs transition-all duration-300 hover:border-foreground/30 hover:shadow-md cursor-pointer select-none"
     >
       <div className="space-y-3.5">
         {/* Frame Foto 16:10 dengan Auto-Crossfade Multi-Foto */}
-        <div className="group/img relative aspect-16/10 w-full overflow-hidden rounded-2xl bg-neutral-950 border border-neutral-200/80 shadow-2xs">
+        <div className="group/img relative aspect-16/10 w-full overflow-hidden rounded-2xl bg-neutral-950 border border-border shadow-2xs">
           {/* Ambient Backdrop Blur untuk menyesuaikan foto portrait maupun landscape */}
           {currentPhoto?.url && (
             <div
@@ -198,30 +198,30 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
 
         {/* Informasi Utama & Metadata */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
             <span className="flex items-center gap-1 truncate max-w-[170px]">
-              <Calendar className="size-3 text-neutral-400 shrink-0" />
+              <Calendar className="size-3 text-muted-foreground shrink-0" />
               <span>{item.waktuMulai || 'Hari ini'}</span>
             </span>
 
             {isSelesai ? (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 rounded-full px-2 py-0.5 shrink-0">
-                <CheckCircle2 className="size-3 text-emerald-600" />
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300 rounded-full px-2 py-0.5 shrink-0">
+                <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
                 <span>Selesai 100%</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 rounded-full px-2 py-0.5 shrink-0">
-                <Clock className="size-3 text-blue-600" />
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300 rounded-full px-2 py-0.5 shrink-0">
+                <Clock className="size-3 text-blue-600 dark:text-blue-400" />
                 <span>{item.progresPersen}% Progres</span>
               </span>
             )}
           </div>
 
-          <h3 className="text-heading-16 sm:text-heading-17 font-bold text-neutral-900 group-hover:text-blue-600 transition-colors leading-snug line-clamp-2">
+          <h3 className="text-heading-16 sm:text-heading-17 font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors leading-snug line-clamp-2">
             {item.judul}
           </h3>
 
-          <p className="text-copy-13 text-neutral-600 line-clamp-2 leading-relaxed">
+          <p className="text-copy-13 text-muted-foreground line-clamp-2 leading-relaxed">
             {item.ringkasan}
           </p>
 
@@ -231,7 +231,7 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
               {targetKelurahan.map((kel, kIdx) => (
                 <span
                   key={kIdx}
-                  className="text-[10px] font-mono text-neutral-600 bg-neutral-100 border border-neutral-200/60 rounded-md px-1.5 py-0.5"
+                  className="text-[10px] font-mono text-muted-foreground bg-muted border border-border rounded-md px-1.5 py-0.5"
                 >
                   #{kel}
                 </span>
@@ -242,13 +242,13 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
       </div>
 
       {/* Footer Kartu dengan Tombol Rincian */}
-      <div className="mt-4 pt-3.5 border-t border-neutral-100 flex items-center justify-between">
-        <span className="text-[11px] font-mono text-neutral-500 flex items-center gap-1.5">
-          <Camera className="size-3.5 text-neutral-400" />
+      <div className="mt-4 pt-3.5 border-t border-border flex items-center justify-between">
+        <span className="text-[11px] font-mono text-muted-foreground flex items-center gap-1.5">
+          <Camera className="size-3.5 text-muted-foreground" />
           <span>Dokumentasi Lapangan</span>
         </span>
 
-        <span className="inline-flex items-center gap-1 text-copy-12 font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors">
+        <span className="inline-flex items-center gap-1 text-copy-12 font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors">
           <span>Lihat Rincian</span>
           <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>
@@ -351,7 +351,7 @@ export function DokumentasiKegiatanSection() {
     <section
       id="dokumentasi-wilayah-5"
       aria-labelledby="dokumentasi-wilayah-title"
-      className="section-white relative overflow-hidden py-14 sm:py-20 bg-neutral-50/60 text-black"
+      className="section-white relative overflow-hidden py-14 sm:py-20 bg-background text-foreground"
     >
       <Container className="max-w-360 px-4 lg:px-12">
         <motion.div
@@ -360,38 +360,27 @@ export function DokumentasiKegiatanSection() {
           viewport={{ once: true, margin: '-50px' }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* Header Seksi Senada & Terstruktur */}
+          {/* Header Seksi Ringkas & Tegas */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-label-12-mono font-mono text-neutral-500 uppercase tracking-wider">
-                  Kanal Pelayanan Wilayah 5
-                </span>
-                <span className="h-1 w-1 rounded-full bg-neutral-300" />
-                <span className="text-[11px] font-mono text-neutral-500">
-                  Zona Bandung Timur &amp; Tenggara
-                </span>
-              </div>
-              <h2
-                id="dokumentasi-wilayah-title"
-                className="text-heading-22 sm:text-heading-26 md:text-heading-30 font-bold tracking-tight text-neutral-900"
-              >
-                Catatan Kerja &amp; Keandalan Distribusi Air
-              </h2>
-            </div>
+            <h2
+              id="dokumentasi-wilayah-title"
+              className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground"
+            >
+              Pelayanan Wilayah 5
+            </h2>
 
             {/* Quick Live Status Badge */}
-            <div className="hidden sm:flex items-center gap-2 text-[12px] font-mono text-neutral-600 bg-white border border-neutral-200/90 rounded-full px-3.5 py-1.5 shadow-2xs">
+            <div className="hidden sm:flex items-center gap-2 text-[12px] font-mono text-muted-foreground bg-card border border-border rounded-full px-3.5 py-1.5 shadow-2xs">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-semibold text-neutral-800">{daftar.length} Agenda Aktif</span>
-              <span className="text-neutral-300">|</span>
+              <span className="font-semibold text-foreground">{daftar.length} Agenda Aktif</span>
+              <span className="text-border">|</span>
               <span>Unit Lapangan</span>
             </div>
           </div>
 
           {/* Subtitle & Filter Baris */}
           <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
-            <p className="text-copy-14 sm:text-copy-15 max-w-2xl text-neutral-600 leading-relaxed">
+            <p className="text-copy-14 sm:text-copy-15 max-w-2xl text-muted-foreground leading-relaxed">
               Dokumentasi berkala pemeliharaan jaringan transmisi, tera akurasi meter digital, dan respons teknisi Perumda Tirtawening demi menjamin kontinuitas air minum bersih bagi warga.
             </p>
 
@@ -410,8 +399,8 @@ export function DokumentasiKegiatanSection() {
                   onClick={() => setKategoriFilter(tab.id)}
                   className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all cursor-pointer select-none ${
                     kategoriFilter === tab.id
-                      ? 'bg-neutral-900 text-white font-semibold shadow-xs'
-                      : 'bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 border border-neutral-200/90'
+                      ? 'bg-foreground text-background font-semibold shadow-xs'
+                      : 'bg-card hover:bg-muted text-muted-foreground hover:text-foreground border border-border'
                   }`}
                 >
                   {tab.label}

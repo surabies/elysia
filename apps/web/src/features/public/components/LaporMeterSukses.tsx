@@ -1,13 +1,5 @@
 "use client"
 
-// features/publik/components/lapor-meter-sukses.tsx — layar konfirmasi
-// setelah laporan meter terkirim.
-//
-// SEMUA field di sini yang membuktikan "server sungguh menerima ini"
-// (status, createdAt, pesan) datang dari respons POST /lapor-meter, BUKAN
-// dihitung ulang dari state form — echo dari input sendiri tidak meyakinkan
-// siapa pun bahwa server benar-benar memprosesnya. Lihat pemanggilnya di
-// lapor-meter-form.tsx.
 import Link from "next/link"
 import {
   ArrowRight,
@@ -50,16 +42,16 @@ export function LaporMeterSukses({
             aria-hidden="true"
             className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl animate-pulse"
           />
-          <span className="relative flex size-16 sm:size-20 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-50 text-emerald-600 shadow-md">
+          <span className="relative flex size-16 sm:size-20 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-md">
             <BadgeCheck className="size-8 sm:size-10" />
           </span>
         </div>
 
         <div className="space-y-1">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
             Laporan Berhasil Terkirim
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-600 max-w-md">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md">
             {hasil.pesan}
           </p>
         </div>
@@ -76,8 +68,8 @@ export function LaporMeterSukses({
       </div>
 
       {/* Digital Receipt Items (Tanpa nested card) */}
-      <div className="space-y-3 border-y border-neutral-100 py-4">
-        <div className="flex items-center justify-between pb-1 text-[10px] sm:text-[11px] text-neutral-400 font-mono uppercase tracking-wider">
+      <div className="space-y-3 border-y border-border py-4">
+        <div className="flex items-center justify-between pb-1 text-[10px] sm:text-[11px] text-muted-foreground font-mono uppercase tracking-wider">
           <span>Rincian Konfirmasi Server</span>
           <span>{formatWaktu(hasil.createdAt)} WIB</span>
         </div>
@@ -96,14 +88,14 @@ export function LaporMeterSukses({
           ].map(({ label, value, mono, highlight }) => (
             <div
               key={label}
-              className="flex items-center justify-between border-b border-dashed border-neutral-100 pb-2 last:border-b-0 last:pb-0"
+              className="flex items-center justify-between border-b border-dashed border-border pb-2 last:border-b-0 last:pb-0"
             >
-              <span className="text-neutral-500 font-medium">{label}</span>
+              <span className="text-muted-foreground font-medium">{label}</span>
               <span
                 className={cn(
-                  "text-neutral-900 text-right font-medium",
+                  "text-foreground text-right font-medium",
                   mono && "font-mono",
-                  highlight && "text-base sm:text-lg font-bold text-blue-700 font-mono"
+                  highlight && "text-base sm:text-lg font-bold text-blue-600 dark:text-sky-400 font-mono"
                 )}
               >
                 {value}
@@ -115,11 +107,11 @@ export function LaporMeterSukses({
 
       {/* Foto Terkirim */}
       <div className="space-y-2">
-        <p className="flex items-center gap-1.5 text-xs font-semibold text-neutral-700">
-          <ImageIcon className="size-4 text-blue-600" />
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          <ImageIcon className="size-4 text-blue-600 dark:text-sky-400" />
           Bukti Foto yang Diterima Server
         </p>
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-950 shadow-xs">
+        <div className="overflow-hidden rounded-2xl border border-border bg-neutral-950 shadow-xs">
           <BingkaiFoto
             src={hasil.fotoPreviewUrl}
             alt="Foto stand meter terkirim"
@@ -131,12 +123,12 @@ export function LaporMeterSukses({
       </div>
 
       {/* SLA Note */}
-      <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 text-xs text-amber-800">
-        <Clock3 className="mt-0.5 size-4 shrink-0 text-amber-600" />
+      <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:text-amber-300">
+        <Clock3 className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
         <p>
           Petugas verifikator akan memeriksa foto sebelum angka ini disahkan menjadi
           dasar rekening tagihan. Anda dapat memantau statusnya kapan saja lewat tab{" "}
-          <strong>Cek Status Laporan</strong>.
+          <strong className="text-foreground">Cek Status Laporan</strong>.
         </p>
       </div>
 

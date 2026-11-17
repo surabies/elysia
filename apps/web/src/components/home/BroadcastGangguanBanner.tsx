@@ -35,7 +35,6 @@ export function BroadcastGangguanBanner({
   React.useEffect(() => {
     setMounted(true);
 
-    // Sinkronkan cache lokal setelah mount (bebas hydration mismatch)
     try {
       const tersimpan = localStorage.getItem("elysia_broadcast_items");
       if (tersimpan) {
@@ -46,7 +45,6 @@ export function BroadcastGangguanBanner({
       }
     } catch {}
 
-    // Ambil siaran terbaru dari backend API
     fetch("/api/broadcast/public")
       .then((r) => r.json())
       .then((json) => {
@@ -57,7 +55,6 @@ export function BroadcastGangguanBanner({
       .catch(() => {});
   }, []);
 
-  // Sinkronisasi jika ada pembaruan siaran dari tab dashboard
   React.useEffect(() => {
     function handleStorageChange() {
       try {
@@ -81,7 +78,6 @@ export function BroadcastGangguanBanner({
     };
   }, []);
 
-  // Filter siaran aktif yang diatur tampil di ticker
   const broadcastAktif = React.useMemo(() => {
     return daftar
       .filter((b) => b.aktif && b.tampilkanDiTicker !== false)
@@ -98,7 +94,6 @@ export function BroadcastGangguanBanner({
       });
   }, [daftar]);
 
-  // Duplikasi item agar marquee track selalu kontinu tanpa celah kosong
   const displayItems = React.useMemo(() => {
     if (broadcastAktif.length === 0) return [];
     if (broadcastAktif.length === 1) {
@@ -115,7 +110,6 @@ export function BroadcastGangguanBanner({
     return broadcastAktif;
   }, [broadcastAktif]);
 
-  // Kecepatan santai dan nyaman dibaca (~32px/s)
   const tickerDuration = Math.max(30, displayItems.length * 15);
 
   if (!mounted || isDismissed || broadcastAktif.length === 0) {
@@ -145,30 +139,30 @@ export function BroadcastGangguanBanner({
     switch (kategori) {
       case "DARURAT":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 border border-rose-300 px-2 py-0.5 text-[10px] font-bold text-rose-800 shrink-0 uppercase tracking-wide">
-            <AlertTriangle className="size-2.5 text-rose-600 shrink-0" />
+          <span className="inline-flex items-center gap-1 rounded-sm bg-white/18 border border-white/30 px-1.5 py-px text-[9px] font-bold text-white shrink-0 uppercase tracking-wider">
+            <AlertTriangle className="size-2.5 text-amber-200 shrink-0" />
             <span>Darurat</span>
           </span>
         );
       case "PEMELIHARAAN":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-900 shrink-0 uppercase tracking-wide">
-            <Wrench className="size-2.5 text-amber-700 shrink-0" />
+          <span className="inline-flex items-center gap-1 rounded-sm bg-white/15 border border-white/25 px-1.5 py-px text-[9px] font-bold text-white shrink-0 uppercase tracking-wider">
+            <Wrench className="size-2.5 text-sky-200 shrink-0" />
             <span>Pemeliharaan</span>
           </span>
         );
       case "EVENT":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 border border-sky-300 px-2 py-0.5 text-[10px] font-bold text-sky-900 shrink-0 uppercase tracking-wide">
-            <Sparkles className="size-2.5 text-sky-600 shrink-0" />
+          <span className="inline-flex items-center gap-1 rounded-sm bg-white/20 border border-white/30 px-1.5 py-px text-[9px] font-bold text-white shrink-0 uppercase tracking-wider">
+            <Sparkles className="size-2.5 text-cyan-200 shrink-0" />
             <span>Program Resmi</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 border border-neutral-300 px-2 py-0.5 text-[10px] font-bold text-neutral-800 shrink-0 uppercase tracking-wide">
-            <Info className="size-2.5 text-neutral-600 shrink-0" />
-            <span>Pengumuman</span>
+          <span className="inline-flex items-center gap-1 rounded-sm bg-white/15 border border-white/25 px-1.5 py-px text-[9px] font-bold text-white shrink-0 uppercase tracking-wider">
+            <Info className="size-2.5 text-white/90 shrink-0" />
+            <span>Info</span>
           </span>
         );
     }
@@ -185,37 +179,36 @@ export function BroadcastGangguanBanner({
             <button
               type="button"
               onClick={() => handleBukaDetail(item)}
-              className="group/item inline-flex items-center gap-2 px-3 py-1 text-left text-copy-12 text-sky-950 hover:text-blue-700 transition-colors cursor-pointer shrink-0"
+              className="group/item inline-flex items-center gap-1.5 px-2.5 py-0.5 text-left text-[11px] leading-none text-white/95 hover:text-white transition-colors cursor-pointer shrink-0"
               title={`Klik untuk melihat detail: ${item.judul}`}
             >
               {renderBadge(item.kategori)}
 
-              <span className="font-bold text-sky-950 tracking-tight group-hover/item:text-blue-700 transition-colors whitespace-nowrap">
+              <span className="font-semibold text-white tracking-tight group-hover/item:underline underline-offset-2 whitespace-nowrap">
                 {item.judul}
               </span>
 
               {item.estimasiSelesai && (
-                <span className="text-sky-700/80 text-[11px] font-mono hidden sm:inline whitespace-nowrap">
+                <span className="text-white/75 text-[10px] font-mono hidden sm:inline whitespace-nowrap">
                   ({item.estimasiSelesai})
                 </span>
               )}
 
-              <span className="text-sky-300 text-[11px] select-none">•</span>
+              <span className="text-white/40 text-[10px] select-none">•</span>
 
-              <span className="text-sky-800/85 text-copy-11 max-w-64 sm:max-w-md truncate whitespace-nowrap font-normal">
+              <span className="text-white/85 text-[11px] max-w-60 sm:max-w-md truncate whitespace-nowrap font-normal">
                 {item.ringkasan}
               </span>
 
-              <span className="inline-flex items-center gap-0.5 text-blue-600 group-hover/item:text-blue-800 text-[11px] font-semibold whitespace-nowrap underline underline-offset-2 ml-1">
+              <span className="inline-flex items-center gap-0.5 text-white font-semibold text-[10px] whitespace-nowrap opacity-90 group-hover/item:opacity-100 ml-0.5">
                 <span>Detail</span>
-                <ChevronRight className="size-3" />
+                <ChevronRight className="size-2.5 transition-transform group-hover/item:translate-x-0.5" />
               </span>
             </button>
 
-            {/* Separator Titik Lembut antar item */}
             <span
               aria-hidden="true"
-              className="size-1 rounded-full bg-sky-300 mx-3 sm:mx-4 select-none shrink-0"
+              className="size-1 rounded-full bg-white/35 mx-2.5 sm:mx-3 select-none shrink-0"
             />
           </React.Fragment>
         ))}
@@ -227,45 +220,45 @@ export function BroadcastGangguanBanner({
     <>
       <aside
         aria-label="Pemberitahuan Siaran Resmi"
-        className="relative z-30 w-full bg-sky-50 text-sky-950 border-b border-sky-200/90 text-copy-12 select-none overflow-hidden"
+        className="relative z-30 w-full bg-[#0070f3] text-white border-b border-[#0060df] text-[11px] select-none overflow-hidden"
       >
-        {/* Subtle Top Border Glow (Biru muda logo Tirtawening) */}
+        {/* Subtle Vercel Blue Top Specular Line */}
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-sky-400/40 to-transparent pointer-events-none"
+          className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/35 to-transparent pointer-events-none"
         />
 
-        <div className="mx-auto flex h-9 sm:h-10 max-w-360 items-center justify-between px-3 sm:px-4 lg:px-12">
+        <div className="mx-auto flex h-7 max-w-360 items-center justify-between px-3 sm:px-4 lg:px-12">
           {/* Label Kiri Tetap (Fixed Indicator) */}
-          <div className="flex items-center shrink-0 gap-1.5 sm:gap-2 pr-2.5 sm:pr-3 border-r border-sky-200 z-20">
-            <span className="relative flex h-2 w-2">
+          <div className="flex items-center shrink-0 gap-1.5 pr-2.5 border-r border-white/20 z-20">
+            <span className="relative flex h-1.5 w-1.5">
               <span
-                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-80 ${
                   adaDarurat
-                    ? "bg-rose-400"
+                    ? "bg-amber-300"
                     : adaPemeliharaan
-                      ? "bg-amber-400"
-                      : "bg-sky-400"
+                      ? "bg-sky-200"
+                      : "bg-white"
                 }`}
               />
               <span
-                className={`relative inline-flex rounded-full h-2 w-2 ${
+                className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
                   adaDarurat
-                    ? "bg-rose-600"
+                    ? "bg-amber-300"
                     : adaPemeliharaan
-                      ? "bg-amber-600"
-                      : "bg-sky-600"
+                      ? "bg-sky-200"
+                      : "bg-white"
                 }`}
               />
             </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-sky-900 uppercase tracking-wider hidden xs:inline">
+            <span className="text-[10px] font-semibold text-white uppercase tracking-wider hidden xs:inline">
               {adaDarurat
                 ? "Darurat"
                 : adaPemeliharaan
                   ? "Pemeliharaan"
                   : "Siaran Resmi"}
             </span>
-            <span className="text-[10px] font-mono text-sky-800 px-1.5 py-0.2 rounded bg-sky-200/70 hidden md:inline">
+            <span className="text-[9px] font-mono font-semibold text-white px-1 py-px rounded-xs bg-white/20 hidden md:inline leading-none">
               {broadcastAktif.length}
             </span>
           </div>
@@ -276,17 +269,16 @@ export function BroadcastGangguanBanner({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            {/* Vignette fade masks di ujung kiri dan kanan selaras dengan background biru muda */}
+            {/* Vignette fade masks selaras dengan Vercel Blue (#0070f3) */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 w-6 sm:w-8 bg-linear-to-r from-sky-50 via-sky-50/90 to-transparent z-10"
+              className="pointer-events-none absolute inset-y-0 left-0 w-5 sm:w-7 bg-linear-to-r from-[#0070f3] via-[#0070f3]/90 to-transparent z-10"
             />
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 w-6 sm:w-8 bg-linear-to-l from-sky-50 via-sky-50/90 to-transparent z-10"
+              className="pointer-events-none absolute inset-y-0 right-0 w-5 sm:w-7 bg-linear-to-l from-[#0070f3] via-[#0070f3]/90 to-transparent z-10"
             />
 
-            {/* Seamless Infinite Ticker Track */}
             <div
               className="flex w-max shrink-0 items-center animate-broadcast-ticker select-none"
               style={
@@ -313,21 +305,20 @@ export function BroadcastGangguanBanner({
           </div>
 
           {/* Tombol Tutup [X] di Ujung Kanan */}
-          <div className="flex items-center shrink-0 pl-2 sm:pl-3 border-l border-sky-200 z-20">
+          <div className="flex items-center shrink-0 pl-2 border-l border-white/20 z-20">
             <button
               type="button"
               onClick={handleDismiss}
               aria-label="Tutup sementara banner informasi"
               title="Tutup sementara pemberitahuan"
-              className="size-6 rounded-md flex items-center justify-center text-sky-600 hover:text-sky-950 hover:bg-sky-200/60 transition-colors cursor-pointer"
+              className="size-5 rounded-xs flex items-center justify-center text-white/80 hover:text-white hover:bg-white/15 transition-colors cursor-pointer"
             >
-              <X className="size-3.5" />
+              <X className="size-3" />
             </button>
           </div>
         </div>
       </aside>
 
-      {/* Modal Detail Saat Item Ticker Diklik */}
       <BroadcastDetailModal
         broadcast={selectedItem}
         open={modalBuka}

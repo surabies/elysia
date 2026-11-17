@@ -47,7 +47,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
   const currentPhoto = allPhotos[activePhotoIdx] || allPhotos[0]
 
   return (
-    <div className="rounded-3xl border border-neutral-200/90 bg-neutral-50/70 p-4 sm:p-6 md:p-8 lg:p-10 shadow-xs transition-shadow hover:shadow-md">
+    <div className="rounded-3xl border border-border bg-card p-4 sm:p-6 md:p-8 lg:p-10 shadow-xs transition-shadow hover:shadow-md">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 items-stretch">
         
         {/* ========================================================
@@ -56,7 +56,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
         <div className="md:col-span-6 lg:col-span-6 flex flex-col justify-between">
           <div
             onClick={() => onOpenModal(item)}
-            className="group/img relative flex-1 min-h-[240px] sm:min-h-[320px] md:min-h-[420px] w-full overflow-hidden rounded-2xl bg-neutral-950 flex items-center justify-center border border-neutral-200/80 shadow-xs cursor-pointer select-none"
+            className="group/img relative flex-1 min-h-[240px] sm:min-h-[320px] md:min-h-[420px] w-full overflow-hidden rounded-2xl bg-neutral-950 flex items-center justify-center border border-border shadow-xs cursor-pointer select-none"
             title="Klik untuk melihat dokumen dan brosur resolusi penuh"
           >
             {/* Ambient Blur Backdrop: Memastikan foto potret / vertikal tidak memiliki ruang kosong jelek */}
@@ -158,34 +158,34 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
           <div className="space-y-4">
             {/* Tag Program dan Periode Tanggal Terpisah Secara Bersih & Rapi */}
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200/90 bg-white px-3 py-1 text-label-12 font-semibold text-neutral-900 shadow-2xs">
-                <span className="size-1.5 rounded-full bg-blue-600 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 text-label-12 font-semibold text-foreground shadow-2xs">
+                <span className="size-1.5 rounded-full bg-[#0070f3] animate-pulse" />
                 <span>Program Resmi</span>
               </span>
 
               {details?.periode && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 border border-neutral-200/70 px-3 py-1 text-label-12 font-mono text-neutral-700">
-                  <Calendar className="size-3.5 text-neutral-500 shrink-0" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-3 py-1 text-label-12 font-mono text-muted-foreground">
+                  <Calendar className="size-3.5 text-muted-foreground shrink-0" />
                   <span>{details.periode}</span>
                 </span>
               )}
             </div>
 
             {/* Judul Headline Promo */}
-            <h2 className="text-heading-22 sm:text-heading-26 md:text-heading-30 lg:text-heading-34 font-semibold tracking-tight text-black leading-tight">
+            <h2 className="text-heading-22 sm:text-heading-26 md:text-heading-30 lg:text-heading-34 font-semibold tracking-tight text-foreground leading-tight">
               {item.judul}
             </h2>
 
             {/* Ringkasan Penjelasan */}
-            <p className="text-copy-14 sm:text-copy-15 whitespace-pre-line text-neutral-600 leading-relaxed">
+            <p className="text-copy-14 sm:text-copy-15 whitespace-pre-line text-muted-foreground leading-relaxed">
               {item.ringkasan}
             </p>
 
             {/* Highlight Penawaran & Butir Keunggulan MENYUSUN KE BAWAH TANPA DIPOTONG */}
             {details && (details.highlightDiskon || (details.keunggulan && details.keunggulan.length > 0)) && (
-              <div className="rounded-2xl bg-white border border-neutral-200/90 p-4 sm:p-5 shadow-2xs space-y-3">
+              <div className="rounded-2xl bg-muted/40 border border-border p-4 sm:p-5 shadow-2xs space-y-3">
                 {details.highlightDiskon && (
-                  <p className="text-copy-14 font-semibold text-black flex items-center gap-2">
+                  <p className="text-copy-14 font-semibold text-foreground flex items-center gap-2">
                     <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
                     <span>{details.highlightDiskon}</span>
                   </p>
@@ -193,13 +193,13 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
 
                 {/* Butir Keunggulan Menyusun ke Bawah Secara Utuh & Lengkap */}
                 {details.keunggulan && details.keunggulan.length > 0 && (
-                  <div className="pt-1 flex flex-col gap-2.5 text-copy-13 text-neutral-700">
+                  <div className="pt-1 flex flex-col gap-2.5 text-copy-13 text-muted-foreground">
                     {details.keunggulan.map((k, i) => (
                       <div key={i} className="flex items-start gap-2.5">
-                        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
+                        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
                           <Check className="size-2.5 stroke-[3]" />
                         </span>
-                        <span className="leading-snug">{k}</span>
+                        <span className="leading-snug text-foreground/90">{k}</span>
                       </div>
                     ))}
                   </div>
@@ -209,7 +209,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
           </div>
 
           {/* Bagian Bawah: Tombol Aksi Sejajar Tepat Tepi Bawah Gambar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-neutral-200/60 mt-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-border mt-auto">
             <PillButton asChild className="w-full sm:w-auto text-center justify-center">
               <Link href={details?.ctaLink || '/pasang-baru'}>
                 {details?.ctaText || 'Daftar Sekarang'}
@@ -219,7 +219,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
             <button
               type="button"
               onClick={() => onOpenModal(item)}
-              className="text-label-13 sm:text-label-14 font-medium text-neutral-600 hover:text-black transition-colors underline underline-offset-4 cursor-pointer text-center py-1 sm:py-0"
+              className="text-label-13 sm:text-label-14 font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4 cursor-pointer text-center py-1 sm:py-0"
             >
               Lihat Syarat &amp; Dokumen
             </button>
@@ -350,7 +350,7 @@ export function PromoBannerSpotlight() {
       aria-labelledby="promo-spotlight-title"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="section-white relative bg-white pt-2 md:pt-4 pb-14 md:pb-20 text-black overflow-hidden"
+      className="section-white relative bg-background pt-2 md:pt-4 pb-14 md:pb-20 text-foreground overflow-hidden"
     >
       {/* Kontainer Sejajar Lebar Navbar (max-w-360 / 1440px) dengan Scroll-In-View Motion */}
       <motion.div
@@ -360,20 +360,22 @@ export function PromoBannerSpotlight() {
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         className="mx-auto w-full max-w-360 px-4 lg:px-12"
       >
-        {/* Header Seksi Ringkas & Elegan */}
+        {/* Header Seksi Ringkas & Tegas */}
         <div className="flex items-center justify-between gap-4 mb-5">
           <div className="flex items-center gap-3">
-            <span className="text-label-12-mono font-mono text-neutral-500 uppercase tracking-wider">
+            <h2
+              id="promo-spotlight-title"
+              className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground"
+            >
               Program &amp; Penawaran Warga
-            </span>
-            <span className="hidden sm:inline-block h-1 w-1 rounded-full bg-neutral-300" />
-            <span className="hidden sm:inline-block text-copy-12 text-neutral-400 font-mono">
+            </h2>
+            <span className="hidden sm:inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-label-12 font-mono font-medium text-muted-foreground">
               {daftarPromo.length} Program Aktif
             </span>
           </div>
 
           {daftarPromo.length > 1 && (
-            <span className="font-mono text-copy-12 text-neutral-400">
+            <span className="font-mono text-copy-13 font-medium text-muted-foreground">
               {selectedIndex + 1} / {daftarPromo.length}
             </span>
           )}
@@ -390,7 +392,7 @@ export function PromoBannerSpotlight() {
                 setProgress(0)
               }}
               aria-label="Iklan sebelumnya"
-              className="absolute left-1 sm:-left-4 lg:-left-5 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-10 lg:size-11 rounded-full bg-white/95 hover:bg-white text-neutral-800 shadow-md border border-neutral-200/90 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-xs"
+              className="absolute left-1 sm:-left-4 lg:-left-5 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-10 lg:size-11 rounded-full bg-card/95 hover:bg-card text-foreground shadow-md border border-border flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-xs"
             >
               <ChevronLeft className="size-4 sm:size-5" />
             </button>
@@ -419,7 +421,7 @@ export function PromoBannerSpotlight() {
                 setProgress(0)
               }}
               aria-label="Iklan selanjutnya"
-              className="absolute right-1 sm:-right-4 lg:-right-5 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-10 lg:size-11 rounded-full bg-white/95 hover:bg-white text-neutral-800 shadow-md border border-neutral-200/90 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-xs"
+              className="absolute right-1 sm:-right-4 lg:-right-5 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-10 lg:size-11 rounded-full bg-card/95 hover:bg-card text-foreground shadow-md border border-border flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-xs"
             >
               <ChevronRight className="size-4 sm:size-5" />
             </button>
@@ -438,14 +440,14 @@ export function PromoBannerSpotlight() {
                   setProgress(0)
                 }}
                 className={`relative h-2 rounded-full overflow-hidden transition-all cursor-pointer ${
-                  idx === selectedIndex ? 'w-10 bg-neutral-200' : 'w-2.5 bg-neutral-300 hover:bg-neutral-400'
+                  idx === selectedIndex ? 'w-10 bg-muted' : 'w-2.5 bg-border hover:bg-muted-foreground/50'
                 }`}
                 aria-label={`Pindah ke slide ${idx + 1}`}
                 title={`Pindah ke iklan ${idx + 1}`}
               >
                 {idx === selectedIndex && (
                   <span
-                    className="absolute inset-y-0 left-0 bg-neutral-900 rounded-full transition-all duration-75"
+                    className="absolute inset-y-0 left-0 bg-foreground rounded-full transition-all duration-75"
                     style={{ width: `${progress}%` }}
                   />
                 )}

@@ -1,16 +1,5 @@
 "use client"
 
-// features/public/components/MasukanNomorLangganan.tsx — kotak "nomor
-// langganan + tombol cari", SATU-SATUNYA definisi visualnya di seluruh
-// halaman publik.
-//
-// Sebelum diekstrak ke sini, tab "Lapor meter" (lapor-meter-form.tsx) dan tab
-// "Cek laporan" (cek-laporan-meter-form.tsx) menulis ulang kotak yang sama
-// masing-masing sendiri-sendiri — dan perlahan menyimpang (h-10 vs tanpa
-// tinggi eksplisit, tombol ikon persegi vs tombol teks lebar, teks bantuan
-// berbeda kalimat). Kalau salah satu tab kelak BENAR-BENAR perlu tampil beda,
-// itu tandanya keduanya harus diputuskan ulang bareng di sini, bukan salah
-// satu diam-diam menulis ulang className sendiri lagi.
 import * as React from "react"
 import { Loader2, Search, CheckCircle2, Sparkles } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
@@ -27,7 +16,6 @@ export function InputNomorLangganan({
 }: {
   id: string
   nomor: string
-  /** Sudah dibersihkan (digit saja, maks 11 karakter) sebelum dipanggil. */
   onNomorChange: (digitBaru: string) => void
   onCari: (nomor: string) => void
   pending: boolean
@@ -37,15 +25,15 @@ export function InputNomorLangganan({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label htmlFor={id} className="text-xs sm:text-sm font-semibold text-neutral-800">
+        <Label htmlFor={id} className="text-xs sm:text-sm font-semibold text-foreground">
           Nomor Langganan
         </Label>
         <span
           className={cn(
             "font-mono text-[11px] transition-colors",
             isLengkap
-              ? "font-semibold text-emerald-600 flex items-center gap-1"
-              : "text-neutral-400"
+              ? "font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"
+              : "text-muted-foreground"
           )}
         >
           {isLengkap ? (
@@ -75,13 +63,13 @@ export function InputNomorLangganan({
             maxLength={11}
             disabled={pending}
             size="lg"
-            className="w-full rounded-xl font-mono text-base tracking-wider pr-8 border-neutral-300 focus-visible:ring-blue-500/20 focus-visible:border-blue-600"
+            className="w-full rounded-xl font-mono text-base tracking-wider pr-8 border-border focus-visible:ring-blue-500/20 focus-visible:border-blue-600"
           />
           {nomor.length > 0 && !pending && (
             <button
               type="button"
               onClick={() => onNomorChange("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-neutral-400 hover:text-neutral-700 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
               title="Hapus"
             >
               ✕
@@ -106,7 +94,7 @@ export function InputNomorLangganan({
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs text-neutral-500">
+      <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs text-muted-foreground">
         <p className="text-[11px] sm:text-xs">
           {pending
             ? "Mencari data sambungan…"
@@ -115,7 +103,7 @@ export function InputNomorLangganan({
         <button
           type="button"
           onClick={() => onNomorChange("00401700010")}
-          className="inline-flex items-center gap-1 rounded-md border border-neutral-200/90 bg-neutral-50 px-2 py-0.5 font-mono text-[10px] sm:text-[11px] text-blue-700 hover:bg-blue-50 transition-colors"
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[10px] sm:text-[11px] text-blue-600 dark:text-sky-400 hover:bg-muted transition-colors"
         >
           <Sparkles className="size-2.5 sm:size-3 text-amber-500" />
           Contoh: 00401700010
@@ -126,4 +114,3 @@ export function InputNomorLangganan({
 }
 
 export const MasukanNomorLangganan = InputNomorLangganan
-

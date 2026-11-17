@@ -214,45 +214,45 @@ export function PengaduanForm({
               aria-hidden="true"
               className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl animate-pulse"
             />
-            <span className="relative flex size-16 sm:size-20 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-50 text-emerald-600 shadow-md">
+            <span className="relative flex size-16 sm:size-20 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-md">
               <BadgeCheck className="size-8 sm:size-10" />
             </span>
           </div>
 
           <div className="space-y-1">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Pengaduan Berhasil Terkirim
             </h2>
-            <p className="text-xs sm:text-sm text-neutral-600 max-w-md">
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-md">
               {hasil.pesan}
             </p>
           </div>
         </div>
 
         {/* Digital Ticket Key Section (Tanpa nested card) */}
-        <div className="space-y-3 border-y border-neutral-100 py-4">
-          <div className="flex items-center justify-between pb-1 text-[10px] sm:text-[11px] text-neutral-400 font-mono uppercase tracking-wider">
+        <div className="space-y-3 border-y border-border py-4">
+          <div className="flex items-center justify-between pb-1 text-[10px] sm:text-[11px] text-muted-foreground font-mono uppercase tracking-wider">
             <span>Nomor Tiket Pengaduan</span>
-            <span className="text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+            <span className="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
               Kunci Pelacakan
             </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-neutral-50/70 p-3.5 rounded-2xl border border-neutral-200/80">
-            <code className="font-mono text-xl sm:text-2xl font-extrabold tracking-wider text-blue-700">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/50 p-3.5 rounded-2xl border border-border">
+            <code className="font-mono text-xl sm:text-2xl font-extrabold tracking-wider text-blue-600 dark:text-sky-400">
               {hasil.nomorTiket}
             </code>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-xl text-xs font-semibold self-start sm:self-auto gap-1.5 min-h-[38px] bg-white"
+              className="rounded-xl text-xs font-semibold self-start sm:self-auto gap-1.5 min-h-[38px] bg-card"
               onClick={() => salinTiket(hasil.nomorTiket)}
             >
               {disalin ? (
                 <>
-                  <CheckCircle2 className="size-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-semibold">Tersalin!</span>
+                  <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-emerald-700 dark:text-emerald-300 font-semibold">Tersalin!</span>
                 </>
               ) : (
                 <>
@@ -265,17 +265,17 @@ export function PengaduanForm({
 
           <div className="space-y-2 text-xs pt-1">
             {hasil.targetSelesaiAt && (
-              <div className="flex items-center justify-between border-b border-dashed border-neutral-100 pb-2">
-                <span className="flex items-center gap-1.5 text-neutral-500">
-                  <Clock className="size-3.5 text-blue-600" />
+              <div className="flex items-center justify-between border-b border-dashed border-border pb-2">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="size-3.5 text-blue-600 dark:text-sky-400" />
                   Target Penanganan (SLA)
                 </span>
-                <span className="font-mono font-semibold text-neutral-900">
+                <span className="font-mono font-semibold text-foreground">
                   {formatWaktu(hasil.targetSelesaiAt)} WIB
                 </span>
               </div>
             )}
-            <p className="text-[11px] text-neutral-500 leading-relaxed pt-1">
+            <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
               {sudahLogin
                 ? "Laporan ini otomatis tersimpan di riwayat akun Anda."
                 : "Simpan nomor tiket ini untuk memantau progres tindakan teknisi lapangan kapan saja."}
@@ -285,8 +285,8 @@ export function PengaduanForm({
 
         {/* Akun Helper Note */}
         {sudahLogin ? (
-          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs text-emerald-800">
-            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs text-emerald-800 dark:text-emerald-300">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <p>
               Laporan otomatis terarsip di akun Anda.{" "}
               <Link href="/akun" className="font-semibold underline underline-offset-2">
@@ -296,8 +296,8 @@ export function PengaduanForm({
             </p>
           </div>
         ) : (
-          <div className="flex items-start gap-2.5 rounded-xl border border-blue-500/25 bg-blue-500/10 p-3 text-xs text-blue-800">
-            <UserPlus className="mt-0.5 size-4 shrink-0 text-blue-600" />
+          <div className="flex items-start gap-2.5 rounded-xl border border-blue-500/25 bg-blue-500/10 p-3 text-xs text-blue-800 dark:text-sky-300">
+            <UserPlus className="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-sky-400" />
             <p>
               Punya beberapa aduan?{" "}
               <Link href="/daftar?callbackUrl=/akun" className="font-semibold underline underline-offset-2">

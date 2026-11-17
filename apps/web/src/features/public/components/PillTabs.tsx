@@ -33,7 +33,7 @@ export function PillTabsList({
   return (
     <TabsPrimitive.List
       className={cn(
-        "grid w-full grid-flow-col auto-cols-fr gap-1 rounded-2xl bg-neutral-100/90 p-1.5 border border-neutral-200/80 select-none shadow-inner",
+        "grid w-full grid-flow-col auto-cols-fr gap-1 rounded-2xl bg-muted/90 p-1.5 border border-border select-none shadow-inner",
         className
       )}
     >
@@ -55,10 +55,10 @@ export function PillTabsTrigger({
     <TabsPrimitive.Trigger
       value={value}
       className={cn(
-        "flex min-h-[44px] items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-medium text-neutral-600 transition-all cursor-pointer outline-none",
-        "hover:text-neutral-950 hover:bg-neutral-50/50",
-        "focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-1",
-        "data-[state=active]:bg-white data-[state=active]:text-neutral-950 data-[state=active]:font-semibold data-[state=active]:shadow-xs",
+        "flex min-h-[44px] items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-all cursor-pointer outline-none",
+        "hover:text-foreground hover:bg-background/50",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+        "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:shadow-xs",
         className
       )}
     >

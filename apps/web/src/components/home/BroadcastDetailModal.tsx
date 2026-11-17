@@ -188,7 +188,7 @@ export function BroadcastDetailModal({
                         <span>{broadcast.lokasiWilayah || 'Pelayanan Wilayah 5'}</span>
                       </span>
                     ) : isPromoOrEvent ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200/90 bg-white px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold text-neutral-900 shadow-2xs shrink-0">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold text-foreground shadow-2xs shrink-0">
                         <span className="size-1.5 rounded-full bg-blue-600 animate-pulse" />
                         <span>Program Resmi</span>
                       </span>
@@ -206,13 +206,13 @@ export function BroadcastDetailModal({
 
                     {/* Chip Tanggal Periode Terpisah Mandiri */}
                     {promo?.periode ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 border border-neutral-200/70 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono text-neutral-700 max-w-[190px] sm:max-w-none truncate shrink-0">
-                        <Calendar className="size-3 text-neutral-500 shrink-0" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono text-muted-foreground max-w-[190px] sm:max-w-none truncate shrink-0">
+                        <Calendar className="size-3 text-muted-foreground shrink-0" />
                         <span className="truncate">{promo.periode}</span>
                       </span>
                     ) : broadcast.estimasiSelesai ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 border border-neutral-200/70 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono text-neutral-700 max-w-[190px] sm:max-w-none truncate shrink-0">
-                        <Clock className="size-3 text-neutral-500 shrink-0" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono text-muted-foreground max-w-[190px] sm:max-w-none truncate shrink-0">
+                        <Clock className="size-3 text-muted-foreground shrink-0" />
                         <span className="truncate">Target: {broadcast.estimasiSelesai}</span>
                       </span>
                     ) : null}
@@ -363,7 +363,7 @@ export function BroadcastDetailModal({
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-copy-12 text-foreground">
                             {promo.keunggulan.map((k, idx) => (
                               <div key={idx} className="flex items-start gap-2">
-                                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
+                                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
                                   <Check className="size-2.5 stroke-[3]" />
                                 </span>
                                 <span className="leading-snug break-words">{k}</span>
@@ -380,7 +380,7 @@ export function BroadcastDetailModal({
                     {/* KARTU 1: PERSYARATAN DOKUMEN & KETENTUAN RESMI */}
                     <div className="rounded-xl border border-border bg-card p-3.5 sm:p-5 space-y-2.5 sm:space-y-3 shadow-2xs flex flex-col">
                       <div className="flex items-center gap-2 text-foreground font-semibold text-heading-14 sm:text-heading-15 pb-2 border-b border-border/60">
-                        <ShieldCheck className="size-4 text-blue-600 shrink-0" />
+                        <ShieldCheck className="size-4 text-blue-600 dark:text-sky-400 shrink-0" />
                         <span>Persyaratan Dokumen &amp; Ketentuan</span>
                       </div>
 
@@ -391,7 +391,7 @@ export function BroadcastDetailModal({
                               key={idx}
                               className="flex items-start gap-2 text-copy-12 sm:text-copy-13 text-foreground leading-relaxed"
                             >
-                              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-200 mt-0.5">
+                              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-blue-600 dark:text-sky-400 border border-blue-500/25 mt-0.5">
                                 <Check className="size-2.5 stroke-[2.5]" />
                               </span>
                               <span className="break-words">{syarat}</span>
@@ -441,7 +441,7 @@ export function BroadcastDetailModal({
                     <Link
                       href={promo?.ctaLink || '/pasang-baru'}
                       onClick={() => onOpenChange(false)}
-                      className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-neutral-900 hover:bg-black text-white px-5 py-3 text-copy-13 font-semibold transition-all shadow-xs text-center active:scale-[0.99]"
+                      className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-foreground hover:opacity-90 text-background px-5 py-3 text-copy-13 font-semibold transition-all shadow-xs text-center active:scale-[0.99]"
                     >
                       <span>{promo?.ctaText || 'Daftar Sekarang'}</span>
                       <ArrowRight className="size-4" />
@@ -582,7 +582,7 @@ export function BroadcastDetailModal({
                         }
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-neutral-900 text-white px-4 py-2 text-copy-12 font-medium shrink-0"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2 text-copy-12 font-medium shrink-0"
                       >
                         <PhoneCall className="size-3.5" />
                         <span>{broadcast.kontakBantuan.nomor}</span>

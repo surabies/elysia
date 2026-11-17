@@ -59,8 +59,8 @@ export function MobileMenu({
         className={cn(
           "flex size-8 items-center justify-center rounded-full transition-all duration-200 outline-none md:hidden",
           open
-            ? "border-2 border-white bg-white text-black shadow-md"
-            : "border-2 border-transparent bg-black text-white hover:opacity-80"
+            ? "border-2 border-background bg-background text-foreground shadow-md"
+            : "border-2 border-transparent bg-foreground text-background hover:opacity-80"
         )}
       >
         {open ? (
@@ -79,13 +79,13 @@ export function MobileMenu({
           />
           <div
             id="mobile-menu"
-            className="absolute inset-x-3 top-full rounded-md bg-white p-3 text-black shadow-xl md:hidden"
+            className="absolute inset-x-3 top-full rounded-md border border-border bg-card p-3 text-foreground shadow-xl md:hidden"
           >
             <ul>
               {mainNavLinks.map((link) => (
                 <li
                   key={link.href}
-                  className="border-b border-neutral-100 last:border-b-0"
+                  className="border-b border-border last:border-b-0"
                 >
                   <Link
                     href={link.href}

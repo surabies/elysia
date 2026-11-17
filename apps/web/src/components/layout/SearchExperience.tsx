@@ -87,7 +87,7 @@ export function SearchExperience({
             setOpen(true)
           }}
           aria-label="Cari layanan"
-          className="mx-4 hidden w-60 lg:w-72 shrink items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 hover:bg-neutral-200 px-3.5 py-2 text-left whitespace-nowrap text-neutral-500 xl:flex transition-colors cursor-pointer"
+          className="mx-4 hidden w-60 lg:w-72 shrink items-center gap-2 rounded-full border border-border bg-muted/70 hover:bg-muted px-3.5 py-2 text-left whitespace-nowrap text-muted-foreground xl:flex transition-colors cursor-pointer"
         >
           <Search size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
           <span className="text-label-13 text-muted-foreground truncate">Cari layanan, tagihan...</span>
@@ -107,8 +107,8 @@ export function SearchExperience({
           className={cn(
             "flex size-8 items-center justify-center rounded-full transition-all duration-200 outline-none md:size-8 xl:hidden cursor-pointer",
             isMenuOpen
-              ? "border-2 border-white bg-white text-black shadow-md"
-              : "border-2 border-transparent bg-black text-white hover:opacity-80"
+              ? "border-2 border-background bg-background text-foreground shadow-md"
+              : "border-2 border-transparent bg-foreground text-background hover:opacity-80"
           )}
         >
           <Search className="size-4" aria-hidden="true" />
@@ -129,7 +129,7 @@ export function SearchExperience({
                 aria-label="Cari layanan Tirtawening"
                 className="mx-auto w-full max-w-[600px]"
               >
-                <div className="flex h-11 items-center gap-3 rounded-full bg-white px-4 text-black shadow-lg">
+                <div className="flex h-11 items-center gap-3 rounded-full border border-border bg-card px-4 text-foreground shadow-lg">
                   <Search size={18} aria-hidden="true" className="shrink-0 text-muted-foreground" />
                   <input
                     ref={inputRef}
@@ -144,14 +144,14 @@ export function SearchExperience({
                     type="button"
                     onClick={close}
                     aria-label="Tutup pencarian"
-                    className="shrink-0 text-muted-foreground hover:text-black"
+                    className="shrink-0 text-muted-foreground hover:text-foreground"
                   >
                     <X size={18} aria-hidden="true" />
                   </button>
                 </div>
 
                 {normalizedQuery ? (
-                  <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-xl bg-white p-3 text-black shadow-2xl">
+                  <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-xl border border-border bg-card p-3 text-foreground shadow-2xl">
                     <h2 className="mb-2 text-label-11-mono font-mono text-muted-foreground uppercase tracking-wider">
                       Hasil Pencarian
                     </h2>
@@ -164,7 +164,7 @@ export function SearchExperience({
                               <Link
                                 href={href}
                                 onClick={close}
-                                className="flex min-h-14 items-center gap-3 rounded-lg p-2 transition-colors hover:bg-neutral-100"
+                                className="flex min-h-14 items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted"
                               >
                                 <div
                                   aria-hidden="true"
@@ -172,13 +172,13 @@ export function SearchExperience({
                                   style={{ backgroundColor: event.accentColor }}
                                 />
                                 <div className="min-w-0">
-                                  <p className="truncate text-heading-14 font-semibold text-black">
+                                  <p className="truncate text-heading-14 font-semibold text-foreground">
                                     {event.title}
                                   </p>
-                                  <p className="truncate text-copy-13 text-neutral-600">
+                                  <p className="truncate text-copy-13 text-muted-foreground">
                                     {event.date} · {event.price}
                                   </p>
-                                  <p className="truncate text-xs text-neutral-500">
+                                  <p className="truncate text-xs text-muted-foreground">
                                     {event.venue}, {event.city}
                                   </p>
                                 </div>

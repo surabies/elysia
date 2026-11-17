@@ -39,17 +39,17 @@ export default async function CekTagihanPage({
         <>
           <AsideBlok label="Di mana nomor langganan saya?">
             <div className="flex items-start gap-3">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-sky-400">
                 <HelpCircle className="size-4" />
               </div>
               <div className="space-y-2">
                 <p>
                   Tertera di rekening atau struk pembayaran air Anda — selalu{" "}
-                  <strong>11 digit angka</strong>, termasuk nol di depan.
+                  <strong className="text-foreground">11 digit angka</strong>, termasuk nol di depan.
                 </p>
-                <div className="rounded-lg border border-neutral-200/90 bg-neutral-50 px-3 py-2 font-mono text-xs text-neutral-800">
-                  <span className="text-neutral-400 select-none">Contoh: </span>
-                  <span className="font-semibold text-neutral-900">00401700010</span>
+                <div className="rounded-lg border border-border bg-muted/60 px-3 py-2 font-mono text-xs text-foreground">
+                  <span className="text-muted-foreground select-none">Contoh: </span>
+                  <span className="font-semibold text-foreground">00401700010</span>
                 </div>
               </div>
             </div>
@@ -57,7 +57,7 @@ export default async function CekTagihanPage({
 
           <AsideBlok label="Kanal Pembayaran Resmi">
             <div className="flex items-start gap-3">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <WalletCards className="size-4" />
               </div>
               <div className="space-y-2.5">
@@ -68,16 +68,16 @@ export default async function CekTagihanPage({
                   {METODE_BAYAR.map((m) => (
                     <span
                       key={m}
-                      className="rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] font-medium text-neutral-700"
+                      className="rounded-md border border-border bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-foreground/90"
                     >
                       {m}
                     </span>
                   ))}
                 </div>
-                <p className="text-[11px] text-neutral-500">
+                <p className="text-[11px] text-muted-foreground">
                   <Link
                     href="/cara-pembayaran"
-                    className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline"
+                    className="inline-flex items-center gap-1 font-medium text-blue-600 dark:text-sky-400 hover:underline"
                   >
                     Petunjuk bayar lengkap <ArrowUpRight className="size-3" />
                   </Link>
@@ -88,7 +88,7 @@ export default async function CekTagihanPage({
 
           <AsideBlok label="Privasi & Keamanan Data">
             <div className="flex items-start gap-3">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
                 <ShieldCheck className="size-4" />
               </div>
               <p>
@@ -115,10 +115,10 @@ export default async function CekTagihanPage({
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="group inline-flex items-center gap-1.5 text-sm font-medium text-neutral-800 transition-colors hover:text-blue-600"
+                    className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-blue-600 dark:hover:text-sky-400"
                   >
                     <span>{l.label}</span>
-                    <ArrowUpRight className="size-3.5 text-neutral-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-blue-600" />
+                    <ArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-blue-600 dark:group-hover:text-sky-400" />
                   </Link>
                 </li>
               ))}

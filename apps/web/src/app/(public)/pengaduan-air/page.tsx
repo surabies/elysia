@@ -46,15 +46,15 @@ export default async function PengaduanPage({
         <>
           <AsideBlok label="Prioritas Reaksi Cepat (TRC)">
             <div className="flex items-start gap-3">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <AlertTriangle className="size-4" />
               </div>
-              <div className="space-y-1.5 text-xs text-neutral-600">
+              <div className="space-y-1.5 text-xs text-muted-foreground">
                 <p>
                   Melihat kebocoran pipa air di jalan raya atau pemukiman?
                 </p>
                 <p>
-                  <strong>Kolom nomor langganan boleh dikosongkan.</strong> Cukup
+                  <strong className="text-foreground">Kolom nomor langganan boleh dikosongkan.</strong> Cukup
                   tandai titik lokasi peta dan unggah foto agar regu lapangan dapat
                   langsung menuju sasaran.
                 </p>
@@ -67,18 +67,18 @@ export default async function PengaduanPage({
               {SLA_LIST.map((item) => (
                 <div
                   key={item.tipe}
-                  className="flex items-center justify-between rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-1.5 text-xs"
+                  className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-xs"
                 >
                   <div className="flex items-center gap-1.5">
-                    <Clock className="size-3 text-neutral-400" />
-                    <span className="font-medium text-neutral-800">{item.tipe}</span>
+                    <Clock className="size-3 text-muted-foreground" />
+                    <span className="font-medium text-foreground">{item.tipe}</span>
                   </div>
-                  <span className="font-mono text-[11px] font-semibold text-blue-700">
+                  <span className="font-mono text-[11px] font-semibold text-blue-600 dark:text-sky-400">
                     {item.target}
                   </span>
                 </div>
               ))}
-              <p className="pt-1 text-[11px] text-neutral-500">
+              <p className="pt-1 text-[11px] text-muted-foreground">
                 Target waktu penanganan ditampilkan di pelacakan tiket secara transparan.
               </p>
             </div>
@@ -86,16 +86,16 @@ export default async function PengaduanPage({
 
           <AsideBlok label="Peta Kendali Spasial">
             <div className="flex items-start gap-3">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
                 <MapPin className="size-4" />
               </div>
-              <div className="space-y-2 text-xs text-neutral-600">
+              <div className="space-y-2 text-xs text-muted-foreground">
                 <p>
                   Ingin memantau persebaran titik perbaikan pipa dan info gangguan di seluruh Kota Bandung?
                 </p>
                 <Link
                   href="/peta-pengaduan"
-                  className="inline-flex items-center gap-1 font-semibold text-blue-600 hover:underline"
+                  className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-sky-400 hover:underline"
                 >
                   Buka Peta Pengaduan GIS <ArrowUpRight className="size-3" />
                 </Link>
@@ -105,11 +105,11 @@ export default async function PengaduanPage({
 
           <AsideBlok label="Hak Konfirmasi Pelapor">
             <div className="flex items-start gap-3">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <ShieldCheck className="size-4" />
               </div>
-              <p className="text-xs text-neutral-600">
-                Petugas hanya bisa menandai status <em>Perbaikan Selesai</em>. Tiket baru
+              <p className="text-xs text-muted-foreground">
+                Petugas hanya bisa menandai status <em className="text-foreground">Perbaikan Selesai</em>. Tiket baru
                 benar-benar ditutup setelah Anda mengonfirmasi bahwa air sudah mengalir
                 normal kembali.
               </p>
@@ -118,15 +118,15 @@ export default async function PengaduanPage({
         </>
       }
     >
-      <div className="rounded-3xl border border-neutral-200/90 bg-white p-4 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      <div className="rounded-3xl border border-border bg-card text-card-foreground p-4 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <PillTabs defaultValue={tabAwal} key={`${tabAwal}-${nomorAwal ?? ""}`}>
           <PillTabsList>
             <PillTabsTrigger value="lapor">
-              <MessageSquare className="size-4 shrink-0 text-blue-600" />
+              <MessageSquare className="size-4 shrink-0 text-blue-600 dark:text-sky-400" />
               <span>Buat Pengaduan Baru</span>
             </PillTabsTrigger>
             <PillTabsTrigger value="lacak">
-              <Ticket className="size-4 shrink-0 text-neutral-500" />
+              <Ticket className="size-4 shrink-0 text-muted-foreground" />
               <span>Lacak Tiket Aduan</span>
             </PillTabsTrigger>
           </PillTabsList>

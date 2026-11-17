@@ -24,7 +24,7 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
   return (
     <section
       aria-labelledby="benefits-title"
-      className="section-white relative bg-white py-16 text-black lg:py-24"
+      className="section-white relative bg-background py-16 text-foreground lg:py-24"
     >
       <Container>
         <motion.div
@@ -35,7 +35,7 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
           className="lg:flex lg:flex-row-reverse lg:items-center lg:gap-21.75"
         >
           <div className="lg:w-full">
-            <h2 id="benefits-title" className="mb-6 text-heading-28 sm:text-heading-32 md:text-heading-40 font-semibold tracking-tight text-black md:mb-8">
+            <h2 id="benefits-title" className="mb-6 text-heading-28 sm:text-heading-32 md:text-heading-40 font-semibold tracking-tight text-foreground md:mb-8">
               {content.title}
             </h2>
 
@@ -54,18 +54,18 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
                   <ImageFrame
                     image={item.image}
                     sizes="100vw"
-                    className="mb-4 aspect-4/5 bg-neutral-100 md:hidden"
+                    className="mb-4 aspect-4/5 bg-muted md:hidden"
                   />
 
                   <div className="md:relative md:pl-10.5">
-                    <h3 className="mb-5 block w-full text-center text-heading-18 leading-snug font-semibold text-black md:mb-2.5 md:flex md:text-left md:text-heading-24 lg:text-heading-28 tracking-tight">
+                    <h3 className="mb-5 block w-full text-center text-heading-18 leading-snug font-semibold text-foreground md:mb-2.5 md:flex md:text-left md:text-heading-24 lg:text-heading-28 tracking-tight">
                       <Image
                         src={item.icon.src}
                         alt={item.icon.alt}
                         width={32}
                         height={32}
                         unoptimized
-                        className="hidden md:absolute md:top-0.5 md:left-0 md:block md:size-7"
+                        className="hidden md:absolute md:top-0.5 md:left-0 md:block md:size-7 dark:invert"
                       />
                       <span className="whitespace-pre-line">{item.title}</span>
                     </h3>
@@ -83,7 +83,7 @@ export function BenefitsSection({ content }: BenefitsSectionProps) {
                 image={item.image}
                 sizes="(min-width: 1280px) 516px, 50vw"
                 className={cn(
-                  "col-start-1 row-start-1 aspect-4/5 bg-neutral-100 transition-opacity duration-150 ease-in",
+                  "col-start-1 row-start-1 aspect-4/5 bg-muted transition-opacity duration-150 ease-in",
                   index === activeIndex ? "opacity-100" : "opacity-0"
                 )}
               />

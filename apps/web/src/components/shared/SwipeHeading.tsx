@@ -21,7 +21,7 @@ export function SwipeHeading({
   let globalWordIndex = 0
 
   return (
-    <Tag className={cn("m-0 type-display text-black", className)}>
+    <Tag className={cn("m-0 type-display text-foreground", className)}>
       {lines.map((line, lineIndex) => {
         const words = line.trim().split(/\s+/).filter(Boolean)
         return (

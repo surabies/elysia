@@ -82,7 +82,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
   return (
     <section
       aria-labelledby="top-events-title"
-      className="section-white relative overflow-hidden bg-white py-12 md:py-16 text-black"
+      className="section-white relative overflow-hidden bg-background py-12 md:py-16 text-foreground"
     >
       <Container>
         <motion.div
@@ -93,22 +93,16 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
         >
           {/* Header Seksi Layanan Unggulan */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-label-12-mono font-mono text-neutral-500 uppercase tracking-wider">
-                  Kanal Mandiri Tirtawening
-                </span>
-                <span className="h-1 w-1 rounded-full bg-neutral-300" />
-                <span className="text-[11px] font-mono text-neutral-500">
-                  {content.events.length} Layanan Aktif
-                </span>
-              </div>
+            <div className="flex items-center gap-3">
               <h2
                 id="top-events-title"
-                className="text-heading-22 sm:text-heading-26 md:text-heading-30 font-bold tracking-tight text-neutral-900"
+                className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground"
               >
                 {content.title}
               </h2>
+              <span className="hidden sm:inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-label-12 font-mono font-medium text-muted-foreground">
+                {content.events.length} Layanan Aktif
+              </span>
             </div>
 
             {/* Kontrol Navigasi & Motion Tracker */}
@@ -118,7 +112,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
                 onClick={togglePlay}
                 aria-label={isPlaying ? "Jeda animasi kartu" : "Putar animasi kartu"}
                 title={isPlaying ? "Jeda animasi" : "Putar animasi"}
-                className="flex size-9 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-700 shadow-2xs transition hover:bg-neutral-100 active:scale-95 cursor-pointer"
+                className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-2xs transition hover:bg-muted active:scale-95 cursor-pointer"
               >
                 {isPlaying ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
               </button>
@@ -127,7 +121,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
                 onClick={() => handleGeser("kiri")}
                 aria-label="Geser ke kiri"
                 title="Geser sebelumnya"
-                className="flex size-9 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-700 shadow-2xs transition hover:bg-neutral-100 active:scale-95 cursor-pointer"
+                className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-2xs transition hover:bg-muted active:scale-95 cursor-pointer"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -136,7 +130,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
                 onClick={() => handleGeser("kanan")}
                 aria-label="Geser ke kanan"
                 title="Geser berikutnya"
-                className="flex size-9 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-700 shadow-2xs transition hover:bg-neutral-100 active:scale-95 cursor-pointer"
+                className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-2xs transition hover:bg-muted active:scale-95 cursor-pointer"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -144,7 +138,7 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
           </div>
 
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <p className="text-copy-14 sm:text-copy-15 max-w-2xl text-neutral-600 leading-relaxed">
+            <p className="text-copy-14 sm:text-copy-15 max-w-2xl text-muted-foreground leading-relaxed">
               {content.description}
             </p>
             <div className="shrink-0">

@@ -162,20 +162,20 @@ export function CekLaporanMeterForm({
     return (
       <div className="flex flex-col gap-4">
         {pemilihPeriodeUji}
-        <div className="flex items-center justify-between gap-2 border-b border-neutral-100 pb-3">
+        <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
+            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
               Pelanggan
             </p>
-            <p className="truncate text-sm font-bold text-neutral-900">
-              {pratinjau.nama} <span className="font-mono font-medium text-xs text-neutral-500">· {pratinjau.nomorLangganan}</span>
+            <p className="truncate text-sm font-bold text-foreground">
+              {pratinjau.nama} <span className="font-mono font-medium text-xs text-muted-foreground">· {pratinjau.nomorLangganan}</span>
             </p>
           </div>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="rounded-lg text-xs font-semibold text-neutral-600 hover:text-neutral-900 shrink-0"
+            className="rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground shrink-0"
             onClick={cekNomorLain}
           >
             Ganti nomor
@@ -185,8 +185,8 @@ export function CekLaporanMeterForm({
         {pratinjau.laporanBulanIni ? (
           <KartuLaporanMeter laporan={pratinjau.laporanBulanIni} />
         ) : (
-          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs text-amber-800 space-y-1.5">
-            <p className="font-semibold text-amber-900">
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-300 space-y-1.5">
+            <p className="font-semibold text-amber-900 dark:text-amber-200">
               Belum Ada Laporan Periode {formatPeriode(pratinjau.periodeBerjalan)}
             </p>
             <p>

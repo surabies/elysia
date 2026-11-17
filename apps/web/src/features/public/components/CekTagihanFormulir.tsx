@@ -1,16 +1,5 @@
 "use client"
 
-// features/publik/components/cek-tagihan-form.tsx
-//
-// Client component + fetch langsung ke /api/public (bukan server action):
-// rate limit di backend berbasis IP PEMAKAI. Kalau lewat server action,
-// seluruh permintaan datang dari IP server dan satu orang bisa menghabiskan
-// kuota semua orang — sekaligus membuat pembatasnya tak berguna.
-//
-// Hanya nomor langganan — TIDAK ada field nama. Lihat catatan keputusan
-// produk di server/modules/publik/verifikasi.ts soal trade-off keamanan
-// yang itu berarti (siapa pun yang tahu/menebak nomornya bisa melihat data
-// ini, bukan cuma pemiliknya).
 import * as React from "react"
 import { Search, TriangleAlert, CheckCircle2, CreditCard, Sparkles } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -22,7 +11,6 @@ import { TombolUtama } from "./TombolUtama"
 import { cn } from "@/lib/utils"
 
 export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
-  // nomorAwal datang dari ?nomor= (form cek cepat di landing)
   const [nomorLangganan, setNomorLangganan] = React.useState(nomorAwal ?? "")
   const [pending, setPending] = React.useState(false)
   const [pesanError, setPesanError] = React.useState<string | null>(null)
@@ -51,7 +39,6 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
     }
   }
 
-  // Auto-search langsung jika ada nomorAwal dari URL/Landing Hero
   React.useEffect(() => {
     if (nomorAwal && nomorAwal.trim().length === 11) {
       void cari(nomorAwal.trim())
@@ -61,21 +48,21 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-3xl border border-neutral-200/90 bg-white p-5 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      <div className="rounded-3xl border border-border bg-card text-card-foreground p-5 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex items-center justify-between">
           <label
             htmlFor="nomorLangganan"
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold tracking-wide text-neutral-800"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold tracking-wide text-foreground"
           >
-            <CreditCard className="size-4 text-blue-600" />
+            <CreditCard className="size-4 text-blue-600 dark:text-sky-400" />
             Nomor Langganan
           </label>
           <span
             className={cn(
               "font-mono text-[11px] sm:text-xs transition-colors",
               isLengkap
-                ? "font-semibold text-emerald-600 flex items-center gap-1"
-                : "text-neutral-400"
+                ? "font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"
+                : "text-muted-foreground"
             )}
           >
             {isLengkap ? (
@@ -103,13 +90,13 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
               maxLength={11}
               disabled={pending}
               size="lg"
-              className="w-full font-mono text-base tracking-wider rounded-xl border-neutral-300 focus-visible:ring-blue-500/20 focus-visible:border-blue-600 pr-9"
+              className="w-full font-mono text-base tracking-wider rounded-xl border-border focus-visible:ring-blue-500/20 focus-visible:border-blue-600 pr-9"
             />
             {nomorLangganan.length > 0 && !pending && (
               <button
                 type="button"
                 onClick={() => setNomorLangganan("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-neutral-400 hover:text-neutral-700 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                 title="Hapus"
               >
                 ✕
@@ -128,12 +115,12 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
         </div>
 
         {/* Demo Helper Pill */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-500">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <p className="text-[11px] sm:text-xs">Tertera pada kwitansi atau struk pembayaran Anda.</p>
           <button
             type="button"
             onClick={() => setNomorLangganan("00401700010")}
-            className="inline-flex items-center gap-1 rounded-md border border-neutral-200/90 bg-neutral-50 px-2.5 py-1 font-mono text-[10px] sm:text-[11px] text-blue-700 hover:bg-blue-50 transition-colors"
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 px-2.5 py-1 font-mono text-[10px] sm:text-[11px] text-blue-600 dark:text-sky-400 hover:bg-muted transition-colors"
           >
             <Sparkles className="size-3 text-amber-500" />
             Contoh: 00401700010
@@ -149,7 +136,7 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
       </div>
 
       {hasil && (
-        <div className="rounded-3xl border border-neutral-200/90 bg-white text-card-foreground shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+        <div className="rounded-3xl border border-border bg-card text-card-foreground shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
           <HasilTagihan hasil={hasil} />
         </div>
       )}

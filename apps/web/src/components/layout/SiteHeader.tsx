@@ -22,34 +22,39 @@ export function SiteHeader() {
       {/* 1. Ambient Live Disruption / Outage Broadcast Banner on Very Top */}
       <BroadcastGangguanBanner />
 
-      {/* 2. Main Navigation Bar */}
-      <nav
-        aria-label="Navigasi Utama"
-        className="mx-auto flex max-w-360 items-center justify-between p-4 flex-nowrap lg:px-12 lg:py-5"
-      >
-        <Logo className="shrink-0" />
-
-        {/* Search Bar Desktop (xl+) di samping Logo */}
-        <SearchExperience
-          events={topEventsContent.events}
-          mode="desktop"
+      {/* 2. Main Navigation Bar (Structural Grid Rails menyatu dengan Hero) */}
+      <div className="relative">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#0070f3]/25 to-transparent"
         />
+        <nav
+          aria-label="Navigasi Utama"
+          className="mx-auto flex max-w-360 items-center justify-between px-4 py-3.5 flex-nowrap lg:px-12 lg:py-4 border-x border-dashed border-border/60"
+        >
+          <Logo className="shrink-0" />
 
-        {/* Grup Elemen Kanan */}
-        <div className="ml-auto flex items-center shrink-0 gap-2">
-          {/* Menu Link Desktop (md+) */}
-          <ul className="hidden items-center md:flex shrink-0">
-            {mainNavLinks.map((link) => (
-              <li key={link.href} className="mx-2 lg:mx-3 xl:mx-4 shrink-0">
-                <Link
-                  href={link.href}
-                  className="relative block text-label-14 leading-none outline-none font-medium text-black/80 transition-colors hover:text-black whitespace-nowrap before:absolute before:inset-x-0 before:-top-2 before:h-0.5 before:w-0 before:bg-current before:transition-[width] before:duration-150 before:ease-in-out hover:before:w-full focus-visible:before:w-full"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {/* Search Bar Desktop (xl+) di samping Logo */}
+          <SearchExperience
+            events={topEventsContent.events}
+            mode="desktop"
+          />
+
+          {/* Grup Elemen Kanan */}
+          <div className="ml-auto flex items-center shrink-0 gap-2">
+            {/* Menu Link Desktop (md+) */}
+            <ul className="hidden items-center md:flex shrink-0">
+              {mainNavLinks.map((link) => (
+                <li key={link.href} className="mx-2 lg:mx-3 xl:mx-4 shrink-0">
+                  <Link
+                    href={link.href}
+                    className="relative block text-label-14 leading-none outline-none font-medium text-foreground/80 transition-colors hover:text-foreground whitespace-nowrap before:absolute before:inset-x-0 before:-top-2 before:h-0.5 before:w-0 before:bg-current before:transition-[width] before:duration-150 before:ease-in-out hover:before:w-full focus-visible:before:w-full"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
 
           {/* Icon Search Mobile (< xl) - Berdampingan langsung dengan Icon Hamburger */}
           <SearchExperience
@@ -74,7 +79,8 @@ export function SiteHeader() {
             {isInstalled ? "BUKA APP" : downloadAppLink.label}
           </PillButton>
         </div>
-      </nav>
+        </nav>
+      </div>
     </AutoHideHeader>
   )
 }

@@ -63,7 +63,7 @@ export function FeatureSection({ section }: FeatureSectionProps) {
   return (
     <section
       aria-labelledby={titleId}
-      className="section-white relative bg-white py-16 text-black lg:py-24"
+      className="section-white relative bg-background py-16 text-foreground lg:py-24"
     >
       <Container>
         <motion.div
@@ -86,12 +86,12 @@ export function FeatureSection({ section }: FeatureSectionProps) {
           <div className="contents md:flex md:flex-1 md:flex-col md:justify-center md:gap-6.25">
             <h2
               id={titleId}
-              className="text-heading-28 sm:text-heading-32 md:text-heading-40 max-md:order-first max-md:mb-4 font-semibold tracking-tight text-black"
+              className="text-heading-28 sm:text-heading-32 md:text-heading-40 max-md:order-first max-md:mb-4 font-semibold tracking-tight text-foreground"
             >
               {title}
             </h2>
 
-            <p className="max-w-xl text-copy-15 md:text-copy-16 whitespace-pre-line text-neutral-700 leading-relaxed">
+            <p className="max-w-xl text-copy-15 md:text-copy-16 whitespace-pre-line text-muted-foreground leading-relaxed">
               {description}
             </p>
 

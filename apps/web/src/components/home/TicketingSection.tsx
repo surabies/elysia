@@ -14,7 +14,7 @@ export function TicketingSection({ content }: TicketingSectionProps) {
   return (
     <section
       aria-labelledby="ticketing-title"
-      className="relative bg-black pt-7.5 pb-10 text-white md:pt-15 md:pb-20"
+      className="section-white relative bg-background pt-7.5 pb-10 text-foreground md:pt-15 md:pb-20"
     >
       <Container>
         <motion.h2
@@ -23,7 +23,7 @@ export function TicketingSection({ content }: TicketingSectionProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-50px' }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-6 text-center text-heading-28 sm:text-heading-32 md:text-heading-40 font-semibold tracking-tight text-white md:mb-8"
+          className="mb-6 text-center text-heading-28 sm:text-heading-32 md:text-heading-40 font-semibold tracking-tight text-foreground md:mb-8"
         >
           {content.title}
         </motion.h2>
@@ -41,9 +41,9 @@ export function TicketingSection({ content }: TicketingSectionProps) {
               <ImageFrame
                 image={item.image}
                 sizes="(min-width: 1000px) 320px, 100vw"
-                className="mb-4 aspect-square bg-neutral-800"
+                className="mb-4 aspect-square bg-muted border border-border"
               />
-              <figcaption className="text-copy-15 md:text-copy-16 text-balance whitespace-pre-line text-neutral-300 leading-relaxed">
+              <figcaption className="text-copy-15 md:text-copy-16 text-balance whitespace-pre-line text-muted-foreground leading-relaxed">
                 {item.description}
               </figcaption>
             </motion.figure>

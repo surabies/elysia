@@ -24,7 +24,7 @@ export function FooterNavColumn({ group }: FooterNavColumnProps) {
           event.preventDefault()
           setOpen((current) => !current)
         }}
-        className="relative mb-6 flex h-6 cursor-pointer list-none items-center text-label-13 font-semibold text-black uppercase tracking-wider outline-none lg:pointer-events-none lg:mb-5 lg:p-0 [&::-webkit-details-marker]:hidden"
+        className="relative mb-6 flex h-6 cursor-pointer list-none items-center text-label-13 font-semibold text-foreground uppercase tracking-wider outline-none lg:pointer-events-none lg:mb-5 lg:p-0 [&::-webkit-details-marker]:hidden"
       >
         {group.title}
         <ChevronDown
@@ -40,7 +40,7 @@ export function FooterNavColumn({ group }: FooterNavColumnProps) {
             <Link
               href={link.href}
               {...getLinkProps(link)}
-              className="text-copy-13 text-neutral-600 hover:text-black transition-colors block"
+              className="text-copy-13 text-muted-foreground hover:text-foreground transition-colors block"
             >
               {link.label}
             </Link>

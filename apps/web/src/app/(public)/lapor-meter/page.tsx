@@ -55,11 +55,11 @@ export default async function LaporMeterPage({
         <>
           <AsideBlok label="Panduan Membaca Angka Meter">
             <div className="space-y-3">
-              <p className="text-neutral-600">
+              <p className="text-muted-foreground">
                 Pada meter air analog terdapat 2 warna penunjuk angka:
               </p>
               {/* Visual Meter Roll Demo */}
-              <div className="rounded-xl border border-neutral-200 bg-neutral-900 p-3 text-white shadow-inner">
+              <div className="rounded-xl border border-border bg-neutral-900 p-3 text-white shadow-inner">
                 <div className="flex items-center justify-between pb-1.5 text-[10px] font-mono text-neutral-400 uppercase">
                   <span>Angka Hitam (m³)</span>
                   <span className="text-red-400">Merah (Liter)</span>
@@ -76,13 +76,13 @@ export default async function LaporMeterPage({
                   <span className="flex size-7 items-center justify-center rounded bg-red-950 text-red-400 border border-red-800/50">5</span>
                 </div>
               </div>
-              <ul className="space-y-1.5 text-xs text-neutral-600">
+              <ul className="space-y-1.5 text-xs text-muted-foreground">
                 <li className="flex items-start gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>Laporkan angka hitam</strong> saja (satuan meter kubik).</span>
+                  <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong className="text-foreground">Laporkan angka hitam</strong> saja (satuan meter kubik).</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="size-1.5 rounded-full bg-neutral-300 shrink-0 mt-1.5 ml-1" />
+                  <span className="size-1.5 rounded-full bg-border shrink-0 mt-1.5 ml-1" />
                   <span>Abaikan angka merah (satuan liter / desimal).</span>
                 </li>
               </ul>
@@ -95,10 +95,10 @@ export default async function LaporMeterPage({
 
           <AsideBlok label="Standar Mutu Foto">
             <div className="flex items-start gap-3">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-sky-400">
                 <Camera className="size-4" />
               </div>
-              <ul className="space-y-1.5 text-xs text-neutral-600">
+              <ul className="space-y-1.5 text-xs text-muted-foreground">
                 <li>• Seluruh angka pada dial meter terbaca jelas tanpa blur.</li>
                 <li>• Kaca meteran bersih dari lumut, air tergenang, atau debu.</li>
                 <li>• Format JPG, PNG, atau WEBP (dikompresi otomatis secara aman).</li>
@@ -108,15 +108,15 @@ export default async function LaporMeterPage({
         </>
       }
     >
-      <div className="rounded-3xl border border-neutral-200/90 bg-white p-4 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      <div className="rounded-3xl border border-border bg-card text-card-foreground p-4 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <PillTabs defaultValue={tabAwal} key={`${tabAwal}-${nomor ?? ""}`}>
           <PillTabsList>
             <PillTabsTrigger value="lapor">
-              <Upload className="size-4 shrink-0 text-blue-600" />
+              <Upload className="size-4 shrink-0 text-blue-600 dark:text-sky-400" />
               <span>Lapor Stand Meter</span>
             </PillTabsTrigger>
             <PillTabsTrigger value="cek">
-              <CalendarClock className="size-4 shrink-0 text-neutral-500" />
+              <CalendarClock className="size-4 shrink-0 text-muted-foreground" />
               <span>Cek Status Laporan</span>
             </PillTabsTrigger>
           </PillTabsList>

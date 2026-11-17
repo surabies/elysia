@@ -33,14 +33,14 @@ export function HeroCommandHub() {
   return (
     <div className="w-full max-w-xl space-y-2.5">
       {/* Sub Tabs Pilihan Layanan Ringkas & Bersih */}
-      <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl w-fit border border-neutral-200/80">
+      <div className="flex items-center gap-1 p-1 bg-muted rounded-xl w-fit border border-border">
         <button
           type="button"
           onClick={() => setTabTujuan('tagihan')}
           className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             tabTujuan === 'tagihan'
-              ? 'bg-white text-neutral-900 shadow-2xs'
-              : 'text-neutral-600 hover:text-neutral-900'
+              ? 'bg-card text-foreground shadow-2xs'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           Cek Tagihan
@@ -50,8 +50,8 @@ export function HeroCommandHub() {
           onClick={() => setTabTujuan('lapor')}
           className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             tabTujuan === 'lapor'
-              ? 'bg-white text-neutral-900 shadow-2xs'
-              : 'text-neutral-600 hover:text-neutral-900'
+              ? 'bg-card text-foreground shadow-2xs'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           Lapor Meter
@@ -61,8 +61,8 @@ export function HeroCommandHub() {
           onClick={() => setTabTujuan('aduan')}
           className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             tabTujuan === 'aduan'
-              ? 'bg-white text-neutral-900 shadow-2xs'
-              : 'text-neutral-600 hover:text-neutral-900'
+              ? 'bg-card text-foreground shadow-2xs'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           Lacak Aduan
@@ -71,8 +71,8 @@ export function HeroCommandHub() {
 
       {/* Main Command Input Bar (Ringkas & Presisi) */}
       <form onSubmit={handleCari} className="relative w-full group">
-        <div className="h-11 sm:h-12 flex items-center rounded-xl bg-white border border-neutral-300 shadow-2xs transition-all focus-within:border-neutral-900 focus-within:ring-2 focus-within:ring-neutral-900/10">
-          <div className="pl-3.5 text-neutral-400 group-focus-within:text-neutral-900 shrink-0 transition-colors">
+        <div className="h-11 sm:h-12 flex items-center rounded-xl bg-card border border-border shadow-2xs transition-all focus-within:border-foreground focus-within:ring-2 focus-within:ring-ring/20">
+          <div className="pl-3.5 text-muted-foreground group-focus-within:text-foreground shrink-0 transition-colors">
             <Search className="size-4" />
           </div>
 
@@ -85,14 +85,14 @@ export function HeroCommandHub() {
                 ? 'Ketik nomor tiket aduan (cth: ADU-2026-001)...'
                 : 'Ketik 11 digit nomor langganan...'
             }
-            className="w-full min-w-0 bg-transparent px-3 text-xs sm:text-sm font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none"
+            className="w-full min-w-0 bg-transparent px-3 text-xs sm:text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
 
           {inputVal && (
             <button
               type="button"
               onClick={() => setInputVal('')}
-              className="p-1 mr-1 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+              className="p-1 mr-1 text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -103,7 +103,7 @@ export function HeroCommandHub() {
             <button
               type="submit"
               disabled={!inputVal.trim()}
-              className="inline-flex items-center justify-center gap-1.5 h-8 sm:h-9 px-3.5 rounded-lg bg-neutral-900 text-white text-xs font-semibold shadow-xs hover:bg-black active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 h-8 sm:h-9 px-3.5 rounded-lg bg-foreground text-background text-xs font-semibold shadow-xs hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <span>Cek Layanan</span>
               <ArrowRight className="size-3.5" />

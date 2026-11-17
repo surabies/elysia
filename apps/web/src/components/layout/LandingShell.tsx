@@ -35,9 +35,9 @@ export function LandingShell({ children }: { children: ReactNode }) {
   if (!halamanPublik(pathname)) return <>{children}</>
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-black font-sans">
+    <div className="flex min-h-screen flex-col bg-background text-foreground font-sans">
       <SiteHeader />
-      <main className="flex flex-1 flex-col pt-26 md:pt-30 [&_.section-white+.section-white]:pt-0">
+      <main className="flex flex-1 flex-col pt-22 md:pt-23 [&_.section-white+.section-white]:pt-0">
         {children}
       </main>
       <SiteFooter />
