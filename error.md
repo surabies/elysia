@@ -1,35 +1,8 @@
-## Error Type
-Build Error
-
-## Error Message
-Module not found: Can't resolve 'react-parallax-tilt'
-
-## Build Output
-./apps/web/src/components/ui/holo-card.tsx:6:1
-Error: Module not found: Can't resolve 'react-parallax-tilt'
-  4 | import type React from "react";
-  5 | import { useRef, useState, useCallback } from "react";
-> 6 | import Tilt from "react-parallax-tilt";
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  7 | import { cn } from "@/lib/utils";
-  8 | import "./holo-card.css";
-  9 |
-
-Import traces:
-  Client Component Browser:
-    ./apps/web/src/components/ui/holo-card.tsx [Client Component Browser]
-    ./apps/web/src/components/home/EventCard.tsx [Client Component Browser]
-    ./apps/web/src/components/home/TopEventsSection.tsx [Client Component Browser]
-    ./apps/web/src/components/home/TopEventsSection.tsx [Server Component]
-    ./apps/web/src/app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./apps/web/src/components/ui/holo-card.tsx [Client Component SSR]
-    ./apps/web/src/components/home/EventCard.tsx [Client Component SSR]
-    ./apps/web/src/components/home/TopEventsSection.tsx [Client Component SSR]
-    ./apps/web/src/components/home/TopEventsSection.tsx [Server Component]
-    ./apps/web/src/app/page.tsx [Server Component]
-
-https://nextjs.org/docs/messages/module-not-found
-
-Next.js version: 16.4.5 (Turbopack)
+nah ada logic yang perlu diperbaiki kenapa saat mengubah hasil laporan petugas dari kondisi catat tidak dipakai dan di kolom pakai pemakaian m3 10 lalau aku ubah ke
+kondisi normal angka pemakaiannya langsung 0 , ini aku coba perilakunya sama dengan kondisi catat lainnya . catatan alur logic di perusahaan air itu ada yang suatu
+taksasi dimana angka stand awal dan akhir sama tetapi pemakaian diatur oleh verifikator dengan pertimbangan tertentu jadi kolom pakai pun ini bisa di edit dan
+bersifat dinamis verifikator bisa set stand awal dan akhir sama tetapi pemakaian diatur secara suka suka oleh verifikator karena kebijakan ( bisa karena ada aturan
+pemakaian minimal, perdir dll.. ). lalu logic di maanual add masal logic nya perlu diperbaiki sistem mentaksasi secara otomatis tetapi seharusnya angka stand awal
+dan akhir nya harus sama kenapa ini perlu diterapkan agar pengkondisian angka meter rill yang pada saat itu memang tidak tercatat oleh petugas hasilnya angka stan
+awal dan akhir sama tetapi pemakaian taksasi tetap berlaku sesuai dengan alur bisnis. baca dokumentasi disiini agar kamu dapat gambaran ini catatan di project lama
+e:\Coding\elysia\docs\alurbisnis di aturan kondisi dan verifikasi mungkin bisa membuat kamu mengerti.

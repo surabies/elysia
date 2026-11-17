@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth/index";
 import {
   VerifikasiMandiri,
   roleVerifikasi,
-} from "@/features/dashboard/verifikasi";
+} from "@/components/tanstacktable";
 
 export const metadata: Metadata = {
   title: "Verifikasi Pembacaan Pelanggan",

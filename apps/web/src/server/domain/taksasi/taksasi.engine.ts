@@ -36,6 +36,36 @@ export interface HasilTaksasi {
 const BULAN_DALAM_TAHUN = 12;
 export const PEMAKAIAN_MINIMUM_PERDIR = 5;
 
+/**
+ * 14 Kode Kondisi Catat yang memicu Taksasi Otomatis (ST Awal == ST Akhir,
+ * Pakai dihitung dari histori pemakaian pelanggan) sesuai ATURAN-KONDISI.md.
+ */
+export const KONDISI_TAKSASI_OTOMATIS = new Set<string>([
+  'RUMAH_KOSONG',
+  'METER_RUSAK',
+  'METER_MATI_ADA_AIR',
+  'MATI_ADA_AIR',
+  'METER_MUNDUR',
+  'METER_TERBALIK',
+  'METER_DALAM_AIR',
+  'LOS_METER',
+  'BMK_BMB',
+  'TTB',
+  'MTA',
+  'TERHALANG',
+  'ADA_ANJING',
+  'DK',
+  'DICABUT',
+]);
+
+export function apakahKondisiTaksasiOtomatis(
+  kondisi: string | null | undefined
+): boolean {
+  if (!kondisi) return false;
+  const normal = kondisi.trim().toUpperCase().replace(/[\s/.-]+/g, '_');
+  return KONDISI_TAKSASI_OTOMATIS.has(normal);
+}
+
 function parseDate(d: Date | string): Date {
   return typeof d === 'string' ? new Date(d) : d;
 }

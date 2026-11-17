@@ -1,6 +1,10 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { db, caterBacaMeter, caterVerifikasiLog } from "@cater/db";
 import { evaluasiPemakaianMeter } from "../../domain/cater/cater-anomali.engine";
+import {
+  apakahKondisiTaksasiOtomatis,
+  PEMAKAIAN_MINIMUM_PERDIR,
+} from "../../domain/taksasi/taksasi.engine";
 import { isCloudinaryConfigured, uploadToCloudinary } from "../../lib/cloudinary";
 
 export interface SubmitReadingInput {
@@ -10,6 +14,7 @@ export interface SubmitReadingInput {
   petugasId?: string;
   stml: number;
   stma: number;
+  pakaiM3Override?: number;
   pakaiLalu?: number;
   kondisiCatat?: string;
   metodeCatat?: string;
@@ -66,6 +71,7 @@ export class CaterVerifikasiService {
       petugasId,
       stml,
       stma,
+      pakaiM3Override,
       pakaiLalu,
       kondisiCatat,
       metodeCatat,
@@ -78,8 +84,62 @@ export class CaterVerifikasiService {
       latitude,
     } = input;
 
+    // Jika kondisi termasuk 14 kondisi taksasi otomatis (misal DK, TERHALANG, RUMAH_KOSONG, METER_RUSAK):
+    // 1. Kunci ST Akhir = ST Awal agar stand riil meter tidak melompat.
+    // 2. Hitung pemakaian otomatis dari histori pelanggan bila belum ada override.
+    const isTaksasiOtomatis = apakahKondisiTaksasiOtomatis(kondisiCatat);
+    const stmaEfektif = isTaksasiOtomatis ? stml : stma;
+
+    let pakaiTaksasiOtomatis: number | undefined;
+    if (isTaksasiOtomatis && pakaiM3Override === undefined) {
+      if (pakaiLalu !== undefined && pakaiLalu > 0) {
+        pakaiTaksasiOtomatis = Math.ceil(pakaiLalu);
+      } else {
+        const riwayat = await db
+          .select({ pakaiM3: caterBacaMeter.pakaiM3 })
+          .from(caterBacaMeter)
+          .where(
+            and(
+              eq(caterBacaMeter.nolg, nolg),
+              sql`${caterBacaMeter.thbl} < ${thbl}`,
+            ),
+          )
+          .orderBy(desc(caterBacaMeter.thbl))
+          .limit(12);
+        const nilaiValid = riwayat
+          .map((r) => Number(r.pakaiM3 ?? 0))
+          .filter((n) => Number.isFinite(n) && n > 0);
+        if (nilaiValid.length >= 12) {
+          pakaiTaksasiOtomatis = Math.ceil(
+            nilaiValid.slice(0, 12).reduce((a, b) => a + b, 0) / 12,
+          );
+        } else if (nilaiValid.length >= 3) {
+          const tigaTertinggi = [...nilaiValid].sort((a, b) => b - a).slice(0, 3);
+          pakaiTaksasiOtomatis = Math.ceil(
+            tigaTertinggi.reduce((a, b) => a + b, 0) / 3,
+          );
+        } else if (nilaiValid.length > 0) {
+          pakaiTaksasiOtomatis = Math.ceil(
+            nilaiValid.reduce((a, b) => a + b, 0) / nilaiValid.length,
+          );
+        } else {
+          pakaiTaksasiOtomatis = PEMAKAIAN_MINIMUM_PERDIR;
+        }
+      }
+    }
+
     // Evaluasi bisnis via Domain Engine murni
-    const evaluasi = evaluasiPemakaianMeter({ stml, stma, pakaiLalu });
+    const evaluasi = evaluasiPemakaianMeter({
+      stml,
+      stma: stmaEfektif,
+      pakaiLalu,
+    });
+    const pakaiM3Final =
+      pakaiM3Override !== undefined
+        ? pakaiM3Override
+        : pakaiTaksasiOtomatis !== undefined
+          ? pakaiTaksasiOtomatis
+          : evaluasi.pakaiM3;
     const id = `cater-${thbl}-${nolg}`;
     const lokasiGps =
       longitude !== undefined && latitude !== undefined
@@ -137,9 +197,9 @@ export class CaterVerifikasiService {
         ruteKode,
         petugasId,
         stml: String(stml),
-        stma: String(stma),
+        stma: String(stmaEfektif),
         pakaiLalu: pakaiLalu === undefined ? null : String(pakaiLalu),
-        pakaiM3: String(evaluasi.pakaiM3),
+        pakaiM3: String(pakaiM3Final),
         ketCatat: kondisiCatat || "Normal",
         metodeCatat: (metodeCatat as any) || "ONSITE",
         sumberCatat: sumberCatat || "PETUGAS_ONSITE",
@@ -156,9 +216,9 @@ export class CaterVerifikasiService {
           ruteKode,
           petugasId,
           stml: String(stml),
-          stma: String(stma),
+          stma: String(stmaEfektif),
           pakaiLalu: pakaiLalu === undefined ? null : String(pakaiLalu),
-          pakaiM3: String(evaluasi.pakaiM3),
+          pakaiM3: String(pakaiM3Final),
           ketCatat: kondisiCatat || "Normal",
           metodeCatat: (metodeCatat as any) || "ONSITE",
           sumberCatat: sumberCatat || "PETUGAS_ONSITE",
@@ -176,8 +236,8 @@ export class CaterVerifikasiService {
       id,
       nolg,
       stml,
-      stma,
-      pakaiM3: evaluasi.pakaiM3,
+      stma: stmaEfektif,
+      pakaiM3: pakaiM3Final,
       isAnomali: evaluasi.isAnomali,
       statusVerifikasi: evaluasi.statusVerifikasi,
     };

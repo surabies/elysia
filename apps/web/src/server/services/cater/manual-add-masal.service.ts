@@ -72,7 +72,7 @@ export class ManualAddMasalService {
    * Mengambil daftar pilihan Petugas dan Rute untuk dropdown filter dinamis
    */
   async getFilterOptions(): Promise<{ petugas: PetugasOption[]; rute: RuteOption[] }> {
-    const [petugasRows, ruteRows] = await Promise.all([
+    const [petugasRows, ruteRows, bacaRuteRows] = await Promise.all([
       db
         .select({
           id: petugasCater.id,
@@ -89,11 +89,33 @@ export class ManualAddMasalService {
         })
         .from(ruteCater)
         .orderBy(ruteCater.kode),
+      db
+        .selectDistinct({
+          ruteKode: caterBacaMeter.ruteKode,
+          petugasId: caterBacaMeter.petugasId,
+        })
+        .from(caterBacaMeter)
+        .where(
+          and(
+            isNotNull(caterBacaMeter.ruteKode),
+            isNotNull(caterBacaMeter.petugasId)
+          )
+        ),
     ]);
+
+    const fallbackMap = new Map<string, string>();
+    for (const b of bacaRuteRows) {
+      if (b.ruteKode && b.petugasId && !fallbackMap.has(b.ruteKode)) {
+        fallbackMap.set(b.ruteKode, b.petugasId);
+      }
+    }
 
     return {
       petugas: petugasRows,
-      rute: ruteRows,
+      rute: ruteRows.map((r) => ({
+        ...r,
+        pencatatDefault: r.pencatatDefault ?? fallbackMap.get(r.kode) ?? null,
+      })),
     };
   }
 
@@ -112,7 +134,7 @@ export class ManualAddMasalService {
       petugasId,
       ruteKode,
       hanyaBelumBaca = true,
-      limit = 200,
+      limit,
     } = params;
 
     // 1. Tentukan rute-rute yang menjadi target
@@ -121,13 +143,27 @@ export class ManualAddMasalService {
     if (ruteKode && ruteKode !== 'all') {
       targetRuteList = [ruteKode];
     } else if (petugasId && petugasId !== 'all') {
-      // Ambil seluruh rute yang ditugaskan ke petugas ini
-      const rutes = await db
-        .select({ kode: ruteCater.kode })
-        .from(ruteCater)
-        .where(eq(ruteCater.pencatatDefault, petugasId));
+      // Ambil seluruh rute yang ditugaskan ke petugas ini (baik dari ruteCater maupun riwayat baca)
+      const [rutes, bacaRutes] = await Promise.all([
+        db
+          .select({ kode: ruteCater.kode })
+          .from(ruteCater)
+          .where(eq(ruteCater.pencatatDefault, petugasId)),
+        db
+          .selectDistinct({ kode: caterBacaMeter.ruteKode })
+          .from(caterBacaMeter)
+          .where(
+            and(
+              eq(caterBacaMeter.petugasId, petugasId),
+              isNotNull(caterBacaMeter.ruteKode)
+            )
+          ),
+      ]);
 
-      targetRuteList = rutes.map((r) => r.kode);
+      const setRute = new Set<string>();
+      for (const r of rutes) if (r.kode) setRute.add(r.kode);
+      for (const b of bacaRutes) if (b.kode) setRute.add(b.kode);
+      targetRuteList = Array.from(setRute);
     }
 
     // 2. Ambil seluruh pelanggan di rute target
@@ -136,7 +172,7 @@ export class ManualAddMasalService {
       conditions.push(inArray(pelanggan.ruteKode, targetRuteList));
     }
 
-    const pelangganList = await db
+    const baseQuery = db
       .select({
         nolg: pelanggan.nolg,
         nama: pelanggan.nama,
@@ -148,8 +184,12 @@ export class ManualAddMasalService {
       })
       .from(pelanggan)
       .leftJoin(kelurahan, eq(pelanggan.kelurahanKode, kelurahan.kode))
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .limit(limit);
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    const pelangganList =
+      limit !== undefined && limit > 0
+        ? await baseQuery.limit(limit)
+        : await baseQuery;
 
     if (pelangganList.length === 0) {
       return {
@@ -241,8 +281,11 @@ export class ManualAddMasalService {
         metodeTaksasi = 'Data Pembacaan Tercatat';
       }
 
-      // Stand Akhir Taksasi = Stand Lalu + Estimasi m3
-      const stmaTaksasi = stml + pakaiM3Taksasi;
+      // Stand Akhir Taksasi = Stand Lalu (ST Awal == ST Akhir)
+      // Sesuai aturan bisnis PDAM (DEC-01): karena meter fisik tidak tercatat di lapangan,
+      // angka stand akhir ditahan sama dengan stand awal agar periode berikutnya tidak minus,
+      // sedangkan pemakaian taksasi disimpan pada pakaiM3Taksasi.
+      const stmaTaksasi = stml;
       const pakaiLalu = Number(existing?.pakaiLalu ?? hist?.pakai ?? 0);
 
       if (!sudahTerbaca || !hanyaBelumBaca) {
@@ -311,12 +354,12 @@ export class ManualAddMasalService {
           nolg: item.nolg,
           ruteKode: item.ruteKode ?? undefined,
           stml: String(item.stml),
-          stma: String(item.stma),
+          stma: String(item.stml),
           pakaiM3: String(item.pakaiM3),
           ketCatat: 'Taksasi Perdir',
           metodeCatat: 'OFFSITE',
           sumberCatat: 'MANUAL',
-          statusVerifikasi: 'VERIFIED',
+          statusVerifikasi: 'SUBMITTED',
           catatan: fullCatatan,
           tglCatat: now,
           updatedAt: now,
@@ -325,12 +368,12 @@ export class ManualAddMasalService {
           target: caterBacaMeter.id,
           set: {
             stml: String(item.stml),
-            stma: String(item.stma),
+            stma: String(item.stml),
             pakaiM3: String(item.pakaiM3),
             ketCatat: 'Taksasi Perdir',
             metodeCatat: 'OFFSITE',
             sumberCatat: 'MANUAL',
-            statusVerifikasi: 'VERIFIED',
+            statusVerifikasi: 'SUBMITTED',
             catatan: fullCatatan,
             updatedAt: now,
           },

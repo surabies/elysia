@@ -410,6 +410,7 @@ export class VerifikasiGridService {
               : null),
           standPasang: asNumber(row.standPasang),
           pemakaian: asNumber(row.pakaiM3Revisi) ?? asNumber(row.pakaiM3),
+          pemakaianRevisi: asNumber(row.pakaiM3Revisi),
           pemakaianTagihVerif: asNumber(row.pakaiTagih),
           kondisiRevisi: row.ketCatatRevisi,
           pemakaianLalu: asNumber(row.pakaiLalu),
@@ -870,6 +871,7 @@ export class VerifikasiGridService {
 
   async searchManualCustomers(nomor: string, periode: number | string) {
     const pattern = `%${nomor}%`;
+    const periodeStr = String(periode);
     const rows = await db
       .select({
         id: pelanggan.nolg,
@@ -877,16 +879,49 @@ export class VerifikasiGridService {
         nama: pelanggan.nama,
         nolg: pelanggan.nolg,
         alamat: pelanggan.alamat,
+        ruteKode: pelanggan.ruteKode,
         tarifKode: pelanggan.tarifKode,
         tarifNama: golonganTarif.nama,
         noMeter: pelanggan.noMeter,
-        standTerakhir: sql<number | null>`(
-          select c.stma::numeric
-          from cater_baca_meter c
-          where c.nolg = ${pelanggan.nolg}
-          order by c.thbl desc
-          limit 1
+        standTerakhir: sql<number | null>`coalesce(
+          ${caterBacaMeter.stml}::numeric,
+          (
+            select coalesce(c.stma_revisi, c.stma)::numeric
+            from cater_baca_meter c
+            where c.nolg = ${pelanggan.nolg}
+              and c.thbl < ${periodeStr}
+            order by c.thbl desc
+            limit 1
+          ),
+          (
+            select c.stml::numeric
+            from cater_baca_meter c
+            where c.nolg = ${pelanggan.nolg}
+            order by c.thbl desc
+            limit 1
+          )
         )`,
+        pakaiTerakhir: sql<number | null>`coalesce(
+          ${caterBacaMeter.pakaiLalu}::numeric,
+          (
+            select coalesce(c.pakai_m3_revisi, c.pakai_m3)::numeric
+            from cater_baca_meter c
+            where c.nolg = ${pelanggan.nolg}
+              and c.thbl < ${periodeStr}
+            order by c.thbl desc
+            limit 1
+          ),
+          (
+            select coalesce(c.pakai_lalu, c.pakai_m3)::numeric
+            from cater_baca_meter c
+            where c.nolg = ${pelanggan.nolg}
+            order by c.thbl desc
+            limit 1
+          )
+        )`,
+        standAkhirSaatIni: sql<number | null>`coalesce(${caterBacaMeter.stmaRevisi}, ${caterBacaMeter.stma})::numeric`,
+        pakaiSaatIni: sql<number | null>`coalesce(${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric`,
+        ketCatatSaatIni: sql<string | null>`coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat})`,
         laporanId: caterBacaMeter.id,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
       })
@@ -896,7 +931,7 @@ export class VerifikasiGridService {
         caterBacaMeter,
         and(
           eq(caterBacaMeter.nolg, pelanggan.nolg),
-          eq(caterBacaMeter.thbl, String(periode)),
+          eq(caterBacaMeter.thbl, periodeStr),
         ),
       )
       .where(
@@ -917,15 +952,27 @@ export class VerifikasiGridService {
 
     return rows.map((row) => ({
       id: row.id,
+      nolg: row.nolg,
       nomorLangganan: row.nomorLangganan,
       nama: row.nama,
+      alamat: row.alamat,
+      ruteKode: row.ruteKode,
+      tarifKode: row.tarifKode,
+      tarifNama: row.tarifNama,
       tarifGolongan: row.tarifKode
         ? { kodeAsli: row.tarifKode, nama: row.tarifNama }
         : null,
+      noMeter: row.noMeter ?? "MTR-AKTIF",
       nomorMeter: row.noMeter ?? "MTR-AKTIF",
       meterAktif: true,
       meterAmbigu: false,
-      standTerakhir: asNumber(row.standTerakhir),
+      standTerakhir: asNumber(row.standTerakhir) ?? 0,
+      pakaiTerakhir: asNumber(row.pakaiTerakhir) ?? 0,
+      standAkhirSaatIni: asNumber(row.standAkhirSaatIni),
+      pakaiSaatIni: asNumber(row.pakaiSaatIni),
+      ketCatatSaatIni: row.ketCatatSaatIni ?? null,
+      laporanId: row.laporanId,
+      statusVerifikasi: row.statusVerifikasi,
       sudahAdaLaporan: Boolean(row.laporanId),
       bolehTimpaLaporan: row.statusVerifikasi !== "LOCKED_BILLING",
     }));

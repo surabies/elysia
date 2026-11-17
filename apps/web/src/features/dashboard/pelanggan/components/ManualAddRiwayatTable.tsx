@@ -143,23 +143,27 @@ export function ManualAddRiwayatTable({
             <p className="text-label-12 mt-0.5">Belum ada catatan manual add yang terdata pada periode ini.</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader className="bg-muted/40">
+          <Table containerClassName="max-h-[calc(100vh-280px)] overflow-y-auto">
+            <TableHeader className="sticky top-0 z-10 bg-(--table-head) shadow-[0_1px_0_0_var(--border)]">
               <TableRow>
-                <TableHead className="w-28">Waktu Catat</TableHead>
-                <TableHead>No. Langganan</TableHead>
-                <TableHead>Nama Pelanggan</TableHead>
-                <TableHead>Alamat & Rute</TableHead>
-                <TableHead className="text-right">STML</TableHead>
-                <TableHead className="text-right">STMA</TableHead>
-                <TableHead className="text-right">Volume (m³)</TableHead>
-                <TableHead>Alasan / Berita Acara</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="w-14 text-right font-mono bg-(--table-head)">No.</TableHead>
+                <TableHead className="w-28 bg-(--table-head)">Waktu Catat</TableHead>
+                <TableHead className="bg-(--table-head)">No. Langganan</TableHead>
+                <TableHead className="bg-(--table-head)">Nama Pelanggan</TableHead>
+                <TableHead className="bg-(--table-head)">Alamat & Rute</TableHead>
+                <TableHead className="text-right bg-(--table-head)">STML</TableHead>
+                <TableHead className="text-right bg-(--table-head)">STMA</TableHead>
+                <TableHead className="text-right bg-(--table-head)">Volume (m³)</TableHead>
+                <TableHead className="bg-(--table-head)">Alasan / Berita Acara</TableHead>
+                <TableHead className="text-center bg-(--table-head)">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.items.map((row) => (
+              {data.items.map((row, idx) => (
                 <TableRow key={row.id}>
+                  <TableCell className="text-right font-mono text-label-12 text-muted-foreground tabular-nums">
+                    {numberFormat.format(idx + 1)}
+                  </TableCell>
                   <TableCell className="text-label-11 text-muted-foreground font-mono whitespace-nowrap">
                     {row.tglCatat
                       ? new Date(row.tglCatat).toLocaleDateString('id-ID', {

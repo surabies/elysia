@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import * as React from 'react'
+import * as React from "react";
 import {
   AlertTriangle,
   ChevronRight,
@@ -8,73 +8,78 @@ import {
   Wrench,
   Sparkles,
   Info,
-} from 'lucide-react'
-import { toast } from 'sonner'
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { BroadcastDetailModal } from '@/components/home/BroadcastDetailModal'
-import { DAFTAR_BROADCAST_AWAL } from '@/data/broadcast'
-import type { BroadcastGangguanItem } from '@/types/broadcast'
+import { BroadcastDetailModal } from "@/components/home/BroadcastDetailModal";
+import { DAFTAR_BROADCAST_AWAL } from "@/data/broadcast";
+import type { BroadcastGangguanItem } from "@/types/broadcast";
 
 interface BroadcastGangguanBannerProps {
-  daftarBroadcast?: BroadcastGangguanItem[]
+  daftarBroadcast?: BroadcastGangguanItem[];
 }
 
 export function BroadcastGangguanBanner({
   daftarBroadcast = DAFTAR_BROADCAST_AWAL,
 }: BroadcastGangguanBannerProps) {
-  const [mounted, setMounted] = React.useState(false)
-  const [isDismissed, setIsDismissed] = React.useState(false)
-  const [isHovered, setIsHovered] = React.useState(false)
-  const [modalBuka, setModalBuka] = React.useState(false)
-  const [selectedItem, setSelectedItem] = React.useState<BroadcastGangguanItem | null>(null)
+  const [mounted, setMounted] = React.useState(false);
+  const [isDismissed, setIsDismissed] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [modalBuka, setModalBuka] = React.useState(false);
+  const [selectedItem, setSelectedItem] =
+    React.useState<BroadcastGangguanItem | null>(null);
 
-  const [daftar, setDaftar] = React.useState<BroadcastGangguanItem[]>(daftarBroadcast)
+  const [daftar, setDaftar] =
+    React.useState<BroadcastGangguanItem[]>(daftarBroadcast);
 
   React.useEffect(() => {
-    setMounted(true)
+    setMounted(true);
 
     // Sinkronkan cache lokal setelah mount (bebas hydration mismatch)
     try {
-      const tersimpan = localStorage.getItem('elysia_broadcast_items')
+      const tersimpan = localStorage.getItem("elysia_broadcast_items");
       if (tersimpan) {
-        const parsed = JSON.parse(tersimpan)
+        const parsed = JSON.parse(tersimpan);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setDaftar(parsed)
+          setDaftar(parsed);
         }
       }
     } catch {}
 
     // Ambil siaran terbaru dari backend API
-    fetch('/api/broadcast/public')
+    fetch("/api/broadcast/public")
       .then((r) => r.json())
       .then((json) => {
         if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setDaftar(json.data)
+          setDaftar(json.data);
         }
       })
-      .catch(() => {})
-  }, [])
+      .catch(() => {});
+  }, []);
 
   // Sinkronisasi jika ada pembaruan siaran dari tab dashboard
   React.useEffect(() => {
     function handleStorageChange() {
       try {
-        const tersimpan = localStorage.getItem('elysia_broadcast_items')
+        const tersimpan = localStorage.getItem("elysia_broadcast_items");
         if (tersimpan) {
-          const parsed = JSON.parse(tersimpan)
+          const parsed = JSON.parse(tersimpan);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setDaftar(parsed)
+            setDaftar(parsed);
           }
         }
       } catch {}
     }
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('elysia:broadcast-updated', handleStorageChange)
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("elysia:broadcast-updated", handleStorageChange);
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('elysia:broadcast-updated', handleStorageChange)
-    }
-  }, [])
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener(
+        "elysia:broadcast-updated",
+        handleStorageChange,
+      );
+    };
+  }, []);
 
   // Filter siaran aktif yang diatur tampil di ticker
   const broadcastAktif = React.useMemo(() => {
@@ -86,80 +91,93 @@ export function BroadcastGangguanBanner({
           PEMELIHARAAN: 2,
           EVENT: 3,
           INFORMASI: 4,
-        }
-        return (priorityOrder[a.kategori] || 5) - (priorityOrder[b.kategori] || 5)
-      })
-  }, [daftar])
+        };
+        return (
+          (priorityOrder[a.kategori] || 5) - (priorityOrder[b.kategori] || 5)
+        );
+      });
+  }, [daftar]);
 
   // Duplikasi item agar marquee track selalu kontinu tanpa celah kosong
   const displayItems = React.useMemo(() => {
-    if (broadcastAktif.length === 0) return []
+    if (broadcastAktif.length === 0) return [];
     if (broadcastAktif.length === 1) {
-      return [broadcastAktif[0], broadcastAktif[0], broadcastAktif[0], broadcastAktif[0]]
+      return [
+        broadcastAktif[0],
+        broadcastAktif[0],
+        broadcastAktif[0],
+        broadcastAktif[0],
+      ];
     }
     if (broadcastAktif.length === 2) {
-      return [...broadcastAktif, ...broadcastAktif]
+      return [...broadcastAktif, ...broadcastAktif];
     }
-    return broadcastAktif
-  }, [broadcastAktif])
+    return broadcastAktif;
+  }, [broadcastAktif]);
 
   // Kecepatan santai dan nyaman dibaca (~32px/s)
-  const tickerDuration = Math.max(30, displayItems.length * 15)
+  const tickerDuration = Math.max(30, displayItems.length * 15);
 
   if (!mounted || isDismissed || broadcastAktif.length === 0) {
-    return null
+    return null;
   }
 
-  const adaDarurat = broadcastAktif.some((b) => b.kategori === 'DARURAT')
-  const adaPemeliharaan = broadcastAktif.some((b) => b.kategori === 'PEMELIHARAAN')
+  const adaDarurat = broadcastAktif.some((b) => b.kategori === "DARURAT");
+  const adaPemeliharaan = broadcastAktif.some(
+    (b) => b.kategori === "PEMELIHARAAN",
+  );
 
   const handleDismiss = () => {
-    setIsDismissed(true)
-    toast.info('Pemberitahuan ditutup sementara', {
-      description: 'Muat ulang (refresh) halaman untuk menampilkan kembali siaran informasi.',
+    setIsDismissed(true);
+    toast.info("Pemberitahuan ditutup sementara", {
+      description:
+        "Muat ulang (refresh) halaman untuk menampilkan kembali siaran informasi.",
       duration: 3500,
-    })
-  }
+    });
+  };
 
   const handleBukaDetail = (item: BroadcastGangguanItem) => {
-    setSelectedItem(item)
-    setModalBuka(true)
-  }
+    setSelectedItem(item);
+    setModalBuka(true);
+  };
 
   const renderBadge = (kategori: string) => {
     switch (kategori) {
-      case 'DARURAT':
+      case "DARURAT":
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 border border-rose-300 px-2 py-0.5 text-[10px] font-bold text-rose-800 shrink-0 uppercase tracking-wide">
             <AlertTriangle className="size-2.5 text-rose-600 shrink-0" />
             <span>Darurat</span>
           </span>
-        )
-      case 'PEMELIHARAAN':
+        );
+      case "PEMELIHARAAN":
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-900 shrink-0 uppercase tracking-wide">
             <Wrench className="size-2.5 text-amber-700 shrink-0" />
             <span>Pemeliharaan</span>
           </span>
-        )
-      case 'EVENT':
+        );
+      case "EVENT":
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 border border-sky-300 px-2 py-0.5 text-[10px] font-bold text-sky-900 shrink-0 uppercase tracking-wide">
             <Sparkles className="size-2.5 text-sky-600 shrink-0" />
             <span>Program Resmi</span>
           </span>
-        )
+        );
       default:
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 border border-neutral-300 px-2 py-0.5 text-[10px] font-bold text-neutral-800 shrink-0 uppercase tracking-wide">
             <Info className="size-2.5 text-neutral-600 shrink-0" />
             <span>Pengumuman</span>
           </span>
-        )
+        );
     }
-  }
+  };
 
-  const renderTrackContent = (items: BroadcastGangguanItem[], prefix: string) => {
+  const renderTrackContent = (
+    items: BroadcastGangguanItem[],
+    prefix: string,
+  ) => {
     return (
       <div className="flex items-center">
         {items.map((item, idx) => (
@@ -202,8 +220,8 @@ export function BroadcastGangguanBanner({
           </React.Fragment>
         ))}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <>
@@ -214,7 +232,7 @@ export function BroadcastGangguanBanner({
         {/* Subtle Top Border Glow (Biru muda logo Tirtawening) */}
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-sky-400/40 to-transparent pointer-events-none"
+          className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-sky-400/40 to-transparent pointer-events-none"
         />
 
         <div className="mx-auto flex h-9 sm:h-10 max-w-360 items-center justify-between px-3 sm:px-4 lg:px-12">
@@ -224,24 +242,28 @@ export function BroadcastGangguanBanner({
               <span
                 className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
                   adaDarurat
-                    ? 'bg-rose-400'
+                    ? "bg-rose-400"
                     : adaPemeliharaan
-                      ? 'bg-amber-400'
-                      : 'bg-sky-400'
+                      ? "bg-amber-400"
+                      : "bg-sky-400"
                 }`}
               />
               <span
                 className={`relative inline-flex rounded-full h-2 w-2 ${
                   adaDarurat
-                    ? 'bg-rose-600'
+                    ? "bg-rose-600"
                     : adaPemeliharaan
-                      ? 'bg-amber-600'
-                      : 'bg-sky-600'
+                      ? "bg-amber-600"
+                      : "bg-sky-600"
                 }`}
               />
             </span>
             <span className="text-[10px] sm:text-[11px] font-bold text-sky-900 uppercase tracking-wider hidden xs:inline">
-              {adaDarurat ? 'Darurat' : adaPemeliharaan ? 'Pemeliharaan' : 'Siaran Resmi'}
+              {adaDarurat
+                ? "Darurat"
+                : adaPemeliharaan
+                  ? "Pemeliharaan"
+                  : "Siaran Resmi"}
             </span>
             <span className="text-[10px] font-mono text-sky-800 px-1.5 py-0.2 rounded bg-sky-200/70 hidden md:inline">
               {broadcastAktif.length}
@@ -257,11 +279,11 @@ export function BroadcastGangguanBanner({
             {/* Vignette fade masks di ujung kiri dan kanan selaras dengan background biru muda */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 w-6 sm:w-8 bg-gradient-to-r from-sky-50 via-sky-50/90 to-transparent z-10"
+              className="pointer-events-none absolute inset-y-0 left-0 w-6 sm:w-8 bg-linear-to-r from-sky-50 via-sky-50/90 to-transparent z-10"
             />
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 w-6 sm:w-8 bg-gradient-to-l from-sky-50 via-sky-50/90 to-transparent z-10"
+              className="pointer-events-none absolute inset-y-0 right-0 w-6 sm:w-8 bg-linear-to-l from-sky-50 via-sky-50/90 to-transparent z-10"
             />
 
             {/* Seamless Infinite Ticker Track */}
@@ -269,24 +291,24 @@ export function BroadcastGangguanBanner({
               className="flex w-max shrink-0 items-center animate-broadcast-ticker select-none"
               style={
                 {
-                  '--ticker-duration': `${tickerDuration}s`,
-                  animationPlayState: isHovered ? 'paused' : 'running',
+                  "--ticker-duration": `${tickerDuration}s`,
+                  animationPlayState: isHovered ? "paused" : "running",
                 } as React.CSSProperties
               }
             >
-              {renderTrackContent(displayItems, 'track-1')}
+              {renderTrackContent(displayItems, "track-1")}
             </div>
             <div
               aria-hidden="true"
               className="flex w-max shrink-0 items-center animate-broadcast-ticker select-none"
               style={
                 {
-                  '--ticker-duration': `${tickerDuration}s`,
-                  animationPlayState: isHovered ? 'paused' : 'running',
+                  "--ticker-duration": `${tickerDuration}s`,
+                  animationPlayState: isHovered ? "paused" : "running",
                 } as React.CSSProperties
               }
             >
-              {renderTrackContent(displayItems, 'track-2')}
+              {renderTrackContent(displayItems, "track-2")}
             </div>
           </div>
 
@@ -312,5 +334,5 @@ export function BroadcastGangguanBanner({
         onOpenChange={setModalBuka}
       />
     </>
-  )
+  );
 }

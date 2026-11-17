@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth/index";
 import {
   VerifikasiLapangan,
   roleVerifikasi,
-} from "@/features/dashboard/verifikasi";
+} from "@/components/tanstacktable";
 
 export const metadata: Metadata = {
   title: "Verifikasi Pembacaan Petugas",

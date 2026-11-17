@@ -17,6 +17,10 @@ import { mandiriService } from "../services/mandiri/mandiri.service";
 import { verifikasiGridService, FINAL_STATUSES } from "../services/cater/verifikasi-grid.service";
 import { manualAddMasalService } from "../services/cater/manual-add-masal.service";
 import { hitungKubikasiGantiMeter } from "../domain/gwm/gwm.engine";
+import {
+  apakahKondisiTaksasiOtomatis,
+  PEMAKAIAN_MINIMUM_PERDIR,
+} from "../domain/taksasi/taksasi.engine";
 
 const READ_ROLES: AppRole[] = [
   "STAFF_ADMIN_BILLING",
@@ -599,10 +603,17 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
     async ({ query, set }) => {
       try {
         const thbl = String(query.periode ?? "202601");
-        const petugasId = query.petugasId ? String(query.petugasId) : undefined;
+        const petugasId = query.petugasId
+          ? String(query.petugasId)
+          : query.pencatatId
+            ? String(query.pencatatId)
+            : undefined;
         const ruteKode = query.ruteKode ? String(query.ruteKode) : undefined;
         const hanyaBelumBaca = query.hanyaBelumBaca !== "false";
-        const limit = Number(query.limit ?? 200);
+        const limit =
+          query.limit !== undefined && Number(query.limit) > 0
+            ? Number(query.limit)
+            : undefined;
 
         const data = await manualAddMasalService.getPreviewTaksasi({
           thbl,
@@ -625,6 +636,7 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
       query: t.Object({
         periode: t.Optional(t.Numeric()),
         petugasId: t.Optional(t.String()),
+        pencatatId: t.Optional(t.String()),
         ruteKode: t.Optional(t.String()),
         hanyaBelumBaca: t.Optional(t.String()),
         limit: t.Optional(t.Numeric()),
@@ -1000,7 +1012,10 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
         body.pemakaianTagihVerif != null &&
         (!Number.isInteger(body.pemakaianTagihVerif) ||
           body.pemakaianTagihVerif < 0);
-      if (angkaTidakValid || tagihanTidakValid) {
+      const pemakaianRevisiTidakValid =
+        body.pemakaianRevisi != null &&
+        (!Number.isInteger(body.pemakaianRevisi) || body.pemakaianRevisi < 0);
+      if (angkaTidakValid || tagihanTidakValid || pemakaianRevisiTidakValid) {
         set.status = 400;
         return {
           success: false,
@@ -1070,15 +1085,49 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
           };
         }
         pakaiM3 = hasilGantiMeter.totalPemakaianM3;
+      } else if (body.pemakaianRevisi != null) {
+        // Verifikator mengatur langsung angka pemakaian (misal taksasi / aturan minimum / perdir
+        // di mana ST Awal dan ST Akhir sama, tetapi pemakaian diatur secara eksplisit).
+        pakaiM3 = body.pemakaianRevisi;
+      } else if (apakahKondisiTaksasiOtomatis(kondisi) && stma === stml) {
+        // Jika kondisi adalah salah satu dari 14 kondisi taksasi otomatis (misal DK, TERHALANG, RUMAH_KOSONG)
+        // dan ST Awal == ST Akhir, hitung otomatis dari pakai sebelumnya / pakaiLalu / minimum Perdir.
+        const pakaiSebelumnya = Number(row.pakaiM3Revisi ?? row.pakaiM3 ?? 0);
+        const pakaiLaluNum = Number(row.pakaiLalu ?? 0);
+        pakaiM3 =
+          pakaiSebelumnya > 0
+            ? pakaiSebelumnya
+            : pakaiLaluNum > 0
+              ? Math.ceil(pakaiLaluNum)
+              : PEMAKAIAN_MINIMUM_PERDIR;
+      } else if (
+        body.pemakaianRevisi === undefined &&
+        stmlRevisi == null &&
+        stmaRevisi == null &&
+        stma === stml
+      ) {
+        // Jika hanya mengubah kondisi catat (tanpa mengubah stand) pada baris yang
+        // ST Awal == ST Akhir tetapi sudah punya angka pemakaian (misal 10 m³),
+        // pertahankan angka pemakaian tersebut agar tidak berubah menjadi 0!
+        const pakaiSebelumnya = Number(row.pakaiM3Revisi ?? row.pakaiM3 ?? 0);
+        if (pakaiSebelumnya > 0) {
+          pakaiM3 = pakaiSebelumnya;
+        }
       }
       const pakaiM3Revisi =
-        stmlRevisi != null ||
-        stmaRevisi != null ||
-        kondisiRevisi != null ||
-        body.standAngkatLama != null ||
-        body.standMeterBaru != null
-          ? String(pakaiM3)
-          : null;
+        body.pemakaianRevisi !== undefined
+          ? body.pemakaianRevisi == null
+            ? stmlRevisi != null || stmaRevisi != null
+              ? String(pakaiM3)
+              : null
+            : String(body.pemakaianRevisi)
+          : stmlRevisi != null ||
+              stmaRevisi != null ||
+              kondisiRevisi != null ||
+              body.standAngkatLama != null ||
+              body.standMeterBaru != null
+            ? String(pakaiM3)
+            : null;
       await db.transaction(async (tx) => {
         await tx.insert(caterVerifikasiLog).values({
           caterId: row.id,
@@ -1124,6 +1173,7 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
       body: t.Object({
         standAwalRevisi: t.Optional(t.Union([t.Number(), t.Null()])),
         standAkhirRevisi: t.Optional(t.Union([t.Number(), t.Null()])),
+        pemakaianRevisi: t.Optional(t.Union([t.Number(), t.Null()])),
         pemakaianTagihVerif: t.Optional(t.Union([t.Number(), t.Null()])),
         kondisiRevisi: t.Optional(t.Union([t.String(), t.Null()])),
         standAngkatLama: t.Optional(t.Union([t.Number(), t.Null()])),
@@ -1320,6 +1370,8 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
           nolg: body.pelangganId,
           stml: body.standAwal,
           stma: body.standAkhir,
+          pakaiM3Override: body.pemakaian,
+          kondisiCatat: body.kondisiCatat || "NORMAL",
           metodeCatat: "OFFSITE",
           sumberCatat: "MANUAL",
           catatan: body.alasanManual,
@@ -1341,6 +1393,7 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
         standAwal: t.Number({ minimum: 0 }),
         standAkhir: t.Number({ minimum: 0 }),
         pemakaian: t.Number(),
+        kondisiCatat: t.Optional(t.String()),
         alasanManual: t.String({ minLength: 1 }),
       }),
     },

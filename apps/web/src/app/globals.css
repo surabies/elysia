@@ -9,7 +9,9 @@
     var(--latar-baris, transparent),
     var(--latar-baris, transparent)
   );
-  transition: background-image 120ms ease;
+  transition:
+    background-image 100ms ease,
+    box-shadow 100ms ease;
 }
 
 .tabel-verifikasi tbody > tr:hover > td {
@@ -629,32 +631,66 @@
   --chart-4: var(--ds-purple-700);
   --chart-5: var(--ds-pink-700);
 
-  /* Verification grid surfaces and semantic status accents */
-  --table-head: var(--ds-gray-100);
-  --table-accent: rgba(0, 112, 243, 0.12);
-  --table-hover: var(--ds-gray-alpha-100);
-  --hover-baris: var(--ds-gray-alpha-100);
-  --verif-v1: var(--ds-amber-700);
-  --verif-v1-soft: rgba(194, 113, 0, 0.08);
-  --verif-v1-hover: rgba(194, 113, 0, 0.14);
-  --verif-v1-border: rgba(194, 113, 0, 0.25);
+  /* Verification grid surfaces and semantic status accents (Vercel Geist 10-step scale) */
+  --table-head: var(--ds-background-200);
+  --table-hover: rgba(0, 0, 0, 0.035);
+  --hover-baris: rgba(0, 0, 0, 0.035);
+  --table-active: rgba(0, 0, 0, 0.055);
+  --table-active-hover: rgba(0, 0, 0, 0.08);
+  --table-selected: rgba(0, 112, 243, 0.06);
+  --table-selected-hover: rgba(0, 112, 243, 0.1);
+  --table-accent: var(--table-active);
+
+  /* V1: Supervisor (Geist Amber) */
+  --verif-v1: var(--ds-amber-600);
+  --verif-v1-text: var(--ds-amber-900);
+  --verif-v1-soft: var(--ds-amber-100);
+  --verif-v1-hover: var(--ds-amber-200);
+  --verif-v1-border: var(--ds-amber-400);
+  --verif-v1-row: rgba(245, 166, 35, 0.045);
+  --verif-v1-row-hover: rgba(245, 166, 35, 0.09);
+
+  /* V2: Manager (Geist Blue) */
   --verif-v2: var(--ds-blue-700);
-  --verif-v2-soft: rgba(0, 112, 243, 0.08);
-  --verif-v2-hover: rgba(0, 112, 243, 0.14);
-  --verif-v2-border: rgba(0, 112, 243, 0.25);
+  --verif-v2-text: var(--ds-blue-900);
+  --verif-v2-soft: var(--ds-blue-100);
+  --verif-v2-hover: var(--ds-blue-200);
+  --verif-v2-border: var(--ds-blue-400);
+  --verif-v2-row: rgba(0, 112, 243, 0.04);
+  --verif-v2-row-hover: rgba(0, 112, 243, 0.085);
+
+  /* V3: Resmi Final (Geist Green) */
   --verif-v3: var(--ds-green-700);
-  --verif-v3-soft: rgba(0, 158, 82, 0.08);
-  --verif-v3-hover: rgba(0, 158, 82, 0.14);
-  --verif-v3-border: rgba(0, 158, 82, 0.25);
+  --verif-v3-text: var(--ds-green-900);
+  --verif-v3-soft: var(--ds-green-100);
+  --verif-v3-hover: var(--ds-green-200);
+  --verif-v3-border: var(--ds-green-400);
+  --verif-v3-row: rgba(30, 184, 112, 0.045);
+  --verif-v3-row-hover: rgba(30, 184, 112, 0.09);
+
+  /* Error / Cek Ulang / Anomali (Geist Red) */
   --verif-error: var(--ds-red-700);
-  --verif-error-soft: rgba(224, 0, 0, 0.08);
-  --verif-error-hover: rgba(224, 0, 0, 0.14);
-  --verif-error-border: rgba(224, 0, 0, 0.25);
+  --verif-error-text: var(--ds-red-900);
+  --verif-error-soft: var(--ds-red-100);
+  --verif-error-hover: var(--ds-red-200);
+  --verif-error-border: var(--ds-red-400);
+  --verif-error-row: rgba(224, 0, 0, 0.04);
+  --verif-error-row-hover: rgba(224, 0, 0, 0.085);
+
+  /* Edit / Koreksi Stand (Geist Purple) */
   --verif-correction: var(--ds-purple-700);
-  --verif-correction-soft: rgba(121, 40, 202, 0.08);
-  --verif-correction-hover: rgba(121, 40, 202, 0.14);
-  --verif-correction-border: rgba(121, 40, 202, 0.25);
+  --verif-correction-text: var(--ds-purple-900);
+  --verif-correction-soft: var(--ds-purple-100);
+  --verif-correction-hover: var(--ds-purple-200);
+  --verif-correction-border: var(--ds-purple-400);
+  --verif-correction-row: rgba(121, 40, 202, 0.04);
+  --verif-correction-row-hover: rgba(121, 40, 202, 0.085);
+
+  /* Info / Mandiri / Meter Baru (Geist Teal) */
   --verif-info: var(--ds-teal-700);
+  --verif-info-text: var(--ds-teal-900);
+  --verif-info-soft: var(--ds-teal-100);
+  --verif-info-border: var(--ds-teal-400);
 
   /* Sidebar */
   --sidebar: #fafafa;
@@ -915,32 +951,66 @@
   --chart-4: var(--ds-purple-600);
   --chart-5: var(--ds-pink-600);
 
-  /* Verification grid surfaces and semantic status accents */
+  /* Verification grid surfaces and semantic status accents (Vercel Geist Dark 10-step scale) */
   --table-head: var(--ds-gray-100);
-  --table-accent: rgba(0, 112, 243, 0.22);
-  --table-hover: var(--ds-gray-alpha-100);
-  --hover-baris: var(--ds-gray-alpha-100);
+  --table-hover: rgba(255, 255, 255, 0.04);
+  --hover-baris: rgba(255, 255, 255, 0.04);
+  --table-active: rgba(255, 255, 255, 0.075);
+  --table-active-hover: rgba(255, 255, 255, 0.105);
+  --table-selected: rgba(50, 145, 255, 0.09);
+  --table-selected-hover: rgba(50, 145, 255, 0.14);
+  --table-accent: var(--table-active);
+
+  /* V1: Supervisor (Geist Amber Dark) */
   --verif-v1: var(--ds-amber-800);
-  --verif-v1-soft: rgba(245, 166, 35, 0.12);
-  --verif-v1-hover: rgba(245, 166, 35, 0.2);
-  --verif-v1-border: rgba(245, 166, 35, 0.32);
+  --verif-v1-text: var(--ds-amber-900);
+  --verif-v1-soft: var(--ds-amber-100);
+  --verif-v1-hover: var(--ds-amber-200);
+  --verif-v1-border: var(--ds-amber-400);
+  --verif-v1-row: rgba(245, 166, 35, 0.06);
+  --verif-v1-row-hover: rgba(245, 166, 35, 0.11);
+
+  /* V2: Manager (Geist Blue Dark) */
   --verif-v2: var(--ds-blue-800);
-  --verif-v2-soft: rgba(50, 145, 255, 0.12);
-  --verif-v2-hover: rgba(50, 145, 255, 0.2);
-  --verif-v2-border: rgba(50, 145, 255, 0.32);
+  --verif-v2-text: var(--ds-blue-900);
+  --verif-v2-soft: var(--ds-blue-100);
+  --verif-v2-hover: var(--ds-blue-200);
+  --verif-v2-border: var(--ds-blue-400);
+  --verif-v2-row: rgba(50, 145, 255, 0.06);
+  --verif-v2-row-hover: rgba(50, 145, 255, 0.11);
+
+  /* V3: Resmi Final (Geist Green Dark) */
   --verif-v3: var(--ds-green-800);
-  --verif-v3-soft: rgba(62, 207, 142, 0.12);
-  --verif-v3-hover: rgba(62, 207, 142, 0.2);
-  --verif-v3-border: rgba(62, 207, 142, 0.32);
+  --verif-v3-text: var(--ds-green-900);
+  --verif-v3-soft: var(--ds-green-100);
+  --verif-v3-hover: var(--ds-green-200);
+  --verif-v3-border: var(--ds-green-400);
+  --verif-v3-row: rgba(62, 207, 142, 0.06);
+  --verif-v3-row-hover: rgba(62, 207, 142, 0.11);
+
+  /* Error / Cek Ulang / Anomali (Geist Red Dark) */
   --verif-error: var(--ds-red-800);
-  --verif-error-soft: rgba(242, 85, 90, 0.12);
-  --verif-error-hover: rgba(242, 85, 90, 0.2);
-  --verif-error-border: rgba(242, 85, 90, 0.32);
+  --verif-error-text: var(--ds-red-900);
+  --verif-error-soft: var(--ds-red-100);
+  --verif-error-hover: var(--ds-red-200);
+  --verif-error-border: var(--ds-red-400);
+  --verif-error-row: rgba(229, 72, 77, 0.065);
+  --verif-error-row-hover: rgba(229, 72, 77, 0.12);
+
+  /* Edit / Koreksi Stand (Geist Purple Dark) */
   --verif-correction: var(--ds-purple-800);
-  --verif-correction-soft: rgba(179, 136, 252, 0.12);
-  --verif-correction-hover: rgba(179, 136, 252, 0.2);
-  --verif-correction-border: rgba(179, 136, 252, 0.32);
+  --verif-correction-text: var(--ds-purple-900);
+  --verif-correction-soft: var(--ds-purple-100);
+  --verif-correction-hover: var(--ds-purple-200);
+  --verif-correction-border: var(--ds-purple-400);
+  --verif-correction-row: rgba(157, 111, 247, 0.065);
+  --verif-correction-row-hover: rgba(157, 111, 247, 0.12);
+
+  /* Info / Mandiri / Meter Baru (Geist Teal Dark) */
   --verif-info: var(--ds-teal-800);
+  --verif-info-text: var(--ds-teal-900);
+  --verif-info-soft: var(--ds-teal-100);
+  --verif-info-border: var(--ds-teal-400);
 
   /* Sidebar */
   --sidebar: #000000;
