@@ -76,7 +76,7 @@ export function AsideBlok({
   return (
     <Card
       aria-label={label}
-      className="overflow-hidden rounded-2xl border border-neutral-200/85 bg-white text-black shadow-[0_2px_10px_-3px_rgba(0,0,0,0.03)] transition-all hover:border-neutral-300 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)]"
+      className="overflow-hidden rounded-2xl border border-neutral-200/85 gradient-card-subtle text-black shadow-[0_2px_10px_-3px_rgba(0,0,0,0.03)] transition-all hover:border-neutral-300 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)]"
     >
       <CardHeader className="pb-2 pt-3.5 px-4 sm:px-5">
         <CardTitle className="text-xs sm:text-heading-14 font-semibold text-neutral-900 tracking-tight">
@@ -143,7 +143,7 @@ export function KartuBerbingkai({
   return (
     <Card
       className={cn(
-        "overflow-hidden rounded-2xl border border-neutral-200/90 bg-white text-black shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)]",
+        "overflow-hidden rounded-2xl border border-neutral-200/90 gradient-card-subtle text-black shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)]",
         className
       )}
     >

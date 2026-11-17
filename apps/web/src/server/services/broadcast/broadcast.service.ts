@@ -24,6 +24,7 @@ function mapDbToItem(row: BroadcastModel): BroadcastGangguanItem {
     tipeGambarUtama: (row.tipeGambarUtama as any) || undefined,
     galeriMedia: (row.galeriMedia as any) || [],
     promoDetails: (row.promoDetails as any) || undefined,
+    lokasiWilayah: row.lokasiWilayah || 'Pelayanan Wilayah 5',
     aktif: row.aktif,
     tampilkanDiTicker: row.tampilkanDiTicker,
     tampilkanDiSpotlight: row.tampilkanDiSpotlight,
@@ -62,6 +63,7 @@ class BroadcastService {
             tipeGambarUtama: item.tipeGambarUtama,
             galeriMedia: item.galeriMedia || [],
             promoDetails: item.promoDetails,
+            lokasiWilayah: item.lokasiWilayah || 'Pelayanan Wilayah 5',
             aktif: item.aktif,
             tampilkanDiTicker: true,
             tampilkanDiSpotlight: true,
@@ -150,6 +152,7 @@ class BroadcastService {
       tipeGambarUtama: input.tipeGambarUtama || 'FOTO_KEGIATAN',
       galeriMedia: input.galeriMedia || [],
       promoDetails: input.promoDetails,
+      lokasiWilayah: input.lokasiWilayah || 'Pelayanan Wilayah 5',
       aktif: input.aktif !== undefined ? input.aktif : true,
       tampilkanDiTicker: input.tampilkanDiTicker !== undefined ? input.tampilkanDiTicker : true,
       tampilkanDiSpotlight: input.tampilkanDiSpotlight !== undefined ? input.tampilkanDiSpotlight : true,
@@ -196,6 +199,7 @@ class BroadcastService {
     if (input.tipeGambarUtama !== undefined) updatePayload.tipeGambarUtama = input.tipeGambarUtama;
     if (input.galeriMedia !== undefined) updatePayload.galeriMedia = input.galeriMedia;
     if (input.promoDetails !== undefined) updatePayload.promoDetails = input.promoDetails;
+    if (input.lokasiWilayah !== undefined) updatePayload.lokasiWilayah = input.lokasiWilayah;
     if (input.aktif !== undefined) updatePayload.aktif = input.aktif;
     if (input.tampilkanDiTicker !== undefined) updatePayload.tampilkanDiTicker = input.tampilkanDiTicker;
     if (input.tampilkanDiSpotlight !== undefined) updatePayload.tampilkanDiSpotlight = input.tampilkanDiSpotlight;
@@ -256,6 +260,7 @@ class BroadcastService {
           tipeGambarUtama: item.tipeGambarUtama,
           galeriMedia: item.galeriMedia || [],
           promoDetails: item.promoDetails,
+          lokasiWilayah: item.lokasiWilayah || 'Pelayanan Wilayah 5',
           aktif: item.aktif,
           tampilkanDiTicker: true,
           tampilkanDiSpotlight: true,

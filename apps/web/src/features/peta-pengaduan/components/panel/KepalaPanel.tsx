@@ -9,6 +9,7 @@ interface Props {
   totalKegiatan: number
   filterStatus: StatusPengaduan | "semua"
   jumlahFilter: number
+  onBeralihKePelanggan?: () => void
 }
 
 export function KepalaPanel({
@@ -16,6 +17,7 @@ export function KepalaPanel({
   totalKegiatan,
   filterStatus,
   jumlahFilter,
+  onBeralihKePelanggan,
 }: Props) {
   return (
     <header className="flex flex-col gap-3 border-b bg-card/60 p-4 backdrop-blur-xs shrink-0">
@@ -30,15 +32,26 @@ export function KepalaPanel({
           <AppLogo className="size-7" />
         </Link>
         <div className="min-w-0 flex-1">
-          <Link
-            href="/dashboard"
-            className="group block outline-none"
-            title="Kembali ke Dashboard"
-          >
-            <h1 className="truncate text-sm font-bold tracking-tight text-foreground leading-tight group-hover:text-primary transition-colors cursor-pointer">
-              Peta Kendali Pengaduan
-            </h1>
-          </Link>
+          <div className="flex items-center justify-between gap-2">
+            <Link
+              href="/dashboard"
+              className="group block outline-none min-w-0"
+              title="Kembali ke Dashboard"
+            >
+              <h1 className="truncate text-sm font-bold tracking-tight text-foreground leading-tight group-hover:text-primary transition-colors cursor-pointer">
+                Peta Kendali Pengaduan
+              </h1>
+            </Link>
+            {onBeralihKePelanggan && (
+              <button
+                onClick={onBeralihKePelanggan}
+                className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200/80 hover:bg-blue-100 transition-colors"
+                title="Tinjau tampilan publik warga"
+              >
+                Mode Warga →
+              </button>
+            )}
+          </div>
           <p className="truncate text-[11px] text-muted-foreground">
             Pusat Monitoring GIS & Dispatch Petugas
           </p>

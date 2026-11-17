@@ -68,7 +68,7 @@ export async function syncAreaLayanan21Kelurahan() {
     const n = normalize(k.nama);
     const feat = geoMap.get(n);
     if (feat && feat.geometry) {
-      const namaKec = kecMap.get(k.kecamatanKode) || 'BANDUNG';
+      const namaKec = (k.kecamatanKode ? kecMap.get(k.kecamatanKode) : null) || 'BANDUNG';
       await db.insert(areaLayanan).values({
         kodeDesa: k.kode,
         kelurahan: k.nama,

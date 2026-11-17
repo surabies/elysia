@@ -57,6 +57,7 @@ export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
           t.Literal('PEMELIHARAAN'),
           t.Literal('EVENT'),
           t.Literal('INFORMASI'),
+          t.Literal('KEGIATAN'),
         ]),
         status: t.Union([
           t.Literal('DALAM_PENGERJAAN'),
@@ -81,6 +82,7 @@ export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
         tipeGambarUtama: t.Optional(t.String()),
         galeriMedia: t.Optional(t.Any()),
         promoDetails: t.Optional(t.Any()),
+        lokasiWilayah: t.Optional(t.String()),
         aktif: t.Optional(t.Boolean()),
         tampilkanDiTicker: t.Optional(t.Boolean()),
         tampilkanDiSpotlight: t.Optional(t.Boolean()),
@@ -115,6 +117,7 @@ export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
             t.Literal('PEMELIHARAAN'),
             t.Literal('EVENT'),
             t.Literal('INFORMASI'),
+            t.Literal('KEGIATAN'),
           ])
         ),
         status: t.Optional(
@@ -144,6 +147,7 @@ export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
         tipeGambarUtama: t.Optional(t.String()),
         galeriMedia: t.Optional(t.Any()),
         promoDetails: t.Optional(t.Any()),
+        lokasiWilayah: t.Optional(t.String()),
         aktif: t.Optional(t.Boolean()),
         tampilkanDiTicker: t.Optional(t.Boolean()),
         tampilkanDiSpotlight: t.Optional(t.Boolean()),

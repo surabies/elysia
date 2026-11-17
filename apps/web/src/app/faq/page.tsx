@@ -41,7 +41,7 @@ export default function PertanyaanUmumPage() {
       deskripsi="Jawaban untuk pertanyaan yang paling sering diajukan pelanggan seputar layanan PERUMDA Tirtawening."
     >
       <Bagian judul="Pertanyaan yang sering diajukan">
-        <div className="mt-4 divide-y divide-border rounded-lg border border-border">
+        <div className="mt-4 divide-y divide-border rounded-xl border border-border gradient-card-subtle shadow-xs">
           {FAQ.map((f) => (
             <details key={f.tanya} className="group px-4 py-3">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-foreground outline-none focus-visible:underline">

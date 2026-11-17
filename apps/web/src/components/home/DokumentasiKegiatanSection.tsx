@@ -1,0 +1,445 @@
+'use client'
+
+import * as React from 'react'
+import { motion } from 'motion/react'
+import {
+  Camera,
+  Calendar,
+  MapPin,
+  CheckCircle2,
+  Clock,
+  Images,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpRight,
+} from 'lucide-react'
+
+import { cn } from '@/lib/utils'
+import { Container } from '@/components/shared/Container'
+import { BroadcastDetailModal } from '@/components/home/BroadcastDetailModal'
+import { DAFTAR_BROADCAST_AWAL } from '@/data/broadcast'
+import type { BroadcastGangguanItem } from '@/types/broadcast'
+
+interface KegiatanCardItemProps {
+  item: BroadcastGangguanItem
+  index: number
+  onOpenModal: (item: BroadcastGangguanItem) => void
+}
+
+function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
+  // Seluruh foto unik yang ada pada dokumentasi ini
+  const photos = React.useMemo(() => {
+    const list: { url: string; judul?: string; keterangan?: string }[] = []
+    if (item.gambarUtama) {
+      list.push({
+        url: item.gambarUtama,
+        judul: item.judul,
+        keterangan: item.ringkasan,
+      })
+    }
+    if (item.galeriMedia && Array.isArray(item.galeriMedia)) {
+      item.galeriMedia.forEach((m) => {
+        if (m.url && !list.some((existing) => existing.url === m.url)) {
+          list.push({
+            url: m.url,
+            judul: m.judul || item.judul,
+            keterangan: m.keterangan || item.ringkasan,
+          })
+        }
+      })
+    }
+    return list
+  }, [item])
+
+  const [activePhotoIdx, setActivePhotoIdx] = React.useState(0)
+  const [isHovered, setIsHovered] = React.useState(false)
+
+  // Otomatis berganti foto setiap ~3.8 detik jika memiliki lebih dari 1 foto (dijeda saat di-hover)
+  React.useEffect(() => {
+    if (photos.length <= 1 || isHovered) return
+
+    // Stagger interval berdasarkan index kartu (3800ms, 4200ms, 4600ms) agar kartu tidak berganti serentak
+    const intervalTime = 3800 + (index % 3) * 400
+    const timer = setInterval(() => {
+      setActivePhotoIdx((prev) => (prev + 1) % photos.length)
+    }, intervalTime)
+
+    return () => clearInterval(timer)
+  }, [photos.length, isHovered, index])
+
+  const currentPhoto = photos[activePhotoIdx] || photos[0]
+  const isSelesai = item.status === 'SELESAI'
+
+  // Ambil kelurahan sasaran yang valid dan ringkas
+  const targetKelurahan = React.useMemo(() => {
+    const list: string[] = []
+    if (item.wilayahTerdampak && Array.isArray(item.wilayahTerdampak)) {
+      item.wilayahTerdampak.forEach((w) => {
+        if (w.kelurahan && Array.isArray(w.kelurahan)) {
+          w.kelurahan.forEach((k) => {
+            if (k && !list.includes(k) && !k.toLowerCase().includes('seluruh') && !k.toLowerCase().includes('semua')) {
+              list.push(k)
+            }
+          })
+        }
+      })
+    }
+    return list.slice(0, 3)
+  }, [item.wilayahTerdampak])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => onOpenModal(item)}
+      className="group relative flex flex-col justify-between rounded-3xl border border-neutral-200/90 bg-white p-4 sm:p-5 shadow-xs transition-all duration-300 hover:border-neutral-300 hover:shadow-md cursor-pointer select-none"
+    >
+      <div className="space-y-3.5">
+        {/* Frame Foto 16:10 dengan Auto-Crossfade Multi-Foto */}
+        <div className="group/img relative aspect-16/10 w-full overflow-hidden rounded-2xl bg-neutral-950 border border-neutral-200/80 shadow-2xs">
+          {/* Ambient Backdrop Blur untuk menyesuaikan foto portrait maupun landscape */}
+          {currentPhoto?.url && (
+            <div
+              className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-40 scale-125 pointer-events-none transition-all duration-700 ease-in-out"
+              style={{ backgroundImage: `url(${currentPhoto.url})` }}
+            />
+          )}
+
+          {/* Layer Foto dengan Animasi Transisi Halus (Crossfade) */}
+          {photos.length > 0 ? (
+            photos.map((p, pIdx) => (
+              <img
+                key={p.url + pIdx}
+                src={p.url}
+                alt={p.judul || item.judul}
+                className={cn(
+                  "absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-in-out",
+                  pIdx === activePhotoIdx
+                    ? "opacity-100 z-10 scale-100"
+                    : "opacity-0 z-0 pointer-events-none scale-102"
+                )}
+              />
+            ))
+          ) : (
+            <div className="relative z-10 flex h-full w-full items-center justify-center text-copy-12 text-neutral-400">
+              Dokumentasi Lapangan
+            </div>
+          )}
+
+          {/* Badge Indikator Jumlah Foto */}
+          {photos.length > 1 && (
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md px-2.5 py-1 text-[11px] font-mono font-semibold text-white shadow-xs">
+              <Images className="size-3 text-cyan-400" />
+              <span>{activePhotoIdx + 1}/{photos.length}</span>
+            </div>
+          )}
+
+          {/* Panah Navigasi Mini saat Hover jika Multi-Foto */}
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setActivePhotoIdx((prev) => (prev > 0 ? prev - 1 : photos.length - 1))
+                }}
+                aria-label="Foto sebelumnya"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 z-25 size-7 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all duration-200 backdrop-blur-xs cursor-pointer shadow-xs"
+              >
+                <ChevronLeft className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setActivePhotoIdx((prev) => (prev + 1) % photos.length)
+                }}
+                aria-label="Foto berikutnya"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 z-25 size-7 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all duration-200 backdrop-blur-xs cursor-pointer shadow-xs"
+              >
+                <ChevronRight className="size-3.5" />
+              </button>
+            </>
+          )}
+
+          {/* Tag Lokasi Unit Pelayanan 5 */}
+          <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md px-2.5 py-1 text-[10px] sm:text-[11px] font-medium text-white border border-white/10 shadow-xs">
+            <MapPin className="size-3 text-emerald-400 shrink-0" />
+            <span className="truncate max-w-[170px] sm:max-w-[210px]">
+              {item.lokasiWilayah || 'Pelayanan Wilayah 5'}
+            </span>
+          </div>
+
+          {/* Indikator Titik Pagination Mini di Bawah Foto jika Multi-Foto */}
+          {photos.length > 1 && (
+            <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1">
+              {photos.map((_, pIdx) => (
+                <button
+                  key={pIdx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setActivePhotoIdx(pIdx)
+                  }}
+                  className={cn(
+                    "h-1 rounded-full transition-all duration-300 cursor-pointer",
+                    pIdx === activePhotoIdx ? "w-4 bg-white" : "w-1.5 bg-white/40 hover:bg-white/70"
+                  )}
+                  aria-label={`Pindah ke foto ${pIdx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Informasi Utama & Metadata */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+            <span className="flex items-center gap-1 truncate max-w-[170px]">
+              <Calendar className="size-3 text-neutral-400 shrink-0" />
+              <span>{item.waktuMulai || 'Hari ini'}</span>
+            </span>
+
+            {isSelesai ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 rounded-full px-2 py-0.5 shrink-0">
+                <CheckCircle2 className="size-3 text-emerald-600" />
+                <span>Selesai 100%</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 rounded-full px-2 py-0.5 shrink-0">
+                <Clock className="size-3 text-blue-600" />
+                <span>{item.progresPersen}% Progres</span>
+              </span>
+            )}
+          </div>
+
+          <h3 className="text-heading-16 sm:text-heading-17 font-bold text-neutral-900 group-hover:text-blue-600 transition-colors leading-snug line-clamp-2">
+            {item.judul}
+          </h3>
+
+          <p className="text-copy-13 text-neutral-600 line-clamp-2 leading-relaxed">
+            {item.ringkasan}
+          </p>
+
+          {/* Chip Kelurahan Sasaran */}
+          {targetKelurahan.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1 pt-0.5">
+              {targetKelurahan.map((kel, kIdx) => (
+                <span
+                  key={kIdx}
+                  className="text-[10px] font-mono text-neutral-600 bg-neutral-100 border border-neutral-200/60 rounded-md px-1.5 py-0.5"
+                >
+                  #{kel}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer Kartu dengan Tombol Rincian */}
+      <div className="mt-4 pt-3.5 border-t border-neutral-100 flex items-center justify-between">
+        <span className="text-[11px] font-mono text-neutral-500 flex items-center gap-1.5">
+          <Camera className="size-3.5 text-neutral-400" />
+          <span>Dokumentasi Lapangan</span>
+        </span>
+
+        <span className="inline-flex items-center gap-1 text-copy-12 font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors">
+          <span>Lihat Rincian</span>
+          <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </span>
+      </div>
+    </motion.div>
+  )
+}
+
+export function DokumentasiKegiatanSection() {
+  const [daftar, setDaftar] = React.useState<BroadcastGangguanItem[]>(() =>
+    DAFTAR_BROADCAST_AWAL.filter((item) => item.kategori === 'KEGIATAN' && item.aktif)
+  )
+  const [kategoriFilter, setKategoriFilter] = React.useState<string>('SEMUA')
+  const [modalItem, setModalItem] = React.useState<BroadcastGangguanItem | null>(null)
+  const [modalBuka, setModalBuka] = React.useState(false)
+
+  // Sinkronisasi data publik dari backend & event perubahan operator di dashboard
+  React.useEffect(() => {
+    try {
+      const tersimpan = localStorage.getItem('elysia_broadcast_items')
+      if (tersimpan) {
+        const parsed = JSON.parse(tersimpan)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const kegiatanOnly = parsed.filter(
+            (b: BroadcastGangguanItem) => b.aktif && b.kategori === 'KEGIATAN'
+          )
+          if (kegiatanOnly.length > 0) {
+            setDaftar(kegiatanOnly)
+          }
+        }
+      }
+    } catch {}
+
+    fetch('/api/broadcast/public')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const kegiatanOnly = json.data.filter(
+            (b: BroadcastGangguanItem) => b.aktif && b.kategori === 'KEGIATAN'
+          )
+          if (kegiatanOnly.length > 0) {
+            setDaftar(kegiatanOnly)
+          }
+        }
+      })
+      .catch(() => {})
+
+    function handleUpdate() {
+      try {
+        const tersimpan = localStorage.getItem('elysia_broadcast_items')
+        if (tersimpan) {
+          const parsed = JSON.parse(tersimpan)
+          if (Array.isArray(parsed)) {
+            const kegiatanOnly = parsed.filter(
+              (b: BroadcastGangguanItem) => b.aktif && b.kategori === 'KEGIATAN'
+            )
+            setDaftar(kegiatanOnly)
+          }
+        }
+      } catch {}
+    }
+
+    window.addEventListener('storage', handleUpdate)
+    window.addEventListener('elysia:broadcast-updated', handleUpdate)
+    return () => {
+      window.removeEventListener('storage', handleUpdate)
+      window.removeEventListener('elysia:broadcast-updated', handleUpdate)
+    }
+  }, [])
+
+  const handleBukaModal = (item: BroadcastGangguanItem) => {
+    setModalItem(item)
+    setModalBuka(true)
+    fetch(`/api/broadcast/${item.id}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          setModalItem(json.data)
+        }
+      })
+      .catch(() => {})
+  }
+
+  // Filter dinamis berdasarkan agenda pekerjaan
+  const daftarTerfilter = React.useMemo(() => {
+    if (kategoriFilter === 'SEMUA') return daftar
+    return daftar.filter((item) => {
+      const text = `${item.judul} ${item.ringkasan} ${item.lokasiWilayah || ''}`.toLowerCase()
+      if (kategoriFilter === 'PIPA') return text.includes('pipa') || text.includes('flushing')
+      if (kategoriFilter === 'METER') return text.includes('meter') || text.includes('tera')
+      if (kategoriFilter === 'PASANG_BARU') return text.includes('sambungan') || text.includes('pasang baru')
+      if (kategoriFilter === 'EDUKASI') return text.includes('sosialisasi') || text.includes('edukasi') || text.includes('jemput bola')
+      return true
+    })
+  }, [daftar, kategoriFilter])
+
+  if (daftar.length === 0) return null
+
+  return (
+    <section
+      id="dokumentasi-wilayah-5"
+      aria-labelledby="dokumentasi-wilayah-title"
+      className="section-white relative overflow-hidden py-14 sm:py-20 bg-neutral-50/60 text-black"
+    >
+      <Container className="max-w-360 px-4 lg:px-12">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Header Seksi Senada & Terstruktur */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-label-12-mono font-mono text-neutral-500 uppercase tracking-wider">
+                  Kanal Pelayanan Wilayah 5
+                </span>
+                <span className="h-1 w-1 rounded-full bg-neutral-300" />
+                <span className="text-[11px] font-mono text-neutral-500">
+                  Zona Bandung Timur &amp; Tenggara
+                </span>
+              </div>
+              <h2
+                id="dokumentasi-wilayah-title"
+                className="text-heading-22 sm:text-heading-26 md:text-heading-30 font-bold tracking-tight text-neutral-900"
+              >
+                Catatan Kerja &amp; Keandalan Distribusi Air
+              </h2>
+            </div>
+
+            {/* Quick Live Status Badge */}
+            <div className="hidden sm:flex items-center gap-2 text-[12px] font-mono text-neutral-600 bg-white border border-neutral-200/90 rounded-full px-3.5 py-1.5 shadow-2xs">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-semibold text-neutral-800">{daftar.length} Agenda Aktif</span>
+              <span className="text-neutral-300">|</span>
+              <span>Unit Lapangan</span>
+            </div>
+          </div>
+
+          {/* Subtitle & Filter Baris */}
+          <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+            <p className="text-copy-14 sm:text-copy-15 max-w-2xl text-neutral-600 leading-relaxed">
+              Dokumentasi berkala pemeliharaan jaringan transmisi, tera akurasi meter digital, dan respons teknisi Perumda Tirtawening demi menjamin kontinuitas air minum bersih bagi warga.
+            </p>
+
+            {/* Filter Tab Senada Pill Navigasi */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar shrink-0">
+              {[
+                { id: 'SEMUA', label: 'Semua Agenda' },
+                { id: 'PIPA', label: 'Jaringan Pipa' },
+                { id: 'METER', label: 'Meterisasi Digital' },
+                { id: 'PASANG_BARU', label: 'Sambungan Baru' },
+                { id: 'EDUKASI', label: 'Layanan Warga' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setKategoriFilter(tab.id)}
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all cursor-pointer select-none ${
+                    kategoriFilter === tab.id
+                      ? 'bg-neutral-900 text-white font-semibold shadow-xs'
+                      : 'bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 border border-neutral-200/90'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid Kartu Dokumentasi dengan Auto-Cycle Multi-Foto */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {daftarTerfilter.map((item, idx) => (
+              <KegiatanCardItem
+                key={item.id}
+                item={item}
+                index={idx}
+                onOpenModal={handleBukaModal}
+              />
+            ))}
+          </div>
+        </motion.div>
+      </Container>
+
+      {/* Modal Detail & Lightbox Resolusi Penuh */}
+      <BroadcastDetailModal
+        broadcast={modalItem}
+        open={modalBuka}
+        onOpenChange={setModalBuka}
+      />
+    </section>
+  )
+}

@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -25,6 +28,31 @@ const socialIcons = {
 
 export function SiteFooter() {
   const { footerLogo } = siteConfig
+
+  const [infoKontak, setInfoKontak] = useState({
+    alamat: "Jl. Badaksinga No. 10, Kel. Lebak Siliwangi, Kec. Coblong, Kota Bandung 40132",
+    callCenter: "(022) 2509030 / (022) 2509032",
+    whatsapp: "0811-200-0020",
+  })
+
+  useEffect(() => {
+    let aktif = true
+    fetch("/api/public/pengaturan?key=profil_perusahaan")
+      .then((res) => res.json())
+      .then((json) => {
+        if (aktif && json.success && json.data) {
+          setInfoKontak((prev) => ({
+            alamat: json.data.alamatPusat || prev.alamat,
+            callCenter: json.data.callCenter || prev.callCenter,
+            whatsapp: json.data.whatsapp || prev.whatsapp,
+          }))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      aktif = false
+    }
+  }, [])
 
   return (
     <footer className="bg-white px-4 pt-15 pb-8 text-black lg:p-12.5 border-t border-neutral-200">
@@ -56,9 +84,9 @@ export function SiteFooter() {
           </Link>
           <div className="mt-4 max-w-xs text-copy-13 text-neutral-600 leading-relaxed">
             <p className="font-semibold text-black">Kantor Pusat:</p>
-            <p>Jl. Badaksinga No. 10, Coblong, Kota Bandung 40132</p>
-            <p className="mt-1">Call Center: (022) 2509030 / 2509032</p>
-            <p>WhatsApp: 0811-2260-656</p>
+            <p>{infoKontak.alamat}</p>
+            <p className="mt-1">Call Center: {infoKontak.callCenter}</p>
+            <p>WhatsApp: {infoKontak.whatsapp}</p>
           </div>
         </div>
 

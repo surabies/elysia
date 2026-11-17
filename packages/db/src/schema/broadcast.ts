@@ -48,7 +48,8 @@ export const broadcast = pgTable(
     id: varchar('id', { length: 50 }).primaryKey(),
     judul: text('judul').notNull(),
     ringkasan: text('ringkasan').notNull(),
-    kategori: varchar('kategori', { length: 30 }).notNull().default('DARURAT'), // 'DARURAT' | 'PEMELIHARAAN' | 'EVENT' | 'INFORMASI'
+    kategori: varchar('kategori', { length: 30 }).notNull().default('DARURAT'), // 'DARURAT' | 'PEMELIHARAAN' | 'EVENT' | 'INFORMASI' | 'KEGIATAN'
+    lokasiWilayah: varchar('lokasi_wilayah', { length: 100 }).default('Pelayanan Wilayah 5'),
     status: varchar('status', { length: 30 }).notNull().default('DALAM_PENGERJAAN'), // 'DALAM_PENGERJAAN' | 'SELESAI' | 'TERJADWAL'
     progresPersen: integer('progres_persen').notNull().default(0),
     prioritas: varchar('prioritas', { length: 20 }).notNull().default('NORMAL'), // 'TINGGI' | 'SEDANG' | 'NORMAL'

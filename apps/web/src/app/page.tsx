@@ -1,5 +1,6 @@
 import {
   BenefitsSection,
+  DokumentasiKegiatanSection,
   FeatureSection,
   HeroSection,
   PromoBannerSpotlight,
@@ -31,7 +32,10 @@ export default function HomePage() {
       {/* 3. Featured Services Ribbon Carousel */}
       <TopEventsSection content={topEventsContent} />
 
-      {/* 4. Interactive Tariff & Consumption Simulator */}
+      {/* 4. Dokumentasi Kegiatan Pelayanan Wilayah 5 Dinamis */}
+      <DokumentasiKegiatanSection />
+
+      {/* 5. Interactive Tariff & Consumption Simulator */}
       <SimulasiTarifSection />
 
       {/* 5. Key Benefits Grid */}

@@ -145,6 +145,7 @@ export function BroadcastDetailModal({
   const isPromoOrEvent = Boolean(
     broadcast && (broadcast.kategori === 'EVENT' || broadcast.promoDetails)
   )
+  const isKegiatan = broadcast?.kategori === 'KEGIATAN'
   const isDarurat = broadcast?.kategori === 'DARURAT'
   const isPemeliharaan = broadcast?.kategori === 'PEMELIHARAAN'
 
@@ -181,7 +182,12 @@ export function BroadcastDetailModal({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                     {/* Badge Kategori Terpisah Rapi */}
-                    {isPromoOrEvent ? (
+                    {isKegiatan ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold shadow-2xs shrink-0">
+                        <Camera className="size-3 text-emerald-600 dark:text-emerald-400" />
+                        <span>{broadcast.lokasiWilayah || 'Pelayanan Wilayah 5'}</span>
+                      </span>
+                    ) : isPromoOrEvent ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200/90 bg-white px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold text-neutral-900 shadow-2xs shrink-0">
                         <span className="size-1.5 rounded-full bg-blue-600 animate-pulse" />
                         <span>Program Resmi</span>
@@ -484,21 +490,21 @@ export function BroadcastDetailModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-copy-12">
                     <div className="rounded-xl border border-border bg-card p-3.5 space-y-1">
                       <span className="font-semibold text-foreground flex items-center gap-1.5">
-                        <AlertTriangle className="size-3.5 text-amber-600" />
-                        <span>Penyebab Teknis</span>
+                        <AlertTriangle className={`size-3.5 ${isKegiatan ? 'text-emerald-600' : 'text-amber-600'}`} />
+                        <span>{isKegiatan ? 'Tujuan & Latar Belakang' : 'Penyebab Teknis'}</span>
                       </span>
                       <p className="text-muted-foreground leading-relaxed break-words">
-                        {broadcast.penyebab || 'Pekerjaan perbaikan pada jaringan distribusi air minum.'}
+                        {broadcast.penyebab || (isKegiatan ? 'Pemeliharaan dan peningkatan kualitas layanan air bersih.' : 'Pekerjaan perbaikan pada jaringan distribusi air minum.')}
                       </p>
                     </div>
 
                     <div className="rounded-xl border border-border bg-card p-3.5 space-y-1">
                       <span className="font-semibold text-foreground flex items-center gap-1.5">
                         <Info className="size-3.5 text-blue-600" />
-                        <span>Dampak Pada Warga</span>
+                        <span>{isKegiatan ? 'Manfaat Bagi Pelanggan' : 'Dampak Pada Warga'}</span>
                       </span>
                       <p className="text-muted-foreground leading-relaxed break-words">
-                        {broadcast.dampak || 'Penurunan debit atau penghentian aliran sementara.'}
+                        {broadcast.dampak || (isKegiatan ? 'Tekanan air lebih stabil dan pencatatan meter lebih akurat.' : 'Penurunan debit atau penghentian aliran sementara.')}
                       </p>
                     </div>
                   </div>
@@ -508,7 +514,7 @@ export function BroadcastDetailModal({
                     <div className="rounded-xl border border-border bg-muted/30 p-3.5 space-y-1 text-copy-12">
                       <span className="font-semibold text-foreground flex items-center gap-1.5">
                         <Wrench className="size-3.5 text-primary" />
-                        <span>Tindakan Tim Reaksi Cepat</span>
+                        <span>{isKegiatan ? 'Pelaksanaan Lapangan Tim Wilayah 5' : 'Tindakan Tim Reaksi Cepat'}</span>
                       </span>
                       <p className="text-muted-foreground leading-relaxed break-words">
                         {broadcast.tindakanPenanganan}
@@ -522,7 +528,7 @@ export function BroadcastDetailModal({
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 text-copy-13 font-semibold text-foreground">
                           <MapPin className="size-3.5 text-primary" />
-                          <span>Area Terdampak ({totalKelurahanTerdampak} Kelurahan)</span>
+                          <span>{isKegiatan ? 'Lokasi & Kelurahan Sasaran' : `Area Terdampak (${totalKelurahanTerdampak} Kelurahan)`}</span>
                         </div>
                         <div className="relative w-full sm:w-56">
                           <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />

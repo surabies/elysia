@@ -3,6 +3,7 @@ export type KategoriBroadcast =
   | 'PEMELIHARAAN'
   | 'EVENT'
   | 'INFORMASI'
+  | 'KEGIATAN'
 
 export type StatusBroadcast =
   | 'DALAM_PENGERJAAN'
@@ -64,6 +65,7 @@ export interface BroadcastGangguanItem {
   galeriMedia?: MediaBroadcastItem[]
   // Khusus Event / Iklan / Promo
   promoDetails?: PromoDetailsItem
+  lokasiWilayah?: string
   aktif: boolean
   tampilkanDiTicker?: boolean
   tampilkanDiSpotlight?: boolean

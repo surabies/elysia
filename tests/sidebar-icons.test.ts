@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { navGroups } from "../apps/web/src/config/Navigasi";
+import { navGroups } from "../apps/web/src/config/navigasi";
 import { getItemIcon, FALLBACK_GROUP_ICON } from "../apps/web/src/components/layout/navigation/sidebar/lib/Icons";
 
 describe("Sidebar Navigation Icons - Semantics, Relevancy, and Zero Duplication", () => {

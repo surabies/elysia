@@ -1,92 +1,153 @@
 import type { Metadata } from "next"
+import Link from "next/link"
+import {
+  Calculator,
+  CheckCircle2,
+  FileSpreadsheet,
+  Info,
+  Layers,
+  Scale,
+} from "lucide-react"
 import {
   Bagian,
   HalamanInfo,
 } from "@/components/shared/HalamanInfo"
+import { RUTE } from "@/config/site"
+import {
+  pengaturanService,
+  DEFAULT_STRUKTUR_TARIF,
+  DEFAULT_PROFIL_PERUSAHAAN,
+} from "@/server/services/pengaturan/pengaturan.service"
 
-export const metadata: Metadata = { title: "Tarif Air" }
+export const metadata: Metadata = { title: "Struktur Tarif Air Minum" }
+export const dynamic = "force-dynamic"
 
-const TARIF = [
-  {
-    golongan: "Kelompok I (Sosial)",
-    keterangan: "Kran umum, tempat ibadah, panti asuhan, sekolah negeri",
-    tarif: "Rp 1.050 – Rp 1.500 / m³",
-  },
-  {
-    golongan: "Kelompok IIA (Rumah Tangga Sederhana)",
-    keterangan: "Rumah tinggal non-permanen / sederhana daya listrik s/d 900 VA",
-    tarif: "Rp 2.200 – Rp 4.100 / m³",
-  },
-  {
-    golongan: "Kelompok IIB (Rumah Tangga Menengah)",
-    keterangan: "Rumah tinggal permanen daya listrik 1300 VA s/d 2200 VA",
-    tarif: "Rp 3.500 – Rp 6.800 / m³",
-  },
-  {
-    golongan: "Kelompok IIC (Rumah Tangga Atas)",
-    keterangan: "Rumah tinggal mewah / daya listrik > 2200 VA",
-    tarif: "Rp 5.200 – Rp 9.500 / m³",
-  },
-  {
-    golongan: "Kelompok III (Niaga)",
-    keterangan: "Ruko, restoran, bengkel, perkantoran swasta, perhotelan",
-    tarif: "Rp 8.000 – Rp 14.500 / m³",
-  },
-  {
-    golongan: "Kelompok IV (Industri)",
-    keterangan: "Pabrik, manufaktur, industri tekstil, pencucian besar",
-    tarif: "Rp 11.000 – Rp 18.000 / m³",
-  },
-]
+export default async function TarifAirPage() {
+  const [data, profil] = await Promise.all([
+    pengaturanService.getPengaturan("struktur_tarif", DEFAULT_STRUKTUR_TARIF),
+    pengaturanService.getPengaturan("profil_perusahaan", DEFAULT_PROFIL_PERUSAHAAN),
+  ])
 
-export default function TarifAirPage() {
+  const blokProgresif = [
+    { blok: "Blok I", rentang: "0 – 10 m³", desc: "Kebutuhan pokok dasar rumah tangga bersubsidi" },
+    { blok: "Blok II", rentang: "11 – 20 m³", desc: "Pemakaian standar rumah tangga wajar" },
+    { blok: "Blok III", rentang: "21 – 30 m³", desc: "Konsumsi di atas rata-rata kebutuhan primer" },
+    { blok: "Blok IV", rentang: "> 30 m³", desc: "Pemakaian tinggi / komersial & non-subsidi" },
+  ]
+
   return (
     <HalamanInfo
-      judul="Tarif Air"
-      deskripsi="Struktur tarif pemakaian air minum perpipaan berdasarkan golongan pelanggan dan blok konsumsi PERUMDA Tirtawening."
+      judul={data.judul || "Struktur Tarif Air Minum"}
+      deskripsi={
+        data.deskripsi ||
+        `Struktur tarif pemakaian air minum perpipaan berdasarkan golongan pelanggan dan blok konsumsi progresif ${profil.nama}.`
+      }
     >
-      <Bagian judul="Tarif per golongan pelanggan">
-        <div className="mt-4 overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/40 text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Golongan Pelanggan</th>
-                <th className="px-4 py-3 font-medium">Kriteria Sambungan</th>
-                <th className="px-4 py-3 font-medium">Rentang Tarif Progresif</th>
-              </tr>
-            </thead>
-            <tbody>
-              {TARIF.map((t) => (
-                <tr key={t.golongan} className="border-t border-border">
-                  <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
-                    {t.golongan}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {t.keterangan}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">
-                    {t.tarif}
-                  </td>
+      {/* 1. TABEL STRUKTUR TARIF PER GOLONGAN */}
+      <Bagian
+        judul="Daftar Tarif Berdasarkan Golongan Pelanggan"
+        subjudul="Tarif resmi yang berlaku sesuai Keputusan Walikota Bandung tentang Penyesuaian Tarif Air Minum."
+      >
+        <div className="motion-card-interactive gradient-card-subtle overflow-hidden rounded-xl border border-border shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="border-b border-border bg-muted/50 text-muted-foreground uppercase font-mono text-[11px]">
+                <tr>
+                  <th className="px-5 py-3.5 font-semibold">Golongan Pelanggan</th>
+                  <th className="px-5 py-3.5 font-semibold">Kriteria &amp; Jenis Sambungan</th>
+                  <th className="px-5 py-3.5 font-semibold text-right">Rentang Tarif Progresif</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {data.tarif.map((t, idx) => (
+                  <tr
+                    key={idx}
+                    className="transition-colors duration-150 hover:bg-muted/40 cursor-default"
+                  >
+                    <td className="px-5 py-4 font-semibold text-foreground whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className="size-1.5 rounded-full bg-primary" />
+                        <span>{t.golongan}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-muted-foreground leading-relaxed">
+                      {t.keterangan}
+                    </td>
+                    <td className="px-5 py-4 text-right font-mono font-bold text-foreground whitespace-nowrap">
+                      {t.tarif}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Bagian>
 
-      <Bagian judul="Ketentuan perhitungan tarif">
-        <ul className="list-disc space-y-1.5 pl-5 text-muted-foreground">
-          <li>
-            Perhitungan tarif menggunakan sistem <strong>blok konsumsi progresif</strong> (Blok I: 0–10 m³, Blok II: 11–20 m³, Blok III: 21–30 m³, Blok IV: &gt;30 m³).
-          </li>
-          <li>
-            Total tagihan bulanan mencakup harga air, biaya pemeliharaan meter (bea beban), bea administrasi rekening, dan retribusi air limbah sesuai peraturan daerah.
-          </li>
-          <li>
-            Tarif mengacu pada Keputusan Walikota Bandung tentang Penyesuaian Tarif Air Minum PERUMDA Tirtawening Kota Bandung.
-          </li>
-        </ul>
-      </Bagian>
+      {/* 2. BLOK KONSUMSI PROGRESIF & KETENTUAN */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Kolom Kiri: 4 Blok Progresif (6 kolom) */}
+        <div className="space-y-4 lg:col-span-6">
+          <div className="motion-card-interactive gradient-card-subtle group rounded-xl border border-border p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 text-primary">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-105">
+                <Layers className="size-4.5" />
+              </span>
+              <h3 className="text-sm font-bold text-foreground">
+                Sistem 4 Blok Konsumsi Progresif
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Semakin bijak penggunaan air, semakin terjangkau tarif rata-rata yang dibayarkan:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {blokProgresif.map((b, idx) => (
+                <div
+                  key={idx}
+                  className="gradient-card-water rounded-lg border border-border/70 p-3 space-y-1 transition-all duration-200 hover:border-primary/50 hover:-translate-y-0.5 shadow-2xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-foreground">
+                      {b.blok}
+                    </span>
+                    <span className="rounded bg-primary/10 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-primary">
+                      {b.rentang}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    {b.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Kolom Kanan: Ketentuan Tambahan (6 kolom) */}
+        <div className="space-y-4 lg:col-span-6">
+          <div className="motion-card-interactive gradient-card-subtle group rounded-xl border border-border p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 text-primary">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-105">
+                <Scale className="size-4.5" />
+              </span>
+              <h3 className="text-sm font-bold text-foreground">
+                Ketentuan &amp; Komponen Tagihan
+              </h3>
+            </div>
+            <ul className="space-y-2.5">
+              {data.ketentuan.map((k, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed transition-colors hover:text-foreground"
+                >
+                  <CheckCircle2 className="size-3.5 shrink-0 text-primary mt-0.5" />
+                  <span>{k}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
     </HalamanInfo>
   )
 }

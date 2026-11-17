@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, index, geometry, varchar, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, index, geometry, varchar, jsonb, integer, doublePrecision } from 'drizzle-orm/pg-core';
 import { user } from './auth';
 
 export interface MultiPolygonGeometry {
@@ -11,6 +11,18 @@ export const areaLayanan = pgTable('area_layanan', {
   kelurahan: varchar('kelurahan', { length: 100 }).notNull(),
   kecamatan: varchar('kecamatan', { length: 100 }).notNull(),
   geometry: jsonb('geometry').$type<MultiPolygonGeometry>(),
+  wilayah: varchar('wilayah', { length: 100 }),
+  zona: varchar('zona', { length: 100 }),
+  jumlahKk: integer('jumlah_kk'),
+  pelanggan: varchar('pelanggan', { length: 100 }),
+  topografi: varchar('topografi', { length: 100 }),
+  potensi: text('potensi'),
+  bangunan: text('bangunan'),
+  sumberAir: varchar('sumber_air', { length: 100 }),
+  durasi: varchar('durasi', { length: 100 }),
+  luasArea: varchar('luas_area', { length: 100 }),
+  latitude: doublePrecision('latitude'),
+  longitude: doublePrecision('longitude'),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 

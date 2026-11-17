@@ -18,7 +18,7 @@ import { DialogDetailPengaduan } from "./components/DialogDetailPengaduan"
 import { KontrolCari, KontrolVertikalPeta } from "./components/KontrolPetaPengaduan"
 import type { PetaHandle, VisibilitasPeta } from "./components/PetaPengaduanCanvas"
 import { DrawerBawahMobile, type PosisiDrawer } from "./components/DrawerBawahMobile"
-import { PanelPetaPengaduan } from "./components/PanelPetaPengaduan"
+import { PanelPetaPengaduan, PanelPetaPelanggan } from "./components/PanelPetaPengaduan"
 import { PopupKoordinatPengaduan } from "./components/PopupKoordinatPengaduan"
 import { useFormulirPengaduan } from "./hooks/UseFormulirPengaduan"
 
@@ -36,6 +36,7 @@ interface Props {
   kecamatan?: FC | null
   pelanggan?: FC | null
   dataAwal?: Pengaduan[]
+  isOperator?: boolean
 }
 
 export function PetaPengaduanView({
@@ -43,8 +44,12 @@ export function PetaPengaduanView({
   kecamatan,
   pelanggan,
   dataAwal,
+  isOperator = false,
 }: Props) {
   /* ---------- State ---------- */
+  const [modeTampilan, setModeTampilan] = useState<"pelanggan" | "operator">(
+    isOperator ? "operator" : "pelanggan"
+  )
   const [data, setData] = useState<Pengaduan[]>(() => dataAwal || [])
   const [terpilihId, setTerpilihId] = useState<string | null>(null)
   const [detailBuka, setDetailBuka] = useState(false)
@@ -61,7 +66,7 @@ export function PetaPengaduanView({
   const [visibilitas, setVisibilitas] = useState<VisibilitasPeta>({
     wilayah: true,
     pelanggan: false,
-    aduan: true,
+    aduan: isOperator,
   })
 
   const formulir = useFormulirPengaduan()
@@ -72,10 +77,11 @@ export function PetaPengaduanView({
 
   /* ---------- Sinkronisasi Data Cadangan jika dataAwal kosong ---------- */
   useEffect(() => {
-    if (!dataAwal || dataAwal.length === 0) {
+    // Hanya ambil data antrean tiket jika berstatus internal operator
+    if (isOperator && (!dataAwal || dataAwal.length === 0)) {
       ambilDaftarPengaduan().then(setData)
     }
-  }, [dataAwal])
+  }, [dataAwal, isOperator])
 
   /* ---------- Interaksi peta ---------- */
 
@@ -185,16 +191,25 @@ export function PetaPengaduanView({
     setData((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
   }, [])
 
-  const panel = (
-    <PanelPetaPengaduan
-      data={data}
-      terpilihId={terpilihId}
-      onPilih={handlePilihDariDaftar}
-      onBuat={bukaBuat}
-      onUpdatePengaduan={handleUpdatePengaduan}
-      onBukaModalDetail={() => setDetailBuka(true)}
-    />
-  )
+  const panel =
+    modeTampilan === "operator" ? (
+      <PanelPetaPengaduan
+        data={data}
+        terpilihId={terpilihId}
+        onPilih={handlePilihDariDaftar}
+        onBuat={bukaBuat}
+        onUpdatePengaduan={handleUpdatePengaduan}
+        onBukaModalDetail={() => setDetailBuka(true)}
+        onBeralihKePelanggan={() => setModeTampilan("pelanggan")}
+      />
+    ) : (
+      <PanelPetaPelanggan
+        onBuat={bukaBuat}
+        onFokusLokasi={(lng, lat, z) => petaRef.current?.terbangKe(lng, lat, z || 14)}
+        isOperator={isOperator}
+        onBeralihMode={() => setModeTampilan("operator")}
+      />
+    )
 
   /* ---------- Tampilan Layar Penuh ---------- */
   return (
@@ -218,7 +233,7 @@ export function PetaPengaduanView({
             petaRef.current = h
           }}
           onKlikPeta={handleKlikPeta}
-          onPilihPengaduan={handlePilih}
+          onPilihPengaduan={modeTampilan === "operator" ? handlePilih : () => {}}
           popupDraft={
             draft ? (
               <PopupKoordinatPengaduan
@@ -278,13 +293,15 @@ export function PetaPengaduanView({
         {panel}
       </DrawerBawahMobile>
 
-      {/* Dialog Detail & Form Pengaduan */}
-      <DialogDetailPengaduan
-        pengaduan={pengaduanTerpilih}
-        buka={detailBuka}
-        onBukaChange={setDetailBuka}
-        onIkuti={handleIkuti}
-      />
+      {/* Dialog Detail Pengaduan khusus Operator (Agar tiket antrean internal tidak terekspos ke pelanggan) */}
+      {modeTampilan === "operator" && (
+        <DialogDetailPengaduan
+          pengaduan={pengaduanTerpilih}
+          buka={detailBuka}
+          onBukaChange={setDetailBuka}
+          onIkuti={handleIkuti}
+        />
+      )}
       <DialogBuatPengaduan
         buka={buatBuka}
         onBukaChange={setBuatBuka}

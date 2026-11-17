@@ -1,58 +1,109 @@
 import type { Metadata } from "next"
+import { Building2, Compass, History, ShieldCheck, Target } from "lucide-react"
 import {
   Bagian,
   HalamanInfo,
 } from "@/components/shared/HalamanInfo"
-import { BRAND } from "@/config/site"
+import {
+  pengaturanService,
+  DEFAULT_PROFIL_PERUSAHAAN,
+} from "@/server/services/pengaturan/pengaturan.service"
 
 export const metadata: Metadata = { title: "Profil Perusahaan" }
+export const dynamic = "force-dynamic"
 
-const MISI = [
-  "Memberikan pelayanan air minum yang memenuhi standar kualitas kesehatan, kontinuitas aliran, dan kecukupan kuantitas.",
-  "Meningkatkan cakupan layanan perpipaan secara merata bagi seluruh masyarakat Kota Bandung.",
-  "Menerapkan tata kelola perusahaan yang baik (Good Corporate Governance) berbasis teknologi digital terintegrasi.",
-  "Mendukung pelestarian sumber daya air baku dan lingkungan hidup berkelanjutan.",
-]
+export default async function ProfilPerusahaanPage() {
+  const profil = await pengaturanService.getPengaturan(
+    "profil_perusahaan",
+    DEFAULT_PROFIL_PERUSAHAAN
+  )
 
-export default function ProfilPerusahaanPage() {
   return (
     <HalamanInfo
-      judul="Profil Perusahaan"
-      deskripsi={`Mengenal ${BRAND.nama}, Badan Usaha Milik Daerah pengelola air minum perpipaan ${BRAND.wilayah}.`}
+      judul={profil.nama}
+      deskripsi={`Badan Usaha Milik Daerah (BUMD) pengelola air minum perpipaan dan sanitasi berkelanjutan ${profil.tagline ? `— ${profil.tagline}` : ""}`}
     >
-      <Bagian judul="Tentang kami">
-        <p className="text-muted-foreground leading-relaxed">
-          PERUSAHAAN UMUM DAERAH TIRTAWENING KOTA BANDUNG adalah Badan Usaha Milik
-          Daerah (BUMD) yang bertugas menyelenggarakan kemanfaatan umum di bidang
-          penyediaan air minum dan pengelolaan air limbah bagi masyarakat Kota
-          Bandung secara profesional, mandiri, dan berkeadilan sosial.
-        </p>
-      </Bagian>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Kolom Kiri: Tentang Kami & Sejarah (7 kolom) */}
+        <div className="space-y-6 lg:col-span-7">
+          <div className="motion-card-interactive gradient-card-subtle group rounded-xl border border-border p-5 sm:p-6 shadow-xs space-y-3">
+            <div className="flex items-center gap-2.5 text-primary">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-105">
+                <Building2 className="size-4.5" />
+              </span>
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+                Tentang Kami
+              </h2>
+            </div>
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-line">
+              {profil.tentang}
+            </p>
+          </div>
 
-      <Bagian judul="Visi">
-        <p className="font-medium text-foreground text-lg">
-          &ldquo;Menjadi Perusahaan Air Minum yang Maju, Mandiri, dan Terpercaya
-          dengan Pelayanan Prima bagi Warga Kota Bandung.&rdquo;
-        </p>
-      </Bagian>
+          <div className="motion-card-interactive gradient-card-subtle group rounded-xl border border-border p-5 sm:p-6 shadow-xs space-y-3">
+            <div className="flex items-center gap-2.5 text-primary">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-105">
+                <History className="size-4.5" />
+              </span>
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+                Sejarah Singkat Perusahaan
+              </h2>
+            </div>
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-line">
+              {profil.sejarah}
+            </p>
+          </div>
+        </div>
 
-      <Bagian judul="Misi">
-        <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-          {MISI.map((m) => (
-            <li key={m}>{m}</li>
-          ))}
-        </ul>
-      </Bagian>
+        {/* Kolom Kanan: Visi & Poin Misi (5 kolom) */}
+        <div className="space-y-6 lg:col-span-5">
+          {/* Card Visi */}
+          <div className="motion-card-interactive gradient-card-water group rounded-xl border border-blue-200/70 p-5 sm:p-6 dark:border-blue-900/40 shadow-xs space-y-2.5">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+              <Compass className="size-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-45" />
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold">
+                Visi Perusahaan
+              </span>
+            </div>
+            <blockquote className="text-base sm:text-lg font-semibold text-foreground leading-snug">
+              &ldquo;{profil.visi}&rdquo;
+            </blockquote>
+          </div>
 
-      <Bagian judul="Sejarah singkat">
-        <p className="text-muted-foreground leading-relaxed">
-          Bermula dari <em>Stadswaterwerk Bandoeng</em> yang didirikan pada masa
-          pemerintahan Hindia Belanda tahun 1916, institusi ini bertransformasi
-          menjadi Perusahaan Daerah Air Minum (PDAM) Kota Bandung pada tahun 1974,
-          dan kini ditetapkan sebagai PERUMDA Tirtawening Kota Bandung berdasarkan
-          Peraturan Daerah Kota Bandung.
-        </p>
-      </Bagian>
+          {/* Card Misi */}
+          <div className="motion-card-interactive gradient-card-subtle group rounded-xl border border-border p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5 text-primary">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-105">
+                <Target className="size-4.5" />
+              </span>
+              <h2 className="text-base font-bold tracking-tight text-foreground">
+                Misi Strategis
+              </h2>
+            </div>
+            <ol className="space-y-3">
+              {profil.misi.map((m, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-start gap-3 text-xs sm:text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                >
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted font-mono text-[10px] font-semibold text-foreground mt-0.5 transition-colors duration-200 group-hover:bg-primary/20">
+                    {idx + 1}
+                  </span>
+                  <span className="leading-relaxed">{m}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Nilai Integritas */}
+          <div className="motion-card-interactive gradient-card-subtle rounded-xl border border-border/70 p-4 flex items-center gap-3 text-xs text-muted-foreground shadow-2xs">
+            <ShieldCheck className="size-5 text-emerald-600 shrink-0" />
+            <span>
+              Menerapkan prinsip Good Corporate Governance (GCG) untuk menjamin transparansi, akuntabilitas, dan pelayanan prima.
+            </span>
+          </div>
+        </div>
+      </div>
     </HalamanInfo>
   )
 }

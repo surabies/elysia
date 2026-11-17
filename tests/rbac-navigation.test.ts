@@ -5,8 +5,8 @@ import {
   filterNavGroups,
   filterPrimaryNav,
   isNodeAllowed,
-} from "../apps/web/src/config/Navigasi";
-import { searchDocs } from "../apps/web/src/lib/DataPencarian";
+} from "../apps/web/src/config/navigasi";
+import { searchDocs } from "../apps/web/src/lib/data-pencarian";
 
 describe("Sidebar Navigation RBAC & Role-Based Menu Filtering", () => {
   test("1. SUPERADMIN has unconstrained access to all groups and items", () => {
@@ -144,8 +144,8 @@ describe("Sidebar Navigation RBAC & Role-Based Menu Filtering", () => {
     const adminSearchResults = searchDocs("user", adminGroups);
     expect(adminSearchResults.length).toBeGreaterThan(0);
     const foundUserItem = adminSearchResults
-      .flatMap((g) => g.results)
-      .find((r) => r.href === "/master/user");
+      .flatMap((g: any) => g.results)
+      .find((r: any) => r.href === "/master/user");
     expect(foundUserItem).toBeDefined();
     expect(foundUserItem?.page).toBe("User");
   });

@@ -7,24 +7,55 @@ import {
 } from "@/server/services/geo/boundary.service"
 import { pengaduanService } from "@/server/services/pengaduan/pengaduan.service"
 import { petakanBarisDbKePengaduan } from "@/features/peta-pengaduan/lib/ApiPengaduan"
+import { auth } from "@/lib/auth/index"
 
 export const metadata: Metadata = {
-  title: "Peta Pengaduan Air | PERUMDA Tirtawening",
+  title: "Peta Kendali Layanan Air | PERUMDA Tirtawening",
   description:
-    "Peta spasial interaktif monitoring pengaduan gangguan air dan wilayah PERUMDA Tirtawening Kota Bandung.",
+    "Peta spasial interaktif monitoring distribusi air dan pengaduan gangguan wilayah PERUMDA Tirtawening Kota Bandung.",
 }
 
 export const dynamic = "force-dynamic"
 
-export default async function PetaPengaduanPage() {
+const DAFTAR_ROLE_OPERATOR = [
+  "SUPERADMIN",
+  "EXECUTIVE",
+  "VERIFIKATOR_3",
+  "VERIFIKATOR_2",
+  "VERIFIKATOR_1",
+  "STAFF_ADMIN_BILLING",
+  "PENCATAT",
+  "PELAKSANA",
+  "ADMIN",
+]
+
+interface PageProps {
+  searchParams?: Promise<{ mode?: string }>
+}
+
+export default async function PetaPengaduanPage({ searchParams }: PageProps) {
+  const resolvedParams = searchParams ? await searchParams : {}
+  const session = await auth()
+  const userRoles = session?.user?.roles ?? []
+  const memilikiAksesOperator = userRoles.some((r) =>
+    DAFTAR_ROLE_OPERATOR.includes(r as string)
+  )
+
+  // Hanya pengguna internal dengan role operasional yang dapat melihat panel kendali operator.
+  // Warga/pelanggan publik tanpa hak akses operator secara ketat dibatasi ke mode pelanggan publik.
+  const isOperator = memilikiAksesOperator && resolvedParams.mode !== "publik"
+
   const [kelurahan, kecamatan, pelanggan, rawPengaduan] = await Promise.all([
     batasKelurahanFC().catch(() => null),
     batasKecamatanFC().catch(() => null),
     titikPelangganFC(10000).catch(() => null),
-    pengaduanService.getPengaduanPetaPublik().catch(() => []),
+    // Ambil data antrean tiket aduan dan riwayat tindakan HANYA jika viewer adalah operator internal
+    isOperator
+      ? pengaduanService.getPengaduanPetaPublik().catch(() => [])
+      : Promise.resolve([]),
   ])
 
-  const dataAwal = petakanBarisDbKePengaduan(rawPengaduan)
+  const dataAwal = isOperator ? petakanBarisDbKePengaduan(rawPengaduan) : []
 
   return (
     <PetaPengaduanView
@@ -32,6 +63,7 @@ export default async function PetaPengaduanPage() {
       kecamatan={kecamatan}
       pelanggan={pelanggan}
       dataAwal={dataAwal}
+      isOperator={isOperator}
     />
   )
 }

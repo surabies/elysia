@@ -7,4 +7,6 @@ export { TabVerifikasiStand } from './components/TabVerifikasiStand';
 export { TabBillingDrd } from './components/TabBillingDrd';
 export { TabPengaduanGwm } from './components/TabPengaduanGwm';
 export { TabSistemAudit } from './components/TabSistemAudit';
+export { TabPerusahaanProfil } from './components/TabPerusahaanProfil';
+export { TabKontenPublikCms } from './components/TabKontenPublikCms';
 export * from './types';

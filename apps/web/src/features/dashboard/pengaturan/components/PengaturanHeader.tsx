@@ -14,6 +14,8 @@ import {
   RotateCcw,
   Save,
   CheckCircle2,
+  Building2,
+  Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +30,8 @@ export interface TabDef {
 
 export const DAFTAR_TAB_PENGATURAN: TabDef[] = [
   { value: 'profil', label: 'Profil & Akun', icon: User },
+  { value: 'perusahaan', label: 'Profil Perusahaan & Kontak', icon: Building2 },
+  { value: 'konten', label: 'CMS & Konten Publik', icon: Layers },
   { value: 'cater', label: 'Catat Meter', icon: Smartphone },
   { value: 'verifikasi', label: 'Verifikasi Stand', icon: FileCheck2 },
   { value: 'billing', label: 'Billing & DRD', icon: Receipt },

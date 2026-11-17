@@ -33,6 +33,7 @@ interface Props {
   onBuat: () => void
   onUpdatePengaduan?: (updated: Pengaduan) => void
   onBukaModalDetail?: () => void
+  onBeralihKePelanggan?: () => void
 }
 
 const formatWaktuIndo = new Intl.DateTimeFormat("id-ID", {
@@ -47,6 +48,7 @@ export function PanelPetaPengaduan({
   onBuat,
   onUpdatePengaduan,
   onBukaModalDetail,
+  onBeralihKePelanggan,
 }: Props) {
   const [tabAktif, setTabAktif] = useState<string>("antrean")
   const [prevTerpilihId, setPrevTerpilihId] = useState<string | null>(terpilihId)
@@ -239,6 +241,7 @@ export function PanelPetaPengaduan({
         totalKegiatan={kegiatanOperator.length}
         filterStatus={filterStatus}
         jumlahFilter={jumlahFilter}
+        onBeralihKePelanggan={onBeralihKePelanggan}
       />
 
       {/* 2. Menu Navigasi Tab (Aduan, Kegiatan, Detail) */}

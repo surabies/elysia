@@ -1,100 +1,145 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import {
+  Building2,
+  Calendar,
+  CheckCircle2,
+  CreditCard,
+  QrCode,
+  Receipt,
+  Search,
+  Smartphone,
+  Store,
+} from "lucide-react"
+import {
   Bagian,
   HalamanInfo,
 } from "@/components/shared/HalamanInfo"
 import { RUTE } from "@/config/site"
+import {
+  pengaturanService,
+  DEFAULT_CARA_PEMBAYARAN,
+} from "@/server/services/pengaturan/pengaturan.service"
 
-export const metadata: Metadata = { title: "Cara Pembayaran" }
+export const metadata: Metadata = { title: "Cara Pembayaran Tagihan Rekening Air" }
+export const dynamic = "force-dynamic"
 
-const LANGKAH = [
-  {
-    judul: "Cek tagihan",
-    isi: "Masukkan nomor langganan 11 digit untuk melihat rincian jumlah tagihan rekening air Anda.",
-  },
-  {
-    judul: "Pilih kanal pembayaran",
-    isi: "Pilih salah satu kanal pembayaran resmi yang tersedia (ATM, Internet/Mobile Banking, Dompet Digital, Minimarket, atau Loket).",
-  },
-  {
-    judul: "Simpan bukti bayar",
-    isi: "Simpan struk atau notifikasi transaksi digital sampai status tagihan Anda berubah menjadi lunas.",
-  },
-]
+export default async function CaraPembayaranPage() {
+  const data = await pengaturanService.getPengaturan(
+    "cara_pembayaran",
+    DEFAULT_CARA_PEMBAYARAN
+  )
 
-const KANAL = [
-  {
-    nama: "Mobile Banking & ATM",
-    deskripsi:
-      "Bank Mandiri, BRI, BNI, BCA, Bank bjb melalui menu Pembayaran PAM / PDAM Kota Bandung.",
-  },
-  {
-    nama: "Dompet Digital & E-Commerce",
-    deskripsi:
-      "GoPay, OVO, DANA, ShopeePay, Tokopedia, Blibli dengan memasukkan 11 digit nomor langganan.",
-  },
-  {
-    nama: "Gerai Ritel Modern",
-    deskripsi: "Indomaret, Alfamart, Alfamidi, Pos Indonesia di seluruh Indonesia.",
-  },
-  {
-    nama: "Loket Kantor Pelayanan",
-    deskripsi:
-      "Kantor Pusat Jl. Badaksinga No. 10 dan kantor cabang pelayanan wilayah Bandung (Senin - Jumat 08.00 - 15.00 WIB).",
-  },
-]
+  const ikonKanal = [
+    Smartphone,
+    QrCode,
+    Store,
+    Building2,
+  ]
 
-export default function CaraPembayaranPage() {
   return (
     <HalamanInfo
-      judul="Cara Pembayaran"
-      deskripsi="Langkah membayar tagihan air dan kanal pembayaran resmi yang tersedia."
+      judul={data.judul || "Cara Pembayaran Tagihan Rekening Air"}
+      deskripsi={
+        data.deskripsi ||
+        "Panduan langkah pembayaran tagihan air minum dan daftar mitra perbankan serta saluran digital resmi yang terverifikasi."
+      }
+      actions={
+        <Link
+          href={RUTE.cekTagihan}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-3.5 py-1.5 text-xs font-semibold text-background hover:bg-foreground/90 transition-all shadow-xs hover:scale-102"
+        >
+          <Search className="size-3.5" />
+          <span>Cek Tagihan Saya</span>
+        </Link>
+      }
     >
-      <Bagian judul="Langkah pembayaran">
-        <ol className="flex flex-col gap-3">
-          {LANGKAH.map((l, i) => (
-            <li
-              key={l.judul}
-              className="flex gap-4 rounded-lg border border-border bg-card p-4"
+      {/* 1. LANGKAH PEMBAYARAN: STEPPER CARDS */}
+      <Bagian
+        judul="Tahapan Pembayaran Mudah"
+        subjudul="Tiga langkah sederhana melunasi rekening pemakaian air minum bulanan Anda."
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {data.langkah.map((l, i) => (
+            <div
+              key={i}
+              className="motion-card-interactive gradient-card-subtle group relative flex flex-col justify-between rounded-xl border border-border p-5 shadow-xs"
             >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-sm text-muted-foreground font-mono">
-                {i + 1}
-              </span>
-              <div>
-                <p className="font-medium text-foreground">{l.judul}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{l.isi}</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-primary font-mono text-xs font-bold text-primary-foreground transition-transform duration-200 group-hover:scale-110">
+                    0{i + 1}
+                  </span>
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                    Tahap {i + 1}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground transition-colors group-hover:text-primary">
+                    {l.judul}
+                  </h3>
+                  <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    {l.isi}
+                  </p>
+                </div>
               </div>
-            </li>
+            </div>
           ))}
-        </ol>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Belum tahu jumlah tagihan?{" "}
-          <Link
-            href={RUTE.cekTagihan}
-            className="text-foreground underline underline-offset-4"
-          >
-            Cek tagihan online
-          </Link>
-          .
-        </p>
+        </div>
       </Bagian>
 
-      <Bagian judul="Kanal pembayaran resmi">
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-          {KANAL.map((k) => (
-            <li
-              key={k.nama}
-              className="rounded-lg border border-border bg-card p-4"
-            >
-              <p className="font-medium text-foreground">{k.nama}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {k.deskripsi}
-              </p>
-            </li>
-          ))}
-        </ul>
+      {/* 2. KANAL PEMBAYARAN RESMI */}
+      <Bagian
+        judul="Kanal &amp; Mitra Pembayaran Terverifikasi"
+        subjudul="Pilih saluran perbankan, dompet digital, atau gerai ritel terdekat yang paling nyaman bagi Anda."
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {data.kanal.map((k, i) => {
+            const Icon = ikonKanal[i % ikonKanal.length]
+            return (
+              <div
+                key={i}
+                className="motion-card-interactive gradient-card-subtle group flex flex-col justify-between rounded-xl border border-border p-5 shadow-xs"
+              >
+                <div className="space-y-3">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-primary transition-all duration-200 group-hover:scale-110 group-hover:bg-primary/10">
+                    <Icon className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground transition-colors group-hover:text-primary">
+                      {k.nama}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                      {k.deskripsi}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-border/50 text-[11px] font-mono text-muted-foreground">
+                  Format: 11 Digit Nomor Langganan
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </Bagian>
+
+      {/* 3. ATURAN JATUH TEMPO & DENDA */}
+      {data.catatanDenda && (
+        <div className="motion-card-interactive group rounded-xl border border-amber-200/80 bg-amber-50/50 p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
+          <div className="flex items-start gap-3">
+            <Calendar className="size-5 shrink-0 text-amber-700 dark:text-amber-400 mt-0.5 transition-transform duration-200 group-hover:scale-110" />
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                Ketentuan Batas Pembayaran Rekening
+              </h4>
+              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                {data.catatanDenda}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </HalamanInfo>
   )
 }

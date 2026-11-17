@@ -16,3 +16,5 @@ export * from './gwm';
 export * from './pengaduan';
 export * from './kpi';
 export * from './broadcast';
+export * from './pengaturan';
+export * from './jaringan';

@@ -18,6 +18,7 @@ import {
   Eye,
   ImageIcon,
   RefreshCw,
+  Camera,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -227,9 +228,20 @@ export default function BroadcastDashboardPage() {
       .catch(() => {})
   }
 
+  const [tabFilter, setTabFilter] = React.useState<'SEMUA' | 'KEGIATAN' | 'EVENT' | 'GANGGUAN'>('SEMUA')
+
   const totalAktif = daftar.filter((d) => d.aktif).length
-  const totalSpotlight = daftar.filter((d) => d.aktif && d.kategori === 'EVENT' && d.tampilkanDiSpotlight !== false).length
-  const totalDarurat = daftar.filter((d) => d.aktif && d.kategori === 'DARURAT').length
+  const totalKegiatan = daftar.filter((d) => d.kategori === 'KEGIATAN').length
+  const totalSpotlight = daftar.filter((d) => d.kategori === 'EVENT').length
+  const totalDarurat = daftar.filter((d) => d.kategori === 'DARURAT').length
+  const totalGangguan = daftar.filter((d) => d.kategori === 'DARURAT' || d.kategori === 'PEMELIHARAAN').length
+
+  const daftarTerfilter = React.useMemo(() => {
+    if (tabFilter === 'KEGIATAN') return daftar.filter((d) => d.kategori === 'KEGIATAN')
+    if (tabFilter === 'EVENT') return daftar.filter((d) => d.kategori === 'EVENT')
+    if (tabFilter === 'GANGGUAN') return daftar.filter((d) => d.kategori === 'DARURAT' || d.kategori === 'PEMELIHARAAN')
+    return daftar
+  }, [daftar, tabFilter])
 
   return (
     <PageContainer className="space-y-6">
@@ -238,7 +250,7 @@ export default function BroadcastDashboardPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
             <Radio className="size-3.5 animate-pulse" />
-            <span>Manajemen Siaran Publik &amp; Iklan</span>
+            <span>Manajemen Siaran Publik, Iklan &amp; Kegiatan Wilayah</span>
             {isLoading && (
               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-normal">
                 <RefreshCw className="size-3 animate-spin" />
@@ -247,10 +259,10 @@ export default function BroadcastDashboardPage() {
             )}
           </div>
           <h1 className="text-heading-24 font-bold tracking-tight text-foreground">
-            Siaran Gangguan &amp; Banner Iklan Promosi
+            Siaran Gangguan, Iklan Promosi &amp; Dokumentasi Wilayah 5
           </h1>
           <p className="text-copy-13 text-muted-foreground max-w-3xl">
-            Kelola materi promosi, pengumuman, dan siaran gangguan perpipaan. Konten promosi otomatis tayang di slider animasi landing page warga.
+            Kelola materi promosi, siaran gangguan perpipaan, dan galeri foto dokumentasi kegiatan pelayanan Wilayah 5 yang tayang langsung secara dinamis di landing page.
           </p>
         </div>
 
@@ -287,6 +299,16 @@ export default function BroadcastDashboardPage() {
           <Button
             size="sm"
             asChild
+            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 font-semibold"
+          >
+            <Link href="/broadcast/tambah?kategori=KEGIATAN">
+              <Camera className="size-4" />
+              <span>+ Dokumentasi Wilayah 5</span>
+            </Link>
+          </Button>
+          <Button
+            size="sm"
+            asChild
             className="gap-1.5 font-semibold"
           >
             <Link href="/broadcast/tambah">
@@ -297,8 +319,8 @@ export default function BroadcastDashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards dengan shadcn/ui Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* KPI Cards 4 Kolom dengan shadcn/ui Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-border bg-card">
           <CardContent className="p-4">
             <span className="text-copy-12 font-medium text-muted-foreground">Siaran Aktif Keseluruhan</span>
@@ -313,12 +335,24 @@ export default function BroadcastDashboardPage() {
 
         <Card className="border-border bg-card">
           <CardContent className="p-4">
+            <span className="text-copy-12 font-medium text-muted-foreground">Dokumentasi Wilayah 5</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-heading-24 font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                {totalKegiatan}
+              </span>
+              <span className="text-copy-12 text-muted-foreground">kegiatan tayang</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border bg-card">
+          <CardContent className="p-4">
             <span className="text-copy-12 font-medium text-muted-foreground">Tayang di Slider Carousel</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-heading-24 font-bold font-mono text-(--ds-green-900) dark:text-(--ds-green-300)">
                 {totalSpotlight}
               </span>
-              <span className="text-copy-12 text-muted-foreground">bergerak animasi di web</span>
+              <span className="text-copy-12 text-muted-foreground">banner promosi</span>
             </div>
           </CardContent>
         </Card>
@@ -330,7 +364,7 @@ export default function BroadcastDashboardPage() {
               <span className="text-heading-24 font-bold font-mono text-(--ds-red-900) dark:text-(--ds-red-300)">
                 {totalDarurat}
               </span>
-              <span className="text-copy-12 text-muted-foreground">muncul di running text atas</span>
+              <span className="text-copy-12 text-muted-foreground">running text atas</span>
             </div>
           </CardContent>
         </Card>
@@ -339,44 +373,64 @@ export default function BroadcastDashboardPage() {
       {/* Daftar Siaran Card Menggunakan shadcn/ui */}
       <Card className="border-border bg-card">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <CardTitle className="text-heading-16">
                 Daftar Konten Siaran &amp; Media Promosi
               </CardTitle>
               <Badge variant="secondary" size="sm" className="font-mono">
-                {daftar.length} Total
+                {daftarTerfilter.length} Ditampilkan
               </Badge>
             </div>
-            <CardDescription className="hidden sm:inline">
-              Klik &quot;Edit&quot; untuk membuka formulir lengkap halaman mandiri
-            </CardDescription>
+
+            {/* Filter Tabs Mini */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              {[
+                { id: 'SEMUA', label: `Semua (${daftar.length})` },
+                { id: 'KEGIATAN', label: `Dokumentasi Wilayah 5 (${totalKegiatan})` },
+                { id: 'EVENT', label: `Iklan & Promo (${totalSpotlight})` },
+                { id: 'GANGGUAN', label: `Gangguan (${totalGangguan})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setTabFilter(tab.id as any)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                    tabFilter === tab.id
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </CardHeader>
 
         <CardContent className="p-5 pt-0 space-y-3">
-          {daftar.length === 0 ? (
+          {daftarTerfilter.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border border-dashed border-border rounded-lg bg-muted/10">
               <Radio className="size-10 mb-3 opacity-30 animate-pulse text-primary" />
-              <p className="text-copy-14 font-medium text-foreground">Belum ada konten siaran</p>
+              <p className="text-copy-14 font-medium text-foreground">Tidak ada konten pada kategori ini</p>
               <p className="text-copy-12 text-muted-foreground mt-1 max-w-sm">
-                Tidak ada siaran atau banner promosi dalam sistem. Anda dapat membuat siaran baru atau mereset data ke default.
+                Belum ada konten yang sesuai dengan filter yang dipilih. Anda dapat membuat konten baru atau beralih ke filter Semua.
               </p>
               <div className="flex gap-2.5 mt-4">
-                <Button size="sm" variant="outline" onClick={() => setDialogResetBuka(true)}>
-                  <RotateCcw className="size-3.5 mr-1" />
-                  <span>Reset Default</span>
+                <Button size="sm" variant="outline" onClick={() => setTabFilter('SEMUA')}>
+                  Lihat Semua
                 </Button>
                 <Button size="sm" asChild>
                   <Link href="/broadcast/tambah">
                     <Plus className="size-3.5 mr-1" />
-                    <span>Buat Siaran Baru</span>
+                    <span>Buat Konten Baru</span>
                   </Link>
                 </Button>
               </div>
             </div>
           ) : (
-            daftar.map((item) => {
+            daftarTerfilter.map((item) => {
+              const isKegiatan = item.kategori === 'KEGIATAN'
               const isDarurat = item.kategori === 'DARURAT'
               const isPemeliharaan = item.kategori === 'PEMELIHARAAN'
               const isEvent = item.kategori === 'EVENT'
@@ -414,21 +468,31 @@ export default function BroadcastDashboardPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge
                           variant={
-                            isDarurat
+                            isKegiatan
+                              ? 'green-subtle'
+                              : isDarurat
                               ? 'red-subtle'
                               : isPemeliharaan
                                 ? 'amber-subtle'
                                 : isEvent
-                                  ? 'green-subtle'
+                                  ? 'blue-subtle'
                                   : 'blue-subtle'
                           }
                           size="sm"
                         >
-                          {isEvent && <Sparkles className="size-2.5" />}
-                          {isDarurat && <AlertTriangle className="size-2.5" />}
-                          {isPemeliharaan && <Wrench className="size-2.5" />}
-                          <span>{item.kategori}</span>
+                          {isKegiatan && <Camera className="size-2.5 mr-1" />}
+                          {isEvent && <Sparkles className="size-2.5 mr-1" />}
+                          {isDarurat && <AlertTriangle className="size-2.5 mr-1" />}
+                          {isPemeliharaan && <Wrench className="size-2.5 mr-1" />}
+                          <span>{isKegiatan ? 'DOKUMENTASI' : item.kategori}</span>
                         </Badge>
+
+                        {isKegiatan && (
+                          <Badge variant="outline" size="sm" className="font-mono text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                            <MapPin className="size-2.5 mr-1" />
+                            <span>{item.lokasiWilayah || 'Pelayanan Wilayah 5'}</span>
+                          </Badge>
+                        )}
 
                         <Badge variant="outline" size="sm" className="font-mono">
                           {item.status.replace('_', ' ')}
