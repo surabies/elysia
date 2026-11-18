@@ -122,22 +122,7 @@ export function HistoriPemakaian({
       {catatan && (
         <p className="text-label-11 text-muted-foreground">{catatan}</p>
       )}
-      {!pelangganId && (
-        <p className="text-label-12 text-muted-foreground">
-          Belum ada histori pembacaan resmi.
-        </p>
-      )}
-      {pelangganId && rows === null && !galat && (
-        <p className="text-label-12 text-muted-foreground">
-          Memuat histori pembacaan…
-        </p>
-      )}
       {galat && <p className="text-label-12 text-destructive">{galat}</p>}
-      {pelangganId && rows?.length === 0 && (
-        <p className="text-label-12 text-muted-foreground">
-          Belum ada histori pembacaan resmi.
-        </p>
-      )}
     </div>
   );
 }

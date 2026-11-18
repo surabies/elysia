@@ -33,6 +33,7 @@ import { FotoBukti } from "../foto/FotoBukti";
 import { FotoSebelumnya } from "../foto/FotoSebelumnya";
 import { PetaLokasi } from "../PetaLokasi";
 import { ModalMandiri } from "../modal/ModalMandiri";
+import { resolveFotoUrl } from "@/lib/foto-resolver";
 
 export type AksiMandiri = "verify" | "tolak";
 
@@ -207,7 +208,7 @@ export function PanelMandiri({
   const pakai = pemakaianCatat ?? detail.pemakaian ?? detail.pembacaan?.pemakaianRiil ?? null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-2 px-2 py-2" aria-busy={memuatDetail}>
+    <div className="flex min-w-0 flex-col gap-2.5 p-3" aria-busy={memuatDetail}>
       {galat && (
         <p role="alert" className="text-label-12 text-destructive">
           {galat}
@@ -234,21 +235,31 @@ export function PanelMandiri({
         }}
       />
 
-      <Seksi judul="Foto laporan periode ini">
+      <Seksi judul="Foto Laporan Periode Ini">
         <FotoBukti
-          url={detail.fotoUrl}
+          url={resolveFotoUrl({
+            realUrl: detail.fotoUrl,
+            nolg: detail.nomorLangganan,
+            jenis: "stand",
+            stand: detail.standDilaporkan,
+            periode: String(detail.periode),
+            nama: detail.pelanggan?.nama ?? detail.namaPelapor,
+          })}
           label={`Foto meter — ${formatPeriode(detail.periode)}`}
         />
       </Seksi>
 
-      <Seksi judul="Foto pembanding periode sebelumnya">
+      <Seksi judul="Foto Pembanding Periode Lalu">
         <FotoSebelumnya
           pelangganId={detail.pelangganId}
+          nomorLangganan={detail.nomorLangganan}
           periode={detail.periode}
+          standAwal={standAwal}
+          nama={detail.pelanggan?.nama ?? detail.namaPelapor}
         />
       </Seksi>
 
-      <Seksi judul="Lokasi pelanggan">
+      <Seksi judul="Lokasi Pelanggan">
         <PetaLokasi
           langsung
           lat={detail.pelanggan?.geoLat}

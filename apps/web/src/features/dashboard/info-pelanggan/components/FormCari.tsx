@@ -78,7 +78,7 @@ export function FormCari({
             placeholder="No. Langganan (contoh: 01011234)"
             aria-label="Nomor Langganan"
             className={cn(
-              "h-10 w-full rounded-md border border-border bg-background px-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              "h-10 w-full rounded-md border border-border bg-card px-3.5 font-mono text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors",
               galat && "border-destructive focus-visible:ring-destructive"
             )}
           />
@@ -95,14 +95,14 @@ export function FormCari({
             placeholder="YYYYMM"
             aria-label="Periode (YYYYMM)"
             maxLength={6}
-            className="h-10 w-full rounded-md border border-border bg-background px-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="h-10 w-full rounded-md border border-border bg-card px-3.5 font-mono text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors"
           />
         </div>
 
         <Button
           type="submit"
           disabled={memuat}
-          className="h-10 px-5 font-medium"
+          className="h-10 px-5 font-semibold shadow-xs"
         >
           {memuat ? (
             <span className="flex items-center gap-2">
@@ -136,7 +136,7 @@ export function FormCari({
       {galat ? (
         <p className="text-xs font-medium text-destructive">{galat}</p>
       ) : (
-        <p className="text-xs text-info-foreground/80 dark:text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Cari berdasarkan Nomor Langganan (NOLG) dan periode tagihan.
         </p>
       )}

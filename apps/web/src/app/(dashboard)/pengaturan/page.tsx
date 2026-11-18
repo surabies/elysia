@@ -1,11 +1,5 @@
-import type { Metadata } from 'next';
-import { PengaturanView } from '@/features/dashboard/pengaturan';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Pengaturan & Preferensi Sistem | Cater PDAM Tirtawening',
-  description: 'Konfigurasi profil operator, toleransi geofence pembacaan meter, dan parameter penagihan air',
-};
-
-export default function PengaturanPage() {
-  return <PengaturanView />;
+export default function PengaturanRootPage() {
+  redirect('/pengaturan/profil');
 }

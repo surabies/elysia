@@ -1,5 +1,5 @@
 // Baris tiga kotak: stand awal, stand akhir (roda angka), dan kartu Pemakaian.
-import { PanelDasbor } from "@/features/dashboard/shared";
+import { cn } from "@/lib/utils";
 import { fmtAngka, fmtBulan } from "../lib/format-tampilan";
 import { Odometer } from "./Odometer";
 import type { BarisRiwayat, DataCatat } from "../types";
@@ -37,53 +37,58 @@ export function PanelPembacaan({
 }) {
   if (!catat) {
     return (
-      <PanelDasbor label="Pencatatan meter">
-        <div className="py-6 text-center">
-          <p className="text-sm font-medium">
-            Belum ada pencatatan untuk periode ini
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Coba periode lain, atau kosongkan periode untuk melihat yang terbaru.
-          </p>
-        </div>
-      </PanelDasbor>
+      <div className="rounded-xl border border-border bg-card p-6 text-center shadow-xs">
+        <p className="text-sm font-semibold text-foreground">
+          Belum ada pencatatan untuk periode ini
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Coba periode lain, atau kosongkan periode untuk melihat yang terbaru.
+        </p>
+      </div>
     );
   }
 
   const banding = bandingkan(catat, riwayat);
 
   return (
-    <PanelDasbor label="Stand meter dan pemakaian">
-      <section
-        aria-label="Stand meter dan pemakaian"
-        className="grid gap-3 md:grid-cols-[1fr_1fr_1.15fr]"
-      >
-        <div className="rounded-lg border border-border bg-card p-4">
-          <Odometer label="Stand awal" nilai={catat.standLalu} />
+    <section
+      aria-label="Stand meter dan pemakaian"
+      className="grid gap-3 md:grid-cols-[1fr_1fr_1.15fr]"
+    >
+      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+        <Odometer label="Stand awal" nilai={catat.standLalu} />
+      </div>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+        <Odometer label="Stand akhir" nilai={catat.standAkhir} />
+      </div>
+      <div className="flex flex-col justify-between rounded-xl border border-blue-500/20 bg-linear-to-br from-blue-500/10 via-sky-500/5 to-transparent dark:from-blue-950/40 dark:via-sky-950/20 dark:to-transparent p-5 text-foreground shadow-xs">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Pemakaian Air
+          </span>
+          <p className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-4xl font-bold tracking-tight tabular-nums text-foreground sm:text-5xl">
+              {fmtAngka(catat.pemakaianM3)}
+            </span>
+            <span className="text-base font-semibold text-blue-600 dark:text-sky-400">
+              m³
+            </span>
+          </p>
         </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <Odometer label="Stand akhir" nilai={catat.standAkhir} />
-        </div>
-        <div className="flex flex-col justify-between rounded-lg bg-info p-5 text-info-foreground shadow-panel">
-          <div>
-            <span className="text-xs text-info-foreground/80">Pemakaian</span>
-            <p className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
-                {fmtAngka(catat.pemakaianM3)}
-              </span>
-              <span className="text-base text-info-foreground/80">m³</span>
-            </p>
-          </div>
-          {banding && (
-            <p
-              className="mt-3 text-xs text-info-foreground/90"
-              role={banding.perhatian ? "alert" : undefined}
-            >
-              {banding.teks}
-            </p>
-          )}
-        </div>
-      </section>
-    </PanelDasbor>
+        {banding && (
+          <p
+            className={cn(
+              "mt-3 text-xs font-medium",
+              banding.perhatian
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-muted-foreground"
+            )}
+            role={banding.perhatian ? "alert" : undefined}
+          >
+            {banding.teks}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }

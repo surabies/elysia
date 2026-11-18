@@ -71,6 +71,7 @@
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.14.0",
     "eslint-config-next": "^16.4.5",
+    "jpeg-js": "^0.4.4",
     "postcss": "^8.5.32",
     "server-only": "^0.0.1",
     "tailwindcss": "^4.3.4",

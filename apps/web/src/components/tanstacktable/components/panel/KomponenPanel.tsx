@@ -72,11 +72,11 @@ export function Seksi({
     >
       <CollapsibleTrigger
         className={cn(
-          "group flex w-full items-center justify-between gap-2 py-2.5 text-left text-foreground transition-colors hover:text-muted-foreground",
+          "group flex w-full items-center justify-between gap-2 px-1 py-2 text-left text-foreground transition-colors hover:text-muted-foreground",
           KELAS_JUDUL_PANEL,
         )}
       >
-        {judul}
+        <span className="font-semibold tracking-tight">{judul}</span>
         <HugeiconsIcon
           icon={ArrowDown01Icon}
           strokeWidth={2}
@@ -84,7 +84,7 @@ export function Seksi({
           aria-hidden
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="min-w-0 pb-2.5">{children}</CollapsibleContent>
+      <CollapsibleContent className="min-w-0 px-0.5 pb-3">{children}</CollapsibleContent>
     </Collapsible>
   );
 }
@@ -112,7 +112,7 @@ export function InfoPelanggan({
     { label: "Alamat", nilai: alamat },
   ];
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5 rounded-md bg-muted/40 p-2.5">
       <p className="min-w-0 text-copy-14 leading-snug font-semibold wrap-break-word text-foreground">
         {nama}
       </p>
@@ -162,14 +162,14 @@ export function RingkasanPelanggan({
   nomor: string;
   kondisi?: string | null;
   alamat?: string | null;
-  pembacaan: PembacaanPanelRingkas;
-  pelangganId: string | null | undefined;
+  pembacaan?: PembacaanPanelRingkas;
+  pelangganId?: string | null | undefined;
   peringatan?: React.ReactNode;
   catatanPembacaan?: string;
 }) {
   return (
-    <Seksi judul="Informasi pelanggan">
-      <>
+    <Seksi judul="Informasi Pelanggan">
+      <div className="flex flex-col gap-2">
         <InfoPelanggan
           nama={nama}
           nomor={nomor}
@@ -177,14 +177,16 @@ export function RingkasanPelanggan({
           alamat={alamat}
         />
         {peringatan}
-        <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2.5">
-          <HistoriPemakaian
-            pelangganId={pelangganId}
-            terkini={pembacaan}
-            catatan={catatanPembacaan}
-          />
-        </div>
-      </>
+        {pembacaan && (
+          <div className="flex flex-col rounded-md bg-muted/40 p-2">
+            <HistoriPemakaian
+              pelangganId={pelangganId}
+              terkini={pembacaan}
+              catatan={catatanPembacaan}
+            />
+          </div>
+        )}
+      </div>
     </Seksi>
   );
 }

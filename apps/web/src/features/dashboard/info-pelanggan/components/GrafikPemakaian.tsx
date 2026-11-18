@@ -37,7 +37,9 @@ export function GrafikPemakaian({
             <div
               className={cn(
                 "absolute inset-x-0 bottom-0 rounded-t-sm transition-all duration-300",
-                d.aktif ? "bg-chart-1" : "bg-muted-foreground/30"
+                d.aktif
+                  ? "bg-blue-600 dark:bg-sky-500 shadow-xs"
+                  : "bg-muted-foreground/20 hover:bg-muted-foreground/35"
               )}
               style={{
                 height: `${d.nilai == null ? 0 : Math.max(4, (d.nilai / maks) * 100)}%`,

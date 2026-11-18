@@ -325,6 +325,7 @@ export class VerifikasiGridService {
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
         tglCatat: caterBacaMeter.tglCatat,
         fotoMeterUrl: caterBacaMeter.fotoMeterUrl,
+        fotoSegelUrl: caterBacaMeter.fotoSegelUrl,
         fotoRumahUrl: caterBacaMeter.fotoRumahUrl,
         catatan: caterBacaMeter.catatan,
         petugasNama: petugasCater.nama,
@@ -444,6 +445,7 @@ export class VerifikasiGridService {
           verifiedBy: v3 ? { name: v3.userName } : null,
           nomorMeter: row.noMeter,
           fotoStandUrl: row.fotoMeterUrl,
+          fotoSegelUrl: row.fotoSegelUrl,
           fotoRumahUrl: row.fotoRumahUrl,
           pencatat: row.petugasId
             ? {
@@ -803,6 +805,8 @@ export class VerifikasiGridService {
         pakaiM3: caterBacaMeter.pakaiM3,
         ketCatat: caterBacaMeter.ketCatat,
         fotoMeterUrl: caterBacaMeter.fotoMeterUrl,
+        fotoSegelUrl: caterBacaMeter.fotoSegelUrl,
+        fotoRumahUrl: caterBacaMeter.fotoRumahUrl,
         metodeCatat: caterBacaMeter.metodeCatat,
       })
       .from(caterBacaMeter)
@@ -820,6 +824,8 @@ export class VerifikasiGridService {
       blokTarif: 1,
       kondisi: row.ketCatat,
       fotoBukti: row.fotoMeterUrl,
+      fotoSegelUrl: row.fotoSegelUrl,
+      fotoRumahUrl: row.fotoRumahUrl,
       sumberLaporan: row.metodeCatat === "OFFSITE" ? "KONSUMEN" : "PETUGAS",
     }));
   }

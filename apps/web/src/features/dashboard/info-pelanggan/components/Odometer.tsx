@@ -26,7 +26,7 @@ export function Odometer({
             <span
               key={i}
               aria-hidden
-              className="flex aspect-3/4 min-w-0 flex-1 items-center justify-center rounded-sm bg-primary font-mono text-[clamp(1rem,11cqw,2.25rem)] font-medium text-primary-foreground tabular-nums ring-1 ring-background/10 ring-inset"
+              className="flex aspect-3/4 min-w-0 flex-1 items-center justify-center rounded-sm bg-neutral-900 font-mono text-[clamp(1rem,11cqw,2.25rem)] font-bold text-neutral-100 dark:bg-neutral-800 dark:text-white tabular-nums border border-neutral-700/60 shadow-xs ring-1 ring-background/10 ring-inset"
             >
               {d}
             </span>

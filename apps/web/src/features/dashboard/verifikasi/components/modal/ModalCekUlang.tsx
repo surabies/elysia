@@ -13,6 +13,7 @@ import {
 } from "@/features/dashboard/shared/api/api-dashboard"
 import type { LaporanHarianDetail } from "../../types"
 import { DialogVerifikasi } from "../DialogVerifikasi"
+import { resolveFotoUrl } from "@/lib/foto-resolver"
 
 export function ModalCekUlang({
   id,
@@ -116,19 +117,40 @@ export function ModalCekUlang({
               {
                 kunci: "stand",
                 label: "Stand meter",
-                url: detail.fotoStandUrl ?? detail.pembacaan?.fotoBukti,
+                url: resolveFotoUrl({
+                  realUrl: detail.fotoStandUrl ?? detail.pembacaan?.fotoBukti,
+                  nolg: detail.nomorLangganan,
+                  jenis: "stand",
+                  stand: detail.standAkhir,
+                  periode: String(detail.periode),
+                  nama: detail.namaPelanggan ?? undefined,
+                }),
                 keteranganKosong: "Laporan ini tidak memiliki foto meter.",
               },
               {
                 kunci: "segel",
                 label: "Segel",
-                url: detail.fotoSegelUrl,
+                url: resolveFotoUrl({
+                  realUrl: detail.fotoSegelUrl,
+                  nolg: detail.nomorLangganan,
+                  jenis: "segel",
+                  stand: detail.standAkhir,
+                  periode: String(detail.periode),
+                  nama: detail.namaPelanggan ?? undefined,
+                }),
                 keteranganKosong: "Petugas tidak mengirim foto segel.",
               },
               {
                 kunci: "rumah",
                 label: "Rumah",
-                url: detail.fotoRumahUrl,
+                url: resolveFotoUrl({
+                  realUrl: detail.fotoRumahUrl,
+                  nolg: detail.nomorLangganan,
+                  jenis: "rumah",
+                  stand: detail.standAkhir,
+                  periode: String(detail.periode),
+                  nama: detail.namaPelanggan ?? undefined,
+                }),
                 keteranganKosong: "Petugas tidak mengirim foto rumah/persil.",
               },
             ]

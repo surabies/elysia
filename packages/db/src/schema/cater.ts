@@ -46,6 +46,7 @@ export const caterBacaMeter = pgTable(
     tglCatat: timestamp('tgl_catat').notNull().defaultNow(),
     durasiDetik: integer('durasi_detik').default(0),
     fotoMeterUrl: text('foto_meter_url'),
+    fotoSegelUrl: text('foto_segel_url'),
     fotoRumahUrl: text('foto_rumah_url'),
     lokasiGps: geometry('lokasi_gps', { type: 'point', mode: 'xy', srid: 4326 }),
     jarakPelangganMeter: numeric('jarak_pelanggan_meter', { precision: 8, scale: 2 }), // Geofence distance

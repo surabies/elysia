@@ -1,13 +1,14 @@
 // src/config/navigasi.ts
-//
 // ============================================================================
 //  KONFIGURASI MENU APLIKASI — M2C BACA METER & BILLING TIRTAWENING
 // ============================================================================
-// Dibaca oleh: navbar, sidebar, pencarian (Ctrl+K), breadcrumb, dan shell layout.
-// Disusun berdasarkan docs/SIDEBAR_REFERENCE.md (Aurora Parity) dengan prinsip:
-// 1. ZERO DUPLICATES: Setiap href & fungsi bisnis hanya muncul di satu tempat.
-// 2. RINGKAS & PRESISI: Label 2-3 kata yang jelas dan langsung ke tujuan.
-// 3. SEPARATOR & SUB-FOLDER: Memisahkan modul utama dari utilitas pendukung.
+// Disusun berdasarkan audit 3 Pilar Inti PDAM + Ikhtisar & Pengaturan (Vercel Style):
+// 1. IKHTISAR (Dashboard, Analitik, KPI, Peta Spasial, Peta Wilayah)
+// 2. PENCATATAN METER (Monitoring, Simulasi, Verifikasi CHN, Foto Meter, Radar Anomali, Rute)
+// 3. TAGIHAN (Laporan DRD, Koreksi Stand, Manual ADD, Tutup Bulan, PBPK)
+// 4. LANGGANAN (Info Pelanggan, Lapor Mandiri, Pengaduan, Mutasi, Tarif, Kontak)
+// 5. SETTING LANDING (Profil & Kontak, Pasang Baru, Cara Bayar, Tarif Air, Berita, Siaran)
+// 6. PENGATURAN (Profil Akun, Catat Meter, Verifikasi, Billing, Pengaduan, Sistem, Pengguna, RBAC)
 // ============================================================================
 
 import type { AppRole } from "@cater/db";
@@ -52,195 +53,103 @@ export function isNavFolder(node: NavNode): node is NavFolder {
 }
 
 // ----------------------------------------------------------------------------
-// 2. MODUL MANDIRI (ROOT SIDEBAR — ZERO DUPLICATES DENGAN GRUP)
-// ----------------------------------------------------------------------------
-
-// A. Puncak: Observasi Eksekutif & Spasial (Aurora Bab 1 & Bab 4)
-export const standaloneTopNav: NavItem[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    description: "Ringkasan eksekutif metrik operasional pembacaan meter harian.",
-    keywords: ["dashboard", "beranda", "ringkasan", "home"],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-      "PENCATAT",
-      "PELAKSANA",
-      "USER",
-    ],
-  },
-  {
-    title: "Analitik",
-    href: "/analytics",
-    description:
-      "Tren kubikasi air, distribusi pemakaian, dan analitik performa petugas.",
-    keywords: ["analytics", "analitik", "grafik", "statistik", "tren"],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-    ],
-  },
-  {
-    title: "Scorecard KPI",
-    href: "/kpi",
-    description:
-      "Strategy Scorecard, target kinerja tahunan, metrik finansial, dan retensi tim.",
-    keywords: ["kpi", "scorecard", "strategy", "goals", "target", "kinerja"],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-    ],
-  },
-  {
-    title: "Peta Spasial",
-    href: "/places",
-    description:
-      "Visualisasi GIS titik koordinat pelanggan, rute baca, dan geofence.",
-    keywords: ["peta", "gis", "spasial", "gps", "radius", "geofence", "map"],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-    ],
-  },
-  {
-    title: "Peta Wilayah",
-    href: "/peta-wilayah",
-    description:
-      "Visualisasi peta batas wilayah administrasi, rute, pelanggan, dan antrean kebocoran pipa dinas.",
-    keywords: ["peta", "wilayah", "spasial", "kelurahan", "kecamatan", "rute", "gis", "map"],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-      "PENCATAT",
-      "PELAKSANA",
-      "USER",
-    ],
-  },
-  {
-    title: "Peta Pengaduan",
-    href: "/peta-pengaduan",
-    description:
-      "Peta interaktif persebaran aduan gangguan air warga Kota Bandung.",
-    keywords: ["peta", "pengaduan", "aduan", "gis", "gangguan", "map"],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-      "PENCATAT",
-      "PELAKSANA",
-      "USER",
-    ],
-  },
-  {
-    title: "Siaran & Info Gangguan",
-    href: "/broadcast",
-    description:
-      "Kelola siaran darurat pipa, pemeliharaan, dan event di landing page publik.",
-    keywords: ["broadcast", "siaran", "gangguan", "banner", "pengumuman", "event"],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-      "PELAKSANA",
-      "USER",
-    ],
-  },
-];
-
-// B. Tengah: Pencarian Detail Pelanggan (Aurora Bab 3.2)
-export const standaloneMidNav: NavItem[] = [
-  {
-    title: "Info Pelanggan",
-    href: "/info-pelanggan",
-    description:
-      "Pencarian detail pelanggan, sambungan, stand meter, histori 12 bulan, dan foto.",
-    keywords: [
-      "info pelanggan",
-      "pelanggan",
-      "cari pelanggan",
-      "histori",
-      "profil",
-    ],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-      "PENCATAT",
-      "PELAKSANA",
-      "USER",
-    ],
-  },
-];
-
-// C. Bawah: Pengaturan Sistem
-export const standaloneBottomNav: NavItem[] = [
-  {
-    title: "Pengaturan",
-    href: "/pengaturan",
-    description:
-      "Preferensi sistem, profil operator, jendela lapor mandiri, dan geofence.",
-    keywords: ["pengaturan", "setting", "konfigurasi", "profil", "preferensi"],
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-    ],
-  },
-];
-
-// Kompatibilitas export
-export const standaloneClosingNav: NavItem[] = [];
-
-export const primaryNav: NavItem[] = [
-  ...standaloneTopNav,
-  ...standaloneMidNav,
-  ...standaloneBottomNav,
-];
-
-// ----------------------------------------------------------------------------
-// 3. DATA GRUP MENU (5 Kelompok Inti Aurora — Ramping, Tepat, Tanpa Duplikat)
+// 2. DATA GRUP MENU UTAMA (Ringkas, Fungsional & Flat Vercel Style)
 // ----------------------------------------------------------------------------
 
 export const navGroups: NavGroup[] = [
   // ==========================================================================
-  // GRUP 1: MONITORING & PROGRES (Aurora Bab 5 + Monitoring Baca Meter)
+  // SEKSI 1: IKHTISAR
   // ==========================================================================
   {
-    id: "monitoring",
-    title: "Monitoring & Progres",
+    id: "ikhtisar",
+    title: "Ikhtisar",
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+      "VERIFIKATOR_2",
+      "VERIFIKATOR_3",
+      "PENCATAT",
+      "PELAKSANA",
+      "USER",
+    ],
+    items: [
+      {
+        title: "Dashboard",
+        href: "/dashboard",
+        description: "Ringkasan eksekutif metrik operasional pembacaan meter harian.",
+        keywords: ["dashboard", "beranda", "ringkasan", "home"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+          "PENCATAT",
+          "PELAKSANA",
+          "USER",
+        ],
+      },
+      {
+        title: "Analitik",
+        href: "/analytics",
+        description: "Tren kubikasi air, distribusi pemakaian, dan performa.",
+        keywords: ["analytics", "analitik", "grafik", "statistik", "tren"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
+      },
+      {
+        title: "Scorecard KPI",
+        href: "/kpi",
+        description: "Target kinerja tahunan, metrik finansial, dan retensi tim.",
+        keywords: ["kpi", "scorecard", "strategy", "goals", "target", "kinerja"],
+        roles: ["SUPERADMIN", "EXECUTIVE"],
+      },
+      {
+        title: "Peta Spasial",
+        href: "/places",
+        description: "Visualisasi GIS persebaran pelanggan dan jaringan pipa.",
+        keywords: ["places", "spasial", "peta", "gis", "lokasi"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
+      },
+      {
+        title: "Peta Wilayah",
+        href: "/peta-wilayah",
+        description: "Batas 7 kecamatan dan 21 kelurahan operasional wilayah pelayanan.",
+        keywords: ["peta wilayah", "wilayah 5", "polygon", "kecamatan", "kelurahan"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
+      },
+    ],
+  },
+
+  // ==========================================================================
+  // SEKSI 2: PENCATATAN METER (Pilar 1: Pembacaan, Verifikasi Lapangan, Rute)
+  // ==========================================================================
+  {
+    id: "pencatatan-meter",
+    title: "Pencatatan Meter",
     roles: [
       "SUPERADMIN",
       "EXECUTIVE",
@@ -253,11 +162,10 @@ export const navGroups: NavGroup[] = [
     ],
     items: [
       {
-        title: "Monitoring Baca Meter",
+        title: "Monitoring Baca",
         href: "/cater",
-        description:
-          "Ringkasan baca meter CHN, beban rute, produktivitas petugas, dan bacaan ditinjau.",
-        keywords: ["monitoring baca meter", "cater", "beban rute", "chn"],
+        description: "Pantau unggahan stand meter harian dan penyelesaian lapangan.",
+        keywords: ["monitoring", "baca meter", "cater", "pencatatan", "target"],
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
@@ -265,14 +173,35 @@ export const navGroups: NavGroup[] = [
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
+          "PENCATAT",
+          "PELAKSANA",
         ],
       },
       {
-        title: "Simulasi Baca Meter",
+        title: "Simulasi Baca",
         href: "/cater/simulasi",
-        description:
-          "Simulator pengiriman bacaan meter mobile lapangan dan uji verifikasi.",
-        keywords: ["simulasi", "simulator", "baca meter", "mobile", "uji"],
+        description: "Uji coba pembacaan meter, validasi foto, dan deteksi deviasi.",
+        keywords: ["simulasi", "sandbox", "test", "cater"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Verifikasi CHN",
+        href: "/verifikasi/baca-petugas",
+        description: "Verifikasi pembacaan meter CHN petugas lapangan dan approval.",
+        keywords: ["verifikasi", "baca petugas", "chn", "lapangan", "approval"],
+        roles: [
+          "SUPERADMIN",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
+      },
+      {
+        title: "Foto Meter",
+        href: "/meter/cek-foto",
+        description: "Audit visual galeri foto bukti fisik meteran air hasil bacaan.",
+        keywords: ["cek foto", "foto meter", "bukti fisik", "kamera", "audit foto"],
         roles: [
           "SUPERADMIN",
           "STAFF_ADMIN_BILLING",
@@ -283,304 +212,73 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
+        title: "Radar Anomali",
+        href: "/progres/ekstrim",
+        description: "Deteksi lonjakan pemakaian, pemakaian 0 m³, dan anomali kubikasi.",
+        keywords: ["anomali", "ekstrim", "pemakaian nol", "lonjakan", "kubikasi"],
+        roles: [
+          "SUPERADMIN",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
+      },
+      {
         title: "Progres Petugas",
         href: "/progres/cater",
-        description:
-          "Realisasi harian petugas pencatat meter, target DPM, dan status kerja lapangan.",
-        keywords: ["progres", "cater", "harian", "capaian", "petugas"],
+        description: "Produktivitas harian, kecepatan baca, dan sisa target per petugas.",
+        keywords: ["progres petugas", "produktivitas", "kinerja", "cater", "evaluasi"],
         roles: [
           "SUPERADMIN",
-          "EXECUTIVE",
           "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
+          "PENCATAT",
         ],
       },
       {
-        title: "Progres Wilayah",
+        title: "Capaian Wilayah",
         href: "/progres/wilayah",
-        description:
-          "Persentase penyelesaian pembacaan meter per kelurahan dan zona distribusi.",
-        keywords: ["wilayah", "kelurahan", "zona", "persentase", "capaian"],
+        description: "Persentase penyelesaian pembacaan meter per zona kelurahan.",
+        keywords: ["progres wilayah", "capaian", "zona", "persentase"],
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
           "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
         ],
       },
       {
-        title: "Anomali Kubikasi",
-        href: "/progres/ekstrim",
-        description:
-          "Deteksi lonjakan pemakaian ekstrem, penurunan drastis, dan stand 0 m³.",
-        keywords: ["ekstrim", "anomali", "lonjakan", "stand nol", "turun"],
-        roles: [
-          "SUPERADMIN",
-          "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
-        ],
-      },
-      {
-        title: "Cek Foto",
-        href: "/meter/cek-foto",
-        description:
-          "Validasi visual foto bukti angka meter dan rumah pelanggan dari lapangan.",
-        keywords: ["foto", "audit foto", "water meter", "bukti", "cek foto"],
-        roles: [
-          "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
-        ],
-      },
-      {
-        title: "Pengaduan Air",
-        href: "/pengaduan",
-        description:
-          "Penanganan tiket keluhan warga (pipa bocor, air keruh, meter rusak).",
-        keywords: ["pengaduan", "aduan", "keluhan", "tiket", "gangguan"],
-        roles: [
-          "SUPERADMIN",
-          "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "PELAKSANA",
-        ],
-      },
-    ],
-  },
-
-  // ==========================================================================
-  // GRUP 2: PENGOLAHAN & VERIFIKASI (Aurora Bab 3)
-  // ==========================================================================
-  {
-    id: "verifikasi",
-    title: "Pengolahan & Verifikasi",
-    roles: [
-      "SUPERADMIN",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-    ],
-    items: [
-      {
-        title: "Baca Petugas (CHN)",
-        href: "/verifikasi/baca-petugas",
-        description:
-          "Verifikasi berjenjang Ring 1 (SPV), Ring 2 (MGR), Ring 3 (DIR) atas bacaan petugas.",
-        keywords: ["verifikasi", "baca petugas", "chn", "ring 1", "ring 2", "ring 3"],
-        roles: [
-          "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
-        ],
-      },
-      {
-        title: "Lapor Mandiri",
-        href: "/verifikasi/baca-pelanggan",
-        description:
-          "Validasi angka stand dan foto meter mandiri kiriman pelanggan.",
-        keywords: ["verifikasi mandiri", "lapor meter", "warga", "mandiri"],
-        roles: [
-          "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
-        ],
-      },
-      {
-        title: "Koreksi Stand",
-        href: "/progres/koreksi",
-        description:
-          "Penyesuaian angka stand dan koreksi kubikasi dengan audit trail.",
-        keywords: ["koreksi", "kubikasi", "penyesuaian", "audit trail"],
-        roles: [
-          "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
-        ],
-      },
-      {
-        title: "Manual ADD & Taksasi",
-        href: "/pelanggan/manual-add",
-        description:
-          "Input stand manual satuan maupun taksasi massal untuk rumah terkunci/terhalang.",
-        keywords: ["manual add", "taksasi", "massal", "rumah terkunci", "stand manual"],
+        title: "Ganti Meter",
+        href: "/cater/ganti-meter",
+        description: "Pencatatan penggantian water meter fisik dan stand angkat.",
+        keywords: ["ganti meter", "gwm", "meter rusak", "meter macet", "stand angkat"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
-        title: "Ganti Water Meter",
-        href: "/cater/ganti-meter",
-        description:
-          "Pencatatan pergantian meter air (GWM), stand angkat lama, dan stand pasang.",
-        keywords: ["gwm", "ganti meter", "stand angkat", "stand pasang"],
-        roles: [
-          "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-        ],
+        title: "Kode Kelainan",
+        href: "/master/kelainan",
+        description: "Master 17 kode jenis kelainan fisik water meter dan tindakan.",
+        keywords: ["kelainan", "kode kelainan", "meter rusak", "anomali meter"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
-        title: "Mutasi & Kalkulasi",
-        children: [
-          {
-            title: "Hitung Rata-Rata",
-            href: "/meter/hitung-rata-rata",
-            description:
-              "Kalkulasi rata-rata pemakaian air 3 bulan terakhir (pending).",
-            keywords: ["hitung rata-rata", "rata-rata", "taksiran"],
-          },
-          {
-            title: "Mutasi Pelanggan",
-            href: "/pelanggan/mutasi",
-            description:
-              "Pembaruan status administrasi dan mutasi pelanggan (pending).",
-            keywords: ["mutasi", "perubahan", "pelanggan"],
-          },
-          {
-            title: "Pindah Jenis Tarif",
-            href: "/pelanggan/jenis",
-            description:
-              "Modifikasi kategori golongan tarif pelanggan (pending).",
-            keywords: ["pindah jenis", "tarif", "golongan"],
-          },
-          {
-            title: "No HP Pelanggan",
-            href: "/pelanggan/no-hp",
-            description:
-              "Pembaruan nomor telepon/WhatsApp pelanggan (pending).",
-            keywords: ["no hp", "whatsapp", "telepon"],
-          },
-        ],
+        title: "Pemetaan Rute",
+        href: "/master/pemetaan-petugas",
+        description: "Penugasan area kerja dan rute Daftar Pembacaan Meter (DPM).",
+        keywords: ["pemetaan", "rute", "dpm", "penugasan petugas"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
     ],
   },
 
   // ==========================================================================
-  // GRUP 3: TUTUP BULAN / CLOSING (Aurora Bab 7 — 6 Halaman Terpisah)
+  // SEKSI 3: TAGIHAN (Pilar 2: Billing, Rekening Air, Koreksi & Closing Siklus)
   // ==========================================================================
   {
-    id: "tutup-bulan",
-    title: "Tutup Bulan (Closing)",
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_3",
-    ],
-    items: [
-      {
-        title: "Konsol Tutup Bulan",
-        href: "/tools-tutup/monitoring-tutup-bulan",
-        description:
-          "Wizard 5 langkah dan matriks 12 tahapan eksekusi tutup buku bulanan.",
-        keywords: ["konsol tutup bulan", "closing periode", "monitoring tutup bulan"],
-      },
-      {
-        title: "Stand Angkat",
-        href: "/tools-tutup/stand-angkat",
-        description:
-          "Persetujuan stand angkat meter lama dan stand pasang meter baru sebelum closing.",
-        keywords: ["stand angkat", "pergantian meter", "tutup bulan"],
-      },
-      {
-        title: "Perbandingan Tagihan",
-        href: "/tools-tutup/create-perbandingan",
-        description:
-          "Komparasi jumlah pelanggan, kubikasi (m³), dan omzet antar periode.",
-        keywords: ["perbandingan tagihan", "create perbandingan", "omzet"],
-      },
-      {
-        title: "Cek Selisih Pelanggan",
-        href: "/tools-tutup/cek-selisih-pelanggan",
-        description:
-          "Audit rekonsiliasi 4 pilar: Master Pelanggan, DPM, Bacaan, dan Rekening DRD.",
-        keywords: ["cek selisih", "rekonsiliasi", "unbilled", "selisih pelanggan"],
-      },
-      {
-        title: "PBPK (Pasang Baru & PK)",
-        href: "/tools-tutup/pbpk",
-        description:
-          "Finalisasi sambungan baru (PB) dan perubahan kategori golongan tarif (PK).",
-        keywords: ["pbpk", "pasang baru", "perubahan kategori", "mutasi tarif"],
-      },
-      {
-        title: "Panduan 12 Modul",
-        href: "/tools-tutup/panduan",
-        description:
-          "Skema alur kerja 4 fase, rumus tarif progresif 4 blok, dan panduan closing.",
-        keywords: ["panduan closing", "skema tutup buku", "bantuan closing"],
-      },
-      {
-        title: "Pintasan Tahapan",
-        children: [
-          {
-            title: "Upload Master Pelanggan",
-            href: "/tools-tutup/upload-master-pelanggan",
-            description: "Langkah 1: Validasi database induk master pelanggan.",
-            keywords: ["upload master pelanggan", "langkah 1"],
-          },
-          {
-            title: "Update Zonasi",
-            href: "/tools-tutup/update-zonasi",
-            description: "Langkah 1: Pembaruan struktur zonasi wilayah dan rute.",
-            keywords: ["update zonasi", "langkah 1"],
-          },
-          {
-            title: "Posting Datameter",
-            href: "/tools-tutup/posting-datameter",
-            description: "Langkah 2: Publikasi bacaan meter terverifikasi ke billing.",
-            keywords: ["posting datameter", "langkah 2"],
-          },
-          {
-            title: "Create Closed DRD",
-            href: "/tools-tutup/create-closed-drd",
-            description: "Langkah 4: Penerbitan DRD terkunci (LOCKED_BILLING).",
-            keywords: ["create closed drd", "langkah 4"],
-          },
-          {
-            title: "Create Bulan Baru",
-            href: "/tools-tutup/create-bulan-baru",
-            description: "Langkah 5: Inisialisasi periode baca bulan berikutnya.",
-            keywords: ["create bulan baru", "langkah 5"],
-          },
-          {
-            title: "Sync Pelanggan Baru",
-            href: "/tools-tutup/sync-pelanggan-baru",
-            description: "Langkah 5: Sinkronisasi pelanggan baru ke rute DPM.",
-            keywords: ["sync pelanggan baru", "langkah 5"],
-          },
-          {
-            title: "Update Data Pelanggan",
-            href: "/tools-tutup/update-data-pelanggan",
-            description: "Langkah 5: Pembaruan massal urutan rute pelanggan.",
-            keywords: ["update data pelanggan", "langkah 5"],
-          },
-        ],
-      },
-    ],
-  },
-
-  // ==========================================================================
-  // GRUP 4: LAPORAN & AUDIT (Aurora Bab 6)
-  // ==========================================================================
-  {
-    id: "laporan",
-    title: "Laporan & Audit",
+    id: "tagihan",
+    title: "Tagihan",
     roles: [
       "SUPERADMIN",
       "EXECUTIVE",
@@ -593,311 +291,361 @@ export const navGroups: NavGroup[] = [
       {
         title: "Laporan DRD",
         href: "/laporan/lap-drd",
-        description:
-          "Rekapitulasi Daftar Rekening Ditagih resmi per golongan tarif dan wilayah.",
-        keywords: ["drd", "laporan drd", "rekening", "ditagih"],
+        description: "Rekapitulasi Daftar Rekening Ditagih (DRD) dan pendapatan resmi.",
+        keywords: ["drd", "laporan drd", "tagihan", "rekening air", "piutang"],
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
-        ],
-      },
-      {
-        title: "Kubikasi Koreksi",
-        href: "/laporan/monitoring-kubikasi-koreksi",
-        description:
-          "Laporan audit perubahan kubikasi pasca koreksi dan dampak finansial.",
-        keywords: ["kubikasi", "koreksi", "audit koreksi", "rekap koreksi"],
-        roles: [
-          "SUPERADMIN",
-          "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
-        ],
-      },
-      {
-        title: "Kelainan Meter",
-        href: "/laporan/lap-kelainan-meter",
-        description:
-          "Laporan rekapitulasi 17 jenis kelainan fisik water meter.",
-        keywords: ["kelainan meter", "meter rusak", "kaca buram", "macet"],
-        roles: [
-          "SUPERADMIN",
           "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
-        ],
-      },
-      {
-        title: "Evaluasi Petugas",
-        href: "/laporan/evaluasi",
-        description:
-          "Laporan evaluasi kinerja, produktivitas, dan akurasi petugas cater.",
-        keywords: ["evaluasi", "produktivitas", "kpi", "kinerja petugas"],
-        roles: [
-          "SUPERADMIN",
-          "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_2",
           "VERIFIKATOR_3",
         ],
       },
       {
-        title: "Stand Awal & Akhir",
-        href: "/laporan/stand-awal-akhir",
-        description:
-          "Laporan komparasi angka stand meter awal terhadap stand meter akhir.",
-        keywords: ["stand awal", "stand akhir", "komparasi"],
-        roles: [
-          "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-        ],
+        title: "Koreksi Stand",
+        href: "/progres/koreksi",
+        description: "Koreksi angka stand meter dan penyesuaian kubikasi rekening berjalan.",
+        keywords: ["koreksi", "koreksi stand", "edit stand", "revisi kubikasi"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
-        title: "Arsip Laporan",
-        children: [
-          {
-            title: "Lap. Periode Cater",
-            href: "/laporan/lap-periode",
-            description: "Laporan jadwal dan periode pembacaan cater (pending).",
-            keywords: ["lap periode", "periode cater"],
-          },
-          {
-            title: "Lap. Data Meter",
-            href: "/laporan/lap-data-meter",
-            description: "Laporan nomor seri dan spesifikasi meter air (pending).",
-            keywords: ["lap data meter", "spesifikasi meter"],
-          },
-          {
-            title: "Lap. Selisih Hari",
-            href: "/laporan/selisih-hari",
-            description: "Laporan deviasi rentang hari baca antar periode (pending).",
-            keywords: ["selisih hari", "rentang baca"],
-          },
-          {
-            title: "Lap. Mutasi Pelanggan",
-            href: "/laporan/lap-mutasi-pel",
-            description: "Laporan perubahan data induk pelanggan (pending).",
-            keywords: ["lap mutasi pel", "mutasi pelanggan"],
-          },
-          {
-            title: "Lap. Perubahan Pel",
-            href: "/laporan/perubahan-pelanggan",
-            description: "Log audit perubahan atribut pelanggan (pending).",
-            keywords: ["perubahan pelanggan", "audit pelanggan"],
-          },
-          {
-            title: "Lap. Pelanggan",
-            href: "/laporan/pelanggan",
-            description: "Direktori rekapitulasi pelanggan per wilayah (pending).",
-            keywords: ["lap pelanggan", "rekap pelanggan"],
-          },
-          {
-            title: "Lap. History",
-            href: "/laporan/history",
-            description: "Rekapitulasi histori pembacaan jangka panjang (pending).",
-            keywords: ["lap history", "riwayat pembacaan"],
-          },
-        ],
+        title: "Manual ADD",
+        href: "/pelanggan/manual-add",
+        description: "Input stand meter manual atau taksasi rata-rata untuk rumah terkunci.",
+        keywords: ["manual add", "taksasi", "input manual", "meter terkunci"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Hitung Rata-Rata",
+        href: "/meter/hitung-rata-rata",
+        description: "Kalkulasi otomatis pemakaian air berdasarkan histori 3 bulan terakhir.",
+        keywords: ["hitung rata rata", "rata 3 bulan", "kalkulasi taksasi"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Konsol Tutup Bulan",
+        href: "/tools-tutup/monitoring-tutup-bulan",
+        description: "5-step wizard konsol tutup buku bulanan dan pembukaan siklus baru.",
+        keywords: ["tutup bulan", "closing", "buka bulan baru", "kunci periode"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
     ],
   },
 
   // ==========================================================================
-  // GRUP 5: MASTER & INTEGRASI (Aurora Bab 2, Bab 8 & Bab 9)
+  // SEKSI 4: LANGGANAN (Pilar 3: Pelanggan, Layanan Mandiri, Pengaduan)
   // ==========================================================================
   {
-    id: "master",
-    title: "Master & Integrasi",
-    roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
+    id: "langganan",
+    title: "Langganan",
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+      "VERIFIKATOR_2",
+      "VERIFIKATOR_3",
+      "PENCATAT",
+      "PELAKSANA",
+      "USER",
+    ],
     items: [
       {
-        title: "Petugas Cater",
-        href: "/master/petugas",
-        description:
-          "Manajemen data profil, kontak, dan penugasan petugas pencatat lapangan.",
-        keywords: ["master petugas", "cater", "pencatat", "petugas cater"],
+        title: "Info Pelanggan",
+        href: "/info-pelanggan",
+        description: "Detail sambungan pipa, stand meter, dan histori rekening 12 bulan.",
+        keywords: ["info pelanggan", "pelanggan", "cari pelanggan", "histori", "sambungan"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+          "PENCATAT",
+          "PELAKSANA",
+          "USER",
+        ],
+      },
+      {
+        title: "Lapor Mandiri",
+        href: "/verifikasi/baca-pelanggan",
+        description: "Validasi foto dan stand pembacaan mandiri warga.",
+        keywords: ["lapor mandiri", "baca pelanggan", "mandiri", "self reading", "stand konsumen"],
+        roles: [
+          "SUPERADMIN",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
+      },
+      {
+        title: "Pengaduan Layanan",
+        href: "/pengaduan",
+        description: "Helpdesk terpadu keluhan pipa bocor, air keruh, dan meter mati.",
+        keywords: ["pengaduan", "tiket", "keluhan", "layanan pelanggan", "bocor pipa"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+          "PELAKSANA",
+          "USER",
+        ],
+      },
+      {
+        title: "Peta Pengaduan",
+        href: "/peta-pengaduan",
+        description: "Peta kendali dan visualisasi spasial sebaran tiket keluhan pelanggan.",
+        keywords: ["peta pengaduan", "gis aduan", "sebaran keluhan", "spasial pengaduan"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+          "PELAKSANA",
+          "USER",
+        ],
+      },
+      {
+        title: "Mutasi Pelanggan",
+        href: "/pelanggan/mutasi",
+        description: "Pengelolaan mutasi nama kepemilikan, alamat, dan data dinas.",
+        keywords: ["mutasi pelanggan", "ubah nama", "balik nama", "administrasi"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Pindah Tarif",
+        href: "/pelanggan/pindah-tarif",
+        description: "Reklasifikasi golongan tarif langganan pelanggan.",
+        keywords: ["pindah tarif", "reklasifikasi", "golongan langganan", "kategori tarif"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Validasi Kontak",
+        href: "/pelanggan/no-hp",
+        description: "Pembaruan nomor telepon dan WhatsApp untuk notifikasi rekening.",
+        keywords: ["no hp", "kontak pelanggan", "whatsapp", "telepon"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "PENCATAT"],
+      },
+    ],
+  },
+
+  // ==========================================================================
+  // SEKSI 5: IMPORT DATA (Pemulihan Backup HP, R-Nomor & PBPK)
+  // ==========================================================================
+  {
+    id: "import-data",
+    title: "Import Data",
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+      "VERIFIKATOR_2",
+      "VERIFIKATOR_3",
+      "PELAKSANA",
+    ],
+    items: [
+      {
+        title: "Foto Backup",
+        href: "/import/foto-backup",
+        description: "Pemulihan foto stand meter, segel, dan rumah dari backup HP petugas.",
+        keywords: ["foto backup", "backup hp", "foto meter", "segel", "rumah", "recovery"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Import Data",
+        href: "/import/data",
+        description: "Import file data pencatatan stand meter pemulihan kendala jaringan.",
+        keywords: ["import data", "data pencatatan", "bacaan meter", "file backup", "csv"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "R Nomor",
+        href: "/import/r-nomor",
+        description: "Input dan pembaruan data rekening pemutusan pelanggan (R Nomor).",
+        keywords: ["r nomor", "pemutusan", "cabut meter", "pelanggan putus", "non aktif"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Import PBPK",
+        href: "/import/pbpk",
+        description: "Import CSV Pasang Baru (PB) dan Pemasangan Kembali (PK) pelanggan.",
+        keywords: ["import pbpk", "pbpk", "pasang baru", "pemasangan kembali", "csv"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+    ],
+  },
+
+  // ==========================================================================
+  // SEKSI 6: SETTING LANDING PAGE (Sama rata & konsisten tanpa collapse)
+  // ==========================================================================
+  {
+    id: "setting-landing",
+    title: "Setting Landing",
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+    ],
+    items: [
+      {
+        title: "Profil & Kontak",
+        href: "/setting-landing/profil",
+        description: "Informasi resmi perusahaan, visi misi, call center, dan kantor cabang.",
+        keywords: ["profil", "kontak", "perusahaan", "kantor cabang", "landing page"],
+        roles: ["SUPERADMIN", "EXECUTIVE", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Pasang Baru",
+        href: "/setting-landing/pasang-baru",
+        description: "Persyaratan dokumen, alur pendaftaran teknis, dan informasi RAB.",
+        keywords: ["syarat pasang baru", "pasang baru", "sambungan baru"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Cara Bayar",
+        href: "/setting-landing/cara-bayar",
+        description: "Panduan kanal perbankan mitra, ritel modern, dan kebijakan denda.",
+        keywords: ["cara bayar", "pembayaran", "rekening", "mitra"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Tarif Air",
+        href: "/setting-landing/tarif-air",
+        description: "Tabel tarif golongan pelanggan dan blok konsumsi progresif.",
+        keywords: ["tarif air", "harga air", "golongan", "blok progresif"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Berita Portal",
+        href: "/setting-landing/berita",
+        description: "Publikasi rilis pers resmi, kegiatan humas, dan artikel edukasi.",
+        keywords: ["berita", "pengumuman", "artikel", "rilis"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Siaran Gangguan",
+        href: "/broadcast",
+        description: "Pemberitahuan darurat kebocoran pipa dan banner portal publik.",
+        keywords: ["broadcast", "siaran", "gangguan pipa", "banner"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+    ],
+  },
+
+  // ==========================================================================
+  // SEKSI 6: PENGATURAN (Aplikasi, Sistem, Pengguna & RBAC)
+  // ==========================================================================
+  {
+    id: "pengaturan",
+    title: "Pengaturan",
+    roles: [
+      "SUPERADMIN",
+      "EXECUTIVE",
+      "STAFF_ADMIN_BILLING",
+      "VERIFIKATOR_1",
+      "VERIFIKATOR_2",
+      "VERIFIKATOR_3",
+      "PENCATAT",
+      "PELAKSANA",
+      "USER",
+    ],
+    items: [
+      {
+        title: "Profil Akun",
+        href: "/pengaturan/profil",
+        description: "Identitas dinas petugas, NPP, foto profil, dan kata sandi.",
+        keywords: ["profil akun", "password", "kata sandi", "operator"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+          "PENCATAT",
+          "PELAKSANA",
+          "USER",
+        ],
+      },
+      {
+        title: "Catat Meter",
+        href: "/pengaturan/cater",
+        description: "Radius toleransi geofence GPS, durasi baca, dan mock GPS.",
+        keywords: ["cater", "geofence", "toleransi gps", "foto meter"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Verifikasi & Anomali",
+        href: "/pengaturan/verifikasi",
+        description: "Metode taksasi default, cut-off closing, dan ambang batas deviasi.",
+        keywords: ["verifikasi", "anomali", "taksasi", "ambang deviasi"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Billing & Denda",
+        href: "/pengaturan/billing",
+        description: "Bea administrasi rekening, biaya pemeliharaan meter, dan denda flat.",
+        keywords: ["billing", "bea admin", "pemeliharaan", "denda"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
-        title: "Pemetaan Petugas",
-        href: "/master/pemetaan-petugas",
-        description:
-          "Penugasan area dan buku Daftar Pembacaan Meter (DPM) per petugas.",
-        keywords: ["pemetaan", "rute", "dpm", "wilayah", "penugasan"],
+        title: "Pengaduan & SLA",
+        href: "/pengaturan/pengaduan",
+        description: "Target SLA pipa bocor, alur SPK meter, dan WhatsApp gateway.",
+        keywords: ["pengaduan", "sla", "tiket", "whatsapp gateway"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Sistem & Log",
+        href: "/pengaturan/sistem",
+        description: "Kepadatan tabel antarmuka, suara alert anomali, dan audit log.",
+        keywords: ["sistem", "audit trail", "kepadatan", "preferensi"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
-        title: "Urutan Rute",
-        href: "/master/urut",
-        description:
-          "Pengaturan urutan sekuensial rute jalan/gang pelanggan.",
-        keywords: ["sekuensial", "urutan", "langkah", "urutan rute"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
-      },
-      {
-        title: "Kode Kelainan",
-        href: "/master/kelainan",
-        description:
-          "Master 17 kode jenis kelainan fisik water meter dan tindakan lapangan.",
-        keywords: ["kelainan", "kode kelainan", "master kelainan"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
-      },
-      {
-        title: "Manajemen User",
+        title: "Pengguna",
         href: "/master/user",
-        description:
-          "Manajemen akun pengguna aplikasi (CRUD user, role, dan status aktif).",
-        keywords: ["user", "pengguna", "akun", "manajemen user"],
+        description: "Manajemen akun pengguna aplikasi, penetapan role, dan status aktif.",
+        keywords: ["manajemen user", "pengguna", "akun", "tambah user"],
         roles: ["SUPERADMIN"],
       },
       {
-        title: "Otorisasi Menu",
+        title: "Hak Akses (RBAC)",
         href: "/master/otorisasi",
-        description:
-          "Matriks hak akses (RBAC) per level pengguna dan ring verifikasi.",
-        keywords: ["otorisasi", "rbac", "hak akses", "role"],
+        description: "Matriks perizinan hak akses per level pengguna dan approval.",
+        keywords: ["otorisasi", "rbac", "hak akses", "role matriks"],
         roles: ["SUPERADMIN"],
-      },
-      {
-        title: "Utilitas Rute",
-        children: [
-          {
-            title: "Gabung Rute",
-            href: "/master/gabung",
-            description:
-              "Menggabungkan beberapa rute kecil menjadi satu penugasan (pending).",
-            keywords: ["gabung rute", "penggabungan rute"],
-          },
-          {
-            title: "Pindah Rute",
-            href: "/master/pindah",
-            description:
-              "Memindahkan pelanggan dari satu rute ke rute petugas lain (pending).",
-            keywords: ["pindah rute", "mutasi rute"],
-          },
-          {
-            title: "Monitoring Pindah Rute",
-            href: "/master/monitoring",
-            description:
-              "Memantau riwayat pemindahan rute pelanggan antar petugas (pending).",
-            keywords: ["monitoring pindah rute", "log rute"],
-          },
-        ],
-      },
-      {
-        title: "Sync Mobile (Android)",
-        children: [
-          {
-            title: "Sync (1) Kirim Mutasi",
-            href: "/sync/sync-mutasi",
-            description:
-              "Mengirim data terbaru mutasi pelanggan ke perangkat petugas (pending).",
-            keywords: ["sync mutasi", "kirim mutasi"],
-          },
-          {
-            title: "Sync (2) Kirim Datameter",
-            href: "/sync/sync-datameter",
-            description:
-              "Mengirim daftar rute dan target bacaan ke perangkat petugas (pending).",
-            keywords: ["sync datameter", "kirim datameter"],
-          },
-          {
-            title: "Sync (3) Import STI",
-            href: "/sync/sync-sti",
-            description:
-              "Menarik hasil bacaan lapangan (Stand, Foto, GPS) ke server (pending).",
-            keywords: ["sync sti", "import sti"],
-          },
-          {
-            title: "Sync (4) Bulan Baru",
-            href: "/sync/sync-bulan-baru",
-            description:
-              "Sinkronisasi perpindahan siklus ke bulan operasional baru (pending).",
-            keywords: ["sync bulan baru"],
-          },
-        ],
-      },
-      {
-        title: "Tools & Impor Batch",
-        children: [
-          {
-            title: "Running Text",
-            href: "/tools/running-text",
-            description:
-              "Pengaturan teks pengumuman berjalan di aplikasi mobile petugas (pending).",
-            keywords: ["running text", "pengumuman"],
-          },
-          {
-            title: "Import Stand Angkat",
-            href: "/tools/import-stand",
-            description:
-              "Impor data stand angka pengangkatan/penggantian meter (pending).",
-            keywords: ["import stand angkat"],
-          },
-          {
-            title: "Import PB-PK",
-            href: "/tools/import-pbpk",
-            description:
-              "Impor data mutasi pasang baru dan perubahan kategori (pending).",
-            keywords: ["import pbpk"],
-          },
-          {
-            title: "Import Data GWM",
-            href: "/tools/import-data",
-            description:
-              "Impor data pembacaan Grand Water Meter / Master Meter (pending).",
-            keywords: ["import data gwm"],
-          },
-          {
-            title: "Import Foto GWM",
-            href: "/tools/import-photo",
-            description:
-              "Pemulihan cadangan foto Grand Water Meter (pending).",
-            keywords: ["import photo", "foto gwm"],
-          },
-          {
-            title: "Import Data SPT",
-            href: "/tools/import-spt",
-            description:
-              "Impor data Surat Perintah Tugas / rute lapangan (pending).",
-            keywords: ["import spt"],
-          },
-          {
-            title: "Import Data Anomali",
-            href: "/tools/import-anomali",
-            description:
-              "Impor data penandaan anomali dari sistem eksternal (pending).",
-            keywords: ["import anomali"],
-          },
-          {
-            title: "Import Backup",
-            href: "/tools/import-backup",
-            description:
-              "Pemulihan file cadangan data dan foto pembacaan (pending).",
-            keywords: ["import backup"],
-          },
-          {
-            title: "Import Tutup Bulan",
-            href: "/tools/import-tutup",
-            description:
-              "Impor file hasil penutupan buku/bulan (pending).",
-            keywords: ["import tutup"],
-          },
-        ],
       },
     ],
   },
 ];
 
-// Helper kelompok terpisah untuk SidebarNav
-export const operasionalGroupIds = ["monitoring", "verifikasi"];
-export const billingMasterGroupIds = ["tutup-bulan", "laporan", "master"];
+// ----------------------------------------------------------------------------
+// 3. KOMPATIBILITAS EKSPOR & HELPER
+// ----------------------------------------------------------------------------
+
+export const standaloneTopNav: NavItem[] =
+  (navGroups.find((g) => g.id === "ikhtisar")?.items as NavItem[]) || [];
+export const standaloneMidNav: NavItem[] = [];
+export const standaloneBottomNav: NavItem[] = [];
+export const standaloneClosingNav: NavItem[] = [];
+
+export const primaryNav: NavItem[] = [...standaloneTopNav];
+
+export const operasionalGroupIds = ["pencatatan-meter"];
+export const billingMasterGroupIds = ["tagihan", "langganan"];
+export const settingGroupIds = ["setting-landing", "pengaturan"];
+export const portalLandingGroupIds = ["setting-landing"];
 
 // ----------------------------------------------------------------------------
 // 4. DATA TURUNAN (Index Datar & Pencarian)
@@ -920,17 +668,9 @@ function collectEntries(
 
 function buildNavIndex(groups: readonly NavGroup[]): NavEntry[] {
   const out: NavEntry[] = [];
-  // 1. Indeks kelompok tematik
-  for (const group of groups) collectEntries(group, group.items, [], out);
-
-  // 2. Indeks modul mandiri (Primary Nav) dengan virtual group "primary"
-  const primaryGroup: NavGroup = {
-    id: "primary",
-    title: "Menu Utama",
-    items: primaryNav,
-  };
-  collectEntries(primaryGroup, primaryNav, [], out);
-
+  for (const group of groups) {
+    collectEntries(group, group.items, [], out);
+  }
   return out;
 }
 
@@ -993,7 +733,7 @@ export function isNodeAllowed(
 ): boolean {
   if (userRoles.includes("SUPERADMIN")) return true;
   if (!node.roles || node.roles.length === 0) return true;
-  return node.roles.some((role) => userRoles.includes(role));
+  return node.roles.some((role) => userRoles.includes(role as AppRole));
 }
 
 export function filterNavGroups(

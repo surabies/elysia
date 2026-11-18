@@ -57,7 +57,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var w=localStorage.getItem("elysia-sidebar-width");if(w){var n=parseInt(w,10);if(n>=256&&n<=420){document.documentElement.style.setProperty("--sidebar-width",n+"px");}else{document.documentElement.style.setProperty("--sidebar-width","256px");localStorage.setItem("elysia-sidebar-width","256");}}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}catch(e){}`,
+            __html: `try{var m=document.cookie.match(/(?:^|; )sidebar_width=(\\d+)/);var w=m?m[1]:localStorage.getItem("elysia-sidebar-width");if(w){var n=parseInt(w,10);if(n>=256&&n<=420){document.documentElement.style.setProperty("--sidebar-width",n+"px");}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}catch(e){}`,
           }}
         />
       </head>

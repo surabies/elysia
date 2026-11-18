@@ -85,6 +85,7 @@ export class PelangganService {
         pakaiTagih: caterBacaMeter.pakaiTagih,
         ketCatat: caterBacaMeter.ketCatat,
         fotoMeterUrl: caterBacaMeter.fotoMeterUrl,
+        fotoSegelUrl: caterBacaMeter.fotoSegelUrl,
         fotoRumahUrl: caterBacaMeter.fotoRumahUrl,
         lokasiGps: caterBacaMeter.lokasiGps,
         petugasId: caterBacaMeter.petugasId,

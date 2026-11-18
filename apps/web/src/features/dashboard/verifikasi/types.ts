@@ -103,6 +103,8 @@ export interface PembacaanRingkas {
   blokTarif: number
   kondisi?: string | null
   fotoBukti?: string | null
+  fotoSegelUrl?: string | null
+  fotoRumahUrl?: string | null
   sumberLaporan?: "PETUGAS" | "KONSUMEN" | null
 }
 

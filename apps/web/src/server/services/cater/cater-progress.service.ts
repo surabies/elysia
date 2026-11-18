@@ -65,6 +65,7 @@ export interface AnomaliKubikasiItem {
   statusVerifikasi: string;
   jenisAnomali: JenisAnomali;
   fotoMeterUrl: string | null;
+  fotoSegelUrl?: string | null;
   fotoRumahUrl: string | null;
   tglCatat: Date | string | null;
 }
@@ -97,6 +98,7 @@ export interface CekFotoItem {
   statusVerifikasi: string;
   tglCatat: Date | string | null;
   fotoMeterUrl: string | null;
+  fotoSegelUrl?: string | null;
   fotoRumahUrl: string | null;
   jarakPelangganMeter: number | null;
 }
@@ -462,6 +464,7 @@ export class CaterProgressService {
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
         tglCatat: caterBacaMeter.tglCatat,
         fotoMeterUrl: caterBacaMeter.fotoMeterUrl,
+        fotoSegelUrl: caterBacaMeter.fotoSegelUrl,
         fotoRumahUrl: caterBacaMeter.fotoRumahUrl,
         jarakPelangganMeter: caterBacaMeter.jarakPelangganMeter,
       })
@@ -491,6 +494,7 @@ export class CaterProgressService {
       statusVerifikasi: r.statusVerifikasi ?? 'SUBMITTED',
       tglCatat: r.tglCatat,
       fotoMeterUrl: r.fotoMeterUrl,
+      fotoSegelUrl: r.fotoSegelUrl,
       fotoRumahUrl: r.fotoRumahUrl,
       jarakPelangganMeter: r.jarakPelangganMeter ? Number(r.jarakPelangganMeter) : null,
     }));

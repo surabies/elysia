@@ -17,6 +17,7 @@ import { masterRouter } from "./modules/master/master.router";
 import { kpiModule } from "./modules/kpi";
 import { mediaRouter } from "./modules/media";
 import { broadcastModule } from "./modules/broadcast";
+import { importModule } from "./modules/import";
 
 export const app = new Elysia({ prefix: "/api" })
   .use(corsPlugin)
@@ -45,6 +46,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(kpiModule)
   .use(mediaRouter)
   .use(broadcastModule)
+  .use(importModule)
   .use(verifikasiLegacyRouter);
 
 export type App = typeof app;

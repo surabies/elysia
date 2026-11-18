@@ -2,6 +2,7 @@
 // Tugas: membungkus halaman dashboard dengan panel sidebar penuh di kiri dan workspace di kanan.
 import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
 
 import { auth, signOut } from "@/lib/auth/index"
 import { DashboardShell } from "@/components/layout/index"
@@ -23,8 +24,19 @@ export default async function DashboardLayout({
 
   const { user } = session
 
+  // Baca status & lebar sidebar dari cookie agar tidak ada flicker/berkedip saat reload
+  const cookieStore = await cookies()
+  const sidebarState = cookieStore.get("sidebar_state")?.value
+  const defaultOpen = sidebarState !== undefined ? sidebarState === "true" : true
+  const rawWidth = cookieStore.get("sidebar_width")?.value
+  const parsedWidth = rawWidth ? parseInt(rawWidth, 10) : 256
+  const defaultWidth =
+    !isNaN(parsedWidth) && parsedWidth >= 256 && parsedWidth <= 420
+      ? parsedWidth
+      : 256
+
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultOpen} defaultWidth={defaultWidth}>
       <TooltipProvider delayDuration={100}>
         <DashboardShell
           user={{

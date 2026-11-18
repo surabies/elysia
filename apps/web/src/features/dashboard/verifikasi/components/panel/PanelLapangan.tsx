@@ -30,6 +30,7 @@ import { TabFoto } from "../foto/TabFoto";
 import { PetaLokasi } from "../PetaLokasi";
 import { TEKS_RING } from "../../lib/warna-tahap";
 import { tentukanHasilPembacaan } from "../../lib/hasil-pembacaan";
+import { resolveFotoUrl } from "@/lib/foto-resolver";
 
 /// Baris progres ring V1/V2/V3 — penampil murni. Warna per ring SAMA dengan
 /// kolom Ring di tabel, dan ketiganya diperlakukan setara.
@@ -176,7 +177,7 @@ export function PanelLapangan({
   const pembacaan = tentukanHasilPembacaan(detail);
 
   return (
-    <div className="flex min-w-0 flex-col gap-2 px-2 py-2" aria-busy={memuat}>
+    <div className="flex min-w-0 flex-col gap-2.5 p-3" aria-busy={memuat}>
       {galat && (
         <p role="alert" className="text-label-12 text-destructive">
           {galat}
@@ -210,45 +211,70 @@ export function PanelLapangan({
         }}
       />
 
-      <Seksi judul="Foto laporan periode ini">
+      <Seksi judul="Foto Laporan Periode Ini">
         <TabFoto
           varian="panel"
           item={[
             {
               kunci: "stand",
               label: "Stand meter",
-              url: detail.fotoStandUrl ?? detail.pembacaan?.fotoBukti,
+              url: resolveFotoUrl({
+                realUrl: detail.fotoStandUrl ?? detail.pembacaan?.fotoBukti,
+                nolg: detail.nomorLangganan,
+                jenis: "stand",
+                stand: detail.standAkhir,
+                periode: String(detail.periode),
+                nama: detail.namaPelanggan ?? undefined,
+              }),
               keteranganKosong:
                 "Laporan petugas dari sistem lama tidak menyertakan foto.",
             },
             {
               kunci: "segel",
               label: "Segel",
-              url: detail.fotoSegelUrl,
+              url: resolveFotoUrl({
+                realUrl: detail.fotoSegelUrl,
+                nolg: detail.nomorLangganan,
+                jenis: "segel",
+                stand: detail.standAkhir,
+                periode: String(detail.periode),
+                nama: detail.namaPelanggan ?? undefined,
+              }),
               keteranganKosong: "Petugas tidak mengirim foto segel.",
             },
             {
               kunci: "rumah",
               label: "Rumah",
-              url: detail.fotoRumahUrl,
+              url: resolveFotoUrl({
+                realUrl: detail.fotoRumahUrl,
+                nolg: detail.nomorLangganan,
+                jenis: "rumah",
+                stand: detail.standAkhir,
+                periode: String(detail.periode),
+                nama: detail.namaPelanggan ?? undefined,
+              }),
               keteranganKosong: "Petugas tidak mengirim foto rumah/persil.",
             },
           ]}
         />
       </Seksi>
 
-      <Seksi judul="Foto pembanding periode sebelumnya">
+      <Seksi judul="Foto Pembanding Periode Lalu">
         <FotoSebelumnya
           pelangganId={detail.pelanggan?.id}
+          nomorLangganan={detail.nomorLangganan}
           periode={detail.periode}
+          standAwal={pembacaan.standAwal ?? detail.standAwal}
+          nama={nama}
+          rute={detail.pelanggan?.rute?.kode ?? undefined}
         />
       </Seksi>
 
-      <Seksi judul="Verifikasi berjenjang">
+      <Seksi judul="Verifikasi Berjenjang">
         <ProgresRing detail={detail} />
       </Seksi>
 
-      <Seksi judul="Lokasi pelanggan">
+      <Seksi judul="Lokasi Pelanggan">
         <PetaLokasi
           langsung
           lat={detail.pelanggan?.geoLat}

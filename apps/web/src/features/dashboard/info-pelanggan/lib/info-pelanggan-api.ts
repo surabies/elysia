@@ -31,6 +31,7 @@ type PelangganDetailResponse = {
       pakaiTagih?: string | number | null;
       ketCatat?: string | null;
       fotoMeterUrl?: string | null;
+      fotoSegelUrl?: string | null;
       fotoRumahUrl?: string | null;
       lokasiGps?: { x: number; y: number } | null;
       petugasId?: string | null;
@@ -164,8 +165,8 @@ export async function ambilInfoPelanggan(
     riwayat,
     lokasi: lat != null && lng != null ? { lat, lng } : null,
     foto: {
-      segel: null,
       stand: rawBaca?.fotoMeterUrl ?? null,
+      segel: rawBaca?.fotoSegelUrl ?? null,
       rumah: rawBaca?.fotoRumahUrl ?? null,
     },
   };

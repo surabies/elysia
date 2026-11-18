@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/dialog';
 import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
+import { resolveFotoUrl } from '@/lib/foto-resolver';
 import type {
   CekFotoItem,
   CekFotoResult,
@@ -59,6 +60,7 @@ export function MonitoringCekFoto() {
   const [search, setSearch] = React.useState('');
   const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('grid');
   const [selectedFoto, setSelectedFoto] = React.useState<CekFotoItem | null>(null);
+  const [activeTabFoto, setActiveTabFoto] = React.useState<'stand' | 'segel' | 'rumah'>('stand');
   const [zoomLevel, setZoomLevel] = React.useState(1);
   const [rotation, setRotation] = React.useState(0);
 
@@ -267,7 +269,14 @@ export function MonitoringCekFoto() {
         <div className="grid gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {data.items.map((item) => {
             const isNormal = item.ketCatat === 'Normal' && item.pakaiM3 <= 50 && item.pakaiM3 > 0;
-            const photoSrc = item.fotoMeterUrl || '/images/meter/petugas.jpg';
+            const photoSrc = resolveFotoUrl({
+              realUrl: item.fotoMeterUrl,
+              nolg: item.nolg,
+              jenis: 'stand',
+              stand: item.stma,
+              rute: item.ruteKode ?? undefined,
+              nama: item.nama ?? undefined,
+            });
 
             return (
               <Card
@@ -374,7 +383,14 @@ export function MonitoringCekFoto() {
                 >
                   <TableCell className="p-2">
                     <img
-                      src={row.fotoMeterUrl || '/images/meter/petugas.jpg'}
+                      src={resolveFotoUrl({
+                        realUrl: row.fotoMeterUrl,
+                        nolg: row.nolg,
+                        jenis: 'stand',
+                        stand: row.stma,
+                        rute: row.ruteKode ?? undefined,
+                        nama: row.nama ?? undefined,
+                      })}
                       alt=""
                       className="size-10 rounded-md object-cover border border-border"
                     />
@@ -430,59 +446,152 @@ export function MonitoringCekFoto() {
       )}
 
       {/* 5. Lightbox Modal Preview using shadcn Dialog */}
-      <Dialog open={Boolean(selectedFoto)} onOpenChange={(open) => !open && setSelectedFoto(null)}>
-        {selectedFoto && (
-          <DialogContent className="max-w-4xl p-0 overflow-hidden border-border bg-card">
-            <div className="relative flex flex-col lg:flex-row w-full max-h-[90vh]">
-              {/* Left Image Viewer */}
-              <div className="relative flex-1 bg-zinc-950 flex flex-col items-center justify-center overflow-hidden min-h-[300px] lg:min-h-[500px]">
-                <div className="overflow-hidden flex items-center justify-center w-full h-full p-4">
-                  <img
-                    src={selectedFoto.fotoMeterUrl || '/images/meter/petugas.jpg'}
-                    alt="Foto Meter"
-                    style={{
-                      transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
-                      transition: 'transform 0.2s ease',
-                    }}
-                    className="max-h-[70vh] max-w-full object-contain select-none"
-                  />
-                </div>
+      <Dialog
+        open={Boolean(selectedFoto)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedFoto(null);
+            setActiveTabFoto('stand');
+            setZoomLevel(1);
+            setRotation(0);
+          }
+        }}
+      >
+        {selectedFoto && (() => {
+          const rawPhotoUrl =
+            activeTabFoto === 'segel'
+              ? selectedFoto.fotoSegelUrl
+              : activeTabFoto === 'rumah'
+              ? selectedFoto.fotoRumahUrl
+              : selectedFoto.fotoMeterUrl;
 
-                {/* Viewer Control Bar */}
-                <div className="absolute bottom-3 flex items-center gap-2 rounded-full bg-black/75 px-3 py-1.5 text-white border border-white/15">
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="text-white hover:bg-white/20"
-                    onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
-                    title="Perbesar"
-                  >
-                    <ZoomIn className="size-3.5" />
-                  </Button>
-                  <span className="text-label-11 font-mono select-none px-1">
-                    {Math.round(zoomLevel * 100)}%
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="text-white hover:bg-white/20"
-                    onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
-                    title="Perkecil"
-                  >
-                    <ZoomOut className="size-3.5" />
-                  </Button>
-                  <div className="h-4 w-px bg-white/20 mx-1" />
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="text-white hover:bg-white/20"
-                    onClick={() => setRotation((r) => (r + 90) % 360)}
-                    title="Putar 90°"
-                  >
-                    <RotateCw className="size-3.5" />
-                  </Button>
+          const activePhotoUrl = resolveFotoUrl({
+            realUrl: rawPhotoUrl,
+            nolg: selectedFoto.nolg,
+            jenis: activeTabFoto,
+            stand: selectedFoto.stma,
+            rute: selectedFoto.ruteKode ?? undefined,
+            nama: selectedFoto.nama ?? undefined,
+          });
+
+          return (
+            <DialogContent className="max-w-4xl p-0 overflow-hidden border-border bg-card">
+              <div className="relative flex flex-col lg:flex-row w-full max-h-[90vh]">
+                {/* Left Image Viewer */}
+                <div className="relative flex-1 bg-zinc-950 flex flex-col items-center justify-center overflow-hidden min-h-[320px] lg:min-h-[500px]">
+                  {/* Top Switcher Bar: Stand, Segel, Rumah */}
+                  <div className="absolute top-3 z-10 flex items-center gap-1 rounded-full bg-black/80 p-1 border border-white/20 text-label-12">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTabFoto('stand');
+                        setZoomLevel(1);
+                        setRotation(0);
+                      }}
+                      className={cn(
+                        'rounded-full px-3 py-1 font-medium transition-colors cursor-pointer',
+                        activeTabFoto === 'stand'
+                          ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                          : 'text-zinc-300 hover:text-white hover:bg-white/10'
+                      )}
+                    >
+                      Stand Meter
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTabFoto('segel');
+                        setZoomLevel(1);
+                        setRotation(0);
+                      }}
+                      className={cn(
+                        'rounded-full px-3 py-1 font-medium transition-colors cursor-pointer',
+                        activeTabFoto === 'segel'
+                          ? 'bg-amber-500 text-white font-semibold shadow-xs'
+                          : 'text-zinc-300 hover:text-white hover:bg-white/10'
+                      )}
+                    >
+                      Segel {selectedFoto.fotoSegelUrl && '✓'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTabFoto('rumah');
+                        setZoomLevel(1);
+                        setRotation(0);
+                      }}
+                      className={cn(
+                        'rounded-full px-3 py-1 font-medium transition-colors cursor-pointer',
+                        activeTabFoto === 'rumah'
+                          ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                          : 'text-zinc-300 hover:text-white hover:bg-white/10'
+                      )}
+                    >
+                      Rumah {selectedFoto.fotoRumahUrl && '✓'}
+                    </button>
+                  </div>
+
+                  <div className="overflow-hidden flex items-center justify-center w-full h-full p-4 pt-14">
+                    {activePhotoUrl ? (
+                      <img
+                        src={activePhotoUrl}
+                        alt={`Foto ${activeTabFoto}`}
+                        style={{
+                          transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                          transition: 'transform 0.2s ease',
+                        }}
+                        className="max-h-[65vh] max-w-full object-contain select-none"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-8 text-center text-zinc-400">
+                        <Camera className="size-10 mb-2 opacity-40" />
+                        <p className="text-label-13 font-medium text-zinc-200">
+                          Foto {activeTabFoto === 'segel' ? 'Segel' : activeTabFoto === 'rumah' ? 'Rumah' : 'Stand Meter'} Belum Tersedia
+                        </p>
+                        <p className="text-copy-12 text-zinc-500 mt-1">
+                          Petugas tidak menyertakan berkas foto {activeTabFoto} pada pencatatan ini.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Viewer Control Bar */}
+                  {activePhotoUrl && (
+                    <div className="absolute bottom-3 flex items-center gap-2 rounded-full bg-black/75 px-3 py-1.5 text-white border border-white/15">
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        className="text-white hover:bg-white/20"
+                        onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
+                        title="Perbesar"
+                      >
+                        <ZoomIn className="size-3.5" />
+                      </Button>
+                      <span className="text-label-11 font-mono select-none px-1">
+                        {Math.round(zoomLevel * 100)}%
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        className="text-white hover:bg-white/20"
+                        onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
+                        title="Perkecil"
+                      >
+                        <ZoomOut className="size-3.5" />
+                      </Button>
+                      <div className="h-4 w-px bg-white/20 mx-1" />
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        className="text-white hover:bg-white/20"
+                        onClick={() => setRotation((r) => (r + 90) % 360)}
+                        title="Putar 90°"
+                      >
+                        <RotateCw className="size-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              </div>
 
               {/* Right Information Panel */}
               <div className="w-full lg:w-80 p-5 flex flex-col justify-between overflow-y-auto bg-card space-y-4">
@@ -562,7 +671,8 @@ export function MonitoringCekFoto() {
               </div>
             </div>
           </DialogContent>
-        )}
+        );
+      })()}
       </Dialog>
     </PageContainer>
   );

@@ -15,7 +15,7 @@ export default async function LayoutPenuh({
 
   return (
     <TooltipProvider delayDuration={100}>
-      <main className="flex h-dvh min-h-0 flex-col bg-background">
+      <main className="flex h-dvh min-h-0 flex-col bg-background text-foreground font-sans">
         {children}
       </main>
     </TooltipProvider>

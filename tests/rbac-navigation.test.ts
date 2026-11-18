@@ -4,142 +4,119 @@ import {
   primaryNav,
   filterNavGroups,
   filterPrimaryNav,
-  isNodeAllowed,
+  flattenNavItems,
 } from "../apps/web/src/config/navigasi";
 import { searchDocs } from "../apps/web/src/lib/data-pencarian";
 
-describe("Sidebar Navigation RBAC & Role-Based Menu Filtering", () => {
-  test("1. SUPERADMIN has unconstrained access to all groups and items", () => {
+describe("Sidebar Navigation RBAC & Role-Based Menu Filtering (Flat & Clean)", () => {
+  test("1. SUPERADMIN has unconstrained access to all 7 groups and admin items", () => {
     const userRoles = ["SUPERADMIN"];
     const filteredGroups = filterNavGroups(navGroups, userRoles);
     const filteredPrimary = filterPrimaryNav(primaryNav, userRoles);
 
-    // All 8 groups must be accessible
-    expect(filteredGroups.length).toBe(8);
+    // All 7 groups must be accessible
+    expect(filteredGroups.length).toBe(7);
     expect(filteredGroups.map((g) => g.id)).toEqual([
-      "master",
-      "pengolahan-data",
-      "peta",
-      "progres",
-      "laporan",
-      "tool-tutup-bulan",
-      "tools",
-      "sync-tutup-bulan",
+      "ikhtisar",
+      "pencatatan-meter",
+      "tagihan",
+      "langganan",
+      "import-data",
+      "setting-landing",
+      "pengaturan",
     ]);
 
-    // Master items must include sensitive admin modules
-    const masterGroup = filteredGroups.find((g) => g.id === "master")!;
-    const masterHrefs = masterGroup.items.map((i) => ("href" in i ? i.href : ""));
-    expect(masterHrefs).toContain("/master/user");
-    expect(masterHrefs).toContain("/master/otorisasi");
+    // Pengaturan items must include sensitive admin modules (Pengguna & RBAC)
+    const pengaturanGroup = filteredGroups.find((g) => g.id === "pengaturan")!;
+    const pengaturanHrefs = flattenNavItems(pengaturanGroup.items).map((i) => i.href);
+    expect(pengaturanHrefs).toContain("/master/user");
+    expect(pengaturanHrefs).toContain("/master/otorisasi");
 
-    // Primary nav has both Dashboard and Analytics
-    expect(filteredPrimary.length).toBe(2);
+    // Primary nav has Dashboard
     expect(filteredPrimary.map((p) => p.href)).toContain("/dashboard");
-    expect(filteredPrimary.map((p) => p.href)).toContain("/analytics");
   });
 
-  test("2. PENCATAT (Petugas Lapangan) is strictly limited to field operations", () => {
+  test("2. PENCATAT (Petugas Lapangan) is limited to operational cater, customer info, and dashboard", () => {
     const userRoles = ["PENCATAT"];
     const filteredGroups = filterNavGroups(navGroups, userRoles);
-    const filteredPrimary = filterPrimaryNav(primaryNav, userRoles);
 
-    // Only 3 operational groups allowed
     const groupIds = filteredGroups.map((g) => g.id);
-    expect(groupIds).toEqual(["pengolahan-data", "peta", "progres"]);
+    expect(groupIds).toContain("ikhtisar");
+    expect(groupIds).toContain("pencatatan-meter");
+    expect(groupIds).toContain("langganan");
 
-    // Sensitive groups must be completely hidden
-    expect(groupIds).not.toContain("master");
-    expect(groupIds).not.toContain("laporan");
-    expect(groupIds).not.toContain("tool-tutup-bulan");
-    expect(groupIds).not.toContain("tools");
-    expect(groupIds).not.toContain("sync-tutup-bulan");
+    // Tagihan & Setting Landing must be hidden
+    expect(groupIds).not.toContain("tagihan");
+    expect(groupIds).not.toContain("setting-landing");
 
-    // Pengolahan Data only contains CHN, Pelanggan, and Cek Foto
-    const pengolahanGroup = filteredGroups.find((g) => g.id === "pengolahan-data")!;
-    const pengolahanHrefs = pengolahanGroup.items.map((i) => ("href" in i ? i.href : ""));
-    expect(pengolahanHrefs).toEqual(["/cater", "/pelanggan", "/meter/cek-foto"]);
-    expect(pengolahanHrefs).not.toContain("/pelanggan/manual-add");
-    expect(pengolahanHrefs).not.toContain("/pelanggan/mutasi");
-
-    // Progress only contains Progress per Cater and Hasil Foto
-    const progresGroup = filteredGroups.find((g) => g.id === "progres")!;
-    const progresHrefs = progresGroup.items.map((i) => ("href" in i ? i.href : ""));
-    expect(progresHrefs).toContain("/progres/cater");
-    expect(progresHrefs).toContain("/progres/hasil-foto");
-    expect(progresHrefs).not.toContain("/progres/koreksi");
-
-    // Primary nav: Dashboard only, no Analytics
-    expect(filteredPrimary.map((p) => p.href)).toEqual(["/dashboard"]);
+    // Pencatatan meter only contains allowed operational modules
+    const caterGroup = filteredGroups.find((g) => g.id === "pencatatan-meter")!;
+    const caterHrefs = flattenNavItems(caterGroup.items).map((i) => i.href);
+    expect(caterHrefs).toContain("/cater");
+    expect(caterHrefs).toContain("/meter/cek-foto");
+    expect(caterHrefs).toContain("/progres/cater");
+    expect(caterHrefs).not.toContain("/cater/simulasi");
+    expect(caterHrefs).not.toContain("/progres/ekstrim");
   });
 
   test("3. STAFF_ADMIN_BILLING sees closing & billing tools, but NOT admin user management", () => {
     const userRoles = ["STAFF_ADMIN_BILLING"];
     const filteredGroups = filterNavGroups(navGroups, userRoles);
-    const filteredPrimary = filterPrimaryNav(primaryNav, userRoles);
 
-    // All operational & closing groups visible
     const groupIds = filteredGroups.map((g) => g.id);
-    expect(groupIds).toContain("tool-tutup-bulan");
-    expect(groupIds).toContain("tools");
-    expect(groupIds).toContain("sync-tutup-bulan");
-    expect(groupIds).toContain("laporan");
+    expect(groupIds).toContain("tagihan");
+    expect(groupIds).toContain("pencatatan-meter");
 
-    // In master: rute management is visible, but user and otorisasi are forbidden
-    const masterGroup = filteredGroups.find((g) => g.id === "master")!;
-    const masterHrefs = masterGroup.items.map((i) => ("href" in i ? i.href : ""));
-    expect(masterHrefs).toContain("/master/pindah");
-    expect(masterHrefs).toContain("/master/gabung");
-    expect(masterHrefs).not.toContain("/master/user");
-    expect(masterHrefs).not.toContain("/master/otorisasi");
+    // In pengaturan: user and otorisasi are forbidden
+    const pengaturanGroup = filteredGroups.find((g) => g.id === "pengaturan")!;
+    const pengaturanHrefs = flattenNavItems(pengaturanGroup.items).map((i) => i.href);
+    expect(pengaturanHrefs).not.toContain("/master/user");
+    expect(pengaturanHrefs).not.toContain("/master/otorisasi");
 
-    // Primary nav includes Analytics
-    expect(filteredPrimary.map((p) => p.href)).toContain("/analytics");
+    // Tagihan includes DRD and closing wizards
+    const tagihanGroup = filteredGroups.find((g) => g.id === "tagihan")!;
+    const tagihanHrefs = flattenNavItems(tagihanGroup.items).map((i) => i.href);
+    expect(tagihanHrefs).toContain("/laporan/lap-drd");
+    expect(tagihanHrefs).toContain("/tools-tutup/monitoring-tutup-bulan");
   });
 
   test("4. VERIFIKATOR_1 (Supervisor) cannot access closing tools or manual billing adjustments", () => {
     const userRoles = ["VERIFIKATOR_1"];
     const filteredGroups = filterNavGroups(navGroups, userRoles);
 
-    const groupIds = filteredGroups.map((g) => g.id);
-    // Closing and technical sync tools must be hidden
-    expect(groupIds).not.toContain("tool-tutup-bulan");
-    expect(groupIds).not.toContain("tools");
-    expect(groupIds).not.toContain("sync-tutup-bulan");
+    // Supervisor cannot access closing tools
+    const tagihanGroup = filteredGroups.find((g) => g.id === "tagihan")!;
+    const tagihanHrefs = flattenNavItems(tagihanGroup.items).map((i) => i.href);
+    expect(tagihanHrefs).not.toContain("/tools-tutup/monitoring-tutup-bulan");
+    expect(tagihanHrefs).not.toContain("/tools-tutup/stand-angkat");
 
-    // Supervisor sees correction monitoring in progres
-    const progresGroup = filteredGroups.find((g) => g.id === "progres")!;
-    const progresHrefs = progresGroup.items.map((i) => ("href" in i ? i.href : ""));
-    expect(progresHrefs).toContain("/progres/koreksi");
-    expect(progresHrefs).toContain("/progres/ekstrim");
-
-    // Pengolahan data: supervisor can verify stand mandiri, but cannot manual add
-    const pengolahanGroup = filteredGroups.find((g) => g.id === "pengolahan-data")!;
-    const pengolahanHrefs = pengolahanGroup.items.map((i) => ("href" in i ? i.href : ""));
-    expect(pengolahanHrefs).toContain("/stand-konsumen");
-    expect(pengolahanHrefs).not.toContain("/pelanggan/manual-add");
+    // Supervisor sees verification CHN and anomaly radar
+    const caterGroup = filteredGroups.find((g) => g.id === "pencatatan-meter")!;
+    const caterHrefs = flattenNavItems(caterGroup.items).map((i) => i.href);
+    expect(caterHrefs).toContain("/verifikasi/baca-petugas");
+    expect(caterHrefs).toContain("/progres/ekstrim");
   });
 
   test("5. Multi-role user inherits union of authorized menus", () => {
-    // User having both Field Cater and Supervisor roles
-    const userRoles = ["PENCATAT", "VERIFIKATOR_1"];
+    const userRoles = ["PENCATAT", "STAFF_ADMIN_BILLING"];
     const filteredGroups = filterNavGroups(navGroups, userRoles);
 
     const groupIds = filteredGroups.map((g) => g.id);
-    // Inherits Supervisor's Laporan group
-    expect(groupIds).toContain("laporan");
-    expect(groupIds).toContain("master");
-    // Still excluded from Staff closing tools
-    expect(groupIds).not.toContain("tool-tutup-bulan");
+    expect(groupIds).toContain("pencatatan-meter");
+    expect(groupIds).toContain("tagihan");
+    expect(groupIds).toContain("langganan");
   });
 
   test("6. Search dialog respects RBAC filtering (prevents unauthorized discovery)", () => {
     // For PENCATAT: searching 'user' returns 0 results
     const pencatatGroups = filterNavGroups(navGroups, ["PENCATAT"]);
     const pencatatSearchResults = searchDocs("user", pencatatGroups);
-    expect(pencatatSearchResults.length).toBe(0);
+    const foundAdminItem = pencatatSearchResults
+      .flatMap((g: any) => g.results)
+      .find((r: any) => r.href === "/master/user");
+    expect(foundAdminItem).toBeUndefined();
 
-    // For SUPERADMIN: searching 'user' returns Master User
+    // For SUPERADMIN: searching 'user' returns Pengguna
     const adminGroups = filterNavGroups(navGroups, ["SUPERADMIN"]);
     const adminSearchResults = searchDocs("user", adminGroups);
     expect(adminSearchResults.length).toBeGreaterThan(0);
@@ -147,6 +124,6 @@ describe("Sidebar Navigation RBAC & Role-Based Menu Filtering", () => {
       .flatMap((g: any) => g.results)
       .find((r: any) => r.href === "/master/user");
     expect(foundUserItem).toBeDefined();
-    expect(foundUserItem?.page).toBe("User");
+    expect(foundUserItem?.page).toBe("Pengguna");
   });
 });

@@ -49,11 +49,16 @@ export function DashboardShell({
     isResizing,
     setIsResizing,
   } = useSidebar();
-  const [mounted, setMounted] = React.useState(false);
+  const [transitionsReady, setTransitionsReady] = React.useState(false);
   const pathname = usePathname();
 
   React.useEffect(() => {
-    setMounted(true);
+    // Tunda pengaktifan transisi CSS 150ms setelah mount agar initial render / reload
+    // sama sekali tidak memicu kedipan / animasi membuka-menutup (Zero Flash)
+    const timer = setTimeout(() => {
+      setTransitionsReady(true);
+    }, 150);
+    return () => clearTimeout(timer);
   }, []);
 
   // Handle dragging untuk resize sidebar (desktop only)
@@ -154,12 +159,12 @@ export function DashboardShell({
         <aside
           aria-label="Navigasi modul"
           style={{
-            width: isOpen ? "var(--sidebar-width, 256px)" : undefined,
-            minWidth: isOpen ? "var(--sidebar-width, 256px)" : undefined,
+            width: isOpen ? `${sidebarWidth}px` : undefined,
+            minWidth: isOpen ? `${sidebarWidth}px` : undefined,
           }}
           className={cn(
             "fixed inset-y-0 left-0 z-40 flex h-full flex-col border-r border-border bg-sidebar lg:relative lg:h-full lg:shrink-0",
-            isResizing || !mounted
+            isResizing || !transitionsReady
               ? "transition-none select-none"
               : "transition-[width,transform,opacity] duration-200 ease-in-out",
             isOpen
@@ -178,12 +183,17 @@ export function DashboardShell({
           </header>
 
           {/* Body Sidebar: Hirarki Menu Navigasi (sesuai inspeksi Vercel: px-2 pt-2.5) */}
-          <div className="sidebar-scroll flex-1 min-h-0 overflow-y-auto px-2 pt-2.5 pb-2 overscroll-contain">
+          <div className="sidebar-scroll relative flex-1 min-h-0 overflow-y-auto px-2 pt-2.5 pb-8 overscroll-contain">
             <SidebarNav />
           </div>
 
-          {/* Footer Sidebar: Avatar akun pengguna & icon notifikasi (sesuai inspeksi Vercel: section gap-2 p-2) */}
-          <section className="flex flex-col gap-2 shrink-0 mt-auto">
+          {/* Footer Sidebar: Avatar akun pengguna & icon notifikasi dengan efek smooth gradient blur saat navigasi di-scroll */}
+          <section className="relative z-20 flex flex-col shrink-0 mt-auto bg-sidebar/85 backdrop-blur-md border-t border-border/40">
+            {/* Gradasi blur lembut di atas footer agar menu memudar secara halus saat di-scroll */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-8 inset-x-0 h-8 bg-gradient-to-t from-sidebar via-sidebar/75 to-transparent"
+            />
             <div className="p-2">
               <UserMenu
                 nama={user?.name ?? "Wiska Prayoga"}

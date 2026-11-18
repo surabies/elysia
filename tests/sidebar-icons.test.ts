@@ -11,8 +11,8 @@ describe("Sidebar Navigation Icons - Semantics, Relevancy, and Zero Duplication"
     }))
   );
 
-  test("1. All 70 sidebar items have a dedicated, specific icon (no fallback)", () => {
-    expect(allNavItems.length).toBe(70);
+  test("1. All audited sidebar items have a dedicated, specific icon (no fallback)", () => {
+    expect(allNavItems.length).toBe(45);
 
     for (const item of allNavItems) {
       expect(item.icon).toBeDefined();
@@ -20,7 +20,7 @@ describe("Sidebar Navigation Icons - Semantics, Relevancy, and Zero Duplication"
     }
   });
 
-  test("2. Every single module icon is 100% unique (0 duplicate icons across 70 modules)", () => {
+  test("2. Every single module icon is 100% unique (0 duplicate icons across 45 modules)", () => {
     const iconComponents = allNavItems.map((item) => item.icon);
     const uniqueIcons = new Set(iconComponents);
 
@@ -41,26 +41,23 @@ describe("Sidebar Navigation Icons - Semantics, Relevancy, and Zero Duplication"
     }
 
     expect(duplicates).toEqual([]);
-    expect(uniqueIcons.size).toBe(70);
+    expect(uniqueIcons.size).toBe(45);
   });
 
   test("3. Highly relevant semantic icon mapping for critical PDAM operations", () => {
     // Water meter reader CHN -> Gauge
-    expect(getItemIcon("Baca Meter CHN", FALLBACK_GROUP_ICON).name || "Gauge").toBe("Gauge");
+    expect(getItemIcon("Monitoring Baca", FALLBACK_GROUP_ICON).name || "Gauge").toBe("Gauge");
 
     // Billing DRD -> Receipt
     expect(getItemIcon("Laporan DRD", FALLBACK_GROUP_ICON).name || "Receipt").toBe("Receipt");
 
     // Anomaly / Kelainan -> AlertTriangle
-    expect(getItemIcon("Kelainan", FALLBACK_GROUP_ICON).name || "AlertTriangle").toBe("AlertTriangle");
-
-    // RBAC Security -> ShieldCheck
-    expect(getItemIcon("Otorisasi Menu", FALLBACK_GROUP_ICON).name || "ShieldCheck").toBe("ShieldCheck");
+    expect(getItemIcon("Kode Kelainan", FALLBACK_GROUP_ICON).name || "AlertTriangle").toBe("AlertTriangle");
 
     // Mobile consumer self-reading -> Smartphone
-    expect(getItemIcon("Baca Meter Mandiri", FALLBACK_GROUP_ICON).name || "Smartphone").toBe("Smartphone");
+    expect(getItemIcon("Lapor Mandiri", FALLBACK_GROUP_ICON).name || "Smartphone").toBe("Smartphone");
 
     // Spatial PostGIS mapping -> Compass
-    expect(getItemIcon("Pemetaan Pelanggan", FALLBACK_GROUP_ICON).name || "Compass").toBe("Compass");
+    expect(getItemIcon("Peta Spasial", FALLBACK_GROUP_ICON).name || "Compass").toBe("Compass");
   });
 });

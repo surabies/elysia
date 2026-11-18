@@ -1,7 +1,5 @@
-import { MenuPage } from "@/components/layout/index"
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Pindah Jenis Pel" }
-
-export default function Page() {
-  return <MenuPage href="/pelanggan/jenis" />
+export default function PindahJenisRedirect() {
+  redirect("/pelanggan/pindah-tarif");
 }

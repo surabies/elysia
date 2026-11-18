@@ -30,8 +30,6 @@ export interface TabDef {
 
 export const DAFTAR_TAB_PENGATURAN: TabDef[] = [
   { value: 'profil', label: 'Profil & Akun', icon: User },
-  { value: 'perusahaan', label: 'Profil Perusahaan & Kontak', icon: Building2 },
-  { value: 'konten', label: 'CMS & Konten Publik', icon: Layers },
   { value: 'cater', label: 'Catat Meter', icon: Smartphone },
   { value: 'verifikasi', label: 'Verifikasi Stand', icon: FileCheck2 },
   { value: 'billing', label: 'Billing & DRD', icon: Receipt },
@@ -42,7 +40,7 @@ export const DAFTAR_TAB_PENGATURAN: TabDef[] = [
 interface PengaturanHeaderProps {
   toastMessage: { title: string; desc: string } | null;
   onResetDefault: () => void;
-  onSimpan: (e: React.FormEvent) => void;
+  onSimpan: (e?: React.FormEvent) => void;
 }
 
 export function PengaturanHeader({

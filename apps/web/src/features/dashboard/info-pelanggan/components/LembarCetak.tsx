@@ -19,10 +19,10 @@ import { bandingkan } from "./PanelPembacaan";
 import type { InfoPelanggan } from "../types";
 
 const NADA_STATUS: Record<string, string> = {
-  AKTIF: "border-success/30 bg-success-muted text-success",
-  TUTUP_SEMENTARA: "border-warning/30 bg-warning-muted text-warning",
-  DISEGEL: "border-destructive/30 bg-destructive/10 text-destructive",
-  TUTUP_SPT: "border-destructive/30 bg-destructive/10 text-destructive",
+  AKTIF: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  TUTUP_SEMENTARA: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  DISEGEL: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
+  TUTUP_SPT: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
 };
 
 function Chip({ label, nilai }: { label: string; nilai: string }) {

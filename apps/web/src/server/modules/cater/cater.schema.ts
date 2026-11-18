@@ -40,6 +40,7 @@ export const submitReadingBodySchema = t.Object({
     ]),
   ),
   fotoMeterUrl: t.Optional(t.String()),
+  fotoSegelUrl: t.Optional(t.String()),
   fotoRumahUrl: t.Optional(t.String()),
   durasiDetik: t.Optional(t.Number({ minimum: 0 })),
   catatan: t.Optional(t.String()),

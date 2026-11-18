@@ -1,42 +1,40 @@
 // components/layout/navigation/sidebar/NavNodeRow.tsx
-// Satu node menu: folder (label seksi + anak-anaknya) atau halaman (link).
+// Satu baris item menu: link langsung bergaya Vercel Geist.
 
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { isNavFolder, type NavNode } from "@/config/navigasi"
-import { getItemIcon } from "./lib/Icons"
-import { NavRowContent, type SidebarIconComponent } from "./NavRow"
-import { SECTION_LABEL, navRowClass } from "./lib/Styles"
-import type { ActiveInfo } from "./types/Tipe"
-import { isPending, nodeKey } from "./lib/Utilitas"
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { isNavFolder, type NavNode } from "@/config/navigasi";
+import { getItemIcon } from "./lib/Icons";
+import { NavRowContent, type SidebarIconComponent } from "./NavRow";
+import { navRowClass } from "./lib/Styles";
+import type { ActiveInfo } from "./types/Tipe";
+import { isPending, nodeKey } from "./lib/Utilitas";
 
 type Props = {
-  node: NavNode
-  active: ActiveInfo
-  fallbackIcon: SidebarIconComponent
-}
+  node: NavNode;
+  active: ActiveInfo;
+  fallbackIcon: SidebarIconComponent;
+};
 
 export function NavNodeRow({ node, active, fallbackIcon }: Props) {
-  // Folder -> label seksi kecil, lalu anak-anaknya (boleh bersarang).
   if (isNavFolder(node)) {
     return (
-      <li className="flex flex-col">
-        <span className={cn(SECTION_LABEL, "pt-4 pb-1.5")}>{node.title}</span>
-        <ul className="flex flex-col gap-px">
-          {node.children.map((child, i) => (
-            <NavNodeRow
-              key={nodeKey(child, i)}
-              node={child}
-              active={active}
-              fallbackIcon={fallbackIcon}
-            />
-          ))}
-        </ul>
+      <li className="flex flex-col gap-0.5">
+        {node.children.map((child, i) => (
+          <NavNodeRow
+            key={nodeKey(child, i)}
+            node={child}
+            active={active}
+            fallbackIcon={fallbackIcon}
+          />
+        ))}
       </li>
-    )
+    );
   }
 
-  const isActive = node === active.item
+  const isActive = node === active.item;
 
   return (
     <li>
@@ -59,5 +57,5 @@ export function NavNodeRow({ node, active, fallbackIcon }: Props) {
         </NavRowContent>
       </Link>
     </li>
-  )
+  );
 }

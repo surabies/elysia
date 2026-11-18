@@ -4,15 +4,14 @@
 // No. Langganan (bisa disalin) + status di kanan, chip ciri teknis di bawah.
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { PanelDasbor } from "@/features/dashboard/shared";
 import { LABEL_STATUS_PELANGGAN } from "../lib/label-pelanggan";
 import type { DataPelanggan } from "../types";
 
 const NADA_STATUS: Record<string, string> = {
-  AKTIF: "bg-success-muted text-success",
-  TUTUP_SEMENTARA: "bg-warning-muted text-warning",
-  DISEGEL: "bg-destructive/10 text-destructive",
-  TUTUP_SPT: "bg-destructive/10 text-destructive",
+  AKTIF: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  TUTUP_SEMENTARA: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  DISEGEL: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
+  TUTUP_SPT: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
 };
 
 function Chip({ label, nilai }: { label: string; nilai: string }) {
@@ -58,7 +57,7 @@ export function ProfilPelanggan({
     : null;
 
   return (
-    <PanelDasbor label="Profil pelanggan">
+    <div className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div className="min-w-0">
@@ -98,6 +97,6 @@ export function ProfilPelanggan({
           {p.noHp && p.noHp !== "0" && <Chip label="Telepon" nilai={p.noHp} />}
         </div>
       </div>
-    </PanelDasbor>
+    </div>
   );
 }

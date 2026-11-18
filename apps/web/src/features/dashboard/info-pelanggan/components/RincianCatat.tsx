@@ -1,6 +1,5 @@
 // Kartu rincian pencatatan: periode, kondisi, petugas, waktu, biaya, dan koordinat.
 import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
-import { PanelDasbor } from "@/features/dashboard/shared";
 import { BarisInfo, DaftarInfo } from "./BarisInfo";
 import { fmtPeriode, fmtRupiah, fmtTeks, fmtWaktu } from "../lib/format-tampilan";
 import type { DataCatat } from "../types";
@@ -18,7 +17,10 @@ export function RincianCatat({
     : null;
 
   return (
-    <PanelDasbor label="Rincian pencatatan" className="min-w-0">
+    <div className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-xs">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">
+        Rincian Pencatatan
+      </h3>
       <DaftarInfo>
         <BarisInfo label="Periode">{fmtPeriode(catat.periode)}</BarisInfo>
         {kondisi && <BarisInfo label="Kondisi">{kondisi}</BarisInfo>}
@@ -39,6 +41,6 @@ export function RincianCatat({
           </BarisInfo>
         )}
       </DaftarInfo>
-    </PanelDasbor>
+    </div>
   );
 }

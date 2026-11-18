@@ -1,41 +1,25 @@
 // components/layout/navigation/SidebarNav.tsx
-// Sidebar drill-down bergaya Vercel untuk aplikasi pemerintahan & billing air.
-//
-//  Tata letak bervariatif & dinamis:
-//  - Puncak: Modul mandiri observasi (Dashboard, Analitik, Peta Spasial)
-//  - Operasional Lapangan: Grup Operasional & Monitoring, Verifikasi & Mutasi
-//  - Tengah: Modul mandiri pusat Data Pelanggan
-//  - Billing & Konfigurasi: Grup Billing & Laporan, Master Data
-//  - Penutup Siklus: Modul mandiri Closing Periode
-//  - Footer: Modul mandiri Pengaturan Sistem
+// Navigasi Sidebar terstruktur & bersih bergaya Vercel Geist Dashboard.
+// Membagi modul ke dalam domain operasional PDAM yang konsisten dan flat (tanpa collapse/expand):
+// 1. IKHTISAR
+// 2. PENCATATAN METER (Pilar 1)
+// 3. TAGIHAN (Pilar 2)
+// 4. LANGGANAN (Pilar 3)
+// 5. SETTING LANDING
+// 6. PENGATURAN (Aplikasi, Pengguna & RBAC)
 
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { GroupDetail } from "./sidebar/GroupDetail";
-import { GroupList } from "./sidebar/GroupList";
-import { PrimaryNav } from "./sidebar/PrimaryNav";
+import { useRbac } from "@/components/layout/shell/RbacContext";
+import { findActiveNav, type NavGroup } from "@/config/navigasi";
 import { SidebarSearch } from "./sidebar/SidebarSearch";
-import { Slide } from "./sidebar/Slide";
-import { RowSeparator } from "./sidebar/NavRow";
-import { useSidebarDrilldown } from "./sidebar/hooks/UseSidebarDrilldown";
-import {
-  standaloneTopNav,
-  standaloneMidNav,
-  standaloneBottomNav,
-  operasionalGroupIds,
-  billingMasterGroupIds,
-  navGroups,
-} from "@/config/navigasi";
-
-// Kelompok grup tematik
-const operasionalGroups = navGroups.filter((g) =>
-  operasionalGroupIds.includes(g.id)
-);
-const billingMasterGroups = navGroups.filter((g) =>
-  billingMasterGroupIds.includes(g.id)
-);
+import { NavNodeRow } from "./sidebar/NavNodeRow";
+import { getGroupIcon } from "./sidebar/lib/Icons";
+import { nodeKey } from "./sidebar/lib/Utilitas";
+import type { ActiveInfo } from "./sidebar/types/Tipe";
 
 export function SidebarNav({
   className,
@@ -44,86 +28,56 @@ export function SidebarNav({
   className?: string;
   withSearch?: boolean;
 }) {
-  const {
-    active,
-    activeGroupId,
-    currentGroup,
-    direction,
-    openGroup,
-    backToRoot,
-  } = useSidebarDrilldown();
+  const pathname = usePathname();
+  const { filteredNavGroups } = useRbac();
 
-  const isInitialMount = React.useRef(true);
-
-  React.useEffect(() => {
-    isInitialMount.current = false;
-  }, []);
+  // Menentukan node aktif dengan pencocokan href terbaik
+  const found = findActiveNav(pathname);
+  const active = React.useMemo<ActiveInfo>(
+    () => ({
+      item: found?.item,
+      trail: found?.trail ?? [],
+    }),
+    [found]
+  );
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex flex-col gap-2 pb-6", className)}>
       {withSearch && <SidebarSearch />}
 
-      <nav aria-label="Menu utama" className="overflow-hidden">
-        {currentGroup ? (
-          <Slide
-            key={currentGroup.id}
-            direction={direction}
-            animate={!isInitialMount.current}
-          >
-            <GroupDetail
-              group={currentGroup}
-              active={active}
-              onBack={backToRoot}
-            />
-          </Slide>
-        ) : (
-          <Slide
-            key="root"
-            direction={direction}
-            animate={!isInitialMount.current}
-          >
-            <div className="flex flex-col gap-px">
-              {/* 1. Bagian Puncak: Observasi & Visualisasi Spasial (Standalone) */}
-              <PrimaryNav items={standaloneTopNav} />
+      <nav aria-label="Menu navigasi utama" className="flex flex-col gap-2">
+        {filteredNavGroups.map((group: NavGroup, idx: number) => {
+          if (!group.items || group.items.length === 0) return null;
 
-              <div className="py-1">
-                <RowSeparator />
+          return (
+            <div key={group.id} className="flex flex-col">
+              {/* Header Seksi: Label grup dengan garis pemisah horizontal tepat di sebelahnya */}
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-2.5 pb-1.5 select-none",
+                  idx === 0 ? "pt-1" : "pt-3.5"
+                )}
+              >
+                <span className="text-[10px] font-semibold tracking-[0.08em] uppercase text-muted-foreground/75 shrink-0">
+                  {group.title}
+                </span>
+                <div className="h-px w-full bg-border/40" />
               </div>
 
-              {/* 2. Kelompok Grup Operasional */}
-              <GroupList
-                groups={operasionalGroups}
-                activeGroupId={activeGroupId}
-                onOpen={openGroup}
-              />
-
-              <div className="py-1.5">
-                <RowSeparator />
-              </div>
-
-              {/* 3. Bagian Tengah: Pusat Data Pelanggan (Standalone) */}
-              <PrimaryNav items={standaloneMidNav} />
-
-              <div className="py-1.5">
-                <RowSeparator />
-              </div>
-
-              {/* 4. Kelompok Grup Tutup Bulan, Laporan & Master */}
-              <GroupList
-                groups={billingMasterGroups}
-                activeGroupId={activeGroupId}
-                onOpen={openGroup}
-              />
-
-              <div className="py-1.5">
-                <RowSeparator />
-              </div>
-
-              {/* 5. Footer Paling Bawah: Pengaturan & Preferensi Sistem (Standalone) */}
-              <PrimaryNav items={standaloneBottomNav} />
+              {/* Daftar item menu langsung (konsisten, flat, tanpa collapse/expand) */}
+              <ul className="flex flex-col gap-0.5">
+                {group.items.map((node, i) => (
+                  <NavNodeRow
+                    key={nodeKey(node, i)}
+                    node={node}
+                    active={active}
+                    fallbackIcon={getGroupIcon(group.id)}
+                  />
+                ))}
+              </ul>
             </div>
-          </Slide>
-        )}
+          );
+        })}
       </nav>
     </div>
   );

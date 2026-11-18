@@ -5,11 +5,9 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { PanelDasbor } from "@/features/dashboard/shared";
+import { resolveFotoUrl } from "@/lib/foto-resolver";
 
 type ItemFoto = { label: string; src: string; contoh: boolean };
-
-const FOTO_UJI_TAMPILAN = "/images/meter/mock.png";
 
 function Gambar({ item, onBuka }: { item: ItemFoto; onBuka: () => void }) {
   const [gagal, setGagal] = React.useState(false);
@@ -47,23 +45,47 @@ function Gambar({ item, onBuka }: { item: ItemFoto; onBuka: () => void }) {
 
 export function GaleriFoto({
   foto,
+  nolg,
+  stand,
+  nama,
 }: {
   foto: { stand: string | null; segel: string | null; rumah: string | null };
+  nolg?: string;
+  stand?: string | number | null;
+  nama?: string;
 }) {
   const semua: ItemFoto[] = [
     {
       label: "Stand meter",
-      src: foto.stand || FOTO_UJI_TAMPILAN,
+      src: resolveFotoUrl({
+        realUrl: foto.stand,
+        nolg,
+        jenis: "stand",
+        stand,
+        nama,
+      }),
       contoh: !foto.stand,
     },
     {
       label: "Segel meter",
-      src: foto.segel || FOTO_UJI_TAMPILAN,
+      src: resolveFotoUrl({
+        realUrl: foto.segel,
+        nolg,
+        jenis: "segel",
+        stand,
+        nama,
+      }),
       contoh: !foto.segel,
     },
     {
       label: "Rumah pelanggan",
-      src: foto.rumah || FOTO_UJI_TAMPILAN,
+      src: resolveFotoUrl({
+        realUrl: foto.rumah,
+        nolg,
+        jenis: "rumah",
+        stand,
+        nama,
+      }),
       contoh: !foto.rumah,
     },
   ];
@@ -91,13 +113,16 @@ export function GaleriFoto({
 
   return (
     <>
-      <PanelDasbor label="Foto lapangan">
+      <div className="flex flex-col rounded-xl border border-border bg-card p-5 shadow-xs">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">
+          Foto Lapangan
+        </h3>
         <div className="grid gap-4 sm:grid-cols-3">
           {semua.map((item, i) => (
             <Gambar key={item.label} item={item} onBuka={() => setTerpilih(i)} />
           ))}
         </div>
-      </PanelDasbor>
+      </div>
 
       <Dialog
         open={terpilih != null}

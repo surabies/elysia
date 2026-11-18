@@ -9,6 +9,7 @@
 import { ImageNotFound01Icon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import { HugeiconsIcon } from "@/features/dashboard/shared/icons/IconRenderer"
 import { BingkaiPotret, FotoZoom } from "./PenampilFoto"
+import { resolveFotoUrl } from "@/lib/foto-resolver"
 
 // Pemakai lama (TabFoto.tsx, DialogVerifikasi.tsx) tetap mengimpor dari sini.
 export { FotoZoom }
@@ -21,10 +22,20 @@ export function FotoKosong({
   label,
   keterangan,
   penuh = false,
+  nolg,
+  jenis = "stand",
+  stand,
+  periode,
+  nama,
 }: {
   label: string
   keterangan?: string
   penuh?: boolean
+  nolg?: string
+  jenis?: "stand" | "segel" | "rumah"
+  stand?: string | number | null
+  periode?: string | null
+  nama?: string | null
 }) {
   if (penuh) {
     return (
@@ -43,14 +54,23 @@ export function FotoKosong({
     )
   }
 
+  const mockUrl = resolveFotoUrl({
+    realUrl: null,
+    nolg,
+    jenis,
+    stand,
+    periode,
+    nama,
+  })
+
   return (
     <div className="flex flex-col gap-1">
       <BingkaiPotret
-        url="/images/meter/mock.png"
-        alt={`${label}. ${keterangan ?? "Belum ada foto yang diunggah."}`}
+        url={mockUrl}
+        alt={`${label}. ${keterangan ?? "Foto on-demand dinamis."}`}
       />
       <p className="text-center text-copy-13 text-muted-foreground">
-        Contoh tampilan foto — belum ada foto aktual.
+        Simulasi foto dinamis (on-demand) — belum ada foto lapangan.
       </p>
     </div>
   )
@@ -60,13 +80,35 @@ export function FotoBukti({
   url,
   label,
   keterangan,
+  nolg,
+  jenis = "stand",
+  stand,
+  periode,
+  nama,
 }: {
   url: string | null | undefined
   label: string
   /** Teks empty state bila foto tidak ada. */
   keterangan?: string
+  nolg?: string
+  jenis?: "stand" | "segel" | "rumah"
+  stand?: string | number | null
+  periode?: string | null
+  nama?: string | null
 }) {
-  if (!url) return <FotoKosong label={label} keterangan={keterangan} />
+  if (!url) {
+    return (
+      <FotoKosong
+        label={label}
+        keterangan={keterangan}
+        nolg={nolg}
+        jenis={jenis}
+        stand={stand}
+        periode={periode}
+        nama={nama}
+      />
+    )
+  }
 
   return (
     <div className="flex flex-col gap-1">
