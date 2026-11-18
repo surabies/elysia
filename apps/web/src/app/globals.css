@@ -633,10 +633,10 @@
 
   /* Verification grid surfaces and semantic status accents (Vercel Geist 10-step scale) */
   --table-head: var(--ds-background-200);
-  --table-hover: rgba(0, 0, 0, 0.035);
-  --hover-baris: rgba(0, 0, 0, 0.035);
-  --table-active: rgba(0, 0, 0, 0.055);
-  --table-active-hover: rgba(0, 0, 0, 0.08);
+  --table-hover: rgba(0, 0, 0, 0.045);
+  --hover-baris: rgba(0, 0, 0, 0.045);
+  --table-active: rgba(0, 0, 0, 0.08);
+  --table-active-hover: rgba(0, 0, 0, 0.11);
   --table-selected: rgba(0, 112, 243, 0.06);
   --table-selected-hover: rgba(0, 112, 243, 0.1);
   --table-accent: var(--table-active);
@@ -953,10 +953,10 @@
 
   /* Verification grid surfaces and semantic status accents (Vercel Geist Dark 10-step scale) */
   --table-head: var(--ds-gray-100);
-  --table-hover: rgba(255, 255, 255, 0.04);
-  --hover-baris: rgba(255, 255, 255, 0.04);
-  --table-active: rgba(255, 255, 255, 0.075);
-  --table-active-hover: rgba(255, 255, 255, 0.105);
+  --table-hover: rgba(255, 255, 255, 0.055);
+  --hover-baris: rgba(255, 255, 255, 0.055);
+  --table-active: rgba(255, 255, 255, 0.095);
+  --table-active-hover: rgba(255, 255, 255, 0.125);
   --table-selected: rgba(50, 145, 255, 0.09);
   --table-selected-hover: rgba(50, 145, 255, 0.14);
   --table-accent: var(--table-active);

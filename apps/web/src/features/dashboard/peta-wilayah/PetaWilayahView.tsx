@@ -5,6 +5,10 @@ import {
   batasKelurahanFC,
   ringkasanKoordinatPelanggan,
   ruteFC,
+  pipaJaringanFC,
+  sumberAirFC,
+  statistikPipaJaringan,
+  statistikStatusPelanggan,
   titikEksPelangganFC,
   titikPengaduanFC,
   titikPelangganFC,
@@ -19,6 +23,10 @@ export async function PetaWilayahView() {
     kelurahan,
     kecamatan,
     rute,
+    pipa,
+    sumberAir,
+    statistikPipa,
+    statistikStatus,
     pelanggan,
     statistikPelanggan,
     potensi,
@@ -31,6 +39,10 @@ export async function PetaWilayahView() {
     batasKelurahanFC(),
     batasKecamatanFC(),
     ruteFC(),
+    pipaJaringanFC(),
+    sumberAirFC(),
+    statistikPipaJaringan(),
+    statistikStatusPelanggan(),
     titikPelangganFC(),
     ringkasanKoordinatPelanggan(),
     titikPotensiFC(),
@@ -43,16 +55,18 @@ export async function PetaWilayahView() {
 
   return (
     <PageContainer
-      className="flex min-h-0 flex-1 flex-col overflow-hidden pt-3 sm:pt-3 [&>header]:hidden sm:[&>header]:flex"
-      breadcrumbs={[
-        { label: "Jaringan & Distribusi", href: "/peta-wilayah" },
-        { label: "Peta Wilayah" },
-      ]}
+      penuh
+      tanpaHeader
+      className="flex h-[calc(100dvh-3.5rem)] min-h-0 flex-1 flex-col overflow-hidden p-0"
     >
       <PetaClientWrapper
         kelurahan={kelurahan}
         kecamatan={kecamatan}
         rute={rute}
+        pipa={pipa}
+        sumberAir={sumberAir}
+        statistikPipa={statistikPipa}
+        statistikStatus={statistikStatus}
         pelanggan={pelanggan}
         statistikPelanggan={statistikPelanggan}
         potensi={potensi}

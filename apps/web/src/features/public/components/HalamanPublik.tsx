@@ -21,7 +21,7 @@ export function HalamanPublik({
   return (
     <div className="w-full bg-transparent text-foreground font-sans">
       {/* Header Banner - Mobile-First dengan Ambient Glow Biru + Hijau Emerald Tipis */}
-      <section className="relative overflow-hidden border-b border-border/70 bg-[radial-gradient(ellipse_75%_60%_at_50%_-15%,rgba(0,112,243,0.09),rgba(16,185,129,0.04)_45%,transparent)]">
+      <section className="relative overflow-hidden bg-[radial-gradient(ellipse_75%_60%_at_50%_-15%,rgba(0,112,243,0.09),rgba(16,185,129,0.04)_45%,transparent)]">
         {/* Subtle Decorative Grid Pattern */}
         <div
           aria-hidden="true"

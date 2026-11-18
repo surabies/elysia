@@ -6,6 +6,8 @@ export interface VisibilitasLayer {
   kecamatan: boolean
   kelurahan: boolean
   rute: boolean
+  pipa: boolean
+  sumberAir: boolean
   pelanggan: boolean
   potensi: boolean
   eksPelanggan: boolean
@@ -96,8 +98,10 @@ export function ekspresiWarnaWilayah(tema: TemaLayerPeta) {
 export function ekspresiWarnaPelanggan(tema: TemaLayerPeta) {
   return [
     "case",
+    ["==", ["get", "kategoriUtama"], "Dicabut"],
+    "#f43f5e",
     ["==", ["get", "dihapus"], true],
-    "#64748b",
+    "#f43f5e",
     [
       "match",
       ["get", "status"],
@@ -111,9 +115,146 @@ export function ekspresiWarnaPelanggan(tema: TemaLayerPeta) {
       "#f97316",
       "TUTUP_SPT",
       tema.aduan,
+      "DICABUT",
+      "#f43f5e",
+      "DIHAPUS",
+      "#f43f5e",
       "#8b5cf6",
     ],
   ] as maplibregl.ExpressionSpecification
+}
+
+function tambahLayerPipa(
+  map: maplibregl.Map,
+  data: FC,
+  visible: boolean,
+  _tema: TemaLayerPeta
+) {
+  map.addSource("pipa-jaringan", {
+    type: "geojson",
+    data: data as unknown as FeatureCollection,
+  })
+  map.addLayer({
+    id: "pipa-casing",
+    type: "line",
+    source: "pipa-jaringan",
+    layout: {
+      visibility: visible ? "visible" : "none",
+      "line-cap": "round",
+      "line-join": "round",
+    },
+    paint: {
+      "line-color": "#0f172a",
+      "line-width": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        10,
+        1.2,
+        14,
+        3.2,
+        18,
+        5.5,
+      ],
+      "line-opacity": 0.4,
+    },
+  })
+  map.addLayer({
+    id: "pipa-garis",
+    type: "line",
+    source: "pipa-jaringan",
+    layout: {
+      visibility: visible ? "visible" : "none",
+      "line-cap": "round",
+      "line-join": "round",
+    },
+    paint: {
+      "line-color": [
+        "match",
+        ["get", "fungsi"],
+        "Transmisi",
+        "#0284c7",
+        "Retikulasi",
+        "#8b5cf6",
+        "#0d9488",
+      ],
+      "line-width": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        10,
+        1.0,
+        14,
+        2.2,
+        18,
+        4.5,
+      ],
+      "line-opacity": 0.9,
+    },
+  })
+}
+
+function tambahLayerSumberAir(
+  map: maplibregl.Map,
+  data: FC,
+  visible: boolean,
+  tema: TemaLayerPeta
+) {
+  map.addSource("sumber-air", {
+    type: "geojson",
+    data: data as unknown as FeatureCollection,
+  })
+  map.addLayer({
+    id: "sumber-air-lingkaran-luar",
+    type: "circle",
+    source: "sumber-air",
+    layout: { visibility: visible ? "visible" : "none" },
+    paint: {
+      "circle-color": "#0284c7",
+      "circle-radius": 11,
+      "circle-opacity": 0.25,
+      "circle-stroke-width": 2,
+      "circle-stroke-color": "#38bdf8",
+    },
+  })
+  map.addLayer({
+    id: "sumber-air-titik",
+    type: "circle",
+    source: "sumber-air",
+    layout: { visibility: visible ? "visible" : "none" },
+    paint: {
+      "circle-color": [
+        "match",
+        ["get", "tipe"],
+        "IPA",
+        "#2563eb",
+        "BOOSTER_PUMP",
+        "#d97706",
+        "#059669",
+      ],
+      "circle-radius": 6.5,
+      "circle-stroke-width": 2,
+      "circle-stroke-color": "#ffffff",
+    },
+  })
+  map.addLayer({
+    id: "sumber-air-nama",
+    type: "symbol",
+    source: "sumber-air",
+    layout: {
+      "text-field": ["get", "nama"],
+      "text-font": ["Noto Sans Regular"],
+      "text-size": 11,
+      "text-offset": [0, 1.4],
+      "text-anchor": "top",
+      visibility: visible ? "visible" : "none",
+    },
+    paint: {
+      "text-color": tema.teksLabel,
+      "text-halo-color": tema.tepiLabel,
+      "text-halo-width": 2,
+    },
+  })
 }
 
 function tambahLayerKelurahan(
@@ -384,6 +525,8 @@ export function tambahLayerPeta({
   kecamatan,
   kelurahan,
   rute,
+  pipa,
+  sumberAir,
   pelanggan,
   potensi,
   eksPelanggan,
@@ -395,6 +538,8 @@ export function tambahLayerPeta({
   kecamatan: FC
   kelurahan: FC
   rute: FC
+  pipa: FC
+  sumberAir: FC
   pelanggan: FC
   potensi: FC
   eksPelanggan: FC
@@ -405,6 +550,8 @@ export function tambahLayerPeta({
   tambahLayerKecamatan(map, kecamatan, visibilitas.kecamatan, tema)
   tambahLayerKelurahan(map, kelurahan, visibilitas.kelurahan, tema)
   tambahLayerRute(map, rute, visibilitas.rute)
+  tambahLayerPipa(map, pipa, visibilitas.pipa, tema)
+  tambahLayerSumberAir(map, sumberAir, visibilitas.sumberAir, tema)
   tambahLayerPelanggan(map, pelanggan, visibilitas.pelanggan, tema)
   tambahLayerPotensi(map, potensi, visibilitas.potensi, tema)
   tambahLayerEksPelanggan(map, eksPelanggan, visibilitas.eksPelanggan, tema)

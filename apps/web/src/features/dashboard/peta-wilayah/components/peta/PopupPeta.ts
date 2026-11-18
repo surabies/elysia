@@ -4,6 +4,8 @@ import styles from "./PopupPeta.module.css"
 type JenisPopup =
   | "kecamatan"
   | "kelurahan"
+  | "pipa"
+  | "sumberAir"
   | "pelanggan"
   | "potensi"
   | "eksPelanggan"
@@ -47,7 +49,7 @@ function formatLabel(nilai: string) {
 
 function nadaStatus(status: string): NadaBadge {
   if (["SELESAI", "DITUTUP", "AKTIF", "PELANGGAN AKTIF"].includes(status)) return "sukses"
-  if (["DITOLAK", "DARURAT", "DISEGEL", "TUTUP_SPT"].includes(status))
+  if (["DITOLAK", "DARURAT", "DISEGEL", "TUTUP_SPT", "DICABUT", "DIHAPUS"].includes(status))
     return "bahaya"
   if (
     [
@@ -87,31 +89,40 @@ function barisStatistikWilayah(
 ): BarisPopup[] {
   return [
     {
+      label: "Total pelanggan terdata",
+      value: propertiTeks(properties, "totalPelanggan"),
+    },
+    {
       label: "Pelanggan aktif",
       value: propertiTeks(properties, "pelangganAktif"),
     },
     {
-      label: "Pelanggan nonaktif",
-      value: propertiTeks(properties, "pelangganNonaktif"),
+      label: "Pelanggan dicabut (nonaktif)",
+      value: propertiTeks(properties, "pelangganDicabut") || propertiTeks(properties, "pelangganNonaktif"),
     },
     {
-      label: "Tutup sementara",
+      label: "Pelanggan potensial (prospek)",
+      value: propertiTeks(properties, "pelangganPotensial") || propertiTeks(properties, "potensi"),
+    },
+    {
+      label: "└ Kriteria Tutup sementara",
       value: propertiTeks(properties, "tutupSementara"),
     },
-    { label: "Disegel", value: propertiTeks(properties, "disegel") },
-    { label: "Tutup SPT", value: propertiTeks(properties, "tutupSpt") },
     {
-      label: "Dihapus dari daftar",
+      label: "└ Kriteria Tutup SPT",
+      value: propertiTeks(properties, "tutupSpt"),
+    },
+    {
+      label: "└ Kriteria Disegel",
+      value: propertiTeks(properties, "disegel"),
+    },
+    {
+      label: "└ Kriteria Dicabut dinas",
       value: propertiTeks(properties, "pelangganDihapus"),
     },
-    { label: "Potensi pelanggan", value: propertiTeks(properties, "potensi") },
     {
-      label: "Eks pelanggan survei",
+      label: "└ Kriteria Eks pelanggan survei",
       value: propertiTeks(properties, "eksPelanggan"),
-    },
-    {
-      label: "Riwayat pemutusan",
-      value: propertiTeks(properties, "riwayatPemutusan"),
     },
     { label: "Total pengaduan", value: propertiTeks(properties, "pengaduan") },
     {
@@ -119,7 +130,7 @@ function barisStatistikWilayah(
       value: propertiTeks(properties, "pengaduanAktif"),
     },
     {
-      label: "Riwayat kebocoran",
+      label: "Laporan kebocoran",
       value: propertiTeks(properties, "kebocoran"),
     },
   ]
@@ -181,28 +192,84 @@ function opsiPopup(
 ): OpsiPopup | null {
   const properties = feature.properties
 
+  if (layerId === "pipa-garis" || layerId === "pipa-casing") {
+    const fungsi = propertiTeks(properties, "fungsi") || "Distribusi";
+    const material = propertiTeks(properties, "material") || "-";
+    const diameter = propertiTeks(properties, "diameter") || "-";
+    const panjang = propertiTeks(properties, "panjangMeter") || "0";
+    const kodePipa = propertiTeks(properties, "kodePipa") || propertiTeks(properties, "id");
+    return {
+      jenis: "pipa",
+      label: "Pipa Jaringan Air Minum",
+      judul: `Pipa ${fungsi} (${material})`,
+      badge: { teks: fungsi, nada: "info" },
+      baris: [
+        { label: "Kode Pipa", value: kodePipa },
+        { label: "Material Pipa", value: material },
+        { label: "Diameter", value: `${diameter} mm` },
+        { label: "Panjang Segmen", value: `${panjang} meter` },
+        { label: "Zona DMA", value: propertiTeks(properties, "dma") },
+        { label: "Pasokan Sumber Air", value: propertiTeks(properties, "sumberAir") },
+        { label: "Status Operasional", value: propertiTeks(properties, "statusPipa") || "Aktif" },
+      ],
+      koordinat: coordinates,
+    };
+  }
+
+  if (
+    layerId === "sumber-air-titik" ||
+    layerId === "sumber-air-lingkaran-luar" ||
+    layerId === "sumber-air-nama"
+  ) {
+    const tipe = propertiTeks(properties, "tipe") || "IPA";
+    const kapasitas = propertiTeks(properties, "kapasitasLps");
+    return {
+      jenis: "sumberAir",
+      label: "Instalasi Pengolahan & Distribusi",
+      judul: propertiTeks(properties, "nama") || "Sumber Air PDAM",
+      badge: { teks: tipe.replaceAll("_", " "), nada: "sukses" },
+      baris: [
+        { label: "Tipe Fasilitas", value: tipe.replaceAll("_", " ") },
+        { label: "Kapasitas Debit", value: kapasitas ? `${kapasitas} Liter/Detik` : null },
+        { label: "Wilayah Pelayanan", value: propertiTeks(properties, "wilayah") },
+        { label: "Status", value: propertiTeks(properties, "status") || "Aktif" },
+        { label: "Keterangan", value: propertiTeks(properties, "keterangan") },
+      ],
+      koordinat: coordinates,
+    };
+  }
+
   if (layerId === "pelanggan-titik") {
     const status = propertiTeks(properties, "status")
-    const dihapus = properties?.dihapus === true
+    const kategoriUtama =
+      propertiTeks(properties, "kategoriUtama") ||
+      (status === "AKTIF" || status === "PELANGGAN AKTIF"
+        ? "Pelanggan Aktif"
+        : "Dicabut")
+    const kriteriaCabut = propertiTeks(properties, "kriteriaCabut")
     const noUrutRute = propertiTeks(properties, "noUrutRute")
     return {
       jenis: "pelanggan",
-      label: "Titik pelanggan",
+      label: `Titik ${kategoriUtama}`,
       judul: propertiTeks(properties, "nama") || "Pelanggan",
-      badge: status
-        ? { teks: formatLabel(status), nada: nadaStatus(status) }
-        : undefined,
+      badge: {
+        teks: kategoriUtama,
+        nada: kategoriUtama === "Pelanggan Aktif" ? "sukses" : "bahaya",
+      },
       baris: [
+        { label: "Kategori Status", value: kategoriUtama },
+        {
+          label: "Kriteria Mutasi",
+          value: kriteriaCabut || (kategoriUtama === "Dicabut" ? formatLabel(status) : null),
+        },
         { label: "No. sambungan", value: propertiTeks(properties, "nomor") },
         { label: "Alamat", value: propertiTeks(properties, "alamat") },
+        { label: "Kelurahan", value: propertiTeks(properties, "kelurahan") },
+        { label: "Kecamatan", value: propertiTeks(properties, "kecamatan") },
         { label: "Kode rute", value: propertiTeks(properties, "kodeRute") },
         {
           label: "Urutan pelanggan",
           value: noUrutRute ? `Urutan ${noUrutRute}` : null,
-        },
-        {
-          label: "Status data",
-          value: dihapus ? "Dihapus dari daftar aktif" : null,
         },
       ],
       koordinat: coordinates,
@@ -213,15 +280,14 @@ function opsiPopup(
     const status = propertiTeks(properties, "status")
     return {
       jenis: "potensi",
-      label: "Pelanggan potensial",
-      judul: propertiTeks(properties, "alamat") || "Lokasi prospek",
-      badge: status
-        ? { teks: formatLabel(status), nada: nadaStatus(status) }
-        : undefined,
+      label: "Pelanggan Potensial",
+      judul: propertiTeks(properties, "alamat") || "Calon Pelanggan Prospek",
+      badge: { teks: "Status: Potensial", nada: "info" },
       baris: [
-        { label: "Kategori", value: propertiTeks(properties, "kategori") },
-        { label: "Kode rute", value: propertiTeks(properties, "kodeRute") },
-        { label: "Catatan", value: propertiTeks(properties, "catatan") },
+        { label: "Kategori", value: "Pelanggan Potensial (Calon Sambungan Baru)" },
+        { label: "Peruntukan", value: propertiTeks(properties, "kategori") },
+        { label: "Kode rute survei", value: propertiTeks(properties, "kodeRute") },
+        { label: "Catatan Verifikasi", value: propertiTeks(properties, "catatan") },
       ],
       koordinat: coordinates,
     }
@@ -235,15 +301,13 @@ function opsiPopup(
         : propertiTeks(properties, "periode")
     return {
       jenis: "eksPelanggan",
-      label: "Riwayat pencabutan",
-      judul: propertiTeks(properties, "nama") || "Pelanggan dicabut",
-      badge: { teks: "Titik verifikasi pemutusan", nada: "netral" },
+      label: "Pelanggan Dicabut",
+      judul: propertiTeks(properties, "nama") || "Pelanggan Dicabut",
+      badge: { teks: "Status: Dicabut", nada: "bahaya" },
       baris: [
+        { label: "Kategori Status", value: "Dicabut (Nonaktif)" },
+        { label: "Kriteria", value: "Eks Pelanggan (Survei Pemutusan)" },
         { label: "No. sambungan", value: propertiTeks(properties, "nomor") },
-        {
-          label: "Jenis pemutusan",
-          value: formatLabel(propertiTeks(properties, "jenis")),
-        },
         {
           label: "Periode pemutusan",
           value: periode ? `${periode.slice(0, 4)}-${periode.slice(4)}` : null,
@@ -345,12 +409,15 @@ export function pasangPopupFiturPeta(map: maplibregl.Map) {
   const layerPrioritas = [
     "pengaduan-titik",
     "pengaduan-cluster",
+    "sumber-air-titik",
+    "sumber-air-lingkaran-luar",
     "eks-pelanggan-titik",
     "eks-pelanggan-cluster",
     "potensi-titik",
     "potensi-cluster",
     "pelanggan-titik",
     "pelanggan-cluster",
+    "pipa-garis",
     "rute-garis",
     "kelurahan-isi",
     "kecamatan-isi",

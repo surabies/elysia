@@ -45,12 +45,18 @@ export function HeroSection({ content }: HeroSectionProps) {
           }}
         />
 
-        {/* 2. Corner Crosshair Markers (+) menempel pada tiang garis vertikal */}
+        {/* 2. Overhead Macro Architectural Grid (Kotak-kotak 3rem / 48px dengan efek memudar ke bawah seperti di HalamanPublik) */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--ds-gray-alpha-100)_1px,transparent_1px),linear-gradient(to_bottom,var(--ds-gray-alpha-100)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_0%,#000_40%,transparent_100%)] opacity-85 dark:opacity-60"
+        />
+
+        {/* 3. Corner Crosshair Markers (+) menempel pada tiang garis vertikal */}
         <div className="mx-auto h-full max-w-360 px-4 lg:px-12 relative">
           <div className="h-full w-full relative">
             {/* Top-left crosshair */}
             <svg
-              className="absolute -left-[4.5px] top-3 size-[9px] text-muted-foreground/60"
+              className="absolute -left-[4.5px] top-3 size-[9px] text-muted-foreground/40"
               viewBox="0 0 9 9"
               fill="none"
             >
@@ -62,7 +68,7 @@ export function HeroSection({ content }: HeroSectionProps) {
             </svg>
             {/* Top-right crosshair */}
             <svg
-              className="absolute -right-[4.5px] top-3 size-[9px] text-muted-foreground/60"
+              className="absolute -right-[4.5px] top-3 size-[9px] text-muted-foreground/40"
               viewBox="0 0 9 9"
               fill="none"
             >
