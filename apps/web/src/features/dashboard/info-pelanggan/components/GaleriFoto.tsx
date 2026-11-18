@@ -3,7 +3,14 @@
 // GaleriFoto menampilkan foto lapangan: stand meter, segel, rumah.
 // Klik membuka lightbox dengan dialog perbesar.
 import * as React from "react";
+import { Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { resolveFotoUrl } from "@/lib/foto-resolver";
 
@@ -14,7 +21,7 @@ function Gambar({ item, onBuka }: { item: ItemFoto; onBuka: () => void }) {
   const ada = item.src && !gagal;
 
   return (
-    <figure className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-panel">
+    <figure className="min-w-0 overflow-hidden rounded-lg border border-border/80 bg-card shadow-none">
       {ada ? (
         <button
           type="button"
@@ -36,7 +43,7 @@ function Gambar({ item, onBuka }: { item: ItemFoto; onBuka: () => void }) {
           {gagal ? "Foto gagal dimuat" : "Foto tidak dikirim"}
         </div>
       )}
-      <figcaption className="border-t border-border px-3 py-2.5 text-center text-sm font-medium text-foreground">
+      <figcaption className="border-t border-border/80 px-3 py-2 text-center text-xs sm:text-sm font-medium text-foreground">
         {item.label}
       </figcaption>
     </figure>
@@ -113,16 +120,23 @@ export function GaleriFoto({
 
   return (
     <>
-      <div className="flex flex-col rounded-xl border border-border bg-card p-5 shadow-xs">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">
-          Foto Lapangan
-        </h3>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {semua.map((item, i) => (
-            <Gambar key={item.label} item={item} onBuka={() => setTerpilih(i)} />
-          ))}
-        </div>
-      </div>
+      <Card className="rounded-lg border-border/80 bg-card shadow-none">
+        <CardHeader className="p-4 sm:p-5 pb-3">
+          <div className="flex items-center gap-2">
+            <Camera className="size-4 shrink-0 text-foreground/80 stroke-[1.5]" />
+            <CardTitle className="text-[15px] sm:text-[16px] font-medium tracking-tight text-foreground">
+              Foto Lapangan
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-5 pt-0">
+          <div className="grid gap-4 sm:grid-cols-3">
+            {semua.map((item, i) => (
+              <Gambar key={item.label} item={item} onBuka={() => setTerpilih(i)} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog
         open={terpilih != null}

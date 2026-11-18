@@ -1,4 +1,6 @@
 // Baris tiga kotak: stand awal, stand akhir (roda angka), dan kartu Pemakaian.
+import { Droplets } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { fmtAngka, fmtBulan } from "../lib/format-tampilan";
 import { Odometer } from "./Odometer";
@@ -37,14 +39,14 @@ export function PanelPembacaan({
 }) {
   if (!catat) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6 text-center shadow-xs">
+      <Card className="rounded-lg border-border/80 bg-card p-6 text-center shadow-none">
         <p className="text-sm font-semibold text-foreground">
           Belum ada pencatatan untuk periode ini
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           Coba periode lain, atau kosongkan periode untuk melihat yang terbaru.
         </p>
-      </div>
+      </Card>
     );
   }
 
@@ -55,22 +57,28 @@ export function PanelPembacaan({
       aria-label="Stand meter dan pemakaian"
       className="grid gap-3 md:grid-cols-[1fr_1fr_1.15fr]"
     >
-      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+      <Card className="rounded-lg border-border/80 bg-card p-4 sm:p-5 shadow-none">
         <Odometer label="Stand awal" nilai={catat.standLalu} />
-      </div>
-      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+      </Card>
+      <Card className="rounded-lg border-border/80 bg-card p-4 sm:p-5 shadow-none">
         <Odometer label="Stand akhir" nilai={catat.standAkhir} />
-      </div>
-      <div className="flex flex-col justify-between rounded-xl border border-blue-500/20 bg-linear-to-br from-blue-500/10 via-sky-500/5 to-transparent dark:from-blue-950/40 dark:via-sky-950/20 dark:to-transparent p-5 text-foreground shadow-xs">
+      </Card>
+      <Card className="flex flex-col justify-between rounded-lg border-border/80 bg-card p-4 sm:p-5 shadow-none text-foreground">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Pemakaian Air
-          </span>
-          <p className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-4xl font-bold tracking-tight tabular-nums text-foreground sm:text-5xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Droplets className="size-4 shrink-0 text-foreground/80 stroke-[1.5]" />
+              <span className="text-[13px] font-medium text-foreground tracking-tight">
+                Pemakaian Air
+              </span>
+            </div>
+            <span className="font-mono text-xs text-muted-foreground">(m³)</span>
+          </div>
+          <p className="mt-3 flex items-baseline gap-1.5">
+            <span className="text-3xl sm:text-4xl font-semibold tracking-tight tabular-nums text-foreground">
               {fmtAngka(catat.pemakaianM3)}
             </span>
-            <span className="text-base font-semibold text-blue-600 dark:text-sky-400">
+            <span className="text-sm font-medium text-muted-foreground">
               m³
             </span>
           </p>
@@ -88,7 +96,7 @@ export function PanelPembacaan({
             {banding.teks}
           </p>
         )}
-      </div>
+      </Card>
     </section>
   );
 }

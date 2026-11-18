@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { BlokLokasi } from "./BlokLokasi";
 import { FormCari } from "./FormCari";
 import { fmtPeriode } from "../lib/format-tampilan";
@@ -69,18 +70,13 @@ export function InfoPelangganView() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background">
+    <div className="flex min-h-screen w-full flex-col bg-transparent">
       {/* Header bergaya landing page: latar radial glow biru + border halus, responsif penuh di tema terang & gelap */}
       <header className="relative isolate shrink-0 border-b border-border/80 bg-background/80 backdrop-blur-md overflow-hidden text-foreground">
         {/* Ambient Glow Biru Halus Khas Landing Page */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_75%_60%_at_50%_-15%,rgba(0,112,243,0.08),rgba(16,185,129,0.03)_45%,transparent)]"
-        />
-        {/* Subtle Decorative Grid Pattern */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] opacity-25 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"
         />
 
         <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-7">
@@ -103,7 +99,7 @@ export function InfoPelangganView() {
                     judulDokumen={`Info Pelanggan ${data.pelanggan.nomorLangganan}${
                       data.catat?.periode ? ` ${data.catat.periode}` : ""
                     }`}
-                    className="h-9 gap-1.5 border-border bg-card text-xs font-medium text-foreground shadow-xs transition-colors hover:bg-accent hover:text-foreground"
+                    className="h-8 gap-1.5 border-border/80 bg-card text-xs font-medium text-foreground shadow-none hover:bg-accent"
                   />
                 )}
                 <Button
@@ -111,7 +107,7 @@ export function InfoPelangganView() {
                   variant="outline"
                   size="sm"
                   onClick={kembali}
-                  className="h-9 gap-1.5 border-border bg-card text-xs font-medium text-foreground shadow-xs transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+                  className="h-8 gap-1.5 border-border/80 bg-card text-xs font-medium text-foreground shadow-none hover:bg-accent cursor-pointer"
                 >
                   <ArrowLeft className="size-3.5" />
                   Kembali
@@ -119,7 +115,7 @@ export function InfoPelangganView() {
               </div>
 
               {data?.catat && (
-                <div className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card/70 px-2.5 py-1 text-xs text-muted-foreground">
+                <div className="inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-card/80 px-2.5 py-1 text-xs text-muted-foreground">
                   <span>Periode Aktif:</span>
                   <strong className="font-mono font-semibold text-foreground">
                     {fmtPeriode(data.catat.periode)}
@@ -129,39 +125,39 @@ export function InfoPelangganView() {
             </div>
           </div>
 
-          {/* Form Cari Pelanggan (tepat di bawah deretan tombol aksi pojok kanan) */}
-          <div className="rounded-xl border border-border/80 bg-card/60 p-3 sm:p-4 shadow-xs backdrop-blur-xs">
+          {/* Form Cari Pelanggan (Card Dashboard konsisten) */}
+          <Card className="rounded-lg border-border/80 bg-card p-3 sm:p-4 shadow-none">
             <FormCari
               nomor={nomor}
               periode={periode}
               memuat={status === "memuat"}
               onCari={cari}
             />
-          </div>
+          </Card>
         </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
         {status === "idle" && (
-          <div className="rounded-xl border border-border bg-card p-12 text-center shadow-xs">
+          <Card className="rounded-lg border-border/80 bg-card p-12 text-center shadow-none">
             <p className="text-sm text-muted-foreground">
               Masukkan No. Langganan di atas untuk melihat stand meter, foto
               lapangan, dan riwayat pemakaian.
             </p>
-          </div>
+          </Card>
         )}
 
         {status === "memuat" && <KerangkaMemuat />}
 
         {status === "galat" && (
-          <div className="mx-auto w-full max-w-2xl rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center shadow-xs">
+          <Card className="mx-auto w-full max-w-2xl rounded-lg border-destructive/30 bg-destructive/5 p-6 text-center shadow-none">
             <div role="alert">
               <p className="text-sm font-semibold text-destructive">{galat}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Periksa nomor langganan dan periodenya, lalu cari lagi.
               </p>
             </div>
-          </div>
+          </Card>
         )}
 
         {data && (

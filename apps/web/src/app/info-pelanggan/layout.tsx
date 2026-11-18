@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth/index";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { InteractiveWaterBackdrop } from "@/components/layout/InteractiveWaterBackdrop";
 
 export default async function LayoutPenuh({
   children,
@@ -15,9 +16,10 @@ export default async function LayoutPenuh({
 
   return (
     <TooltipProvider delayDuration={100}>
-      <main className="flex h-dvh min-h-0 flex-col bg-background text-foreground font-sans">
+      <div className="relative isolate flex min-h-screen flex-col bg-background text-foreground font-sans overflow-x-clip">
+        <InteractiveWaterBackdrop />
         {children}
-      </main>
+      </div>
     </TooltipProvider>
   );
 }

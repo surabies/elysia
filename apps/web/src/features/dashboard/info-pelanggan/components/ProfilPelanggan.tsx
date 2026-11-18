@@ -3,6 +3,13 @@
 // ProfilPelanggan menampilkan identitas: nama + alamat di kiri,
 // No. Langganan (bisa disalin) + status di kanan, chip ciri teknis di bawah.
 import * as React from "react";
+import { User } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { LABEL_STATUS_PELANGGAN } from "../lib/label-pelanggan";
 import type { DataPelanggan } from "../types";
@@ -57,46 +64,56 @@ export function ProfilPelanggan({
     : null;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-          <div className="min-w-0">
-            <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              {p.nama || "Tanpa nama"}
-            </h2>
-            {p.alamat && (
-              <p className="mt-1 text-sm text-muted-foreground">{p.alamat}</p>
-            )}
+    <Card className="rounded-lg border-border/80 bg-card shadow-none">
+      <CardHeader className="p-4 sm:p-5 pb-3">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            <User className="size-4 shrink-0 text-foreground/80 stroke-[1.5]" />
+            <CardTitle className="text-[15px] sm:text-[16px] font-medium tracking-tight text-foreground">
+              Profil Pelanggan
+            </CardTitle>
           </div>
+          {labelStatus && (
+            <span
+              className={cn(
+                "w-fit rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                NADA_STATUS[p.status ?? ""] ??
+                  "border-border bg-muted text-foreground"
+              )}
+            >
+              {labelStatus}
+            </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-4 sm:p-5 pt-0">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div className="min-w-0">
+              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl text-foreground">
+                {p.nama || "Tanpa nama"}
+              </h2>
+              {p.alamat && (
+                <p className="mt-1 text-sm text-muted-foreground">{p.alamat}</p>
+              )}
+            </div>
 
-          <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-lg font-semibold tabular-nums">
+            <div className="flex shrink-0 items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-3 py-1.5 sm:self-start">
+              <span className="font-mono text-base font-semibold tabular-nums text-foreground">
                 {p.nomorLangganan}
               </span>
               <TombolSalin teks={p.nomorLangganan} />
             </div>
-            {labelStatus && (
-              <span
-                className={cn(
-                  "rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                  NADA_STATUS[p.status ?? ""] ??
-                    "border-border bg-muted text-foreground"
-                )}
-              >
-                {labelStatus}
-              </span>
-            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t border-border/40 pt-3">
+            {p.golongan && <Chip label="Golongan" nilai={p.golongan} />}
+            {p.nomorMeter && <Chip label="Meter" nilai={p.nomorMeter} />}
+            {p.ukuranMeter && <Chip label="Ukuran" nilai={p.ukuranMeter} />}
+            {p.noHp && p.noHp !== "0" && <Chip label="Telepon" nilai={p.noHp} />}
           </div>
         </div>
-
-        <div className="flex flex-wrap gap-2 border-t border-border/40 pt-3">
-          {p.golongan && <Chip label="Golongan" nilai={p.golongan} />}
-          {p.nomorMeter && <Chip label="Meter" nilai={p.nomorMeter} />}
-          {p.ukuranMeter && <Chip label="Ukuran" nilai={p.ukuranMeter} />}
-          {p.noHp && p.noHp !== "0" && <Chip label="Telepon" nilai={p.noHp} />}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
