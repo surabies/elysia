@@ -45,10 +45,10 @@ export function HeroSection({ content }: HeroSectionProps) {
           }}
         />
 
-        {/* 2. Overhead Macro Architectural Grid (Kotak-kotak besar 4rem / 64px dengan efek memudar halus ke bawah) */}
+        {/* 2. Overhead Macro Architectural Grid (Kotak-kotak 62px x 62px memudar ke bawah dan memudar ke kiri & kanan, hanya tampak tipis di tengah) */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] bg-[size:4rem_4rem] text-foreground/[0.06] dark:text-foreground/[0.07] [mask-image:linear-gradient(to_bottom,#000_0%,#000_30%,transparent_90%)]"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] bg-[size:62px_62px] text-foreground/[0.05] dark:text-foreground/[0.06] [mask-image:radial-gradient(ellipse_65%_55%_at_50%_15%,#000_15%,transparent_80%)] [-webkit-mask-image:radial-gradient(ellipse_65%_55%_at_50%_15%,#000_15%,transparent_80%)]"
         />
 
         {/* 3. Corner Crosshair Markers (+) menempel pada tiang garis vertikal */}

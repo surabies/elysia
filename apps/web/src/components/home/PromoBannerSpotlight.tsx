@@ -398,11 +398,11 @@ export function PromoBannerSpotlight() {
             </button>
           )}
 
-          {/* Viewport Carousel */}
-          <div ref={emblaRef} className="overflow-hidden rounded-3xl">
+          {/* Viewport Carousel (dengan breathing room p-1 -m-1 agar border & rounded hover tidak terpotong) */}
+          <div ref={emblaRef} className="overflow-hidden p-1 -m-1">
             <div className="flex">
               {daftarPromo.map((item) => (
-                <div key={item.id} className="min-w-0 flex-[0_0_100%]">
+                <div key={item.id} className="min-w-0 flex-[0_0_100%] p-1">
                   <PromoSlideCard
                     item={item}
                     onOpenModal={handleBukaModal}
