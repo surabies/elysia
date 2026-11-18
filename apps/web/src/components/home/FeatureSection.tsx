@@ -4,7 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "motion/react"
-import { Check, ArrowRight, Activity } from "lucide-react"
+import { Check } from "lucide-react"
 
 import { Container } from "@/components/shared/Container"
 import { PillButton } from "@/components/shared/PillButton"
@@ -28,7 +28,7 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
 
   if (media.type === "image") {
     return (
-      <div className="group relative overflow-hidden rounded-lg border border-border/80 bg-neutral-950 shadow-none">
+      <div className="group relative overflow-hidden rounded-md border border-border/80 bg-neutral-950 shadow-none">
         <Image
           src={media.src}
           alt={media.alt}
@@ -58,7 +58,7 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
         muted
         playsInline
         aria-hidden="true"
-        className="aspect-4/5 h-auto w-full rounded-lg border border-border/80 object-cover shadow-none"
+        className="aspect-4/5 h-auto w-full rounded-md border border-border/80 object-cover shadow-none"
       />
     )
   }
@@ -127,12 +127,12 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
-            "flex flex-col gap-8 rounded-3xl border border-border bg-card/85 backdrop-blur-xs p-5 sm:p-8 lg:p-10 shadow-xs md:items-center lg:gap-12",
+            "flex flex-col gap-8 rounded-lg border border-border/80 bg-card p-6 sm:p-8 lg:p-10 shadow-none transition-all hover:border-foreground/20 hover:shadow-xs md:items-center lg:gap-12",
             mediaPosition === "right" ? "md:flex-row-reverse" : "md:flex-row"
           )}
         >
           {/* Kolom Media */}
-          <div className="w-full md:w-5/12 lg:w-5/12 shrink-0 overflow-hidden rounded-3xl">
+          <div className="w-full md:w-5/12 lg:w-5/12 shrink-0 overflow-hidden rounded-md">
             <SwipeRevealMedia>
               <FeatureMediaView media={media} />
             </SwipeRevealMedia>
@@ -140,21 +140,14 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
 
           {/* Kolom Konten Interaktif */}
           <div className="flex flex-1 flex-col justify-center space-y-5">
-            {badge && (
-              <div className="inline-flex items-center gap-2 self-start rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-mono font-semibold text-foreground">
-                <Activity className="size-3.5 text-[#0070f3]" />
-                <span>{badge}</span>
-              </div>
-            )}
-
             <h2
               id={titleId}
-              className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground leading-tight"
+              className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground leading-tight"
             >
               {title}
             </h2>
 
-            <p className="text-copy-14 sm:text-copy-15 whitespace-pre-line text-muted-foreground leading-relaxed">
+            <p className="text-sm sm:text-base whitespace-pre-line text-muted-foreground leading-relaxed">
               {description}
             </p>
 
@@ -162,9 +155,9 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
             {highlights && highlights.length > 0 && (
               <div className="space-y-2.5 pt-1">
                 {highlights.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 text-copy-13 text-foreground/90">
-                    <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                      <Check className="size-3 stroke-[2.5]" />
+                  <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
+                    <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                      <Check className="size-2.5 stroke-[2.5]" />
                     </span>
                     <span className="leading-snug">{item}</span>
                   </div>
@@ -178,7 +171,7 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
                 {stats.map((st, idx) => (
                   <div
                     key={idx}
-                    className="rounded-lg border border-border/80 bg-card px-3 py-2.5 shadow-none"
+                    className="rounded-md border border-border/80 bg-muted/30 px-3 py-2.5 shadow-none text-center sm:text-left"
                   >
                     <p className="font-mono text-sm sm:text-base font-bold text-foreground">
                       {st.value}
@@ -193,10 +186,9 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
 
             {cta ? (
               <div className="pt-2">
-                <PillButton asChild className="inline-flex items-center gap-2">
+                <PillButton asChild className="uppercase text-xs sm:text-xs font-semibold tracking-wider cursor-pointer">
                   <Link href={cta.href}>
-                    <span>{cta.label}</span>
-                    <ArrowRight className="size-3.5" />
+                    {cta.label}
                   </Link>
                 </PillButton>
               </div>
