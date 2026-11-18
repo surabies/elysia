@@ -9,7 +9,7 @@ import { CheckCircle2, Camera, Sparkles } from "@/components/ui/hugeicons-compat
  */
 export function MockupLaporMeter() {
   return (
-    <div className="group relative aspect-4/5 w-full overflow-hidden rounded-4 border border-neutral-800 bg-neutral-950 font-sans text-white select-none shadow-2xl">
+    <div className="group relative aspect-4/5 w-full overflow-hidden rounded-lg border border-border/80 bg-neutral-950 font-sans text-white select-none shadow-none">
       {/* 1. Latar Belakang Foto Meteran Asli */}
       <div className="absolute inset-0">
         <Image

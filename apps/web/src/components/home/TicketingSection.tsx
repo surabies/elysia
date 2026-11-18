@@ -134,11 +134,11 @@ export function TicketingSection({ content: initialContent }: TicketingSectionPr
               >
                 <Link
                   href={href}
-                  className="group relative flex h-full flex-col justify-between rounded-3xl border border-border bg-card p-4 sm:p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-foreground/30 hover:shadow-lg"
+                  className="group relative flex h-full flex-col justify-between rounded-lg border border-border/80 bg-card p-4 sm:p-5 shadow-none transition-all duration-200 hover:border-foreground/20 hover:shadow-xs"
                 >
                   <div>
                     {/* Visual Image Frame with Interactive Zoom */}
-                    <div className="relative mb-4 overflow-hidden rounded-2xl border border-border bg-neutral-950 aspect-16/10">
+                    <div className="relative mb-4 overflow-hidden rounded-md border border-border/80 bg-neutral-950 aspect-16/10">
                       <ImageFrame
                         image={item.image}
                         sizes="(min-width: 1000px) 400px, 100vw"
@@ -162,11 +162,11 @@ export function TicketingSection({ content: initialContent }: TicketingSectionPr
                   </div>
 
                   {/* Interactive Bottom Action Bar */}
-                  <div className="mt-5 flex items-center justify-between border-t border-border pt-3.5">
+                  <div className="mt-5 flex items-center justify-between border-t border-border/80 pt-3.5">
                     <span className="text-xs font-semibold text-foreground group-hover:text-[#0070f3] dark:group-hover:text-sky-400 transition-colors">
                       {ctaLabel}
                     </span>
-                    <span className="flex size-7 items-center justify-center rounded-full border border-border bg-muted/60 text-foreground transition-all group-hover:bg-[#0070f3] group-hover:border-[#0070f3] group-hover:text-white">
+                    <span className="flex size-7 items-center justify-center rounded-md border border-border/80 bg-muted/40 text-foreground transition-all group-hover:bg-foreground group-hover:border-foreground group-hover:text-background">
                       <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </span>
                   </div>

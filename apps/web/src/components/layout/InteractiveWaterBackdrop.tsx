@@ -46,13 +46,6 @@ export function InteractiveWaterBackdrop() {
     }
   }, [])
 
-  // Pattern CSS: Garis Grid 32px dipadukan dengan Dot mikro di setiap persimpangan
-  const gridAndDotPattern = `
-    radial-gradient(circle at 0px 0px, currentColor 1px, transparent 1px),
-    linear-gradient(to right, currentColor 1px, transparent 1px),
-    linear-gradient(to bottom, currentColor 1px, transparent 1px)
-  `
-
   return (
     <div
       ref={containerRef}
@@ -63,53 +56,29 @@ export function InteractiveWaterBackdrop() {
         ["--mouse-y" as any]: "-1000px",
       }}
     >
-      {/* 1. Gradien Cahaya Air Alami Sangat Lembut */}
+      {/* 1. Gradien Cahaya Air Alami Sangat Lembut & Bersih (Tanpa Kotak-Kotak Grid) */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(65% 18% at 72% 5%, rgba(0, 112, 243, 0.05) 0%, rgba(16, 185, 129, 0.02) 48%, transparent 100%), " +
-            "radial-gradient(50% 15% at 18% 8%, rgba(0, 112, 243, 0.03) 0%, rgba(16, 185, 129, 0.015) 55%, transparent 100%), " +
-            "radial-gradient(55% 20% at 80% 34%, rgba(0, 112, 243, 0.03) 0%, rgba(16, 185, 129, 0.015) 50%, transparent 100%), " +
-            "radial-gradient(55% 20% at 20% 62%, rgba(16, 185, 129, 0.025) 0%, rgba(0, 112, 243, 0.015) 55%, transparent 100%), " +
-            "radial-gradient(60% 18% at 65% 88%, rgba(0, 112, 243, 0.03) 0%, rgba(16, 185, 129, 0.015) 50%, transparent 100%)",
+            "radial-gradient(65% 25% at 70% 8%, rgba(0, 112, 243, 0.06) 0%, rgba(16, 185, 129, 0.025) 45%, transparent 100%), " +
+            "radial-gradient(50% 20% at 20% 12%, rgba(0, 112, 243, 0.04) 0%, rgba(16, 185, 129, 0.02) 50%, transparent 100%), " +
+            "radial-gradient(55% 25% at 80% 40%, rgba(0, 112, 243, 0.035) 0%, rgba(16, 185, 129, 0.018) 50%, transparent 100%), " +
+            "radial-gradient(55% 25% at 18% 68%, rgba(16, 185, 129, 0.03) 0%, rgba(0, 112, 243, 0.02) 55%, transparent 100%), " +
+            "radial-gradient(60% 22% at 65% 92%, rgba(0, 112, 243, 0.035) 0%, rgba(16, 185, 129, 0.018) 50%, transparent 100%)",
         }}
       />
 
-      {/* 2. LAYER UTAMA: Garis Grid & Dot Ultra-Soft (Super Faint ~1.8% Alpha) */}
+      {/* 2. Pendaran Cahaya Air Halus Mengikuti Kursor (Pure Soft Gradient Glow) */}
       <div
-        className="absolute inset-0 text-foreground/[0.018] dark:text-foreground/[0.016]"
-        style={{
-          backgroundImage: gridAndDotPattern,
-          backgroundSize: "32px 32px",
-          backgroundPosition: "0 0, 0 0, 0 0",
-          maskImage:
-            "radial-gradient(ellipse 75% 55% at 50% 18%, #000 20%, transparent 90%), linear-gradient(to bottom, #000 0%, #000 65%, transparent 100%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 75% 55% at 50% 18%, #000 20%, transparent 90%), linear-gradient(to bottom, #000 0%, #000 65%, transparent 100%)",
-        }}
-      />
-
-      {/* 3. LAYER DINAMIS KURSOR: Pendaran Halus Tanpa Garis Tebal (Hanya ~7% Biru Air Lembut) */}
-      <div
-        className={`absolute inset-0 transition-opacity duration-500 ${
+        className={`absolute inset-0 transition-opacity duration-500 pointer-events-none ${
           mouseActive ? "opacity-100" : "opacity-0"
-        } text-[#0070f3]/[0.07] dark:text-sky-400/[0.07]`}
+        }`}
         style={{
-          backgroundImage: gridAndDotPattern,
-          backgroundSize: "32px 32px",
-          backgroundPosition: "0 0, 0 0, 0 0",
-          maskImage:
-            "radial-gradient(circle 200px at var(--mouse-x) var(--mouse-y), #000 0%, transparent 100%)",
-          WebkitMaskImage:
-            "radial-gradient(circle 200px at var(--mouse-x) var(--mouse-y), #000 0%, transparent 100%)",
+          background:
+            "radial-gradient(450px circle at var(--mouse-x) var(--mouse-y), rgba(0, 112, 243, 0.045) 0%, rgba(16, 185, 129, 0.02) 40%, transparent 70%)",
         }}
       />
-
-      {/* 4. Tiang Pemandu Vertikal Ekstra Halus */}
-      <div className="mx-auto h-full max-w-360 px-4 lg:px-12">
-        <div className="h-full w-full border-x border-dashed border-border/12" />
-      </div>
     </div>
   )
 }

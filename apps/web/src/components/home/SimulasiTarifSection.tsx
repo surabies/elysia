@@ -230,16 +230,16 @@ export function SimulasiTarifSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-3xl border border-border bg-slate-900 text-white p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-2xl"
+        className="rounded-lg border border-border/80 bg-card text-foreground p-6 sm:p-8 md:p-10 relative overflow-hidden shadow-none"
       >
-        {/* Ambient Glow */}
+        {/* Ambient Radial Accent Glow */}
         <div
           aria-hidden="true"
-          className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none"
+          className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-blue-500/10 dark:bg-sky-500/10 blur-3xl pointer-events-none"
         />
         <div
           aria-hidden="true"
-          className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl pointer-events-none"
+          className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"
         />
 
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
@@ -247,7 +247,7 @@ export function SimulasiTarifSection() {
           <div className="lg:col-span-7 space-y-6">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-300 border border-cyan-500/40">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-sky-400 border border-blue-500/20">
                   <Calculator className="h-3.5 w-3.5" />
                   <span>Simulasi Tagihan Air Resmi</span>
                 </div>
@@ -255,11 +255,11 @@ export function SimulasiTarifSection() {
 
               <h2
                 id="simulasi-tarif-title"
-                className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white"
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground"
               >
                 Kalkulator Estimasi Biaya Pemakaian Air
               </h2>
-              <p className="mt-2 text-sm sm:text-base text-slate-300">
+              <p className="mt-2 text-sm sm:text-base text-muted-foreground">
                 Hitung perkiraan tagihan rekening air bulanan Anda langsung
                 berdasarkan master tarif blok progresif dan biaya tetap resmi
                 PERUMDA Tirtawening.
@@ -270,25 +270,25 @@ export function SimulasiTarifSection() {
             <div className="space-y-2">
               <label
                 htmlFor="select-golongan"
-                className="text-xs font-semibold text-slate-300 uppercase tracking-wider block"
+                className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block"
               >
                 Pilih Golongan Tarif Pelanggan:
               </label>
               <Select value={golonganKode} onValueChange={setGolonganKode}>
                 <SelectTrigger
                   id="select-golongan"
-                  className="w-full h-12 rounded-2xl border-slate-700/80 bg-slate-800/95 px-4 text-sm font-medium text-white shadow-inner hover:bg-slate-700/80 hover:text-white focus:bg-slate-800 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 transition-all [&_svg]:text-slate-400 [&_svg]:size-4 cursor-pointer data-[placeholder]:text-slate-400"
+                  className="w-full h-11 rounded-md border border-border/80 bg-background px-4 text-sm font-medium text-foreground hover:bg-muted/40 focus:border-ring focus:ring-1 focus:ring-ring transition-all cursor-pointer"
                 >
                   <SelectValue placeholder="Pilih golongan tarif pelanggan" />
                 </SelectTrigger>
-                <SelectContent className="border border-slate-700 bg-slate-900 text-white max-h-72 z-50 rounded-xl shadow-2xl p-1">
+                <SelectContent className="border border-border/80 bg-popover text-popover-foreground max-h-72 z-50 rounded-md shadow-md p-1">
                   {daftarGolongan.map((g) => (
                     <SelectItem
                       key={g.kode}
                       value={g.kode}
-                      className="text-slate-200 hover:bg-slate-800 hover:text-cyan-300 focus:bg-slate-800 focus:text-cyan-300 data-[highlighted]:bg-slate-800 data-[highlighted]:text-cyan-300 cursor-pointer py-2.5 px-3 rounded-lg text-sm transition-colors"
+                      className="cursor-pointer py-2 px-3 rounded-sm text-sm transition-colors text-foreground focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted"
                     >
-                      <span className="font-mono text-cyan-400 font-semibold mr-2">[{g.kode}]</span>
+                      <span className="font-mono text-blue-600 dark:text-sky-400 font-semibold mr-2">[{g.kode}]</span>
                       <span>{g.nama}</span>
                     </SelectItem>
                   ))}
@@ -301,13 +301,13 @@ export function SimulasiTarifSection() {
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="slider-volume"
-                  className="text-xs font-semibold text-slate-300 uppercase tracking-wider"
+                  className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
                 >
                   Estimasi Volume Pemakaian Bulanan:
                 </label>
-                <div className="flex items-baseline gap-1 bg-cyan-500/20 border border-cyan-500/40 px-3 py-1 rounded-xl text-cyan-300 font-mono font-bold text-base">
+                <div className="flex items-baseline gap-1 bg-muted/60 border border-border/80 px-3 py-1 rounded-md text-foreground font-mono font-bold text-base">
                   <NumberFlow value={volume} />
-                  <span className="text-xs">m³</span>
+                  <span className="text-xs text-muted-foreground">m³</span>
                 </div>
               </div>
 
@@ -319,21 +319,21 @@ export function SimulasiTarifSection() {
                 step="1"
                 value={volume}
                 onChange={(e) => setVolume(Number(e.target.value))}
-                className="w-full h-2.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400 focus:outline-none"
+                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-sky-400 focus:outline-none"
               />
 
               {/* Preset Buttons */}
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-xs text-slate-400 mr-1">Preset Cepat:</span>
+                <span className="text-xs text-muted-foreground mr-1">Preset Cepat:</span>
                 {[10, 15, 20, 30, 45].map((preset) => (
                   <button
                     key={preset}
                     type="button"
                     onClick={() => setVolume(preset)}
-                    className={`rounded-xl px-2.5 py-1 text-xs font-mono font-medium transition-colors ${
+                    className={`rounded-md px-2.5 py-1 text-xs font-mono font-medium transition-colors ${
                       volume === preset
-                        ? 'bg-cyan-400 text-slate-950 font-bold'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-foreground text-background font-bold'
+                        : 'border border-border/80 bg-muted/40 text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {preset} m³
@@ -343,23 +343,23 @@ export function SimulasiTarifSection() {
             </div>
 
             {/* Rincian Blok Progresif Terhitung */}
-            <div className="space-y-2 pt-1 border-t border-slate-800">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+            <div className="space-y-2 pt-1 border-t border-border/80">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
                 Perhitungan Blok Progresif:
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {rincianBlok.map((rb) => (
                   <div
                     key={rb.blok}
-                    className="rounded-xl border border-slate-800 bg-slate-800/50 p-2.5 text-center"
+                    className="rounded-md border border-border/80 bg-muted/30 p-2.5 text-center"
                   >
-                    <span className="text-[10px] text-slate-400 block font-mono">
+                    <span className="text-[10px] text-muted-foreground block font-mono">
                       Blok {rb.blok} ({rb.volume} m³)
                     </span>
-                    <span className="text-xs font-bold text-cyan-300 font-mono">
+                    <span className="text-xs font-bold text-foreground font-mono">
                       {formatRupiah(rb.subtotal)}
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
+                    <span className="text-[10px] text-muted-foreground block">
                       @{formatRupiah(rb.tarif)}/m³
                     </span>
                   </div>
@@ -369,50 +369,50 @@ export function SimulasiTarifSection() {
           </div>
 
           {/* Kolom Kanan: FinTech Result Card (Sesuai Komponen DRD Database) */}
-          <div className="lg:col-span-5 rounded-3xl border border-slate-700 bg-slate-800/80 p-6 sm:p-8 backdrop-blur-md shadow-xl space-y-5">
-            <div className="pb-4 border-b border-slate-700">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+          <div className="lg:col-span-5 rounded-lg border border-border/80 bg-muted/30 dark:bg-muted/20 p-5 sm:p-6 shadow-none space-y-5">
+            <div className="pb-4 border-b border-border/80">
+              <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                 <span>Total Estimasi Rekening</span>
-                <span className="font-mono text-cyan-400 font-bold">
+                <span className="font-mono text-foreground font-bold">
                   {golongan.kode}
                 </span>
               </div>
-              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-cyan-300 tracking-tight flex items-baseline gap-1">
-                <span className="text-2xl sm:text-3xl text-cyan-400">Rp</span>
+              <div className="text-3xl sm:text-4xl font-bold font-mono text-foreground tracking-tight flex items-baseline gap-1">
+                <span className="text-xl sm:text-2xl font-semibold text-blue-600 dark:text-sky-400">Rp</span>
                 <NumberFlow value={totalTagihan} format={{ useGrouping: true }} />
               </div>
-              <span className="text-xs text-slate-400 mt-1 block">
+              <span className="text-xs text-muted-foreground mt-1 block">
                 1 Bulan Pemakaian ({volume} m³)
               </span>
             </div>
 
             {/* Rincian Komponen Biaya Resmi Sesuai Tabel DRD */}
             <div className="space-y-2.5 text-xs sm:text-sm">
-              <div className="flex items-center justify-between text-slate-300">
+              <div className="flex items-center justify-between text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <Droplets className="h-3.5 w-3.5 text-cyan-400" />
+                  <Droplets className="h-3.5 w-3.5 text-blue-600 dark:text-sky-400" />
                   Harga Air Progresif
                 </span>
-                <span className="font-mono font-semibold text-white flex items-baseline gap-1">
+                <span className="font-mono font-semibold text-foreground flex items-baseline gap-1">
                   <span>Rp</span>
                   <NumberFlow value={totalHargaAir} format={{ useGrouping: true }} />
                 </span>
               </div>
-              <div className="flex items-center justify-between text-slate-400">
+              <div className="flex items-center justify-between text-muted-foreground">
                 <span>Bea Pemeliharaan Meter (Beban)</span>
-                <span className="font-mono text-slate-300">
+                <span className="font-mono text-foreground">
                   {formatRupiah(beaBeban)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-slate-400">
+              <div className="flex items-center justify-between text-muted-foreground">
                 <span>Bea Administrasi Rekening</span>
-                <span className="font-mono text-slate-300">
+                <span className="font-mono text-foreground">
                   {formatRupiah(beaAdmin)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-slate-400">
+              <div className="flex items-center justify-between text-muted-foreground">
                 <span>Retribusi Air Limbah (Kotor)</span>
-                <span className="font-mono text-slate-300">
+                <span className="font-mono text-foreground">
                   {formatRupiah(airKotor)}
                 </span>
               </div>
@@ -421,7 +421,7 @@ export function SimulasiTarifSection() {
             <div className="pt-2">
               <Link
                 href={`/cek-tagihan?tarif=${golongan.kode}`}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 text-xs sm:text-sm font-bold text-slate-950 shadow-lg shadow-cyan-400/20 hover:bg-cyan-300 active:scale-95 transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-foreground text-background px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-none hover:bg-foreground/90 active:scale-[0.99] transition-all"
               >
                 <span>Cek Rekening Asli Pelanggan</span>
                 <ArrowRight className="h-4 w-4" />

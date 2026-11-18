@@ -162,7 +162,7 @@ export function EventCard({ event }: EventCardProps) {
             </div>
 
             {/* Bar Bawah: Info & Hint Flip (Judul Ringkas 1 Baris Konsisten) */}
-            <div className="relative flex w-full flex-col gap-1.5 overflow-hidden rounded-2xl bg-black/50 p-4 backdrop-blur-md border border-white/15">
+            <div className="relative flex w-full flex-col gap-1.5 overflow-hidden rounded-lg bg-black/55 p-4 backdrop-blur-md border border-white/15">
               <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-300">
                 {data.subtitle}
               </span>

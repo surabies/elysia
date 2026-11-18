@@ -22,12 +22,6 @@ export function HalamanPublik({
     <div className="w-full bg-transparent text-foreground font-sans">
       {/* Header Banner - Mobile-First dengan Ambient Glow Biru + Hijau Emerald Tipis */}
       <section className="relative overflow-hidden bg-[radial-gradient(ellipse_75%_60%_at_50%_-15%,rgba(0,112,243,0.09),rgba(16,185,129,0.04)_45%,transparent)]">
-        {/* Subtle Decorative Grid Pattern */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--ds-gray-alpha-100)_1px,transparent_1px),linear-gradient(to_bottom,var(--ds-gray-alpha-100)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"
-        />
-
         <div className="relative mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-9 md:px-8 lg:py-12">
           {/* Live Telemetry Pill */}
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-1 shadow-[0_1px_4px_rgba(0,0,0,0.03)] backdrop-blur-md">

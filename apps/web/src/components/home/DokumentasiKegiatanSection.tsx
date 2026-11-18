@@ -96,11 +96,11 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onOpenModal(item)}
-      className="group relative flex flex-col justify-between rounded-3xl border border-border bg-card p-4 sm:p-5 shadow-xs transition-all duration-300 hover:border-foreground/30 hover:shadow-md cursor-pointer select-none"
+      className="group relative flex flex-col justify-between rounded-lg border border-border/80 bg-card p-4 sm:p-5 shadow-none transition-all duration-200 hover:border-foreground/20 hover:shadow-xs cursor-pointer select-none"
     >
       <div className="space-y-3.5">
         {/* Frame Foto 16:10 dengan Auto-Crossfade Multi-Foto */}
-        <div className="group/img relative aspect-16/10 w-full overflow-hidden rounded-2xl bg-neutral-950 border border-border shadow-2xs">
+        <div className="group/img relative aspect-16/10 w-full overflow-hidden rounded-md bg-neutral-950 border border-border/80 shadow-none">
           {/* Ambient Backdrop Blur untuk menyesuaikan foto portrait maupun landscape */}
           {currentPhoto?.url && (
             <div
@@ -242,7 +242,7 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
       </div>
 
       {/* Footer Kartu dengan Tombol Rincian */}
-      <div className="mt-4 pt-3.5 border-t border-border flex items-center justify-between">
+      <div className="mt-4 pt-3.5 border-t border-border/80 flex items-center justify-between">
         <span className="text-[11px] font-mono text-muted-foreground flex items-center gap-1.5">
           <Camera className="size-3.5 text-muted-foreground" />
           <span>Dokumentasi Lapangan</span>

@@ -15,7 +15,7 @@ import {
  */
 export function MockupPengaduan() {
   return (
-    <div className="group relative aspect-4/5 w-full overflow-hidden rounded-4 border border-neutral-800 bg-neutral-950 font-sans text-white select-none shadow-2xl">
+    <div className="group relative aspect-4/5 w-full overflow-hidden rounded-lg border border-border/80 bg-neutral-950 font-sans text-white select-none shadow-none">
       {/* 1. Latar Belakang Peta Spasial Vektor GIS Bandung */}
       <div className="absolute inset-0 overflow-hidden bg-[#0c1017]">
         {/* Grid Garis Jalanan Vektor Kota Bandung */}

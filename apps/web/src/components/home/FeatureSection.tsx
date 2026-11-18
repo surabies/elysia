@@ -28,7 +28,7 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
 
   if (media.type === "image") {
     return (
-      <div className="group relative overflow-hidden rounded-3xl border border-border bg-neutral-950 shadow-xl">
+      <div className="group relative overflow-hidden rounded-lg border border-border/80 bg-neutral-950 shadow-none">
         <Image
           src={media.src}
           alt={media.alt}
@@ -58,7 +58,7 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
         muted
         playsInline
         aria-hidden="true"
-        className="aspect-4/5 h-auto w-full rounded-3xl border border-border object-cover shadow-xl"
+        className="aspect-4/5 h-auto w-full rounded-lg border border-border/80 object-cover shadow-none"
       />
     )
   }
@@ -178,7 +178,7 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
                 {stats.map((st, idx) => (
                   <div
                     key={idx}
-                    className="rounded-2xl border border-border bg-muted/40 px-3 py-2.5"
+                    className="rounded-lg border border-border/80 bg-card px-3 py-2.5 shadow-none"
                   >
                     <p className="font-mono text-sm sm:text-base font-bold text-foreground">
                       {st.value}

@@ -112,8 +112,8 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
             {/* Kolom Kiri: Visual Showcase Interaktif */}
             <div className="lg:col-span-5">
-              <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-2.5 shadow-lg">
-                <div className="relative grid aspect-4/5 overflow-hidden rounded-2xl bg-neutral-950">
+              <div className="relative overflow-hidden rounded-lg border border-border/80 bg-card p-2 shadow-none">
+                <div className="relative grid aspect-4/5 overflow-hidden rounded-md bg-neutral-950">
                   {content.items.map((item, index) => (
                     <div
                       key={`${item.title}-${index}`}
@@ -144,8 +144,8 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
               </div>
             </div>
 
-            {/* Kolom Kanan: Interactive Feature Selector Cards */}
-            <div className="lg:col-span-7 flex flex-col gap-3.5">
+            {/* Kolom Kanan: Interactive Feature Selector Cards (Style Dashboard Card Konsisten) */}
+            <div className="lg:col-span-7 flex flex-col gap-3">
               {content.items.map((item, index) => {
                 const isActive = index === activeIndex
                 const desc =
@@ -160,19 +160,19 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
                     onClick={() => setActiveIndex(index)}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={cn(
-                      "group relative w-full text-left rounded-2xl border p-4 sm:p-5 transition-all duration-200 cursor-pointer outline-none",
+                      "group relative w-full text-left rounded-lg border p-4 sm:p-5 transition-all duration-200 cursor-pointer outline-none shadow-none",
                       isActive
-                        ? "border-[#0070f3]/50 bg-card shadow-md ring-1 ring-[#0070f3]/20"
-                        : "border-border bg-card/60 hover:bg-card hover:border-foreground/25"
+                        ? "border-foreground/30 bg-card ring-1 ring-foreground/15 shadow-xs"
+                        : "border-border/80 bg-card/60 hover:bg-card hover:border-foreground/20 hover:shadow-xs"
                     )}
                   >
                     <div className="flex items-start gap-4">
                       <div
                         className={cn(
-                          "flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors",
+                          "flex size-10 shrink-0 items-center justify-center rounded-md border transition-colors",
                           isActive
-                            ? "border-[#0070f3]/30 bg-[#0070f3]/10"
-                            : "border-border bg-muted/60"
+                            ? "border-foreground/20 bg-muted/80"
+                            : "border-border/80 bg-muted/40"
                         )}
                       >
                         <Image

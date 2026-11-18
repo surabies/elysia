@@ -47,7 +47,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
   const currentPhoto = allPhotos[activePhotoIdx] || allPhotos[0]
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-4 sm:p-6 md:p-8 lg:p-10 shadow-xs transition-shadow hover:shadow-md">
+    <div className="rounded-lg border border-border/80 bg-card p-4 sm:p-6 md:p-8 lg:p-10 shadow-none transition-all hover:border-foreground/20 hover:shadow-xs">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 items-stretch">
         
         {/* ========================================================
@@ -56,7 +56,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
         <div className="md:col-span-6 lg:col-span-6 flex flex-col justify-between">
           <div
             onClick={() => onOpenModal(item)}
-            className="group/img relative flex-1 min-h-[240px] sm:min-h-[320px] md:min-h-[420px] w-full overflow-hidden rounded-2xl bg-neutral-950 flex items-center justify-center border border-border shadow-xs cursor-pointer select-none"
+            className="group/img relative flex-1 min-h-[240px] sm:min-h-[320px] md:min-h-[420px] w-full overflow-hidden rounded-md bg-neutral-950 flex items-center justify-center border border-border/80 shadow-none cursor-pointer select-none"
             title="Klik untuk melihat dokumen dan brosur resolusi penuh"
           >
             {/* Ambient Blur Backdrop: Memastikan foto potret / vertikal tidak memiliki ruang kosong jelek */}
@@ -183,7 +183,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
 
             {/* Highlight Penawaran & Butir Keunggulan MENYUSUN KE BAWAH TANPA DIPOTONG */}
             {details && (details.highlightDiskon || (details.keunggulan && details.keunggulan.length > 0)) && (
-              <div className="rounded-2xl bg-muted/40 border border-border p-4 sm:p-5 shadow-2xs space-y-3">
+              <div className="rounded-lg bg-muted/30 border border-border/80 p-4 sm:p-5 shadow-none space-y-3">
                 {details.highlightDiskon && (
                   <p className="text-copy-14 font-semibold text-foreground flex items-center gap-2">
                     <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
@@ -209,7 +209,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
           </div>
 
           {/* Bagian Bawah: Tombol Aksi Sejajar Tepat Tepi Bawah Gambar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-border mt-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-border/80 mt-auto">
             <PillButton asChild className="w-full sm:w-auto text-center justify-center">
               <Link href={details?.ctaLink || '/pasang-baru'}>
                 {details?.ctaText || 'Daftar Sekarang'}
