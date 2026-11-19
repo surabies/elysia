@@ -266,7 +266,7 @@ export class CaterProgressService {
     const totalAnomali = kpiData.totalEkstrim + kpiData.totalNol + kpiData.totalTurun;
 
     // 2. Bangun filter kondisi SQL berbasis perbandingan riil Pakai vs Lalu
-    let condition = eq(caterBacaMeter.thbl, thbl);
+    const condition = eq(caterBacaMeter.thbl, thbl);
 
     const ekstrimSql = sql`(
       (${caterBacaMeter.pakaiLalu}::float > 0 and ${caterBacaMeter.pakaiM3}::float >= ${caterBacaMeter.pakaiLalu}::float * 2)

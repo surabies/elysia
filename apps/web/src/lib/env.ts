@@ -10,6 +10,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 dotenv.config();
 
+const DEV_FALLBACK_SECRET = 'development-secret-key-must-be-at-least-32-chars-long';
+
 const envSchema = z.object({
   DATABASE_URL: z
     .string()
@@ -18,7 +20,7 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z
     .string()
     .min(16, 'BETTER_AUTH_SECRET must be at least 16 characters')
-    .default('development-secret-key-must-be-at-least-32-chars-long'),
+    .default(DEV_FALLBACK_SECRET),
   BETTER_AUTH_URL: z
     .string()
     .url()
@@ -50,3 +52,14 @@ export const env = envSchema.parse({
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   CLOUDINARY_URL: process.env.CLOUDINARY_URL,
 });
+
+// Fail fast in production runtime if critical secrets still use local dev fallbacks
+if (
+  env.NODE_ENV === 'production' &&
+  process.env.NEXT_PHASE !== 'phase-production-build' &&
+  env.BETTER_AUTH_SECRET === DEV_FALLBACK_SECRET
+) {
+  throw new Error(
+    '[ENV_ERROR] BETTER_AUTH_SECRET must be explicitly configured in production (do not use the development fallback).'
+  );
+}

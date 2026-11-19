@@ -55,6 +55,11 @@ export const geoModule = new Elysia({ prefix: '/places' })
       const limit = Number(query.limit ?? 20);
 
       try {
+        // Degree bounding-box prefilter allows PostgreSQL to use the GiST index (places_location_idx)
+        // on geometry(Point, 4326), followed by meter-exact geodesic filtering via ::geography.
+        const cosLat = Math.max(0.1, Math.cos((lat * Math.PI) / 180));
+        const degreeBuffer = Math.min(180, radius / (111000 * cosLat) + 0.01);
+
         const results = await db.execute(sql`
           SELECT 
             id, 
@@ -67,7 +72,8 @@ export const geoModule = new Elysia({ prefix: '/places' })
             updated_at AS "updatedAt",
             ROUND(ST_Distance(location::geography, ST_SetSRID(ST_MakePoint(${lon}, ${lat}), 4326)::geography)::numeric, 2) AS "distanceMeters"
           FROM places
-          WHERE ST_DWithin(location::geography, ST_SetSRID(ST_MakePoint(${lon}, ${lat}), 4326)::geography, ${radius})
+          WHERE location && ST_Expand(ST_SetSRID(ST_MakePoint(${lon}, ${lat}), 4326), ${degreeBuffer})
+            AND ST_DWithin(location::geography, ST_SetSRID(ST_MakePoint(${lon}, ${lat}), 4326)::geography, ${radius})
           ORDER BY "distanceMeters" ASC
           LIMIT ${limit};
         `);

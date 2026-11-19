@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { nextCookies } from 'better-auth/next-js';
 import { db } from '@cater/db';
 import * as schema from '@cater/db';
 import { env } from '@/lib/env';
@@ -95,6 +96,7 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: serverBaseUrl,
   trustedOrigins,
+  plugins: [nextCookies()],
 });
 
 export type Session = typeof auth.$Infer.Session.session;

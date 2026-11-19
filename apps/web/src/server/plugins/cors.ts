@@ -32,7 +32,7 @@ const configuredOrigins = env.CORS_ALLOWED_ORIGINS
   ? env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim().replace(/\/$/, ''))
   : [];
 
-const allowedOrigins = Array.from(
+export const allowedOrigins = Array.from(
   new Set(
     [
       'http://localhost:3000',

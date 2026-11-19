@@ -135,7 +135,7 @@ export async function batasKelurahanFC(): Promise<FC> {
     const areaMap = new Map(rows.map((r) => [r.kodeDesa, r]));
 
     // 3. Fallback jika area_layanan kosong, baca dari Area_layanan.geojson
-    let geoJsonMap = new Map<string, any>();
+    const geoJsonMap = new Map<string, any>();
     if (rows.length === 0) {
       const p = resolveGeoJsonPath('Area_layanan.geojson');
       if (p) {
@@ -214,7 +214,7 @@ export async function batasKelurahanFC(): Promise<FC> {
     // 6. Bentuk fitur GeoJSON hanya untuk 21 kelurahan resmi
     for (const k of dbKels) {
       let geom = areaMap.get(k.kode)?.geometry;
-      let namaKec = (k.kecamatanKode ? kecMap.get(k.kecamatanKode) : undefined) || areaMap.get(k.kode)?.kecamatan || 'BANDUNG';
+      const namaKec = (k.kecamatanKode ? kecMap.get(k.kecamatanKode) : undefined) || areaMap.get(k.kode)?.kecamatan || 'BANDUNG';
 
       if (!geom && geoJsonMap.size > 0) {
         const feat = geoJsonMap.get(normalize(k.nama));

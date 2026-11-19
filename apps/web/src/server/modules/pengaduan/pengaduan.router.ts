@@ -40,6 +40,7 @@ const pengaduanRoutes = new Elysia()
       }
     },
     {
+      requireAuth: true,
       body: tugaskanPengaduanBodySchema,
     }
   )
@@ -67,6 +68,7 @@ const pengaduanRoutes = new Elysia()
       }
     },
     {
+      requireAuth: true,
       body: ubahStatusPengaduanBodySchema,
     }
   )
@@ -114,6 +116,7 @@ const pengaduanRoutes = new Elysia()
       }
     },
     {
+      requireAuth: true,
       body: createPengaduanBodySchema,
     }
   )

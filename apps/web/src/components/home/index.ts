@@ -1,4 +1,5 @@
 export { HeroSection } from './HeroSection'
+export { SplashIntro } from './SplashIntro'
 export { TopEventsSection } from './TopEventsSection'
 export { TicketingSection } from './TicketingSection'
 export { BenefitsSection } from './BenefitsSection'

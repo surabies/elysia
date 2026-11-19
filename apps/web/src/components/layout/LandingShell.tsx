@@ -1,8 +1,10 @@
 "use client"
 
+import * as React from "react"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 
+import { SplashIntro } from "@/components/home/SplashIntro"
 import { SiteFooter } from "@/components/layout/SiteFooter"
 import { SiteHeader } from "@/components/layout/SiteHeader"
 import { InteractiveWaterBackdrop } from "@/components/layout/InteractiveWaterBackdrop"
@@ -32,19 +34,30 @@ function halamanPublik(pathname: string) {
 
 export function LandingShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/"
+  const isHome = pathname === "/"
+  const [splashActive, setSplashActive] = React.useState(false)
 
   if (!halamanPublik(pathname)) return <>{children}</>
 
-  return (
-    <div className="relative isolate flex min-h-screen flex-col bg-background text-foreground font-sans overflow-x-clip">
-      {/* Dynamic Water & Dot Matrix Backdrop with Interactive Riak Air */}
-      <InteractiveWaterBackdrop />
+  const isLocked = isHome && splashActive
 
-      <SiteHeader />
-      <main className="flex flex-1 flex-col [&_.section-white+.section-white]:pt-0">
-        {children}
-      </main>
-      <SiteFooter />
-    </div>
+  return (
+    <>
+      {isHome ? <SplashIntro onActiveChange={setSplashActive} /> : null}
+      <div
+        inert={isLocked}
+        aria-hidden={isLocked || undefined}
+        className="relative isolate flex min-h-screen flex-col bg-background text-foreground font-sans overflow-x-clip"
+      >
+        {/* Dynamic Water & Dot Matrix Backdrop with Interactive Riak Air */}
+        <InteractiveWaterBackdrop />
+
+        <SiteHeader />
+        <main className="flex flex-1 flex-col [&_.section-white+.section-white]:pt-0">
+          {children}
+        </main>
+        <SiteFooter />
+      </div>
+    </>
   )
 }

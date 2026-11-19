@@ -77,6 +77,7 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
       }
     },
     {
+      requireAuth: true,
       params: pratinjauParamsSchema,
     }
   )
@@ -111,6 +112,7 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
       }
     },
     {
+      requireAuth: true,
       body: eksekusiClosingBodySchema,
     }
   )
@@ -143,6 +145,7 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
       }
     },
     {
+      requireAuth: true,
       body: bukaBulanBaruBodySchema,
     }
   )
@@ -164,6 +167,7 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
       }
     },
     {
+      requireAuth: true,
       body: postingDatameterBodySchema,
     }
   )

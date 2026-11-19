@@ -497,6 +497,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
+      requireAuth: true,
       params: thblParamsSchema,
       query: ikhtisarQuerySchema,
     }
@@ -515,6 +516,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
+      requireAuth: true,
       params: thblParamsSchema,
       query: ikhtisarQuerySchema,
     }

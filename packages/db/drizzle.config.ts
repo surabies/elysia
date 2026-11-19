@@ -12,6 +12,7 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/elysia_db',
   },
+  extensionsFilters: ['postgis'],
   tablesFilter: ['!spatial_ref_sys', '!geometry_columns', '!geography_columns'],
   verbose: true,
   strict: true,
