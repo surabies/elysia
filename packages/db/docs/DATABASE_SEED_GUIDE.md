@@ -1,170 +1,103 @@
-# Panduan Lengkap Setup & Seeding Database PDAM Cater
+# Panduan Database: Clean, Seed & Import Data
 
-Dokumen ini adalah referensi definitif mengenai arsitektur basis data, proses seeding data awal, akun otentikasi/RBAC, dan perintah eksekusi agar tidak ada keraguan dalam pengelolaan database.
+Dokumen panduan ringkas pengelolaan basis data **PDAM Cater (Tirtawening)**: mulai dari pembersihan, seeding master data awal, hingga import laporan pembacaan meter bulanan secara dinamis.
 
 ---
 
-## 1. Arsitektur Basis Data & Persyaratan
+## 1. Ringkasan Arsitektur & Dataset
 
-Sistem menggunakan **PostgreSQL 16+** dengan ekstensi **PostGIS** dan di-manage menggunakan **Drizzle ORM** pada package `@cater/db` (`packages/db`).
+Sistem menggunakan **PostgreSQL 16+ (Neon Database)** dengan ekstensi geospasial **PostGIS** dan di-manage menggunakan **Drizzle ORM** (`packages/db`).
 
-### Konfigurasi Environment (`.env` / `.env.local`)
-Pastikan variabel lingkungan berikut terdefinisi pada root folder:
-```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5433/elysia_db
-BETTER_AUTH_SECRET=supersecretkeyforproductionmustbelongenough123456
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+### Sumber Dataset Resmi (`packages/db/data/raw/`):
+- **`ProgresCater-PW5.csv`** (85 kolom) : Sumber master pelanggan (22.524 data), nomor meter air fisik, golongan tarif, kecamatan/kelurahan, dan rute cater.
+- **`PBPK.csv`** : Master pasang baru & sambungan kembali untuk DPM.
+- **`Data_verifikasi.geojson`** : Hasil survei presisi tinggi mWater (koordinat GPS akurat 924 pelanggan).
+- **`Area_layanan.geojson`** : Batas poligonal 21 kelurahan resmi Wilayah Pelayanan 5.
+- **`lapdatametertes.csv`** : Laporan data hasil pembacaan meter bulanan (Januari). **Diimpor secara dinamis melalui Frontend**, bukan di seed awal.
+
+---
+
+## 2. Perintah CLI (Cheat Sheet)
+
+Jalankan perintah ini dari terminal di folder utama proyek:
+
+| Perintah | Fungsi | Keterangan |
+|---|---|---|
+| `bun run db:clean` | **Membersihkan Data** | Mengosongkan data transaksi, master pelanggan, dan aset meter. **Akun pengguna tetap aman**. |
+| `bun run db:clean --all` | **Reset Total** | Mengosongkan seluruh tabel termasuk akun pengguna dan session auth. |
+| `bun run db:migrate` | **Migrasi Skema** | Menerapkan seluruh file migrasi SQL Drizzle ke database. |
+| `bun run db:seed` | **Seeding Master Data** | Mengisi 15 akun resmi, 23 master kondisi STI, 22.524 master pelanggan, aset meter, dan area layanan (`masterOnly`). |
+| `bun run db:seed:accounts` | **Seed Akun Saja** | Memperbarui atau me-reset password 15 akun resmi tanpa mengubah data pelanggan. |
+| `bun run db:studio` | **Buka GUI Database** | Membuka Drizzle Studio di browser untuk melihat isi tabel langsung. |
+
+---
+
+## 3. Alur Pengelolaan Data (Best Practice)
+
+```
+[1. Bersihkan Data] ──> [2. Seeding Master Data] ──> [3. Import Bulanan Dinamis]
+  bun run db:clean           bun run db:seed             Menu Tools > Import Data
+(Hapus data salah)     (Isi master pelanggan & aset)   (Upload lapdatameter CSV)
 ```
 
----
-
-## 2. Struktur Data & Integrasi Riil (Dataset CSV)
-
-Data awal diimpor langsung dari arsip riil PDAM STI: `packages/db/data/jan/ProgresCater-PW5.csv` (22.549 baris).
-
-### Entitas yang Dibuat Saat Seeding:
-1. **Wilayah Administrasi**: 4 Wilayah, 7 Kecamatan, 21 Kelurahan.
-2. **Rute Catat Meter**: 126 Rute cater (contoh: `CD104`, `KC207`, dll.).
-3. **Golongan Tarif**: 13 Golongan tarif (`2A1`, `2A2`, dll.) lengkap dengan bea beban, administrasi, dan air kotor.
-4. **Master Kondisi Catat Meter STI**: 22 Kode kondisi resmi PDAM (lihat tabel kondisi di bawah).
-5. **Petugas Pencatat**: 9 Petugas lapangan resmi.
-6. **Water Meter (Aset Fisik)**: 22.078 Unit meter air unik.
-7. **Pelanggan**: 22.549 Sambungan pelanggan aktif.
-8. **Catat Meter & DRD Tagihan**: 22.549 Rekod pembacaan meter dan tagihan rekening bulan berjalan.
-9. **Spasial PostGIS**: Titik koordinat pelanggan dan landmark perkotaan.
-
-> [!NOTE]
-> **Mengapa tabel `water_meter` ada 22.078 sedangkan `pelanggan` ada 22.549?**
-> Di tabel `water_meter`, kolom `no_meter` adalah **Primary Key (aset alat fisik unik)**.
-> Pada data riil PDAM:
-> - **462 pelanggan** menggunakan nomor meter bersama/kolektif (misal kode `"2018MBR"` untuk 131+ pelanggan program MBR 2018, atau 1 meter induk untuk beberapa pintu sewa).
-> - **9 pelanggan** belum terpasang meter (`no_meter` bernilai NULL/strip).
-> Normalisasi ini memastikan aset fisik alat meter tercatat akurat tanpa duplikasi aset, sementara seluruh 22.549 kontrak pelanggan tetap tersimpan 100% utuh.
-
----
-
-## 3. Daftar Akun Pengguna & Kredensial Resmi (15 Akun)
-
-Saat menjalankan seed, semua akun dibuat dengan password bootstrap yang sama dari
-variabel `SEED_DEFAULT_PASSWORD`. Gunakan password unik minimal 12 karakter melalui
-environment lokal atau secret manager; jangan simpan nilainya di repository. Ganti
-password tiap akun setelah bootstrap, terutama pada database non-development.
-
-### A. 5 Akun Manajemen, Administrasi & Verifikasi
-
-| Email | Nama | Role RBAC | Fungsi & Otoritas |
-|---|---|---|---|
-| `superadmin@pdam.co.id` | Super Admin PDAM | `SUPERADMIN` | Akses penuh seluruh modul & konfigurasi sistem |
-| `staff.billing@pdam.co.id` | Staff Admin Billing | `STAFF_ADMIN_BILLING` | Administrasi rute, tarif, koreksi pasca-verifikasi, closing |
-| `verifikator1@pdam.co.id` | Supervisor Verifikator 1 | `VERIFIKATOR_1` | Verifikasi awal (screening) pembacaan meter tingkat rute |
-| `verifikator2@pdam.co.id` | Manager Verifikator 2 | `VERIFIKATOR_2` | Verifikasi lanjutan tingkat cabang / area |
-| `verifikator3@pdam.co.id` | Direksi Verifikator 3 | `VERIFIKATOR_3` | Approval final pengesahan penerbitan tagihan DRD |
-| `demo@example.com` | Demo Admin | Multi-Role (V1-V3, Staff, Superadmin) | Akun testing cepat untuk seluruh fitur |
-
-### B. 9 Akun Petugas Pencatat Lapangan (Mobile / Cater)
-
-| Email | Nama Petugas | Role RBAC | ID Petugas Lapangan |
-|---|---|---|---|
-| `dadang@cater.pdam.co.id` | Dadang (Pencatat) | `PENCATAT` | `DADANG` |
-| `periyadi@cater.pdam.co.id` | Periyadi (Pencatat) | `PENCATAT` | `PERIYADI` |
-| `omay@cater.pdam.co.id` | Omay (Pencatat) | `PENCATAT` | `OMAY` |
-| `iwan@cater.pdam.co.id` | Iwan (Pencatat) | `PENCATAT` | `IWAN` |
-| `agus@cater.pdam.co.id` | Agus (Pencatat) | `PENCATAT` | `AGUS` |
-| `didin@cater.pdam.co.id` | Didin (Pencatat) | `PENCATAT` | `DIDIN` |
-| `rudy@cater.pdam.co.id` | Rudy (Pencatat) | `PENCATAT` | `RUDY` |
-| `dani@cater.pdam.co.id` | Dani (Pencatat) | `PENCATAT` | `DANI` |
-| `edi@cater.pdam.co.id` | Edi (Pencatat) | `PENCATAT` | `EDI` |
-
----
-
-## 4. Perintah Eksekusi (CLI Cheat Sheet)
-
-Jalankan perintah ini dari root direktori proyek `E:\Coding\elysia`:
-
-### 1. Eksekusi Seed Tunggal Terpadu (Direkomendasikan)
-Menjalankan seluruh tahapan seed sekaligus: Akun Pengguna (15 akun) -> Tempat Geospasial -> 22 Master Kondisi -> Impor 22.549 Data CSV (jika tabel masih kosong):
+### Langkah A: Reset & Seeding Ulang
+Jika ingin mereset dan mengulang data dari awal secara bersih:
 ```bash
+# 1. Bersihkan data lama
+bun run db:clean
+
+# 2. Isi master data pelanggan & wilayah (transaksi catat meter dibiarkan bersih)
 bun run db:seed
 ```
-Sebelum menjalankan perintah, atur `SEED_DEFAULT_PASSWORD` di environment lokal
-dengan password unik minimal 12 karakter. Seed tidak menghapus database dan tidak
-menimpa dataset yang sudah ada; impor CSV berjalan hanya saat tabel pelanggan kosong.
 
-### 2. Seeding Akun Pengguna Saja
-Jika Anda hanya ingin memperbarui atau me-reset 15 akun pengguna tanpa menyentuh data pelanggan/meter:
-```bash
-bun run db:seed:accounts
-```
-
-### 3. Seeding 22 Master Kondisi Catat STI Saja
-```bash
-bun --filter "@cater/db" db:seed:kondisi
-```
-
-### 4. Eksekusi Ulang Impor Data Pelanggan & Catat Meter dari CSV
-Jika ingin me-refresh seluruh 22.549 rekod dari file CSV `ProgresCater-PW5.csv`:
-```bash
-bun run cater:import
-```
-
-### 5. Menjalankan Migrasi Skema Basis Data
-```bash
-bun run db:migrate
-```
-
-### 6. Membuka Drizzle Studio (Database GUI Viewer)
-```bash
-bun run db:studio
-```
+### Langkah B: Import Laporan Catat Meter Bulanan via Web UI
+Data pembacaan meter bulanan (`lapdatameter`) tidak perlu di-seed di awal. Anda dapat mengimpornya kapan saja sesuai periode bulan berjalan:
+1. Buka browser dan login ke dashboard (misal: `http://localhost:3000`).
+2. Masuk ke menu sidebar **Tools > Import Data** (`/tools/import-data`).
+3. Pilih / unggah berkas CSV laporan bulanan (misal `lapdatametertes.csv`).
+4. Sistem otomatis memetakan nomor pelanggan (`nolg`), periode (`thbl`), stand awal (`stml`), stand akhir (`stma`), kubikasi pakai, dan petugas pencatat ke tabel `cater_baca_meter`.
 
 ---
 
-## 5. Master 22 Kondisi Catat Meter STI (Standar Resmi)
+## 4. Daftar Akun Pengguna Resmi (15 Akun)
 
-| Kode TMSS | Keterangan Kondisi | Kategori Anomali / Aksi Sistem |
-|---|---|---|
-| `01` / `NORMAL` | Normal | Standar terbaca wajar |
-| `02` / `DK` | Pagar Dikunci | Taksasi rata-rata pemakaian bulan lalu |
-| `03` / `RK` | Rumah Kosong | Taksasi minimum 5 m³ |
-| `04` / `MT` | Meter Tertimbun | Perlu resurvey / tindakan teknis |
-| `05` / `MB` | Meter Buram / Rusak | Jadwalkan Ganti Water Meter (GWM) |
-| `06` / `KM` | Kran Rusak / Los | Peringatan kebocoran persil |
-| `07` / `MA` | Meter Hilang / Angkat | Verifikasi pemakaian fisik |
-| `08` / `TA` | Tidak Ada Air | Validasi kontinuitas aliran jaringan |
-| `09` / `SM` | Stand Minus (Rollover / Mundur) | Deteksi rollover 9999->0001 atau indikasi balik meter |
-| `10` / `SK` | Segel Rusak / Lepas | Audit fisik oleh pengawas |
-| `11` / `TU` | Meter Terbalik | Perintah balik posisi instalasi |
-| `12` / `LS` | Langsung Tanpa Meter | Pelanggaran / sambungan liar |
-| `13` | Meter Mati Ada Aliran Air | Taksasi metode 3-Tertinggi |
-| `14` s/d `22` | Kondisi Khusus Wilayah / Non-Aktif | Evaluasi administrasi penagihan |
+Password default ditentukan oleh variabel lingkungan `SEED_DEFAULT_PASSWORD` (min. 12 karakter):
+
+### A. Manajemen & Operasional Kantor
+| Email | Nama Akun | Role RBAC | Fungsi Utama |
+|---|---|---|---|
+| `wiska.prayoga@gmail.com` | Super Admin PDAM | `SUPERADMIN` | Administrator penuh seluruh modul sistem |
+| `staff.billing@pdam.co.id` | Staff Admin Billing | `STAFF_ADMIN_BILLING` | Penagihan, tarif, administrasi rute, closing |
+| `verifikator1@pdam.co.id` | Supervisor Verifikator 1 | `VERIFIKATOR_1` | Verifikasi awal screening baca meter rute |
+| `verifikator2@pdam.co.id` | Manager Verifikator 2 | `VERIFIKATOR_2` | Verifikasi lanjutan tingkat wilayah |
+| `verifikator3@pdam.co.id` | Direksi Verifikator 3 | `VERIFIKATOR_3` | Otorisasi final penerbitan rekening DRD |
+| `demo@example.com` | Demo User | Multi-Role | Akun testing seluruh hak akses |
+
+### B. Petugas Pencatat Lapangan (Mobile Cater)
+| Email | Petugas | ID Lapangan | Role |
+|---|---|---|---|
+| `dadang@cater.pdam.co.id` | Dadang | `DADANG` | `PENCATAT` |
+| `periyadi@cater.pdam.co.id` | Periyadi | `PERIYADI` | `PENCATAT` |
+| `omay@cater.pdam.co.id` | Omay | `OMAY` | `PENCATAT` |
+| `iwan@cater.pdam.co.id` | Iwan | `IWAN` | `PENCATAT` |
+| `agus@cater.pdam.co.id` | Agus | `AGUS` | `PENCATAT` |
+| `didin@cater.pdam.co.id` | Didin | `DIDIN` | `PENCATAT` |
+| `rudy@cater.pdam.co.id` | Rudy | `RUDY` | `PENCATAT` |
+| `dani@cater.pdam.co.id` | Dani | `DANI` | `PENCATAT` |
+| `edi@cater.pdam.co.id` | Edi | `EDI` | `PENCATAT` |
 
 ---
 
-## 6. Kueri Verifikasi Data (Cek Cepat di DB)
+## 5. Kueri Verifikasi Database (Cek Cepat)
 
-Untuk memastikan seluruh data telah masuk dengan benar, jalankan kueri SQL berikut:
+Jalankan kueri SQL ini untuk memverifikasi integritas data:
 
 ```sql
--- Cek jumlah pelanggan dan unit meter air
 SELECT 
-  (SELECT COUNT(*) FROM pelanggan) AS total_pelanggan,
-  (SELECT COUNT(*) FROM water_meter) AS total_unit_meter,
-  (SELECT COUNT(*) FROM cater_baca_meter) AS total_pembacaan_meter,
-  (SELECT COUNT(*) FROM drd_billing) AS total_tagihan_drd,
-  (SELECT COUNT(*) FROM "user") AS total_akun_pengguna,
-  (SELECT COUNT(*) FROM master_kondisi_catat) AS total_master_kondisi;
-
--- Cek akun dan role yang aktif
-SELECT u.name, u.email, ur.role 
-FROM "user" u 
-JOIN user_roles ur ON u.id = ur.user_id 
-ORDER BY ur.role, u.name;
+  (SELECT COUNT(*) FROM pelanggan) AS total_pelanggan,         -- Target: 22.524
+  (SELECT COUNT(*) FROM water_meter) AS total_unit_meter,       -- Target: 22.051
+  (SELECT COUNT(*) FROM area_layanan) AS total_kelurahan,       -- Target: 21
+  (SELECT COUNT(*) FROM master_kondisi_catat) AS total_kondisi, -- Target: 23
+  (SELECT COUNT(*) FROM "user") AS total_akun_pengguna,         -- Target: 15
+  (SELECT COUNT(*) FROM cater_baca_meter) AS total_transaksi;   -- Target: 0 (Bersih, siap import bulanan)
 ```
-
-Hasil yang diharapkan:
-- `total_pelanggan`: **22.549**
-- `total_unit_meter`: **22.078**
-- `total_pembacaan_meter`: **22.549**
-- `total_tagihan_drd`: **22.549**
-- `total_master_kondisi`: **22** (atau 23 termasuk varian)
-- `total_akun_pengguna`: **15**

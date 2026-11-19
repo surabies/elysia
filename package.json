@@ -16,6 +16,7 @@
     "test": "bun test",
     "db:generate": "bun --filter \"@cater/db\" db:generate",
     "db:migrate": "bun --filter \"@cater/db\" db:migrate",
+    "db:clean": "bun --filter \"@cater/db\" db:clean",
     "db:studio": "bun --filter \"@cater/db\" db:studio",
     "db:seed": "bun --filter \"@cater/db\" db:seed",
     "db:seed:accounts": "bun --filter \"@cater/db\" db:seed:accounts",
