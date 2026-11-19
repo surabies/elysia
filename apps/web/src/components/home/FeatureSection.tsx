@@ -9,7 +9,6 @@ import { Check } from "lucide-react"
 import { Container } from "@/components/shared/Container"
 import { PillButton } from "@/components/shared/PillButton"
 import { SwipeRevealMedia } from "@/components/shared/SwipeRevealMedia"
-import { HaloBadge } from "@/components/ui/halo-badge"
 import { cn } from "@/lib/utils"
 import type { FeatureMedia, FeatureSectionContent } from "@/types/home"
 import { MockupLaporMeter } from "./MockupLaporMeter"
@@ -39,10 +38,10 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
           sizes="(min-width: 1280px) 516px, (min-width: 768px) 50vw, 100vw"
           className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-103"
         />
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 text-white flex items-center justify-between">
-          <HaloBadge live variant="outline" className="text-xs font-mono font-medium text-white border-white/20">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3.5 sm:p-4 text-white flex items-center justify-between">
+          <span className="text-xs font-mono font-medium text-white/90">
             Jaringan Distribusi Aktif
-          </HaloBadge>
+          </span>
           <span className="text-[11px] font-mono text-neutral-300">Kota Bandung</span>
         </div>
       </div>
@@ -112,13 +111,13 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
     }
   }, [initialSection.id])
 
-  const { id, badge, title, description, highlights, stats, media, mediaPosition, cta } = section
+  const { id, title, description, highlights, stats, media, mediaPosition, cta } = section
   const titleId = `${id}-title`
 
   return (
     <section
       aria-labelledby={titleId}
-      className="section-white relative bg-transparent py-12 text-foreground lg:py-18"
+      className="section-white relative bg-transparent py-8 sm:py-12 lg:py-16 text-foreground"
     >
       <Container className="max-w-360 px-4 lg:px-12">
         <motion.div
@@ -127,7 +126,7 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
-            "flex flex-col gap-8 rounded-lg border border-border/80 bg-card p-6 sm:p-8 lg:p-10 shadow-none transition-all hover:border-foreground/20 hover:shadow-xs md:items-center lg:gap-12",
+            "flex flex-col gap-6 sm:gap-8 rounded-lg border border-border/80 bg-card p-4 sm:p-7 lg:p-10 shadow-none transition-all hover:border-foreground/20 hover:shadow-xs md:items-center lg:gap-12",
             mediaPosition === "right" ? "md:flex-row-reverse" : "md:flex-row"
           )}
         >
@@ -139,33 +138,27 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
           </div>
 
           {/* Kolom Konten Interaktif */}
-          <div className="flex flex-1 flex-col justify-center space-y-5">
-            {badge && (
-              <HaloBadge live variant="outline" className="self-start text-xs font-mono font-medium text-muted-foreground px-3 py-1">
-                {badge}
-              </HaloBadge>
-            )}
-
-            <div className="space-y-3">
+          <div className="flex flex-1 flex-col justify-center space-y-4 sm:space-y-5">
+            <div className="space-y-2 sm:space-y-3">
               <h2
                 id={titleId}
-                className="text-2xl sm:text-3xl lg:text-[2rem] font-bold tracking-tight text-foreground leading-tight"
+                className="text-xl sm:text-2xl lg:text-[2rem] font-bold tracking-tight text-foreground leading-tight"
               >
                 {title}
               </h2>
 
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-normal">
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground leading-relaxed font-normal">
                 {description}
               </p>
             </div>
 
             {/* Daftar Poin Keunggulan */}
             {highlights && highlights.length > 0 && (
-              <div className="space-y-2.5 pt-1">
+              <div className="space-y-2 pt-1">
                 {highlights.map((item, idx) => (
                   <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90 font-normal">
-                    <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                      <Check className="size-2.5 stroke-[2.5]" />
+                    <span className="mt-0.5 flex size-3.5 sm:size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                      <Check className="size-2 sm:size-2.5 stroke-[2.5]" />
                     </span>
                     <span className="leading-snug">{item}</span>
                   </div>
@@ -175,16 +168,16 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
 
             {/* Baris Statistik Ringkas */}
             {stats && stats.length > 0 && (
-              <div className="grid grid-cols-3 gap-2.5 pt-2">
+              <div className="grid grid-cols-3 gap-2 sm:gap-2.5 pt-1 sm:pt-2">
                 {stats.map((st, idx) => (
                   <div
                     key={idx}
-                    className="rounded-md border border-border/80 bg-muted/30 px-3 py-2.5 shadow-none text-center sm:text-left"
+                    className="rounded-md border border-border/80 bg-muted/30 p-2 sm:px-3 sm:py-2.5 shadow-none text-center sm:text-left"
                   >
-                    <p className="font-mono text-sm sm:text-base font-bold text-foreground">
+                    <p className="font-mono text-xs sm:text-sm md:text-base font-bold text-foreground">
                       {st.value}
                     </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 leading-tight">
                       {st.label}
                     </p>
                   </div>
@@ -194,7 +187,7 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
 
             {cta ? (
               <div className="pt-2">
-                <PillButton asChild>
+                <PillButton asChild className="w-full sm:w-auto text-center justify-center">
                   <Link href={cta.href}>
                     {cta.label}
                   </Link>
