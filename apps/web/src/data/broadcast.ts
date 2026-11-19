@@ -136,7 +136,7 @@ export const DAFTAR_BROADCAST_AWAL: BroadcastGangguanItem[] = [
         tipe: 'BROSUR',
       },
       {
-        url: '/images/hero.jpg',
+        url: '/images/features/Pusat-Kendali.png',
         judul: 'Sosialisasi & Layanan Loket Terpadu Tirtawening',
         keterangan: 'Pemberian asistensi langsung dan konsultasi syarat pendaftaran warga.',
         tipe: 'FOTO_KEGIATAN',
@@ -223,7 +223,7 @@ export const DAFTAR_BROADCAST_AWAL: BroadcastGangguanItem[] = [
         tipe: 'FOTO_KEGIATAN',
       },
       {
-        url: '/images/hero.jpg',
+        url: '/images/features/Pusat-Kendali.png',
         judul: 'Loket Pelayanan Terpadu Tirtawening',
         keterangan: 'Asistensi ramah dan penjelasan skema angsuran langsung oleh petugas loket.',
         tipe: 'FOTO_KEGIATAN',
@@ -461,11 +461,11 @@ export const DAFTAR_BROADCAST_AWAL: BroadcastGangguanItem[] = [
       label: 'Pendaftaran Pasang Baru Wilayah 5',
       nomor: '0811-222-7771',
     },
-    gambarUtama: '/images/hero.jpg',
+    gambarUtama: '/images/features/Pusat-Kendali.png',
     tipeGambarUtama: 'FOTO_KEGIATAN',
     galeriMedia: [
       {
-        url: '/images/hero.jpg',
+        url: '/images/features/Pusat-Kendali.png',
         judul: 'Pekerjaan Galian & Tapping Saddle Pipa',
         keterangan: 'Pemasangan klem penyambung pipa dinas ke jalur induk.',
         tipe: 'FOTO_KEGIATAN',

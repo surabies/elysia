@@ -122,7 +122,6 @@ export function HeroSection({ content }: HeroSectionProps) {
             <div className="relative w-full aspect-4/5 rounded-3xl overflow-hidden bg-neutral-950 shadow-2xl shadow-neutral-950/15 ring-1 ring-neutral-900/10 md:h-[calc(100vh-140px)] md:max-h-220 md:w-auto">
               <HlsVideo
                 src={content.videoSrc}
-                poster="/images/hero-poster.webp"
                 className="w-full h-full object-cover"
               />
             </div>

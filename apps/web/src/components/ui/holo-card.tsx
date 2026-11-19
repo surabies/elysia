@@ -76,7 +76,7 @@ export interface HoloCardProps {
 // ============================================================================
 
 const DEFAULT_BACKGROUND =
-	"/images/hero.jpg";
+	"/images/features/Pusat-Kendali.png";
 
 const DEFAULT_BRANDING: HoloCardBranding = {
 	logo: "/images/logo.png",

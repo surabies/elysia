@@ -85,7 +85,7 @@ const META_LAYANAN: Record<string, LayananMeta> = {
       'Pengajuan sambungan pipa air minum baru untuk rumah tangga, niaga, dan industri secara online.',
     fiturUtama: 'Survei 1-2 Hari Kerja',
     overlayColor: '#0891b2', // Cyan
-    bgImage: '/images/hero.jpg',
+    bgImage: '/images/features/Pusat-Kendali.png',
     icon: Droplets,
     warnaIcon: 'text-cyan-400',
   },
@@ -110,7 +110,7 @@ export function EventCard({ event }: EventCardProps) {
     deskripsi: event.venue,
     fiturUtama: event.price,
     overlayColor: '#0284c7',
-    bgImage: '/images/hero.jpg',
+    bgImage: '/images/features/Pusat-Kendali.png',
     icon: Sparkles,
     warnaIcon: 'text-sky-400',
   }
