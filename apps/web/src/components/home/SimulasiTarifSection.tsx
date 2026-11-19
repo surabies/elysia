@@ -250,15 +250,32 @@ export function SimulasiTarifSection() {
           className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"
         />
 
-        {/* Header Seksi (Tanpa Badge, Ruang Vertikal Seimbang) */}
-        <div className="relative z-10 mb-6 sm:mb-8">
+        {/* Ambient Grid Kotak-Kotak 32x32px dengan Gradasi Blur & Memudar ke Bawah */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 opacity-70 dark:opacity-40 [mask-image:linear-gradient(to_bottom,black_10%,rgba(0,0,0,0.5)_50%,transparent_90%)]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(100, 116, 139, 0.18) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(100, 116, 139, 0.18) 1px, transparent 1px)
+            `,
+            backgroundSize: '32px 32px',
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-card/50 to-card backdrop-blur-[2px]"
+        />
+
+        {/* Header Seksi (Ringkas, Fungsional & Tanpa Badge) */}
+        <div className="relative z-10 mb-4 sm:mb-6 md:mb-8">
           <h2
             id="simulasi-tarif-title"
             className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground"
           >
-            Kalkulator Estimasi Biaya Pemakaian Air
+            Kalkulator Tarif Air
           </h2>
-          <p className="mt-1.5 text-xs sm:text-sm md:text-base text-muted-foreground max-w-2xl leading-relaxed">
+          <p className="hidden md:block mt-1.5 text-xs sm:text-sm md:text-base text-muted-foreground max-w-2xl leading-relaxed">
             Hitung perkiraan tagihan rekening air bulanan Anda langsung
             berdasarkan master tarif blok progresif dan biaya tetap resmi
             PERUMDA Tirtawening.
