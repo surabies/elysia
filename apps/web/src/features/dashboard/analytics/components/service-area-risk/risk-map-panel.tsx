@@ -86,7 +86,6 @@ export function RiskMapPanel({
               }
             />
             <ChoroplethTooltip
-              backgroundColor="var(--popover)"
               content={({ feature }) => {
                 const area = areaByCode.get(
                   getFeatureCode(feature.properties),
@@ -94,23 +93,35 @@ export function RiskMapPanel({
                 if (!area) return null;
 
                 return (
-                  <div className="grid gap-1 text-copy-12">
-                    <p className="text-label-13 text-foreground">
-                      {area.kelurahan} &bull; {area.kecamatan}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {metric.label}:{" "}
-                      <span className="text-label-12-mono text-foreground">
-                        {formatNumber(Number(area[metric.countKey]))} (
-                        {formatPercent(area[metric.rateKey])})
-                      </span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      Total Pembacaan:{" "}
-                      <span className="text-label-12-mono text-foreground">
-                        {formatNumber(area.jumlahBaca)} SL
-                      </span>
-                    </p>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-label-13 font-semibold text-foreground">
+                          {area.kelurahan}
+                        </p>
+                        <p className="truncate text-label-11 text-muted-foreground">
+                          Kec. {area.kecamatan}
+                        </p>
+                      </div>
+                      <Badge variant="gray-subtle" size="sm" className="shrink-0 font-mono">
+                        {formatPercent(area[metric.rateKey])}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1 border-t border-border/60 pt-2 text-label-12">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">{metric.label}</span>
+                        <span className="font-mono font-medium tabular-nums text-foreground">
+                          {formatNumber(Number(area[metric.countKey]))}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">Total Bacaan</span>
+                        <span className="font-mono font-medium tabular-nums text-foreground">
+                          {formatNumber(area.jumlahBaca)} SL
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 );
               }}

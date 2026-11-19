@@ -1,5 +1,7 @@
+export { AntreanTindakanCard } from './components/AntreanTindakanCard';
 export { DistribusiWilayahTarif } from './components/DistribusiWilayahTarif';
 export { KartuMetrik } from './components/KartuMetrik';
+export { KesiapanBillingCard } from './components/KesiapanBillingCard';
 export { MetricCard } from './components/MetricCard';
 export { PintasanModul } from './components/PintasanModul';
 export { RingkasanHeader } from './components/RingkasanHeader';

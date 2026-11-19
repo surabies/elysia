@@ -5,7 +5,11 @@
 
 import { sql } from "drizzle-orm";
 import { db, type MultiPolygonGeometry } from "@cater/db";
-import { dashboardService } from "./dashboard.service";
+import {
+  dashboardService,
+  formatPeriodeInfo,
+  type PeriodeOption,
+} from "./dashboard.service";
 
 export interface DailyTrendItem {
   tanggal: string;
@@ -91,6 +95,7 @@ export interface AnalyticsPageData {
     bulan: string;
     tahun: string;
   };
+  availablePeriods?: PeriodeOption[];
   dailyTrends: DailyTrendItem[];
   consumptionBuckets: ConsumptionBucket[];
   officers: OfficerProductivity[];
@@ -131,8 +136,16 @@ export class AnalyticsService {
         to_char(tgl_catat, 'YYYY-MM-DD') as tanggal,
         to_char(tgl_catat, 'DD') as hari,
         count(*)::int as total,
-        count(CASE WHEN (upper(trim(coalesce(ket_catat, 'NORMAL'))) = 'NORMAL' AND (tmss IS NULL OR tmss IN ('01', ' ', '', '-'))) THEN 1 END)::int as normal,
-        count(CASE WHEN (upper(trim(coalesce(ket_catat, 'NORMAL'))) <> 'NORMAL' OR (tmss IS NOT NULL AND tmss NOT IN ('01', ' ', '', '-'))) THEN 1 END)::int as anomali,
+        count(CASE WHEN (
+          (upper(trim(coalesce(ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
+            AND (tmss IS NULL OR upper(trim(tmss)) IN ('01', 'Z', '', '-')))
+          OR upper(trim(coalesce(sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
+        ) THEN 1 END)::int as normal,
+        count(CASE WHEN NOT (
+          (upper(trim(coalesce(ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
+            AND (tmss IS NULL OR upper(trim(tmss)) IN ('01', 'Z', '', '-')))
+          OR upper(trim(coalesce(sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
+        ) THEN 1 END)::int as anomali,
         coalesce(sum(pakai_m3), 0)::float as kubikasi
       FROM cater_baca_meter
       WHERE thbl = ${thbl} AND tgl_catat IS NOT NULL
@@ -230,7 +243,8 @@ export class AnalyticsService {
   }
 
   /**
-   * Mengambil ranking performa & produktivitas 9 Petugas Cater
+   * Mengambil ranking performa & produktivitas Petugas Cater lapangan
+   * (Laporan mandiri pelanggan dikecualikan agar tidak mendistorsi beban kerja petugas)
    */
   async getOfficersProductivity(thbl: string): Promise<OfficerProductivity[]> {
     const raw = await db.execute(sql`
@@ -239,9 +253,16 @@ export class AnalyticsService {
         p.nama,
         count(c.nolg)::int as total_baca,
         coalesce(sum(c.pakai_m3), 0)::float as total_kubikasi,
-        count(CASE WHEN (upper(trim(coalesce(c.ket_catat, 'NORMAL'))) <> 'NORMAL' OR (c.tmss IS NOT NULL AND c.tmss NOT IN ('01', ' ', '', '-'))) THEN 1 END)::int as anomali_count
+        count(CASE WHEN c.nolg IS NOT NULL AND NOT (
+          (upper(trim(coalesce(c.ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
+            AND (c.tmss IS NULL OR upper(trim(c.tmss)) IN ('01', 'Z', '', '-')))
+          OR upper(trim(coalesce(c.sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
+        ) THEN 1 END)::int as anomali_count
       FROM petugas_cater p
-      LEFT JOIN cater_baca_meter c ON c.petugas_id = p.id AND c.thbl = ${thbl}
+      LEFT JOIN cater_baca_meter c
+        ON c.petugas_id = p.id
+        AND c.thbl = ${thbl}
+        AND upper(trim(coalesce(c.sumber_catat, ''))) NOT IN ('MANDIRI_WEB', 'MANDIRI_APP')
       WHERE p.aktif = true
       GROUP BY p.id, p.nama
       ORDER BY total_baca DESC, p.id ASC
@@ -359,7 +380,11 @@ export class AnalyticsService {
           upper(trim(k.nama)) AS kelurahan_key,
           count(*)::int AS jumlah_baca,
           count(*) FILTER (
-            WHERE upper(trim(c.ket_catat)) <> 'NORMAL'
+            WHERE NOT (
+              (upper(trim(coalesce(c.ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
+                AND (c.tmss IS NULL OR upper(trim(c.tmss)) IN ('01', 'Z', '', '-')))
+              OR upper(trim(coalesce(c.sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
+            )
           )::int AS catatan_non_normal,
           count(*) FILTER (
             WHERE c.pakai_lalu >= 5
@@ -424,16 +449,24 @@ export class AnalyticsService {
       WITH reading_status AS (
         SELECT
           CASE
+            WHEN upper(trim(coalesce(c.sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
+              OR upper(trim(coalesce(c.tmss, ''))) = 'Z'
+              OR upper(trim(coalesce(c.ket_catat, ''))) IN ('STAND-KONSUMEN', 'STAND KONSUMEN')
+              THEN 'Z'
             WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
-              AND upper(trim(c.ket_catat)) <> 'NORMAL'
+              AND upper(trim(coalesce(c.ket_catat, 'NORMAL'))) <> 'NORMAL'
               THEN 'CATATAN:' || upper(trim(c.ket_catat))
             WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
               THEN '01'
             ELSE trim(c.tmss)
           END AS kode,
           CASE
+            WHEN upper(trim(coalesce(c.sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
+              OR upper(trim(coalesce(c.tmss, ''))) = 'Z'
+              OR upper(trim(coalesce(c.ket_catat, ''))) IN ('STAND-KONSUMEN', 'STAND KONSUMEN')
+              THEN 'Stand Konsumen (Lapor Mandiri)'
             WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
-              AND upper(trim(c.ket_catat)) <> 'NORMAL'
+              AND upper(trim(coalesce(c.ket_catat, 'NORMAL'))) <> 'NORMAL'
               THEN trim(c.ket_catat)
             ELSE NULL
           END AS keterangan_catatan,
@@ -481,8 +514,18 @@ export class AnalyticsService {
   /**
    * Orkestrasi lengkap data analitik untuk halaman /analytics
    */
-  async getAnalyticsPageData(): Promise<AnalyticsPageData> {
-    const periode = await dashboardService.getActivePeriod();
+  async getAnalyticsPageData(requestedThbl?: string): Promise<AnalyticsPageData> {
+    const [latestActivePeriode, availablePeriods] = await Promise.all([
+      dashboardService.getActivePeriod(),
+      dashboardService.getAvailablePeriods(),
+    ]);
+
+    const isValidRequested =
+      typeof requestedThbl === "string" && /^\d{6}$/.test(requestedThbl.trim());
+    const periode = isValidRequested
+      ? formatPeriodeInfo(requestedThbl!.trim())
+      : latestActivePeriode;
+
     const summary = await dashboardService.getExecutiveSummary(periode.thbl);
 
     const [
@@ -513,6 +556,7 @@ export class AnalyticsService {
 
     return {
       periode,
+      availablePeriods,
       dailyTrends,
       consumptionBuckets,
       officers,

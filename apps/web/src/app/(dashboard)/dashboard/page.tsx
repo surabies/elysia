@@ -4,11 +4,11 @@ import { PageContainer } from "@/components/layout";
 import { auth } from "@/lib/auth/index";
 import { dashboardService } from "@/server/services/dashboard/dashboard.service";
 import {
+  AntreanTindakanCard,
   DistribusiWilayahTarif,
   KartuMetrik,
-  PintasanModul,
+  KesiapanBillingCard,
   RingkasanHeader,
-  StatusSistem,
 } from "@/features/dashboard/overview";
 
 export const metadata: Metadata = {
@@ -17,11 +17,17 @@ export const metadata: Metadata = {
     "Pusat komando operasional 3 Pilar PDAM: Pencatatan Meter, Pelayanan Pengaduan, dan Penagihan.",
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ periode?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
   }
+
+  const { periode: requestedPeriode } = await searchParams;
 
   const tanggalHariIni = new Date().toLocaleDateString("id-ID", {
     day: "2-digit",
@@ -29,8 +35,17 @@ export default async function DashboardPage() {
     year: "numeric",
   });
 
-  const { periode, summary, wilayah, tarif } =
-    await dashboardService.getDashboardData();
+  const {
+    periode,
+    availablePeriods,
+    currentCalendarLabel,
+    isHistoricalFallback,
+    summary,
+    wilayah,
+    tarif,
+    antrean,
+    kesiapanBilling,
+  } = await dashboardService.getDashboardData(requestedPeriode);
 
   return (
     <PageContainer className="space-y-6">
@@ -38,15 +53,18 @@ export default async function DashboardPage() {
         name={session.user.name}
         role={session.user.role}
         periode={periode}
+        availablePeriods={availablePeriods}
+        currentCalendarLabel={currentCalendarLabel}
+        isHistoricalFallback={isHistoricalFallback}
         tanggalHariIni={tanggalHariIni}
         summary={summary}
       />
       <KartuMetrik periode={periode} summary={summary} />
-      <DistribusiWilayahTarif wilayah={wilayah} tarif={tarif} />
-      <div className="grid gap-4 md:grid-cols-2">
-        <StatusSistem />
-        <PintasanModul />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <AntreanTindakanCard antrean={antrean} periode={periode} />
+        <KesiapanBillingCard kesiapan={kesiapanBilling} periode={periode} />
       </div>
+      <DistribusiWilayahTarif wilayah={wilayah} tarif={tarif} />
     </PageContainer>
   );
 }

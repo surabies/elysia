@@ -2,29 +2,38 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   ArrowUpRight,
   Calendar,
   Check,
   Copy,
-  Gauge,
-  Layers,
   Search,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import type {
   DashboardMetricSummary,
   PeriodeInfo,
+  PeriodeOption,
 } from "@/server/services/dashboard/dashboard.service";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface RingkasanHeaderProps {
   name: string;
   role: string;
   periode: PeriodeInfo;
+  availablePeriods?: PeriodeOption[];
+  currentCalendarLabel?: string;
+  isHistoricalFallback?: boolean;
   tanggalHariIni: string;
   summary?: DashboardMetricSummary;
 }
@@ -33,10 +42,19 @@ export function RingkasanHeader({
   name,
   role,
   periode,
+  availablePeriods = [],
+  currentCalendarLabel,
+  isHistoricalFallback = false,
   tanggalHariIni,
   summary,
 }: RingkasanHeaderProps) {
+  const router = useRouter();
   const [copied, setCopied] = React.useState(false);
+
+  const handlePeriodeChange = (nextThbl: string) => {
+    if (!nextThbl || nextThbl === periode.thbl) return;
+    router.push(`/dashboard?periode=${encodeURIComponent(nextThbl)}`);
+  };
 
   // Hitung salam berdasarkan waktu lokal
   const greeting = React.useMemo(() => {
@@ -125,29 +143,60 @@ export function RingkasanHeader({
             </div>
           </div>
 
-          {/* Telemetry Chips (THBL, Tanggal, Live Badge) */}
-          <div className="flex items-center gap-2 font-mono text-[11px]">
-            {/* THBL Chip with Copy */}
+          {/* Telemetry Controls: Period Switcher, THBL, Tanggal (tinggi seragam h-8 / 32px) */}
+          <div className="flex flex-wrap items-center gap-2 text-label-12">
+            {/* Pemilih Periode Dashboard */}
+            {availablePeriods.length > 0 ? (
+              <Select value={periode.thbl} onValueChange={handlePeriodeChange}>
+                <SelectTrigger
+                  size="sm"
+                  aria-label="Pilih periode dashboard"
+                  className="h-8 min-w-[172px] rounded-md border-border/80 bg-background px-2.5 font-sans text-label-12 font-medium text-foreground shadow-none"
+                >
+                  <SelectValue placeholder="Pilih periode" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  {availablePeriods.map((item) => (
+                    <SelectItem key={item.thbl} value={item.thbl}>
+                      <span className="flex items-center gap-2">
+                        <span>{item.label}</span>
+                        {item.isCurrentMonth && !item.hasData ? (
+                          <span className="text-[11px] text-muted-foreground">
+                            (Belum di-import)
+                          </span>
+                        ) : item.isCurrentMonth ? (
+                          <span className="text-[11px] text-(--ds-green-900)">
+                            (Berjalan)
+                          </span>
+                        ) : null}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+
+            {/* THBL Chip with Copy (tinggi h-8 seragam dengan Select) */}
             <button
               type="button"
               onClick={handleCopyThbl}
               title="Klik untuk menyalin kode THBL"
-              className="group flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/70 hover:text-foreground"
+              className="group inline-flex h-8 items-center gap-1.5 rounded-md border border-border/80 bg-background px-2.5 font-mono text-label-12 text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/50 hover:text-foreground cursor-pointer"
             >
-              <span className="text-[10px] font-medium text-muted-foreground/70">THBL</span>
-              <span className="font-semibold text-foreground tracking-tight">
+              <span className="text-[10.5px] font-medium text-muted-foreground">THBL</span>
+              <span className="font-semibold text-foreground tracking-tight tabular-nums">
                 {periode.thbl}
               </span>
               {copied ? (
-                <Check className="size-3 text-emerald-500" />
+                <Check className="size-3.5 text-(--ds-green-700)" />
               ) : (
-                <Copy className="size-2.5 text-muted-foreground/60 transition-opacity group-hover:text-foreground" />
+                <Copy className="size-3 text-muted-foreground/70 transition-colors group-hover:text-foreground" />
               )}
             </button>
 
-            {/* Tanggal Chip */}
-            <div className="flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-muted-foreground">
-              <Calendar className="size-3 text-muted-foreground/70" />
+            {/* Tanggal Chip (tinggi h-8 seragam dengan Select & THBL) */}
+            <div className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/80 bg-background px-2.5 font-mono text-label-12 text-muted-foreground">
+              <Calendar className="size-3.5 text-muted-foreground/80" />
               <span className="tabular-nums font-medium text-foreground">
                 {tanggalHariIni}
               </span>
@@ -160,14 +209,10 @@ export function RingkasanHeader({
           {/* Kolom 1: User Identity & Mission Title (5 Col) */}
           <div className="min-w-0 lg:col-span-5">
             <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                size="sm"
-                className="font-mono text-[10px] font-medium tracking-wider uppercase border-border/80 bg-background/60 backdrop-blur-xs"
-              >
+              <Badge variant="gray-subtle" size="sm" className="font-mono uppercase">
                 {role}
               </Badge>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-label-12 text-muted-foreground">
                 Pusat Kendali 3 Pilar
               </span>
             </div>
@@ -178,8 +223,25 @@ export function RingkasanHeader({
             <p className="mt-0.5 text-copy-13 text-muted-foreground">
               {greeting},{" "}
               <span className="font-medium text-foreground">{name}</span>.
-              Sistem pencatatan dan tagihan aktif untuk periode{" "}
-              <span className="font-medium text-foreground">{periode.label}</span>.
+              {isHistoricalFallback && currentCalendarLabel ? (
+                <>
+                  {" "}
+                  Menampilkan data terakhir tersedia (
+                  <span className="font-medium text-foreground">
+                    {periode.label}
+                  </span>
+                  ) karena data {currentCalendarLabel} belum di-import.
+                </>
+              ) : (
+                <>
+                  {" "}
+                  Sistem pencatatan dan tagihan aktif untuk periode{" "}
+                  <span className="font-medium text-foreground">
+                    {periode.label}
+                  </span>
+                  .
+                </>
+              )}
             </p>
           </div>
 

@@ -10,17 +10,18 @@ interface MetricVisualSparklineProps {
 
 export function MetricVisualSparkline({
   data,
-  color = "#12b76a",
+  color = "#0070f3",
 }: MetricVisualSparklineProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
-  const [width, setWidth] = React.useState(350)
+  const [width, setWidth] = React.useState(320)
+  const [hoverIdx, setHoverIdx] = React.useState<number | null>(null)
   const height = 72
 
   React.useEffect(() => {
     if (!containerRef.current) return
     const updateWidth = () => {
       if (containerRef.current) {
-        setWidth(containerRef.current.clientWidth || 350)
+        setWidth(containerRef.current.clientWidth || 320)
       }
     }
     updateWidth()
@@ -29,17 +30,41 @@ export function MetricVisualSparkline({
     return () => observer.disconnect()
   }, [])
 
-  const { linePath, areaPath, lastPoint } = React.useMemo(() => {
-    return generateMonotoneAreaPath(data, width, height, 4, 27)
+  const { linePath, areaPath, lastPoint, points } = React.useMemo(() => {
+    return generateMonotoneAreaPath(data, width, height, 8, 52, 5)
   }, [data, width])
 
   const gradientId = React.useId()
+  const activePoint =
+    hoverIdx !== null && points[hoverIdx] ? points[hoverIdx] : null
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || points.length === 0) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left))
+    const idx = Math.round((relX / Math.max(rect.width, 1)) * (points.length - 1))
+    setHoverIdx(Math.max(0, Math.min(points.length - 1, idx)))
+  }
 
   return (
     <div
       ref={containerRef}
-      className="relative flex h-[72px] w-full items-end overflow-hidden select-none"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHoverIdx(null)}
+      className="relative flex h-[72px] w-full items-end select-none"
     >
+      {/* Tooltip ringkas saat hover (tidak mengubah tampilan diam) */}
+      {activePoint ? (
+        <div
+          className="pointer-events-none absolute top-0 z-10 rounded-md border border-border/80 bg-popover px-1.5 py-0.5 font-mono text-[10.5px] font-medium tabular-nums text-popover-foreground shadow-xs"
+          style={{
+            left: `${Math.min(Math.max(activePoint.x - 28, 0), Math.max(width - 76, 0))}px`,
+          }}
+        >
+          H-{(hoverIdx ?? 0) + 1}: {Math.round(activePoint.value).toLocaleString("id-ID")}
+        </div>
+      ) : null}
+
       <svg
         width={width}
         height={height}
@@ -48,38 +73,70 @@ export function MetricVisualSparkline({
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+            <stop offset="0%" stopColor={color} stopOpacity="0.16" />
             <stop offset="100%" stopColor={color} stopOpacity="0.0" />
           </linearGradient>
         </defs>
 
-        {/* Area Gradien */}
-        <path d={areaPath} fill={`url(#${gradientId})`} />
+        {/* Area Gradien Halus */}
+        {areaPath ? <path d={areaPath} fill={`url(#${gradientId})`} /> : null}
 
-        {/* Garis Kurva Halus (1.5px) */}
-        <path
-          d={linePath}
-          fill="none"
-          stroke={color}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        {/* Garis Kurva Monotone Halus (1.5px) */}
+        {linePath ? (
+          <path
+            d={linePath}
+            fill="none"
+            stroke={color}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ) : null}
 
-        {/* Garis Putus-putus Vertikal di Titik Terakhir */}
-        <line
-          x1={lastPoint.x}
-          y1={lastPoint.y}
-          x2={lastPoint.x}
-          y2={height}
-          stroke={color}
-          strokeOpacity="0.25"
-          strokeWidth="1"
-          strokeDasharray="2 2"
-        />
-
-        {/* Titik Lingkaran Solid 6px di Ujung Kanan */}
-        <circle cx={lastPoint.x} cy={lastPoint.y} r="3" fill={color} />
+        {/* Garis Panduan Vertikal & Titik Aktif (Hover atau Titik Terakhir) */}
+        {activePoint ? (
+          <>
+            <line
+              x1={activePoint.x}
+              y1={activePoint.y}
+              x2={activePoint.x}
+              y2={height}
+              stroke={color}
+              strokeOpacity="0.35"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+            />
+            <circle
+              cx={activePoint.x}
+              cy={activePoint.y}
+              r="3.5"
+              fill={color}
+              stroke="var(--card)"
+              strokeWidth="1.5"
+            />
+          </>
+        ) : (
+          <>
+            <line
+              x1={lastPoint.x}
+              y1={lastPoint.y}
+              x2={lastPoint.x}
+              y2={height}
+              stroke={color}
+              strokeOpacity="0.25"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+            />
+            <circle
+              cx={lastPoint.x}
+              cy={lastPoint.y}
+              r="3.5"
+              fill={color}
+              stroke="var(--card)"
+              strokeWidth="1.5"
+            />
+          </>
+        )}
       </svg>
     </div>
   )

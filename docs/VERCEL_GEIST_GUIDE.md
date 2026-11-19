@@ -184,3 +184,27 @@ Sesuai spesifikasi resmi [Vercel Geist](https://vercel.com/geist/materials):
   <Activity size={16} />
   ```
 - Bila menggunakan **`lucide-react`**, gunakan prop `strokeWidth={1.5}` atau tambahkan utility class `.geist-icon` untuk menjaga geometri minimalis 1px/1.5px khas Geist.
+
+---
+
+## 6. Standar Paten: Vercel Geist Badge
+
+Mengacu langsung pada spesifikasi resmi [Vercel Geist Badge](https://vercel.com/geist/badge) dan diimplementasikan terpusat di [badge.tsx](../apps/web/src/components/ui/badge.tsx):
+
+### Aturan Wajib (Paten Proyek)
+1. **DILARANG memakai palet warna Tailwind mentah** (`bg-emerald-500/10`, `text-amber-700`, `border-rose-500/30`, dll.) untuk mewarnai `<Badge>`.
+2. **WAJIB menggunakan varian resmi Geist** yang terikat langsung ke token CSS `--ds-*` (otomatis adaptif Light & Dark Mode):
+   - **Netral**: `gray`, `gray-subtle` *(default)*, `inverted`, `pill`
+   - **Semantik**:
+     - Sukses / Sehat: `green`, `green-subtle`
+     - Peringatan / Menunggu: `amber`, `amber-subtle`
+     - Galat / Anomali / Kritis: `red`, `red-subtle`
+     - Info / Produksi: `blue`, `blue-subtle`
+     - Aksentuasi lain: `purple` / `purple-subtle`, `pink` / `pink-subtle`, `teal` / `teal-subtle`
+3. **Tanpa Border pada Varian Solid & Subtle**: Badge Geist berbentuk `rounded-full` dengan `border-transparent` (hanya `pill` / `outline` yang memakai border hairline `border-border`).
+4. **Ukuran Resmi**:
+   - `sm` (`20px` / `h-5`, `text-label-11`) — metadata ringkas inline
+   - `md` / `default` (`24px` / `h-6`, `text-label-12`) — standar kartu & tabel
+   - `lg` (`32px` / `h-8`, `text-label-13`) — sejajar dengan kontrol `h-8` (toolbar/filter)
+5. **Kontrol Header / Toolbar Sejajar**: Elemen informasi & aksi di baris yang sama dengan `<SelectTrigger>` (mis. filter periode, chip `THBL`, dan chip `Tanggal`) wajib menggunakan tinggi seragam `h-8` (`32px`) dan `rounded-md`.
+6. **Non-Interaktif**: `<Badge>` adalah label status statis; jangan pasang `onClick` langsung pada `<Badge>` (gunakan `<button>` atau `<Link>` untuk elemen interaktif).

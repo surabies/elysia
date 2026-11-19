@@ -33,16 +33,16 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
   const totalBaca = data.totalBaca || 0;
   const belumTerbaca = Math.max(data.totalPelanggan - totalBaca, 0);
 
-  // Agregasi anomali dari time-series harian atau daftar anomali
+  // Agregasi anomali dari time-series harian atau daftar anomali (kecualikan Normal '01' & Stand Konsumen 'Z')
   const totalAnomaliTrends = (data.dailyTrends || []).reduce(
     (sum, d) => sum + (d.anomali || 0),
     0
   );
-  const totalAnomaliList = (data.anomalies || []).reduce(
-    (sum, a) => sum + (a.jumlah || 0),
-    0
-  );
-  const totalAnomali = totalAnomaliTrends > 0 ? totalAnomaliTrends : totalAnomaliList;
+  const totalAnomaliList = (data.anomalies || [])
+    .filter((a) => a.kode !== "01" && a.kode !== "Z")
+    .reduce((sum, a) => sum + (a.jumlah || 0), 0);
+  const totalAnomali =
+    (data.dailyTrends || []).length > 0 ? totalAnomaliTrends : totalAnomaliList;
   const totalNormal = Math.max(totalBaca - totalAnomali, 0);
 
   const persentaseBaca = ((totalBaca / totalTarget) * 100).toFixed(1);

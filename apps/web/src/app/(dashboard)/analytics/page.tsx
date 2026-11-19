@@ -10,11 +10,16 @@ export const metadata: Metadata = {
     "Pusat metrik performa, time-series pembacaan meter, distribusi kubikasi, dan produktivitas petugas.",
 };
 
-export default async function AnalyticsPage() {
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ periode?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const data = await analyticsService.getAnalyticsPageData();
+  const { periode: requestedPeriode } = await searchParams;
+  const data = await analyticsService.getAnalyticsPageData(requestedPeriode);
 
   return <AnalyticsDashboard data={data} generatedAt={new Date()} />;
 }

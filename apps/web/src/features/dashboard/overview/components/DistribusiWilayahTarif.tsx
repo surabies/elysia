@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowUpRight, Building2, Layers, PieChart } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,14 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type {
   TarifStat,
@@ -30,212 +21,385 @@ interface DistribusiWilayahTarifProps {
   tarif: TarifStat[];
 }
 
-type MetrikWilayah = "pelanggan" | "konsumsi" | "rupiah";
+type MetrikPilihan = "pelanggan" | "konsumsi" | "rupiah";
+
+const METRIK_OPTIONS: { id: MetrikPilihan; label: string }[] = [
+  { id: "pelanggan", label: "SL" },
+  { id: "konsumsi", label: "m³" },
+  { id: "rupiah", label: "Rp" },
+];
+
+function MetricSegmentedControl({
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  value: MetrikPilihan;
+  onChange: (next: MetrikPilihan) => void;
+  ariaLabel: string;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      className="inline-flex h-8 shrink-0 items-center rounded-md border border-border/80 bg-(--ds-gray-100) p-0.5 dark:bg-(--ds-gray-200)/60"
+    >
+      {METRIK_OPTIONS.map((opt) => {
+        const active = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(opt.id)}
+            className={`inline-flex h-full items-center rounded-[4px] px-2.5 text-label-12 font-medium transition-colors cursor-pointer ${
+              active
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function formatMetricValue(
+  metrik: MetrikPilihan,
+  pelanggan: number,
+  konsumsi: number,
+  rupiah: number
+): string {
+  if (metrik === "konsumsi") return `${formatAngka(konsumsi)} m³`;
+  if (metrik === "rupiah") return formatRupiah(rupiah);
+  return `${formatAngka(pelanggan)} SL`;
+}
+
+function pickMetricNumber(
+  metrik: MetrikPilihan,
+  pelanggan: number,
+  konsumsi: number,
+  rupiah: number
+): number {
+  if (metrik === "konsumsi") return konsumsi;
+  if (metrik === "rupiah") return rupiah;
+  return pelanggan;
+}
 
 export function DistribusiWilayahTarif({
   wilayah,
   tarif,
 }: DistribusiWilayahTarifProps) {
-  const [metrikPilihan, setMetrikPilihan] = React.useState<MetrikWilayah>("pelanggan");
+  const [metrikWilayah, setMetrikWilayah] =
+    React.useState<MetrikPilihan>("pelanggan");
+  const [metrikTarif, setMetrikTarif] =
+    React.useState<MetrikPilihan>("pelanggan");
 
-  // Hitung total untuk menghitung persentase dinamis
-  const totalNilai = React.useMemo(() => {
-    return {
+  const totalWilayah = React.useMemo(
+    () => ({
       pelanggan: wilayah.reduce((acc, curr) => acc + curr.totalPelanggan, 0),
       konsumsi: wilayah.reduce((acc, curr) => acc + curr.totalPakaiM3, 0),
       rupiah: wilayah.reduce((acc, curr) => acc + curr.totalRupiah, 0),
-    };
-  }, [wilayah]);
+    }),
+    [wilayah]
+  );
 
-  const totalTarifPelanggan = React.useMemo(() => {
-    return tarif.reduce((acc, curr) => acc + curr.totalPelanggan, 0);
-  }, [tarif]);
+  const totalTarif = React.useMemo(
+    () => ({
+      pelanggan: tarif.reduce((acc, curr) => acc + curr.totalPelanggan, 0),
+      konsumsi: tarif.reduce((acc, curr) => acc + curr.totalPakaiM3, 0),
+      rupiah: tarif.reduce((acc, curr) => acc + curr.totalRupiah, 0),
+    }),
+    [tarif]
+  );
+
+  const maxWilayahValue = React.useMemo(() => {
+    return Math.max(
+      ...wilayah.map((item) =>
+        pickMetricNumber(
+          metrikWilayah,
+          item.totalPelanggan,
+          item.totalPakaiM3,
+          item.totalRupiah
+        )
+      ),
+      1
+    );
+  }, [wilayah, metrikWilayah]);
+
+  const maxTarifValue = React.useMemo(() => {
+    return Math.max(
+      ...tarif.map((item) =>
+        pickMetricNumber(
+          metrikTarif,
+          item.totalPelanggan,
+          item.totalPakaiM3,
+          item.totalRupiah
+        )
+      ),
+      1
+    );
+  }, [tarif, metrikTarif]);
+
+  const activeTotalWilayah = pickMetricNumber(
+    metrikWilayah,
+    totalWilayah.pelanggan,
+    totalWilayah.konsumsi,
+    totalWilayah.rupiah
+  );
+
+  const activeTotalTarif = pickMetricNumber(
+    metrikTarif,
+    totalTarif.pelanggan,
+    totalTarif.konsumsi,
+    totalTarif.rupiah
+  );
 
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-      {/* KARTU 1: Sebaran Wilayah Pelayanan */}
-      <Card className="min-w-0 rounded-lg border-border/80 bg-card shadow-none">
-        <CardHeader className="p-5 pb-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+      {/* KARTU 1: Sebaran Wilayah Pelayanan (Vercel Breakdown List) */}
+      <Card className="flex min-w-0 flex-col rounded-lg border-border/80 bg-card shadow-none">
+        <CardHeader className="border-b border-border/60 p-5 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <CardTitle>Sebaran Wilayah Pelayanan</CardTitle>
-                <Badge variant="outline" size="sm" className="font-mono text-[10px]">
-                  4 Wilayah
+                <CardTitle className="text-[15px] font-semibold tracking-tight">
+                  Sebaran Wilayah Pelayanan
+                </CardTitle>
+                <Badge variant="gray-subtle" size="sm">
+                  {wilayah.length} Kecamatan
                 </Badge>
               </div>
-              <CardDescription className="mt-0.5">
-                Distribusi beban pelanggan, konsumsi air, dan nilai tagihan per wilayah kerja.
+              <CardDescription className="mt-0.5 text-[12.5px]">
+                Proporsi sambungan, kubikasi, dan tagihan per kecamatan.
               </CardDescription>
             </div>
 
-            {/* Metrik View Switcher (Vercel Tabs) */}
-            <div className="inline-flex shrink-0 items-center rounded-md border border-border/60 bg-muted/40 p-0.5 text-label-12">
-              <button
-                type="button"
-                onClick={() => setMetrikPilihan("pelanggan")}
-                className={`rounded px-2.5 py-1 font-medium transition-all ${
-                  metrikPilihan === "pelanggan"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                SL
-              </button>
-              <button
-                type="button"
-                onClick={() => setMetrikPilihan("konsumsi")}
-                className={`rounded px-2.5 py-1 font-medium transition-all ${
-                  metrikPilihan === "konsumsi"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                m³
-              </button>
-              <button
-                type="button"
-                onClick={() => setMetrikPilihan("rupiah")}
-                className={`rounded px-2.5 py-1 font-medium transition-all ${
-                  metrikPilihan === "rupiah"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Rp
-              </button>
-            </div>
+            <MetricSegmentedControl
+              value={metrikWilayah}
+              onChange={setMetrikWilayah}
+              ariaLabel="Pilih metrik wilayah"
+            />
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 p-5 pt-2">
-          {wilayah.map((item) => {
-            let nilaiDisplay = `${formatAngka(item.totalPelanggan)} SL`;
-            let subDisplay = `Konsumsi: ${formatAngka(item.totalPakaiM3)} m³ • ${formatRupiah(item.totalRupiah)}`;
-            let persen = 0;
-
-            if (metrikPilihan === "pelanggan") {
-              persen = totalNilai.pelanggan > 0 ? Math.round((item.totalPelanggan / totalNilai.pelanggan) * 100) : 0;
-            } else if (metrikPilihan === "konsumsi") {
-              persen = totalNilai.konsumsi > 0 ? Math.round((item.totalPakaiM3 / totalNilai.konsumsi) * 100) : 0;
-              nilaiDisplay = `${formatAngka(item.totalPakaiM3)} m³`;
-              subDisplay = `${formatAngka(item.totalPelanggan)} Pelanggan • ${formatRupiah(item.totalRupiah)}`;
-            } else {
-              persen = totalNilai.rupiah > 0 ? Math.round((item.totalRupiah / totalNilai.rupiah) * 100) : 0;
-              nilaiDisplay = formatRupiah(item.totalRupiah);
-              subDisplay = `${formatAngka(item.totalPelanggan)} Pelanggan • ${formatAngka(item.totalPakaiM3)} m³`;
-            }
-
-            return (
-              <div key={item.kode} className="group space-y-1.5">
-                <div className="flex flex-col gap-1 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] font-semibold text-muted-foreground">
-                      WIL-{item.kode}
-                    </span>
-                    <span className="text-label-13 font-medium text-foreground">
-                      {item.nama}
-                    </span>
-                  </div>
-                  <div className="tabular-nums text-muted-foreground sm:text-right">
-                    <span className="font-medium text-foreground">{nilaiDisplay}</span>{" "}
-                    <span className="font-mono text-label-12 text-muted-foreground/80">({persen}%)</span>
-                  </div>
-                </div>
-
-                {/* Progress Bar dengan aksen dinamis */}
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/80">
-                  <div
-                    className="h-full rounded-full bg-foreground/80 transition-all duration-500 ease-out group-hover:bg-foreground"
-                    style={{ width: `${Math.min(persen, 100)}%` }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-copy-12 text-muted-foreground">
-                  <span className="truncate">{subDisplay}</span>
-                  <Link
-                    href={`/pelanggan?wilayah=${item.kode}`}
-                    className="ml-2 inline-flex items-center gap-0.5 text-label-12 text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <span>Detail</span>
-                    <ArrowUpRight className="size-3" />
-                  </Link>
-                </div>
+        <CardContent className="flex flex-1 flex-col justify-between p-5 pt-3">
+          <div>
+            {/* Column Header (sejajar presisi dengan kolom baris & footer) */}
+            <div className="mb-2 flex items-center justify-between gap-3 px-2.5 text-label-11 font-medium uppercase tracking-wider text-muted-foreground">
+              <span>Kecamatan</span>
+              <div className="flex shrink-0 items-center gap-4">
+                <span className="min-w-[92px] text-right">Jumlah</span>
+                <span className="w-12 text-right">Porsi</span>
               </div>
-            );
-          })}
+            </div>
+
+            {/* Vercel Bar-Behind-Row List */}
+            <div className="space-y-1.5">
+              {wilayah.map((item) => {
+                const rawVal = pickMetricNumber(
+                  metrikWilayah,
+                  item.totalPelanggan,
+                  item.totalPakaiM3,
+                  item.totalRupiah
+                );
+                const sharePct =
+                  activeTotalWilayah > 0
+                    ? Math.round((rawVal / activeTotalWilayah) * 1000) / 10
+                    : 0;
+                const barWidth =
+                  rawVal > 0 ? Math.max((rawVal / maxWilayahValue) * 100, 3) : 0;
+                const nilaiDisplay = formatMetricValue(
+                  metrikWilayah,
+                  item.totalPelanggan,
+                  item.totalPakaiM3,
+                  item.totalRupiah
+                );
+
+                return (
+                  <Link
+                    key={item.kode}
+                    href={`/pelanggan?kecamatan=${item.kode}`}
+                    className="group relative flex items-center justify-between gap-3 overflow-hidden rounded-md px-2.5 py-2 transition-colors hover:bg-(--ds-gray-100)/70 dark:hover:bg-(--ds-gray-200)/40"
+                  >
+                    {/* Proportional Bar Behind Row */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-(--ds-gray-200)/70 transition-all duration-300 dark:bg-(--ds-gray-200)/50"
+                      style={{ width: `${Math.min(barWidth, 100)}%` }}
+                    />
+
+                    <div className="relative z-10 flex min-w-0 items-center gap-2">
+                      <span className="w-10 shrink-0 font-mono text-label-11 font-medium text-muted-foreground">
+                        {item.kode}
+                      </span>
+                      <span className="truncate text-label-13 font-medium text-foreground">
+                        {item.nama}
+                      </span>
+                    </div>
+
+                    <div className="relative z-10 flex shrink-0 items-center gap-4 tabular-nums">
+                      <span className="min-w-[92px] text-right text-label-13 font-medium text-foreground">
+                        {nilaiDisplay}
+                      </span>
+                      <span className="w-12 text-right font-mono text-label-12 text-muted-foreground">
+                        {sharePct.toLocaleString("id-ID", {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        })}
+                        %
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footer Total (sejajar presisi dengan kolom Jumlah & Porsi) */}
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/60 px-2.5 pt-3 text-label-12">
+            <span className="text-muted-foreground">
+              Total {wilayah.length} Kecamatan
+            </span>
+            <div className="flex shrink-0 items-center gap-4 tabular-nums">
+              <span className="min-w-[92px] text-right font-mono font-semibold text-foreground">
+                {formatMetricValue(
+                  metrikWilayah,
+                  totalWilayah.pelanggan,
+                  totalWilayah.konsumsi,
+                  totalWilayah.rupiah
+                )}
+              </span>
+              <span className="w-12 text-right font-mono text-muted-foreground">
+                {activeTotalWilayah > 0 ? "100%" : "0%"}
+              </span>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* KARTU 2: Distribusi Golongan Tarif */}
-      <Card className="min-w-0 rounded-lg border-border/80 bg-card shadow-none">
-        <CardHeader className="p-5 pb-3">
-          <div className="flex min-w-0 items-start justify-between gap-3">
+      {/* KARTU 2: Golongan Tarif Pelanggan (Vercel Breakdown List) */}
+      <Card className="flex min-w-0 flex-col rounded-lg border-border/80 bg-card shadow-none">
+        <CardHeader className="border-b border-border/60 p-5 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <CardTitle>Golongan Tarif Pelanggan</CardTitle>
-                <Badge variant="outline" size="sm" className="font-mono text-[10px]">
-                  {tarif.length} Golongan
+                <CardTitle className="text-[15px] font-semibold tracking-tight">
+                  Golongan Tarif Pelanggan
+                </CardTitle>
+                <Badge variant="gray-subtle" size="sm">
+                  Top {tarif.length}
                 </Badge>
               </div>
-              <CardDescription className="mt-0.5">
-                Struktur pelanggan & tagihan berdasarkan kategori tarif aktif PDAM STI.
+              <CardDescription className="mt-0.5 text-[12.5px]">
+                Komposisi golongan tarif dominan berdasarkan metrik aktif.
               </CardDescription>
             </div>
-            <Layers className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+
+            <MetricSegmentedControl
+              value={metrikTarif}
+              onChange={setMetrikTarif}
+              ariaLabel="Pilih metrik golongan tarif"
+            />
           </div>
         </CardHeader>
 
-        <CardContent className="min-w-0 p-5 pt-2">
-          <div className="max-h-[310px] overflow-auto rounded-md border border-border/50">
-            <Table className="min-w-[32rem]">
-              <TableHeader className="bg-muted/30 sticky top-0 backdrop-blur-xs">
-                <TableRow>
-                  <TableHead className="py-2.5">Golongan Tarif</TableHead>
-                  <TableHead className="py-2.5 text-right">Pelanggan</TableHead>
-                  <TableHead className="py-2.5 text-right">Konsumsi Air</TableHead>
-                  <TableHead className="py-2.5 text-right">Nilai Tagihan</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tarif.map((item) => {
-                  const sharePct = totalTarifPelanggan > 0
-                    ? Math.round((item.totalPelanggan / totalTarifPelanggan) * 100)
-                    : 0;
+        <CardContent className="flex flex-1 flex-col justify-between p-5 pt-3">
+          <div>
+            {/* Column Header (sejajar presisi dengan kolom baris & footer) */}
+            <div className="mb-2 flex items-center justify-between gap-3 px-2.5 text-label-11 font-medium uppercase tracking-wider text-muted-foreground">
+              <span>Golongan</span>
+              <div className="flex shrink-0 items-center gap-4">
+                <span className="min-w-[92px] text-right">Jumlah</span>
+                <span className="w-12 text-right">Porsi</span>
+              </div>
+            </div>
 
-                  return (
-                    <TableRow key={item.kode} className="transition-colors hover:bg-muted/40">
-                      <TableCell className="py-2.5 pr-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-[11px] font-semibold text-foreground">
-                            {item.kode}
-                          </span>
-                          <span className="text-label-13 text-muted-foreground truncate max-w-[140px]" title={item.nama}>
-                            {item.nama}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2.5 text-right tabular-nums">
-                        <span className="font-medium text-foreground">
-                          {formatAngka(item.totalPelanggan)}
-                        </span>
-                        {sharePct > 0 && (
-                          <span className="ml-1.5 font-mono text-[11px] text-muted-foreground">
-                            {sharePct}%
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-2.5 text-right font-mono text-[12px] tabular-nums text-muted-foreground">
-                        {formatAngka(item.totalPakaiM3)} m³
-                      </TableCell>
-                      <TableCell className="py-2.5 text-right font-mono text-[12px] font-medium tabular-nums text-foreground">
-                        {formatRupiah(item.totalRupiah)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            {/* Vercel Bar-Behind-Row List */}
+            <div className="space-y-1.5">
+              {tarif.map((item) => {
+                const rawVal = pickMetricNumber(
+                  metrikTarif,
+                  item.totalPelanggan,
+                  item.totalPakaiM3,
+                  item.totalRupiah
+                );
+                const sharePct =
+                  activeTotalTarif > 0
+                    ? Math.round((rawVal / activeTotalTarif) * 1000) / 10
+                    : 0;
+                const barWidth =
+                  rawVal > 0 ? Math.max((rawVal / maxTarifValue) * 100, 3) : 0;
+                const nilaiDisplay = formatMetricValue(
+                  metrikTarif,
+                  item.totalPelanggan,
+                  item.totalPakaiM3,
+                  item.totalRupiah
+                );
+
+                return (
+                  <div
+                    key={item.kode}
+                    className="relative flex items-center justify-between gap-3 overflow-hidden rounded-md px-2.5 py-2 transition-colors hover:bg-(--ds-gray-100)/70 dark:hover:bg-(--ds-gray-200)/40"
+                  >
+                    {/* Proportional Bar Behind Row */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-(--ds-gray-200)/70 transition-all duration-300 dark:bg-(--ds-gray-200)/50"
+                      style={{ width: `${Math.min(barWidth, 100)}%` }}
+                    />
+
+                    <div className="relative z-10 flex min-w-0 items-center gap-2">
+                      <span className="w-10 shrink-0 font-mono text-label-11 font-semibold text-foreground">
+                        {item.kode}
+                      </span>
+                      <span
+                        title={item.nama}
+                        className="truncate text-label-13 text-muted-foreground"
+                      >
+                        {item.nama}
+                      </span>
+                    </div>
+
+                    <div className="relative z-10 flex shrink-0 items-center gap-4 tabular-nums">
+                      <span className="min-w-[92px] text-right text-label-13 font-medium text-foreground">
+                        {nilaiDisplay}
+                      </span>
+                      <span className="w-12 text-right font-mono text-label-12 text-muted-foreground">
+                        {sharePct.toLocaleString("id-ID", {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        })}
+                        %
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footer Total (sejajar presisi dengan kolom Jumlah & Porsi) */}
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/60 px-2.5 pt-3 text-label-12">
+            <span className="text-muted-foreground">
+              Total Top {tarif.length} Golongan
+            </span>
+            <div className="flex shrink-0 items-center gap-4 tabular-nums">
+              <span className="min-w-[92px] text-right font-mono font-semibold text-foreground">
+                {formatMetricValue(
+                  metrikTarif,
+                  totalTarif.pelanggan,
+                  totalTarif.konsumsi,
+                  totalTarif.rupiah
+                )}
+              </span>
+              <span className="w-12 text-right font-mono text-muted-foreground">
+                {activeTotalTarif > 0 ? "100%" : "0%"}
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
