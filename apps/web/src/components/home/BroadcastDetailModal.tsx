@@ -36,7 +36,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { HaloBadge } from '@/components/ui/halo-badge'
 import { Progress } from '@/components/ui/progress'
 import type {
   BroadcastGangguanItem,
@@ -181,40 +180,24 @@ export function BroadcastDetailModal({
               {/* Header Informasi & Meta Tag Bersih */}
               <DialogHeader className="space-y-2 sm:space-y-3 text-left pr-8 sm:pr-10">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
-                    {/* Badge Kategori Terpisah Rapi */}
-                    {isKegiatan ? (
-                      <HaloBadge live variant="outline" className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold shrink-0">
-                        {broadcast.lokasiWilayah || 'Pelayanan Wilayah 5'}
-                      </HaloBadge>
-                    ) : isPromoOrEvent ? (
-                      <HaloBadge live variant="outline" className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold shrink-0">
-                        Program Resmi
-                      </HaloBadge>
-                    ) : (
-                      <HaloBadge
-                        live
-                        variant={isDarurat ? 'destructive' : 'outline'}
-                        className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold shrink-0"
-                      >
-                        {broadcast.kategori}
-                      </HaloBadge>
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-muted-foreground font-mono">
+                    <span className="font-semibold text-foreground">
+                      {isKegiatan
+                        ? broadcast.lokasiWilayah || 'Pelayanan Wilayah 5'
+                        : isPromoOrEvent
+                          ? 'Program Resmi'
+                          : broadcast.kategori}
+                    </span>
+                    {(promo?.periode || broadcast.estimasiSelesai) && (
+                      <>
+                        <span className="text-border">·</span>
+                        <span>{promo?.periode || `Target: ${broadcast.estimasiSelesai}`}</span>
+                      </>
                     )}
-
-                    {/* Chip Tanggal Periode Terpisah Mandiri */}
-                    {promo?.periode ? (
-                      <HaloBadge variant="secondary" className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono max-w-[190px] sm:max-w-none truncate shrink-0">
-                        {promo.periode}
-                      </HaloBadge>
-                    ) : broadcast.estimasiSelesai ? (
-                      <HaloBadge variant="secondary" className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono max-w-[190px] sm:max-w-none truncate shrink-0">
-                        Target: {broadcast.estimasiSelesai}
-                      </HaloBadge>
-                    ) : null}
-
-                    <Badge variant="outline" size="sm" className="font-mono text-muted-foreground text-[9px] sm:text-xs shrink-0">
+                    <span className="text-border">·</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                       {broadcast.status.replace('_', ' ')}
-                    </Badge>
+                    </span>
                   </div>
 
                   {/* Tombol Bagikan / Salin Tautan */}
@@ -260,6 +243,9 @@ export function BroadcastDetailModal({
                       <img
                         src={mediaAktif.url}
                         alt={mediaAktif.judul}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/images/features/Pusat-Kendali.png'
+                        }}
                         className="max-h-[340px] sm:max-h-full max-w-full object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-[1.01]"
                         loading="lazy"
                       />
@@ -316,6 +302,9 @@ export function BroadcastDetailModal({
                               <img
                                 src={media.url}
                                 alt={media.judul}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/images/features/Pusat-Kendali.png'
+                                }}
                                 className="h-full w-full object-cover"
                               />
                             </div>
@@ -662,6 +651,9 @@ export function BroadcastDetailModal({
                 <img
                   src={mediaAktif.url}
                   alt={mediaAktif.judul}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/features/Pusat-Kendali.png'
+                  }}
                   className="max-h-[78vh] max-w-full object-contain rounded-lg shadow-2xl"
                 />
               )}

@@ -7,7 +7,6 @@ import { motion } from 'motion/react'
 import { ChevronLeft, ChevronRight, Maximize2, Tag, Check } from 'lucide-react'
 
 import { PillButton } from '@/components/shared/PillButton'
-import { HaloBadge } from '@/components/ui/halo-badge'
 import { BroadcastDetailModal } from '@/components/home/BroadcastDetailModal'
 import { DAFTAR_BROADCAST_AWAL } from '@/data/broadcast'
 import type { BroadcastGangguanItem } from '@/types/broadcast'
@@ -48,8 +47,8 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
   const currentPhoto = allPhotos[activePhotoIdx] || allPhotos[0]
 
   return (
-    <div className="rounded-lg border border-border/80 bg-card p-4 sm:p-6 md:p-8 lg:p-10 shadow-none transition-all hover:border-foreground/20 hover:shadow-xs">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 items-stretch">
+    <div className="rounded-lg border border-border/80 bg-card p-3.5 sm:p-6 md:p-8 lg:p-10 shadow-none transition-all hover:border-foreground/20 hover:shadow-xs">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-8 lg:gap-12 items-stretch">
         
         {/* ========================================================
             KOLOM KIRI: MULTI-FOTO ADAPTIF (Landscape & Portrait)
@@ -57,7 +56,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
         <div className="md:col-span-6 lg:col-span-6 flex flex-col justify-between">
           <div
             onClick={() => onOpenModal(item)}
-            className="group/img relative flex-1 min-h-[240px] sm:min-h-[320px] md:min-h-[420px] w-full overflow-hidden rounded-md bg-neutral-950 flex items-center justify-center border border-border/80 shadow-none cursor-pointer select-none"
+            className="group/img relative flex-1 min-h-[190px] xs:min-h-[220px] sm:min-h-[300px] md:min-h-[400px] w-full overflow-hidden rounded-md bg-neutral-950 flex items-center justify-center border border-border/80 shadow-none cursor-pointer select-none"
             title="Klik untuk melihat dokumen dan brosur resolusi penuh"
           >
             {/* Ambient Blur Backdrop: Memastikan foto potret / vertikal tidak memiliki ruang kosong jelek */}
@@ -68,11 +67,14 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
               />
             )}
 
-            {/* Gambar Utama: object-contain agar rasio asli (potret/lanskap/persegi) tampil utuh & sempurna */}
+            {/* Gambar Utama: object-contain agar rasio asli tampil utuh & sempurna */}
             {currentPhoto?.url ? (
               <img
                 src={currentPhoto.url}
                 alt={currentPhoto.judul || item.judul}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/features/Pusat-Kendali.png'
+                }}
                 className="relative z-10 max-h-full max-w-full object-contain transition-transform duration-500 group-hover/img:scale-102"
               />
             ) : (
@@ -81,16 +83,10 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
               </div>
             )}
 
-            {/* Badge Hitungan Foto (Jika multi-foto) */}
+            {/* Indikator Hitungan Foto Ringkas */}
             {allPhotos.length > 1 && (
-              <div className="absolute top-3 right-3 z-20">
-                <HaloBadge
-                  tabularNums
-                  variant="secondary"
-                  className="px-2.5 py-1 text-label-11 font-mono font-semibold"
-                >
-                  {activePhotoIdx + 1}/{allPhotos.length}
-                </HaloBadge>
+              <div className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-[10px] font-mono text-white/90">
+                {activePhotoIdx + 1}/{allPhotos.length}
               </div>
             )}
 
@@ -123,20 +119,20 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
             )}
 
             {/* Strip Keterangan & Tombol Perbesar di Bawah Gambar */}
-            <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-t from-black/85 via-black/40 to-transparent text-white">
-              <span className="text-label-12 font-medium truncate max-w-[70%]">
+            <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between p-2.5 sm:p-4 bg-gradient-to-t from-black/85 via-black/40 to-transparent text-white">
+              <span className="text-[11px] sm:text-label-12 font-medium truncate max-w-[70%]">
                 {currentPhoto?.judul || 'Brosur Resmi Tirtawening'}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-xs px-2.5 py-0.5 text-label-11 font-semibold shrink-0">
-                <Maximize2 className="size-3" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-xs px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-label-11 font-semibold shrink-0">
+                <Maximize2 className="size-2.5 sm:size-3" />
                 <span>Perbesar</span>
               </span>
             </div>
           </div>
 
-          {/* Thumbnail Strip (Hanya tampil jika ada 2 foto atau lebih) */}
+          {/* Thumbnail Strip (Hanya tampil di tablet/desktop jika ada 2 foto atau lebih) */}
           {allPhotos.length > 1 && (
-            <div className="flex items-center gap-2 pt-3 overflow-x-auto pb-1 scrollbar-none">
+            <div className="hidden sm:flex items-center gap-2 pt-3 overflow-x-auto pb-1 scrollbar-none">
               {allPhotos.map((photo, pIdx) => (
                 <button
                   key={pIdx}
@@ -148,7 +144,14 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
                       : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={photo.url}
+                    alt=""
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/features/Pusat-Kendali.png'
+                    }}
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -157,50 +160,44 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
 
         {/* ========================================================
             KOLOM KANAN: KONTEN TEKS & PENAWARAN (FLUSH ALIGNED)
-            Badge keataskan sejajar tinggi gambar, Button sejajarkan tepi bawah gambar
             ======================================================== */}
         <div className="md:col-span-6 lg:col-span-6 flex flex-col justify-between h-full">
           {/* Bagian Atas: Dimulai tepat di tepi atas gambar */}
-          <div className="space-y-4">
-            {/* Tag Program dan Periode Tanggal Terpisah Secara Bersih & Rapi */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <HaloBadge live variant="outline" className="px-3 py-1 text-label-12 font-semibold">
-                Program Resmi
-              </HaloBadge>
-
-              {details?.periode && (
-                <HaloBadge variant="secondary" className="px-3 py-1 text-label-12 font-mono">
-                  {details.periode}
-                </HaloBadge>
-              )}
-            </div>
+          <div className="space-y-3 sm:space-y-4">
+            {/* Periode Tanggal Ringkas Tanpa Badge */}
+            {details?.periode && (
+              <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-mono text-muted-foreground">
+                <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span>Periode: {details.periode}</span>
+              </div>
+            )}
 
             {/* Judul Headline Promo */}
-            <h2 className="text-heading-22 sm:text-heading-26 md:text-heading-30 lg:text-heading-34 font-semibold tracking-tight text-foreground leading-tight">
+            <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight text-foreground leading-snug sm:leading-tight">
               {item.judul}
             </h2>
 
             {/* Ringkasan Penjelasan */}
-            <p className="text-copy-14 sm:text-copy-15 whitespace-pre-line text-muted-foreground leading-relaxed">
+            <p className="text-xs sm:text-copy-14 whitespace-pre-line text-muted-foreground leading-relaxed line-clamp-3 sm:line-clamp-none">
               {item.ringkasan}
             </p>
 
-            {/* Highlight Penawaran & Butir Keunggulan MENYUSUN KE BAWAH TANPA DIPOTONG */}
+            {/* Highlight Penawaran & Butir Keunggulan */}
             {details && (details.highlightDiskon || (details.keunggulan && details.keunggulan.length > 0)) && (
-              <div className="rounded-lg bg-muted/30 border border-border/80 p-4 sm:p-5 shadow-none space-y-3">
+              <div className="rounded-lg bg-muted/40 border border-border/80 p-3 sm:p-4 space-y-2">
                 {details.highlightDiskon && (
-                  <p className="text-copy-14 font-semibold text-foreground flex items-center gap-2">
+                  <p className="text-xs sm:text-copy-14 font-semibold text-foreground flex items-center gap-2">
                     <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
                     <span>{details.highlightDiskon}</span>
                   </p>
                 )}
 
-                {/* Butir Keunggulan Menyusun ke Bawah Secara Utuh & Lengkap */}
+                {/* Butir Keunggulan */}
                 {details.keunggulan && details.keunggulan.length > 0 && (
-                  <div className="pt-1 flex flex-col gap-2.5 text-copy-13 text-muted-foreground">
+                  <div className="pt-0.5 flex flex-col gap-1.5 sm:gap-2 text-xs sm:text-copy-13 text-muted-foreground">
                     {details.keunggulan.map((k, i) => (
-                      <div key={i} className="flex items-start gap-2.5">
-                        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="flex size-3.5 sm:size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
                           <Check className="size-2.5 stroke-[3]" />
                         </span>
                         <span className="leading-snug text-foreground/90">{k}</span>
@@ -212,8 +209,8 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
             )}
           </div>
 
-          {/* Bagian Bawah: Tombol Aksi Sejajar Tepat Tepi Bawah Gambar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-border/80 mt-auto">
+          {/* Bagian Bawah: Tombol Aksi */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-4 pt-3.5 sm:pt-5 border-t border-border/80 mt-3 sm:mt-auto">
             <PillButton asChild className="w-full sm:w-auto text-center justify-center">
               <Link href={details?.ctaLink || '/pasang-baru'}>
                 {details?.ctaText || 'Daftar Sekarang'}
@@ -223,7 +220,7 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
             <button
               type="button"
               onClick={() => onOpenModal(item)}
-              className="text-label-13 sm:text-label-14 font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4 cursor-pointer text-center py-1 sm:py-0"
+              className="text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4 cursor-pointer text-center py-1 sm:py-0"
             >
               Lihat Syarat &amp; Dokumen
             </button>
@@ -254,7 +251,11 @@ export function PromoBannerSpotlight() {
   // Sinkronisasi data publik dari backend PostgreSQL & localStorage client-side
   React.useEffect(() => {
     try {
-      const tersimpan = localStorage.getItem('elysia_broadcast_items')
+      let tersimpan = localStorage.getItem('elysia_broadcast_items')
+      if (tersimpan && tersimpan.includes('hero.jpg')) {
+        tersimpan = tersimpan.replaceAll('/images/hero.jpg', '/images/features/Pusat-Kendali.png')
+        localStorage.setItem('elysia_broadcast_items', tersimpan)
+      }
       if (tersimpan) {
         const parsed = JSON.parse(tersimpan)
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -277,7 +278,11 @@ export function PromoBannerSpotlight() {
 
     function handleStorageChange() {
       try {
-        const tersimpan = localStorage.getItem('elysia_broadcast_items')
+        let tersimpan = localStorage.getItem('elysia_broadcast_items')
+        if (tersimpan && tersimpan.includes('hero.jpg')) {
+          tersimpan = tersimpan.replaceAll('/images/hero.jpg', '/images/features/Pusat-Kendali.png')
+          localStorage.setItem('elysia_broadcast_items', tersimpan)
+        }
         if (tersimpan) {
           const parsed = JSON.parse(tersimpan)
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -365,17 +370,14 @@ export function PromoBannerSpotlight() {
         className="mx-auto w-full max-w-360 px-4 lg:px-12"
       >
         {/* Header Seksi Ringkas & Tegas */}
-        <div className="flex items-center justify-between gap-4 mb-5">
+        <div className="flex items-center justify-between gap-4 mb-4 sm:mb-5">
           <div className="flex items-center gap-3">
             <h2
               id="promo-spotlight-title"
-              className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground"
+              className="text-lg sm:text-heading-26 md:text-heading-30 font-bold tracking-tight text-foreground"
             >
               Program &amp; Penawaran Warga
             </h2>
-            <HaloBadge tabularNums variant="secondary" className="hidden sm:inline-flex text-label-12 font-mono font-medium">
-              {daftarPromo.length} Program Aktif
-            </HaloBadge>
           </div>
 
           {daftarPromo.length > 1 && (

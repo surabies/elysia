@@ -13,7 +13,6 @@ import {
 
 import { cn } from '@/lib/utils'
 import { Container } from '@/components/shared/Container'
-import { HaloBadge } from '@/components/ui/halo-badge'
 import { BroadcastDetailModal } from '@/components/home/BroadcastDetailModal'
 import { DAFTAR_BROADCAST_AWAL } from '@/data/broadcast'
 import type { BroadcastGangguanItem } from '@/types/broadcast'
@@ -114,6 +113,9 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
                 key={p.url + pIdx}
                 src={p.url}
                 alt={p.judul || item.judul}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/features/Pusat-Kendali.png'
+                }}
                 className={cn(
                   "absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-in-out",
                   pIdx === activePhotoIdx
@@ -128,16 +130,10 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
             </div>
           )}
 
-          {/* Badge Indikator Jumlah Foto */}
+          {/* Indikator Jumlah Foto Ringkas */}
           {photos.length > 1 && (
-            <div className="absolute top-3 right-3 z-20">
-              <HaloBadge
-                tabularNums
-                variant="secondary"
-                className="px-2.5 py-1 text-[11px] font-mono font-semibold"
-              >
-                {activePhotoIdx + 1}/{photos.length}
-              </HaloBadge>
+            <div className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-[10px] font-mono text-white/90">
+              {activePhotoIdx + 1}/{photos.length}
             </div>
           )}
 
@@ -208,13 +204,13 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
             </span>
 
             {isSelesai ? (
-              <HaloBadge live variant="default" className="text-[10px] font-semibold shrink-0">
-                Selesai 100%
-              </HaloBadge>
+              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                ● Selesai 100%
+              </span>
             ) : (
-              <HaloBadge live variant="outline" className="text-[10px] font-semibold shrink-0">
-                {item.progresPersen}% Progres
-              </HaloBadge>
+              <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                ● {item.progresPersen}% Progres
+              </span>
             )}
           </div>
 
@@ -269,7 +265,11 @@ export function DokumentasiKegiatanSection() {
   // Sinkronisasi data publik dari backend & event perubahan operator di dashboard
   React.useEffect(() => {
     try {
-      const tersimpan = localStorage.getItem('elysia_broadcast_items')
+      let tersimpan = localStorage.getItem('elysia_broadcast_items')
+      if (tersimpan && tersimpan.includes('hero.jpg')) {
+        tersimpan = tersimpan.replaceAll('/images/hero.jpg', '/images/features/Pusat-Kendali.png')
+        localStorage.setItem('elysia_broadcast_items', tersimpan)
+      }
       if (tersimpan) {
         const parsed = JSON.parse(tersimpan)
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -369,13 +369,6 @@ export function DokumentasiKegiatanSection() {
             >
               Pelayanan Wilayah 5
             </h2>
-
-            {/* Quick Live Status Badge */}
-            <HaloBadge live variant="outline" className="hidden sm:inline-flex text-[12px] font-mono gap-2 py-1.5 px-3.5">
-              <span className="font-semibold text-foreground">{daftar.length} Agenda Aktif</span>
-              <span className="text-border">|</span>
-              <span>Unit Lapangan</span>
-            </HaloBadge>
           </div>
 
           {/* Subtitle & Filter Baris */}
