@@ -26,14 +26,14 @@ export function TombolUtama({
 }) {
   if (nonaktif) {
     return (
-      <Button disabled className={className} {...props}>
+      <Button disabled className={cn("rounded-xl font-medium", className)} {...props}>
         {children}
       </Button>
     )
   }
 
   return (
-    <Button className={cn("font-medium shadow-panel", className)} {...props}>
+    <Button className={cn("rounded-xl font-medium shadow-panel", className)} {...props}>
       {children}
     </Button>
   )

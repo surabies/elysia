@@ -512,7 +512,12 @@ export function PengaduanForm({
           </Alert>
         )}
 
-        <TombolUtama type="submit" size="lg" className="w-full" disabled={pending}>
+        <TombolUtama
+          type="submit"
+          size="lg"
+          className="h-12 w-full rounded-xl font-semibold shadow-sm transition-all"
+          disabled={pending}
+        >
           {pending ? <Spinner className="size-4" /> : <Send />}
           {pending ? "Mengirim…" : "Kirim pengaduan"}
         </TombolUtama>

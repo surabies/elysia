@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Upload,
   CalendarClock,
+  ArrowRight,
 } from "@/components/ui/hugeicons-compat"
 import type { JendelaLaporMandiri } from "@/lib/domain/lapor-mandiri"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -419,7 +420,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
           />
         )}
 
-        {pratinjau && (
+        {pratinjau && (!pratinjau.sudahLaporBulanIni || perluKirimUlang) && (
           <div className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-xs dark:border-emerald-500/30 dark:bg-emerald-500/10">
             <div className="flex items-center justify-between border-b border-emerald-500/15 pb-2.5">
               <div className="flex items-center gap-2">
@@ -488,94 +489,119 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
           </div>
         )}
 
-        {pratinjau?.sudahLaporBulanIni && !perluKirimUlang && (
-          <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/5 p-4 sm:p-5 dark:border-blue-500/30 dark:bg-blue-500/10 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 dark:text-sky-400">
-                <CheckCircle2 className="size-5" />
-              </div>
-              <div className="space-y-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-sm sm:text-base font-bold text-foreground">
-                    Laporan Periode {formatPeriode(pratinjau.periodeBerjalan)} Sudah Diterima
-                  </h4>
-                  {(() => {
-                    const statusInfo = statusLaporanMandiriWarga(
-                      pratinjau.statusLaporanBulanIni ?? "PENDING"
-                    )
-                    return (
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold",
-                          statusInfo.badgeClass
-                        )}
-                      >
-                        <span className={cn("size-1.5 rounded-full", statusInfo.dotClass)} />
-                        {statusInfo.label}
-                      </span>
-                    )
-                  })()}
+        {pratinjau?.sudahLaporBulanIni && !perluKirimUlang && (() => {
+          const statusInfo = statusLaporanMandiriWarga(
+            pratinjau.statusLaporanBulanIni ?? "PENDING"
+          )
+          return (
+            <div className="mt-4 rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
+              {/* Status Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-border pb-3.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="size-4.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-sm sm:text-base font-bold text-foreground tracking-tight truncate">
+                      Laporan Periode {formatPeriode(pratinjau.periodeBerjalan)} Sudah Diterima
+                    </h4>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {pratinjau.laporanBulanIni?.createdAt
+                        ? `Tercatat ${formatWaktu(pratinjau.laporanBulanIni.createdAt)} WIB`
+                        : "Tersimpan dalam antrean verifikasi"}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Laporan angka meter mandiri untuk sambungan <strong>{pratinjau.nomorLangganan}</strong> ({pratinjau.nama}) telah berhasil dicatat oleh sistem. Pelanggan tidak dapat mengirimkan laporan lebih dari 1 (satu) kali pada periode yang sama.
-                </p>
-              </div>
-            </div>
 
-            {pratinjau.laporanBulanIni && (
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 rounded-xl border border-border bg-card/70 p-3 text-xs">
-                <div>
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                <div className="self-start sm:self-auto shrink-0">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs font-semibold shadow-2xs",
+                      statusInfo.badgeClass
+                    )}
+                  >
+                    <span className={cn("size-2 rounded-full", statusInfo.dotClass)} />
+                    {statusInfo.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Rincian Ringkas & Rapi */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div className="rounded-xl border border-border bg-muted/40 p-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Pelanggan
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-foreground truncate">
+                    {pratinjau.nama}
+                  </p>
+                  <p className="font-mono text-[11px] text-muted-foreground">
+                    {pratinjau.nomorLangganan}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-border bg-muted/40 p-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Stand Dilaporkan
                   </p>
-                  <p className="mt-0.5 font-mono text-sm font-bold text-foreground">
-                    {pratinjau.laporanBulanIni.standDilaporkan.toLocaleString("id-ID")}{" "}
-                    <span className="text-[11px] font-normal text-muted-foreground">m³</span>
+                  <p className="mt-1 font-mono text-base sm:text-lg font-bold text-foreground">
+                    {pratinjau.laporanBulanIni?.standDilaporkan.toLocaleString("id-ID") ?? "—"}{" "}
+                    <span className="text-xs font-normal text-muted-foreground">m³</span>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {pratinjau.tarifGolongan?.kategori ?? "Tarif Standar"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">
-                    Waktu Pengiriman
+
+                <div className="col-span-2 sm:col-span-1 rounded-xl border border-border bg-muted/40 p-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Status Rekening
                   </p>
-                  <p className="mt-0.5 text-xs font-medium text-foreground">
-                    {formatWaktu(pratinjau.laporanBulanIni.createdAt)} WIB
-                  </p>
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">
-                    Status Verifikasi
-                  </p>
-                  <p className="mt-0.5 text-xs font-medium text-foreground">
+                  <p className="mt-1 text-xs font-medium text-foreground">
                     {pratinjau.statusLaporanBulanIni === "APPROVED"
-                      ? "Disahkan Petugas"
-                      : "Antrean Verifikasi"}
+                      ? "Disahkan untuk tagihan"
+                      : "Antrean verifikasi petugas"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Periode {formatPeriode(pratinjau.periodeBerjalan)}
                   </p>
                 </div>
               </div>
-            )}
 
-            <div className="flex flex-col sm:flex-row gap-2 pt-1">
-              <Button
-                asChild
-                size="sm"
-                className="rounded-xl text-xs font-semibold h-9"
-              >
-                <Link href={`/lapor-meter?tab=cek&nomor=${encodeURIComponent(pratinjau.nomorLangganan)}`}>
-                  Cek Status Laporan Lengkap
-                </Link>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl text-xs h-9"
-                onClick={reset}
-              >
-                Lapor untuk Nomor Sambungan Lain
-              </Button>
+              {/* Functional Info Note */}
+              <div className="flex items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-xs text-muted-foreground border border-border/50">
+                <span className="size-1.5 rounded-full bg-blue-500 shrink-0" />
+                <p className="text-[11px] sm:text-xs leading-relaxed">
+                  Pelaporan mandiri dibatasi <strong>1 kali per periode</strong> untuk akurasi rekening. Anda dapat memantau hasil verifikasi petugas secara berkala.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                <TombolUtama
+                  asChild
+                  size="lg"
+                  className="w-full sm:flex-1 h-11 rounded-xl text-xs sm:text-sm font-semibold"
+                >
+                  <Link href={`/lapor-meter?tab=cek&nomor=${encodeURIComponent(pratinjau.nomorLangganan)}`}>
+                    <span>Pantau di Status Laporan</span>
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </TombolUtama>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full sm:w-auto h-11 rounded-xl text-xs sm:text-sm font-medium px-4"
+                  onClick={reset}
+                >
+                  Lapor Nomor Lain
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
 
       {pratinjau && (!pratinjau.sudahLaporBulanIni || perluKirimUlang) && (
@@ -668,7 +694,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
           onClick={kirim}
           disabled={kirimPending}
           nonaktif={!bisaLapor}
-          className="h-12 w-full"
+          className="h-12 w-full rounded-xl font-semibold shadow-sm transition-all"
         >
           {kirimPending ? <Spinner className="size-4" /> : <Upload />}
           {kirimPending
