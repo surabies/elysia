@@ -138,7 +138,8 @@ export async function importProgresCater(options: {
     const caterseksikode = cols[30]?.trim() || null;
     const caterseksinama = cols[31]?.trim() || null;
     const ruteKode = cols[32]?.trim();
-    const pencatat = cols[33]?.trim() || 'PETUGAS';
+    const pencatatRaw = cols[33]?.trim() || '';
+    const pencatat = pencatatRaw && pencatatRaw !== '-' ? pencatatRaw : null;
 
     const ismbr = cols[47]?.trim()?.toLowerCase() === 't';
     const kdMerkMeter = cols[48]?.trim() || null;
