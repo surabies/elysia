@@ -2,6 +2,7 @@ import { db } from './client';
 import { places, pelanggan } from './schema';
 import { seedAccounts, FALLBACK_SEED_PASSWORD } from './seed-accounts';
 import { seedMasterKondisi } from './seed-kondisi';
+import { seedMasterTarif } from './seed-tarif';
 import { importProgresCater } from './etl/import-progres-cater';
 import { syncAreaLayanan21Kelurahan, seedDataVerifikasi } from './seed-data-verifikasi';
 import { count } from 'drizzle-orm';
@@ -54,6 +55,10 @@ async function seed() {
     // 3. Seed Master Kondisi Catat (22 Kode STI Resmi PDAM)
     console.log('3. Seeding Master Kondisi Catat...');
     await seedMasterKondisi();
+
+    // 3b. Seed Master Tarif & Blok Konsumsi Progresif
+    console.log('3b. Seeding Master Golongan & Blok Tarif...');
+    await seedMasterTarif();
 
     // 4. Seed Master Pelanggan (jika tabel masih kosong)
     console.log('4. Checking Pelanggan Dataset...');

@@ -164,7 +164,16 @@ export function SimulasiTarifSection() {
         if (!res.ok) return
         const body = await res.json()
         if (body.success && Array.isArray(body.data) && body.data.length > 0) {
-          setDaftarGolongan(body.data)
+          const listLengkap: GolonganTarifBackend[] = body.data.map(
+            (item: GolonganTarifBackend) => {
+              if (!item.blok || item.blok.length === 0) {
+                const fb = FALLBACK_GOLONGAN.find((f) => f.kode === item.kode)
+                return fb ? { ...item, blok: fb.blok } : item
+              }
+              return item
+            }
+          )
+          setDaftarGolongan(listLengkap)
           setIsDbLoaded(true)
         }
       } catch {
