@@ -552,7 +552,7 @@ export class CaterProgressService {
   /**
    * Mengambil riwayat seluruh sesi harian siklus pembacaan petugas dari database nyata
    */
-  async getRiwayatSesiPetugas(thbl: string = '202601') {
+  async getRiwayatSesiPetugas(thbl: string = '202611') {
     // 1. Ambil seluruh tanggal siklus kerja catat di periode ini (dinamis, tanpa batasan 20 sesi)
     const dateRows = await db.execute<{ tanggal: string }>(sql`
       SELECT DISTINCT to_char(tgl_catat, 'YYYY-MM-DD') as tanggal
@@ -562,7 +562,7 @@ export class CaterProgressService {
     `);
     const dates = dateRows.map((d) => d.tanggal);
 
-    // 2. Ambil data ringkasan tiap petugas
+    // 2. Ambil data ringkasan tiap petugas resmi dari database nyata (9 petugas cater)
     const officers = await db.execute<{
       id: string;
       nama: string;
@@ -573,11 +573,13 @@ export class CaterProgressService {
         p.id,
         p.nama,
         count(c.id)::int as total_baca,
-        count(distinct c.rute_kode)::int as total_rute
+        count(distinct r.kode)::int as total_rute
       FROM petugas_cater p
-      JOIN cater_baca_meter c ON p.id = c.petugas_id AND c.thbl = ${thbl}
+      LEFT JOIN rute_cater r ON p.id = r.pencatat_default
+      LEFT JOIN cater_baca_meter c ON p.id = c.petugas_id AND c.thbl = ${thbl}
+      WHERE p.id != '-'
       GROUP BY p.id, p.nama
-      ORDER BY total_baca DESC
+      ORDER BY p.nama ASC
     `);
 
     // 3. Ambil data sesi per tanggal untuk semua petugas

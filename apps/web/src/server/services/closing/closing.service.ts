@@ -1246,8 +1246,8 @@ export class ClosingService {
     }));
 
     const openPeriod = daftarPeriode.find((p) => p.status === 'BERJALAN');
-    const latestPeriod = daftarPeriode[0]?.periode ?? '202601';
-    const periodeAktif = openPeriod ? openPeriod.periode : null;
+    const latestPeriod = daftarPeriode[0]?.periode ?? '202611';
+    const periodeAktif = openPeriod ? openPeriod.periode : '202611';
     const saranPeriode = openPeriod ? openPeriod.periode : latestPeriod;
 
     return {
@@ -1256,7 +1256,10 @@ export class ClosingService {
       daftarPeriode:
         daftarPeriode.length > 0
           ? daftarPeriode
-          : [{ periode: '202601', status: 'BERJALAN' as const, jumlahSl: null }],
+          : [
+              { periode: '202611', status: 'BERJALAN' as const, jumlahSl: null },
+              { periode: '202610', status: 'TERKUNCI' as const, jumlahSl: null },
+            ],
     };
   }
 

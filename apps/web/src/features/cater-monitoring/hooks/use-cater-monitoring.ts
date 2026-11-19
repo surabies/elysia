@@ -29,7 +29,7 @@ export function useCaterMonitoring(options: UseCaterMonitoringOptions = {}) {
   const [routes, setRoutes] = useState<RouteSummary[]>(options.initialRoutes ?? []);
   const [overviewLoading, setOverviewLoading] = useState(!options.initialStats);
   const [overviewError, setOverviewError] = useState<string | null>(null);
-  const [month, setMonth] = useState(options.initialMonth || '2026-01');
+  const [month, setMonth] = useState(options.initialMonth || '2026-11');
   const [petugasProgress, setPetugasProgress] = useState<PetugasProgress[]>([]);
   const [riwayatSesiList, setRiwayatSesiList] = useState<ItemRuteBaca[]>(
     options.initialRiwayatSesi ?? []

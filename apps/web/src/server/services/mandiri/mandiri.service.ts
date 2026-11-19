@@ -9,13 +9,15 @@
  * yang memiliki keterangan kondisi catat "Stand Konsumen" (kode Z).
  */
 
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, lt } from "drizzle-orm";
 import {
   db,
   caterMandiriPelanggan,
   caterBacaMeter,
   caterVerifikasiLog,
   pelanggan,
+  rekeningDrd,
+  waterMeterMutasi,
 } from "@cater/db";
 import {
   periksaJendelaLaporMandiri,
@@ -103,15 +105,49 @@ export class MandiriService {
       isLokasiValid = evalGeo.isLokasiValid;
     }
 
-    // 4. Hitung Estimasi Pemakaian (pakaiM3) berdasarkan Stand Meter Lalu (stml) jika ada
-    const [caterRow] = await db
-      .select({ stml: caterBacaMeter.stml })
+    // 4. Hitung Estimasi Pemakaian (pakaiM3) berdasarkan Stand Meter Lalu (stml)
+    // a. Cari di cater_baca_meter untuk periode sebelumnya
+    const [caterRowLalu] = await db
+      .select({ stma: caterBacaMeter.stma, stml: caterBacaMeter.stml })
       .from(caterBacaMeter)
-      .where(and(eq(caterBacaMeter.nolg, nolg), eq(caterBacaMeter.thbl, thbl)))
+      .where(and(eq(caterBacaMeter.nolg, nolg), lt(caterBacaMeter.thbl, thbl)))
+      .orderBy(desc(caterBacaMeter.thbl))
       .limit(1);
 
-    const stmlLalu = caterRow ? Number(caterRow.stml) : 0;
-    const estimasiPakaiM3 = Math.max(0, stma - stmlLalu);
+    let stmlLalu: number | null = caterRowLalu ? Number(caterRowLalu.stma) : null;
+
+    // b. Jika belum ada di cater_baca_meter, cari di mutasi pasang meter
+    if (stmlLalu === null) {
+      const [mutasiRow] = await db
+        .select({ standPasang: waterMeterMutasi.standPasang })
+        .from(waterMeterMutasi)
+        .where(eq(waterMeterMutasi.nolg, nolg))
+        .orderBy(desc(waterMeterMutasi.createdAt))
+        .limit(1);
+      if (mutasiRow) {
+        stmlLalu = Number(mutasiRow.standPasang);
+      }
+    }
+
+    // c. Jika masih null, periksa apakah ada stand dari pembacaan bulan yang sama
+    if (stmlLalu === null) {
+      const [caterRowSama] = await db
+        .select({ stml: caterBacaMeter.stml })
+        .from(caterBacaMeter)
+        .where(and(eq(caterBacaMeter.nolg, nolg), eq(caterBacaMeter.thbl, thbl)))
+        .limit(1);
+      if (caterRowSama?.stml) {
+        stmlLalu = Number(caterRowSama.stml);
+      }
+    }
+
+    // Jika stmlLalu ditemukan dan wajar (stma >= stmlLalu):
+    const estimasiPakaiM3 =
+      stmlLalu !== null && stma >= stmlLalu
+        ? stma - stmlLalu
+        : stmlLalu !== null
+          ? 0
+          : 0;
 
     const id = `mandiri-${thbl}-${nolg}`;
 

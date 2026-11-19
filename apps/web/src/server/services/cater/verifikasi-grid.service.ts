@@ -518,6 +518,89 @@ export class VerifikasiGridService {
       .from(daftarCatat)
       .innerJoin(pelanggan, eq(daftarCatat.nolg, pelanggan.nolg))
       .where(where);
+
+    if (!countRow || countRow.total === 0) {
+      // Fallback robust: Jika daftarCatat periode ini belum dibuat/kosong,
+      // tampilkan seluruh pelanggan aktif yang belum tercatat di cater_baca_meter pada periode ini.
+      const targetPeriod = period ?? "202611";
+      const pConditions = [
+        eq(pelanggan.status, "PELANGGAN AKTIF"),
+        sql`NOT EXISTS (
+          SELECT 1 FROM cater_baca_meter c
+          WHERE c.nolg = ${pelanggan.nolg}
+            AND c.thbl = ${targetPeriod}
+        )`,
+      ];
+      if (query.ruteId) {
+        pConditions.push(eq(pelanggan.ruteKode, query.ruteId));
+      }
+      if (query.q) {
+        const pattern = `%${query.q}%`;
+        pConditions.push(
+          or(ilike(pelanggan.nolg, pattern), ilike(pelanggan.nama, pattern))!
+        );
+      }
+      const pWhere = and(...pConditions);
+      const [fallbackCount] = await db
+        .select({ total: sql<number>`count(*)::int` })
+        .from(pelanggan)
+        .where(pWhere);
+
+      const fallbackRows = await db
+        .select({
+          id: sql<string>`concat('dpm-', ${targetPeriod}::text, '-', ${pelanggan.nolg})`,
+          thbl: sql<string>`${targetPeriod}::text`,
+          nolg: pelanggan.nolg,
+          nama: pelanggan.nama,
+          alamat: pelanggan.alamat,
+          ruteKode: pelanggan.ruteKode,
+          petugasId: ruteCater.pencatatDefault,
+          petugasNama: petugasCater.nama,
+          noMeter: pelanggan.noMeter,
+          tarifKode: pelanggan.tarifKode,
+          urutan: pelanggan.noUrutRute,
+        })
+        .from(pelanggan)
+        .leftJoin(ruteCater, eq(pelanggan.ruteKode, ruteCater.kode))
+        .leftJoin(petugasCater, eq(ruteCater.pencatatDefault, petugasCater.id))
+        .where(pWhere)
+        .orderBy(pelanggan.noUrutRute, pelanggan.nolg)
+        .limit(pageSize)
+        .offset(offset);
+
+      return {
+        rows: fallbackRows.map((row) => ({
+          id: row.id,
+          pelangganId: row.nolg,
+          nomorLangganan: row.nolg,
+          namaPelanggan: row.nama,
+          alamatPelanggan: row.alamat,
+          periode: Number(row.thbl),
+          standAwal: null,
+          standAkhir: null,
+          pemakaian: null,
+          kondisi: "BELUM_DICATAT",
+          status: "BELUM_DIBACA",
+          nomorMeter: row.noMeter,
+          pencatat: row.petugasId
+            ? {
+                id: row.petugasId,
+                namaLapangan: row.petugasNama ?? row.petugasId,
+              }
+            : null,
+          pelanggan: {
+            id: row.nolg,
+            nomorLangganan: row.nolg,
+            nama: row.nama,
+            alamat: row.alamat,
+            tarifGolongan: row.tarifKode ? { kodeAsli: row.tarifKode } : null,
+            rute: row.ruteKode ? { kode: row.ruteKode } : null,
+          },
+        })),
+        total: fallbackCount?.total ?? 0,
+      };
+    }
+
     const rows = await db
       .select({
         id: daftarCatat.id,
@@ -617,7 +700,11 @@ export class VerifikasiGridService {
         nama: pelanggan.nama,
         alamat: pelanggan.alamat,
         titikLokasi: pelanggan.titikLokasi,
-        stml: caterBacaMeter.stml,
+        stml: sql<string | null>`COALESCE(
+          ${caterBacaMeter.stml}::text,
+          (SELECT c2.stma::text FROM cater_baca_meter c2 WHERE c2.nolg = ${caterMandiriPelanggan.nolg} AND c2.thbl < ${caterMandiriPelanggan.thbl} ORDER BY c2.thbl DESC LIMIT 1),
+          (SELECT m.stand_pasang::text FROM water_meter_mutasi m WHERE m.nolg = ${caterMandiriPelanggan.nolg} ORDER BY m.created_at DESC LIMIT 1)
+        )`,
         stma: caterMandiriPelanggan.stma,
         pakaiM3: caterMandiriPelanggan.pakaiM3,
         fotoMeterUrl: caterMandiriPelanggan.fotoMeterUrl,
@@ -669,8 +756,8 @@ export class VerifikasiGridService {
         const stAwal = asNumber(row.stml);
         const stAkhir = asNumber(row.stma);
         const pemakaian =
-          stAwal != null && stAkhir != null
-            ? Math.max(0, stAkhir - stAwal)
+          stAwal != null && stAkhir != null && stAkhir >= stAwal
+            ? stAkhir - stAwal
             : asNumber(row.pakaiM3);
         return {
           id: row.id,
@@ -831,16 +918,24 @@ export class VerifikasiGridService {
   }
 
   async getWorkPeriods() {
-    const rows = await db
+    let rows = await db
       .select({
         periode: periodePenagihan.periode,
         status: periodePenagihan.status,
       })
       .from(periodePenagihan)
       .orderBy(desc(periodePenagihan.periode));
+
+    if (rows.length === 0) {
+      rows = [
+        { periode: '202611', status: 'BERJALAN' },
+        { periode: '202610', status: 'TERKUNCI' },
+      ];
+    }
+
     const open = rows.find((row) => row.status === "BERJALAN");
     return {
-      periodeKerja: open ? Number(open.periode) : null,
+      periodeKerja: open ? Number(open.periode) : Number(rows[0]!.periode),
       periode: rows.map((row) => ({
         periode: Number(row.periode),
         terkunci: row.status !== "BERJALAN",

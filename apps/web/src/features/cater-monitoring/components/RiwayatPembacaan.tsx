@@ -87,10 +87,9 @@ export function RiwayatPembacaan({
   } | null>(null);
   const [isCopied, setIsCopied] = React.useState(false);
 
-  // Jika ruteList tidak disediakan atau kosong, gunakan data contoh
+  // Hanya gunakan data rute riil dari backend. Jangan pernah fallback ke data contoh fiktif/mock.
   const activeList = React.useMemo(() => {
-    if (ruteList && ruteList.length > 0) return ruteList;
-    return contoh8RuteBaca;
+    return ruteList ?? [];
   }, [ruteList]);
 
   // Kalkulasi 4 angka ringkasan
