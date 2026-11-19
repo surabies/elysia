@@ -92,16 +92,16 @@ export function PemilihFoto({
                   }`}
                 />
 
-                {/* Petunjuk Ketuk untuk Perbesar di Sudut Kiri Bawah */}
-                <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-xs border border-white/20 shadow-xs">
-                  <ZoomIn className="size-3.5 text-blue-400" />
+                {/* Petunjuk Ketuk untuk Perbesar — Adaptif Tema Terang & Gelap */}
+                <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-full border border-border/80 bg-background/85 px-2.5 py-1 text-[11px] font-medium text-foreground shadow-xs backdrop-blur-xs transition-opacity duration-200 group-hover:bg-background/95 dark:border-white/20 dark:bg-black/75 dark:text-white">
+                  <ZoomIn className="size-3.5 text-blue-500 dark:text-blue-400" />
                   <span>Ketuk untuk perbesar</span>
                 </div>
               </AspectRatio>
             </DialogTrigger>
 
-            {/* Dialog Perbesar Foto (FotoZoom) yang Robust & Seamless seperti Verifikasi */}
-            <DialogContent className="max-w-[calc(100vw-1.5rem)] sm:max-w-4xl p-0 gap-0 overflow-hidden border border-white/15 bg-neutral-950 text-white shadow-2xl rounded-2xl [&_[data-slot=dialog-close]]:text-white [&_[data-slot=dialog-close]]:bg-black/60 [&_[data-slot=dialog-close]]:border [&_[data-slot=dialog-close]]:border-white/20 [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:hover:bg-white/20 [&_[data-slot=dialog-close]]:size-8 [&_[data-slot=dialog-close]]:top-3 [&_[data-slot=dialog-close]]:right-3 [&_[data-slot=dialog-close]]:z-30">
+            {/* Dialog Perbesar Foto (FotoZoom) yang Robust & Seamless (Support Tema Terang & Gelap) */}
+            <DialogContent className="max-w-[calc(100vw-1.5rem)] sm:max-w-4xl p-0 gap-0 overflow-hidden border border-border bg-background text-foreground shadow-2xl rounded-2xl [&_[data-slot=dialog-close]]:text-foreground [&_[data-slot=dialog-close]]:bg-background/80 [&_[data-slot=dialog-close]]:border [&_[data-slot=dialog-close]]:border-border [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:hover:bg-muted [&_[data-slot=dialog-close]]:size-8 [&_[data-slot=dialog-close]]:top-3 [&_[data-slot=dialog-close]]:right-3 [&_[data-slot=dialog-close]]:z-30 dark:border-white/15 dark:bg-neutral-950 dark:text-white dark:[&_[data-slot=dialog-close]]:text-white dark:[&_[data-slot=dialog-close]]:bg-black/60 dark:[&_[data-slot=dialog-close]]:border-white/20 dark:[&_[data-slot=dialog-close]]:hover:bg-white/20">
               <DialogTitle className="sr-only">{label}</DialogTitle>
               <DialogDescription className="sr-only">
                 Penampil foto interaktif dengan zoom, geser, dan putar. Tekan Esc untuk menutup.

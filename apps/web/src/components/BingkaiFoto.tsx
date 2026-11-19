@@ -143,7 +143,7 @@ export function FotoZoom({
       onPointerCancel={onPointerUp}
       onDoubleClick={onDoubleClick}
       className={cn(
-        "relative flex h-[70vh] sm:h-[80vh] w-full touch-none items-center justify-center overflow-hidden bg-neutral-950 outline-none select-none",
+        "relative flex h-[70vh] sm:h-[80vh] w-full touch-none items-center justify-center overflow-hidden bg-muted/20 dark:bg-neutral-950 outline-none select-none",
         skala > 1
           ? menyeret
             ? "cursor-grabbing"
@@ -172,9 +172,9 @@ export function FotoZoom({
         />
       )}
 
-      {/* Floating Toolbar Controls */}
+      {/* Floating Toolbar Controls — Mendukung Tema Terang & Gelap */}
       <div
-        className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/20 bg-neutral-900/90 px-2.5 py-1.5 shadow-2xl backdrop-blur-md z-20 text-white"
+        className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border/80 bg-background/90 px-2.5 py-1.5 shadow-2xl backdrop-blur-md z-20 text-foreground dark:border-white/15 dark:bg-neutral-900/90 dark:text-neutral-100"
         onPointerDown={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
       >
@@ -184,12 +184,12 @@ export function FotoZoom({
           disabled={skala <= SKALA_MIN}
           title="Perkecil (−)"
           aria-label="Perkecil (−)"
-          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 disabled:opacity-30 cursor-pointer transition-colors"
+          className="flex size-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-muted active:scale-95 disabled:opacity-30 cursor-pointer transition-colors dark:text-white/80 dark:hover:text-white dark:hover:bg-white/15"
         >
           <Minus className="size-3.5" />
         </button>
 
-        <span className="w-12 text-center font-mono text-xs font-semibold text-white/90 tabular-nums select-none">
+        <span className="w-12 text-center font-mono text-xs font-semibold text-foreground dark:text-white tabular-nums select-none">
           {Math.round(skala * 100)}%
         </span>
 
@@ -199,19 +199,19 @@ export function FotoZoom({
           disabled={skala >= SKALA_MAKS}
           title="Perbesar (+)"
           aria-label="Perbesar (+)"
-          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 disabled:opacity-30 cursor-pointer transition-colors"
+          className="flex size-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-muted active:scale-95 disabled:opacity-30 cursor-pointer transition-colors dark:text-white/80 dark:hover:text-white dark:hover:bg-white/15"
         >
           <Plus className="size-3.5" />
         </button>
 
-        <div className="mx-1 h-4 w-px bg-white/20" />
+        <div className="mx-1 h-4 w-px bg-border dark:bg-white/20" />
 
         <button
           type="button"
           onClick={() => setPutar((p) => p - 90)}
           title="Putar Kiri (Shift+R)"
           aria-label="Putar Kiri (Shift+R)"
-          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 cursor-pointer transition-colors"
+          className="flex size-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-muted active:scale-95 cursor-pointer transition-colors dark:text-white/80 dark:hover:text-white dark:hover:bg-white/15"
         >
           <RotateCcw className="size-3.5" />
         </button>
@@ -221,7 +221,7 @@ export function FotoZoom({
           onClick={() => setPutar((p) => p + 90)}
           title="Putar Kanan (R)"
           aria-label="Putar Kanan (R)"
-          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 cursor-pointer transition-colors"
+          className="flex size-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-muted active:scale-95 cursor-pointer transition-colors dark:text-white/80 dark:hover:text-white dark:hover:bg-white/15"
         >
           <RotateCw className="size-3.5" />
         </button>
@@ -231,7 +231,7 @@ export function FotoZoom({
           onClick={reset}
           title="Atur Ulang (0)"
           aria-label="Atur Ulang (0)"
-          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 cursor-pointer transition-colors"
+          className="flex size-7 items-center justify-center rounded-full text-foreground/80 hover:text-foreground hover:bg-muted active:scale-95 cursor-pointer transition-colors dark:text-white/80 dark:hover:text-white dark:hover:bg-white/15"
         >
           <RefreshCw className="size-3.5" />
         </button>
@@ -314,8 +314,8 @@ export function BingkaiFoto({
       <DialogTrigger className="block w-full cursor-zoom-in text-left">
         {bingkai}
       </DialogTrigger>
-      {/* sm:max-w-4xl: dialog foto responsif penuh yang kokoh dan seamless seperti verifikasi */}
-      <DialogContent className="max-w-[calc(100vw-1.5rem)] sm:max-w-4xl p-0 gap-0 overflow-hidden border border-white/15 bg-neutral-950 text-white shadow-2xl rounded-2xl [&_[data-slot=dialog-close]]:text-white [&_[data-slot=dialog-close]]:bg-black/60 [&_[data-slot=dialog-close]]:border [&_[data-slot=dialog-close]]:border-white/20 [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:hover:bg-white/20 [&_[data-slot=dialog-close]]:size-8 [&_[data-slot=dialog-close]]:top-3 [&_[data-slot=dialog-close]]:right-3 [&_[data-slot=dialog-close]]:z-30">
+      {/* sm:max-w-4xl: dialog foto responsif penuh yang kokoh dan seamless (support tema terang & gelap) */}
+      <DialogContent className="max-w-[calc(100vw-1.5rem)] sm:max-w-4xl p-0 gap-0 overflow-hidden border border-border bg-background text-foreground shadow-2xl rounded-2xl [&_[data-slot=dialog-close]]:text-foreground [&_[data-slot=dialog-close]]:bg-background/80 [&_[data-slot=dialog-close]]:border [&_[data-slot=dialog-close]]:border-border [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:hover:bg-muted [&_[data-slot=dialog-close]]:size-8 [&_[data-slot=dialog-close]]:top-3 [&_[data-slot=dialog-close]]:right-3 [&_[data-slot=dialog-close]]:z-30 dark:border-white/15 dark:bg-neutral-950 dark:text-white dark:[&_[data-slot=dialog-close]]:text-white dark:[&_[data-slot=dialog-close]]:bg-black/60 dark:[&_[data-slot=dialog-close]]:border-white/20 dark:[&_[data-slot=dialog-close]]:hover:bg-white/20">
         <DialogTitle className="sr-only">{alt}</DialogTitle>
         <DialogDescription className="sr-only">
           Penampil foto interaktif dengan zoom, geser, dan putar. Tekan Esc untuk menutup.
