@@ -792,6 +792,7 @@ export class VerifikasiGridService {
           pemakaianLalu: asNumber(row.caterPakaiLalu),
           kondisi: row.caterKondisi ?? "STAND_KONSUMEN",
           tanggalCatat: toIso(row.createdAt),
+          createdAt: toIso(row.createdAt),
           verifiedAt: toIso(row.verifiedAt),
           verifiedBy: row.verifiedBy ? { name: null } : null,
           verifiedByRole: null,

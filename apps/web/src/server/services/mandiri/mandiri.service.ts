@@ -18,6 +18,7 @@ import {
   pelanggan,
   rekeningDrd,
   waterMeterMutasi,
+  periodePenagihan,
 } from "@cater/db";
 import {
   periksaJendelaLaporMandiri,
@@ -71,7 +72,57 @@ export class MandiriService {
       throw new Error(jendela.pesan);
     }
 
-    // 2. Validasi Keberadaan Pelanggan
+    // Tentukan periode target (ambil periode aktif dari database jika tidak dispesifikasikan)
+    let targetThbl = thbl;
+    if (!targetThbl) {
+      const [periodeAktif] = await db
+        .select({ periode: periodePenagihan.periode })
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.status, "BERJALAN"))
+        .orderBy(desc(periodePenagihan.periode))
+        .limit(1);
+      targetThbl = periodeAktif?.periode ?? String(jendela.periode);
+    }
+
+    // 2. Validasi Pembatasan Cut-off Periode (Status TERKUNCI)
+    const [periodeRow] = await db
+      .select({ status: periodePenagihan.status })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, targetThbl));
+
+    if (periodeRow && periodeRow.status === "TERKUNCI") {
+      throw new Error(
+        `Pelaporan mandiri untuk periode ${targetThbl} telah ditutup (cut-off / terkunci). Laporan baru tidak dapat diterima lagi.`
+      );
+    }
+
+    // 3. Validasi Anti-Duplikasi: Pelanggan tidak boleh melapor 2x dalam satu periode yang sama
+    const [existing] = await db
+      .select({
+        id: caterMandiriPelanggan.id,
+        statusVerifikasi: caterMandiriPelanggan.statusVerifikasi,
+      })
+      .from(caterMandiriPelanggan)
+      .where(
+        and(
+          eq(caterMandiriPelanggan.nolg, nolg),
+          eq(caterMandiriPelanggan.thbl, targetThbl)
+        )
+      );
+
+    if (existing && existing.statusVerifikasi !== "REJECTED") {
+      const statusLabel =
+        existing.statusVerifikasi === "PENDING"
+          ? "Menunggu Verifikasi Petugas"
+          : existing.statusVerifikasi === "APPROVED"
+            ? "Sudah Disetujui"
+            : existing.statusVerifikasi;
+      throw new Error(
+        `Nomor langganan ${nolg} sudah melakukan pelaporan meter mandiri untuk periode ${targetThbl} (${statusLabel}). Anda tidak dapat mengirimkan laporan lebih dari 1 kali per periode.`
+      );
+    }
+
+    // 4. Validasi Keberadaan Pelanggan
     const [cust] = await db
       .select({ nolg: pelanggan.nolg, titikLokasi: pelanggan.titikLokasi })
       .from(pelanggan)
@@ -149,7 +200,7 @@ export class MandiriService {
           ? 0
           : 0;
 
-    const id = `mandiri-${thbl}-${nolg}`;
+    const id = existing ? existing.id : `mandiri-${targetThbl}-${nolg}`;
 
     // Standardisasi & Upload Cloudinary jika input adalah Base64 DataURL
     let processedFotoMeter = fotoMeterUrl;
@@ -163,7 +214,7 @@ export class MandiriService {
             modul: 'mandiri',
             jenis: 'stand',
             identifier: nolg,
-            thbl,
+            thbl: targetThbl,
           });
           processedFotoMeter = res.secureUrl;
         } catch (err) {
@@ -178,7 +229,7 @@ export class MandiriService {
             modul: 'mandiri',
             jenis: 'rumah',
             identifier: nolg,
-            thbl,
+            thbl: targetThbl,
           });
           processedFotoRumah = res.secureUrl;
         } catch (err) {
@@ -187,44 +238,50 @@ export class MandiriService {
       }
     }
 
-    await db
-      .insert(caterMandiriPelanggan)
-      .values({
-        id,
-        thbl,
-        nolg,
-        stma: String(stma),
-        pakaiM3: String(estimasiPakaiM3),
-        fotoMeterUrl: processedFotoMeter,
-        fotoRumahUrl: processedFotoRumah,
-        lokasiGps: longitude && latitude ? { x: longitude, y: latitude } : null,
-        jarakDariRumahMeter: String(jarakMeter),
-        isLokasiValid,
-        channel,
-        ipAddress,
-        userAgent,
-        statusVerifikasi: "PENDING",
-      })
-      .onConflictDoUpdate({
-        target: caterMandiriPelanggan.id,
-        set: {
+    if (existing) {
+      // Perbarui laporan yang sebelumnya ditolak menjadi PENDING kembali dengan revisi foto/angka baru
+      await db
+        .update(caterMandiriPelanggan)
+        .set({
           stma: String(stma),
           pakaiM3: String(estimasiPakaiM3),
           fotoMeterUrl: processedFotoMeter,
           fotoRumahUrl: processedFotoRumah,
-          lokasiGps:
-            longitude && latitude ? { x: longitude, y: latitude } : null,
+          lokasiGps: longitude && latitude ? { x: longitude, y: latitude } : null,
           jarakDariRumahMeter: String(jarakMeter),
           isLokasiValid,
           channel,
+          ipAddress,
+          userAgent,
           statusVerifikasi: "PENDING",
+          alasanPenolakan: null,
           updatedAt: new Date(),
-        },
-      });
+        })
+        .where(eq(caterMandiriPelanggan.id, id));
+    } else {
+      await db
+        .insert(caterMandiriPelanggan)
+        .values({
+          id,
+          thbl: targetThbl,
+          nolg,
+          stma: String(stma),
+          pakaiM3: String(estimasiPakaiM3),
+          fotoMeterUrl: processedFotoMeter,
+          fotoRumahUrl: processedFotoRumah,
+          lokasiGps: longitude && latitude ? { x: longitude, y: latitude } : null,
+          jarakDariRumahMeter: String(jarakMeter),
+          isLokasiValid,
+          channel,
+          ipAddress,
+          userAgent,
+          statusVerifikasi: "PENDING",
+        });
+    }
 
     return {
       id,
-      thbl,
+      thbl: targetThbl,
       nolg,
       stma,
       pakaiM3: estimasiPakaiM3,

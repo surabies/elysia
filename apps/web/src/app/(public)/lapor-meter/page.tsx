@@ -1,5 +1,5 @@
-import type { Metadata } from "next"
-import { CalendarClock, Upload, Camera, CheckCircle2 } from "lucide-react"
+import type { Metadata } from "next";
+import { CalendarClock, Upload, Camera, CheckCircle2 } from "lucide-react";
 import {
   LaporMeterForm,
   CekLaporanMeterForm,
@@ -10,13 +10,13 @@ import {
   PillTabsList,
   PillTabsTrigger,
   PillTabsContent,
-} from "@/features/public"
+} from "@/features/public";
 
 export const metadata: Metadata = {
   title: "Lapor Stand Meter Mandiri",
   description:
     "Laporkan sendiri angka meter air Anda ke PERUMDA Tirtawening Kota Bandung secara akurat, transparan, dan terverifikasi.",
-}
+};
 
 const LANGKAH = [
   {
@@ -34,17 +34,17 @@ const LANGKAH = [
     detail:
       "Laporan dicek oleh petugas verifikasi sebagai dasar penerbitan rekening bulan berjalan.",
   },
-] as const
+] as const;
 
 export default async function LaporMeterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ nomor?: string; tab?: string; nosamb?: string }>
+  searchParams: Promise<{ nomor?: string; tab?: string; nosamb?: string }>;
 }) {
-  const { nomor: rawNomor, tab, nosamb } = await searchParams
-  const raw = (rawNomor ?? nosamb ?? "").replace(/\D/g, "")
-  const nomor = raw.length === 11 ? raw : (raw || undefined)
-  const tabAwal = tab === "cek" ? "cek" : "lapor"
+  const { nomor: rawNomor, tab, nosamb } = await searchParams;
+  const raw = (rawNomor ?? nosamb ?? "").replace(/\D/g, "");
+  const nomor = raw.length === 11 ? raw : raw || undefined;
+  const tabAwal = tab === "cek" ? "cek" : "lapor";
 
   return (
     <HalamanPublik
@@ -56,7 +56,9 @@ export default async function LaporMeterPage({
           <AsideBlok label="Panduan Membaca Angka Meter">
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <p className="text-muted-foreground">Meter analog memiliki 2 warna angka:</p>
+                <p className="text-muted-foreground">
+                  Meter analog memiliki 2 warna angka:
+                </p>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
                   Diagram Contoh
                 </span>
@@ -70,28 +72,48 @@ export default async function LaporMeterPage({
                 </div>
                 <div className="flex items-center justify-center gap-1 font-mono text-lg font-bold">
                   {/* Angka Hitam */}
-                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">0</span>
-                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">1</span>
-                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">4</span>
-                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">2</span>
+                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">
+                    0
+                  </span>
+                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">
+                    1
+                  </span>
+                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">
+                    4
+                  </span>
+                  <span className="flex size-7 items-center justify-center rounded bg-neutral-800 text-white shadow-xs">
+                    2
+                  </span>
                   <span className="text-neutral-500 font-normal">,</span>
                   {/* Angka Merah */}
-                  <span className="flex size-7 items-center justify-center rounded bg-red-950 text-red-400 border border-red-800/50">8</span>
-                  <span className="flex size-7 items-center justify-center rounded bg-red-950 text-red-400 border border-red-800/50">5</span>
+                  <span className="flex size-7 items-center justify-center rounded bg-red-950 text-red-400 border border-red-800/50">
+                    8
+                  </span>
+                  <span className="flex size-7 items-center justify-center rounded bg-red-950 text-red-400 border border-red-800/50">
+                    5
+                  </span>
                 </div>
                 <p className="text-center text-[10px] font-mono text-neutral-400 mt-2">
-                  Contoh stand terbaca: <strong className="text-white">0142</strong> m³
+                  Contoh stand terbaca:{" "}
+                  <strong className="text-white">0142</strong> m³
                 </p>
               </div>
 
               <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 p-2.5 text-[11px] text-amber-800 dark:text-amber-300">
-                <strong>Catatan Pengisian:</strong> Masukkan angka stand meter Anda pada formulir di kartu utama, bukan pada diagram contoh di atas.
+                <strong>Catatan Pengisian:</strong> Masukkan angka stand meter
+                Anda pada formulir di kartu utama, bukan pada diagram contoh di
+                atas.
               </div>
 
               <ul className="space-y-1.5 text-xs text-muted-foreground pt-0.5">
                 <li className="flex items-start gap-1.5">
                   <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong className="text-foreground">Laporkan angka hitam</strong> saja (satuan meter kubik).</span>
+                  <span>
+                    <strong className="text-foreground">
+                      Laporkan angka hitam
+                    </strong>{" "}
+                    saja (satuan meter kubik).
+                  </span>
                 </li>
                 <li className="flex items-start gap-1.5">
                   <span className="size-1.5 rounded-full bg-border shrink-0 mt-1.5 ml-1" />
@@ -111,9 +133,16 @@ export default async function LaporMeterPage({
                 <Camera className="size-4" />
               </div>
               <ul className="space-y-1.5 text-xs text-muted-foreground">
-                <li>• Seluruh angka pada dial meter terbaca jelas tanpa blur.</li>
-                <li>• Kaca meteran bersih dari lumut, air tergenang, atau debu.</li>
-                <li>• Format JPG, PNG, atau WEBP (dikompresi otomatis secara aman).</li>
+                <li>
+                  • Seluruh angka pada dial meter terbaca jelas tanpa blur.
+                </li>
+                <li>
+                  • Kaca meteran bersih dari lumut, air tergenang, atau debu.
+                </li>
+                <li>
+                  • Format JPG, PNG, atau WEBP (dikompresi otomatis secara
+                  aman).
+                </li>
               </ul>
             </div>
           </AsideBlok>
@@ -129,7 +158,7 @@ export default async function LaporMeterPage({
             </PillTabsTrigger>
             <PillTabsTrigger value="cek">
               <CalendarClock className="size-4 shrink-0 text-muted-foreground" />
-              <span>Cek Status Laporan</span>
+              <span>Cek Laporan</span>
             </PillTabsTrigger>
           </PillTabsList>
 
@@ -143,5 +172,5 @@ export default async function LaporMeterPage({
         </PillTabs>
       </div>
     </HalamanPublik>
-  )
+  );
 }

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select"
 import {
   cariPelanggan,
+  ambilJendelaLaporMandiri,
   ambilPeriodeUjiLaporMandiri,
   type PeriodeUjiLaporMeter,
   ApiError,
@@ -34,6 +35,12 @@ import {
 import { formatPeriode } from "../lib/format"
 import { InputNomorLangganan } from "./MasukanNomorLangganan"
 import { KartuLaporanMeter } from "./KartuLaporanMeter"
+
+function getPeriodeDefault(): string {
+  const sekarang = new Date()
+  const wib = new Date(sekarang.getTime() + 7 * 60 * 60 * 1000)
+  return `${wib.getUTCFullYear()}${String(wib.getUTCMonth() + 1).padStart(2, "0")}`
+}
 
 export function CekLaporanMeterForm({
   nomorAwal,
@@ -46,11 +53,18 @@ export function CekLaporanMeterForm({
   const [error, setError] = React.useState<string | null>(null)
   const [periodeUji, setPeriodeUji] =
     React.useState<PeriodeUjiLaporMeter | null>(null)
-  const [pilihanPeriode, setPilihanPeriode] = React.useState("202601")
+  const [pilihanPeriode, setPilihanPeriode] = React.useState(getPeriodeDefault)
   const pencarianTerbaru = React.useRef(0)
 
   React.useEffect(() => {
     let batal = false
+    ambilJendelaLaporMandiri()
+      .then((j) => {
+        if (!batal && j?.periode) {
+          setPilihanPeriode(String(j.periode))
+        }
+      })
+      .catch(() => {})
     ambilPeriodeUjiLaporMandiri()
       .then((data) => {
         if (!batal) {
@@ -72,7 +86,7 @@ export function CekLaporanMeterForm({
     setPratinjau(null)
     setPending(true)
     try {
-      const targetPeriode = periode ?? (Number(pilihanPeriode) || 202601)
+      const targetPeriode = periode ?? (Number(pilihanPeriode) || Number(getPeriodeDefault()))
       const hasil = await cariPelanggan(nomorLangganan, targetPeriode)
       if (id === pencarianTerbaru.current) setPratinjau(hasil)
     } catch (err) {
@@ -90,7 +104,7 @@ export function CekLaporanMeterForm({
   function ubahPeriode(nilai: string) {
     setPilihanPeriode(nilai)
     if (nomor.length === 11) {
-      void cari(nomor, Number(nilai) || 202601)
+      void cari(nomor, Number(nilai) || Number(getPeriodeDefault()))
     }
   }
 
@@ -101,7 +115,7 @@ export function CekLaporanMeterForm({
     // Sengaja: mengisi HASIL pencarian dari ?nomor= URL SEKALI saat
     // taut-langsung dibuka, pola sama dengan lacak-tiket-form.tsx.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (nomorAwal?.trim()) void cari(nomorAwal.trim(), Number(pilihanPeriode) || 202601)
+    if (nomorAwal?.trim()) void cari(nomorAwal.trim(), Number(pilihanPeriode) || Number(getPeriodeDefault()))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -110,7 +124,7 @@ export function CekLaporanMeterForm({
   function onNomorChange(digitBaru: string) {
     setNomor(digitBaru)
     if (digitBaru.length === 11) {
-      cari(digitBaru, Number(pilihanPeriode) || 202601)
+      cari(digitBaru, Number(pilihanPeriode) || Number(getPeriodeDefault()))
     } else {
       pencarianTerbaru.current++ // batalkan pencarian yang sedang berjalan
       setPratinjau(null)

@@ -161,7 +161,10 @@ export async function cariPelanggan(
   nomorLangganan: string,
   _periodeUji?: number
 ): Promise<PelangganPratinjau> {
-  const periodeAktif = _periodeUji ?? 202601
+  const sekarang = new Date()
+  const wib = new Date(sekarang.getTime() + 7 * 60 * 60 * 1000)
+  const periodeDefault = wib.getUTCFullYear() * 100 + (wib.getUTCMonth() + 1)
+  const periodeAktif = _periodeUji ?? periodeDefault
   const res = await fetch(`/api/publik/tagihan/${encodeURIComponent(nomorLangganan)}`)
   const json = await tangani<any>(res)
 
@@ -403,6 +406,17 @@ export interface PeriodeUjiLaporMeter {
 }
 
 export async function ambilJendelaLaporMandiri(): Promise<JendelaLaporMandiri> {
+  try {
+    const res = await fetch("/api/publik/lapor-meter/jadwal")
+    if (res.ok) {
+      const json = await res.json()
+      if (json.success && json.data) {
+        return json.data
+      }
+    }
+  } catch {
+    // fallback ke kalkulasi client jika server offline
+  }
   const { jendelaLaporMandiri } = await import("@/lib/domain/lapor-mandiri")
   return jendelaLaporMandiri()
 }
@@ -433,10 +447,13 @@ export async function ambilPeriodeUjiLaporMandiri(): Promise<PeriodeUjiLaporMete
 }
 
 export async function laporMeter(form: FormData): Promise<HasilLaporMeter> {
+  const sekarang = new Date()
+  const wib = new Date(sekarang.getTime() + 7 * 60 * 60 * 1000)
+  const periodeDefault = `${wib.getUTCFullYear()}${String(wib.getUTCMonth() + 1).padStart(2, "0")}`
   const thblInput = String(
     form.get("thbl") ||
     form.get("periodeUji") ||
-    "202601"
+    periodeDefault
   )
   const nolgInput = String(form.get("nomorLangganan") || form.get("nolg") || "")
   const standInput = Number(

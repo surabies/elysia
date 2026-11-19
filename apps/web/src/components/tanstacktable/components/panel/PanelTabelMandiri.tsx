@@ -67,6 +67,7 @@ interface BarisApi {
   standDilaporkan?: number;
   pemakaianLalu?: number | null;
   kondisi?: string | null;
+  tanggalCatat?: string | null;
   createdAt?: string;
   verifiedAt?: string | null;
   pembacaanId?: string | null;
@@ -117,11 +118,11 @@ function petaBaris(r: BarisApi): BarisMandiriTabel {
     pemakaianLalu: r.pemakaianLalu ?? r.pembacaan?.pemakaianLalu ?? null,
     persentase: null,
     kondisi: r.kondisi ?? r.pembacaan?.kondisi ?? "STAND_KONSUMEN",
-    tanggalCatat: r.createdAt ?? null,
-    verif3At: resmi ? (r.verifiedAt ?? r.createdAt ?? "ok") : null,
+    tanggalCatat: r.tanggalCatat ?? r.createdAt ?? null,
+    verif3At: resmi ? (r.verifiedAt ?? r.tanggalCatat ?? r.createdAt ?? "ok") : null,
     laporanMandiriTerverifikasi: terverifikasi && !resmi,
     verifiedAt:
-      r.status === "DITOLAK" ? (r.verifiedAt ?? r.createdAt ?? "ok") : null,
+      r.status === "DITOLAK" ? (r.verifiedAt ?? r.tanggalCatat ?? r.createdAt ?? "ok") : null,
     isVerified: terverifikasi,
     pencatat: { id: "konsumen", namaLapangan: "Konsumen" },
     pelanggan: r.pelanggan,

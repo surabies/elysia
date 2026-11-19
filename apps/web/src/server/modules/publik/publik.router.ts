@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { eq, and } from 'drizzle-orm';
-import { db, caterMandiriPelanggan, golonganTarif, tarifBlok } from '@cater/db';
+import { eq, and, desc } from 'drizzle-orm';
+import { db, caterMandiriPelanggan, golonganTarif, tarifBlok, periodePenagihan } from '@cater/db';
+import { periksaJendelaLaporMandiri } from '../../domain/mandiri/mandiri.engine';
 import {
   hitungRincianHargaAir,
   hitungTotalTagihan,
@@ -238,11 +239,61 @@ const publikRoutes = new Elysia()
     }
   )
 
+  // 8b. Jendela & Jadwal Pelaporan Mandiri Resmi (WIB & Periode Aktif)
+  .get('/lapor-meter/jadwal', async () => {
+    const [periodeAktif] = await db
+      .select({
+        periode: periodePenagihan.periode,
+        status: periodePenagihan.status,
+      })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.status, 'BERJALAN'))
+      .orderBy(desc(periodePenagihan.periode))
+      .limit(1);
+
+    const sekarang = new Date();
+    const wib = new Date(sekarang.getTime() + 7 * 60 * 60 * 1000);
+    const defaultPeriodeNum = wib.getUTCFullYear() * 100 + (wib.getUTCMonth() + 1);
+
+    const activeThbl = periodeAktif?.periode ?? String(defaultPeriodeNum);
+    const isLocked = !periodeAktif || periodeAktif.status === 'TERKUNCI';
+
+    const jendela = periksaJendelaLaporMandiri(sekarang);
+    const boleh = jendela.boleh && !isLocked;
+
+    return {
+      success: true,
+      data: {
+        ...jendela,
+        boleh,
+        periode: Number(activeThbl),
+        thbl: activeThbl,
+        isCutOff: isLocked || !jendela.boleh,
+        pesan: isLocked
+          ? `Pelaporan meter mandiri periode ${activeThbl} telah ditutup (Cut-off penagihan).`
+          : jendela.pesan,
+      },
+    };
+  })
+
   // 9. Cek Status Laporan Mandiri Warga
   .get(
     '/lapor-meter/status/:nolg',
     async ({ params: { nolg }, query }) => {
-      const thbl = query.thbl ?? '202601';
+      let thbl = query.thbl;
+      if (!thbl) {
+        const [periodeAktif] = await db
+          .select({ periode: periodePenagihan.periode })
+          .from(periodePenagihan)
+          .where(eq(periodePenagihan.status, 'BERJALAN'))
+          .orderBy(desc(periodePenagihan.periode))
+          .limit(1);
+        const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+        thbl =
+          periodeAktif?.periode ??
+          `${wib.getUTCFullYear()}${String(wib.getUTCMonth() + 1).padStart(2, '0')}`;
+      }
+
       const [laporan] = await db
         .select()
         .from(caterMandiriPelanggan)
@@ -252,6 +303,7 @@ const publikRoutes = new Elysia()
             eq(caterMandiriPelanggan.thbl, thbl)
           )
         )
+        .orderBy(desc(caterMandiriPelanggan.createdAt))
         .limit(1);
 
       return {

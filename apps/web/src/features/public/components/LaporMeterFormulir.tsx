@@ -9,6 +9,7 @@
 // stand meter/foto/pelapor baru ditampilkan. TIDAK ada field nama pelanggan
 // di sini — lihat catatan keputusan produk di server/modules/publik/verifikasi.ts.
 import * as React from "react"
+import Link from "next/link"
 import {
   CheckCircle2,
   AlertCircle,
@@ -37,11 +38,18 @@ import {
   type PelangganPratinjau,
   type PeriodeUjiLaporMeter,
 } from "../lib/api"
-import { formatPeriode } from "../lib/format"
+import { formatPeriode, formatWaktu, statusLaporanMandiriWarga } from "../lib/format"
+import { cn } from "@/lib/utils"
 import { PemilihFoto } from "./PemilihFoto"
 import { LaporMeterSukses, type HasilLaporanTampilan } from "./LaporMeterSukses"
 import { InputNomorLangganan } from "./MasukanNomorLangganan"
 import { TombolUtama } from "./TombolUtama"
+
+function getPeriodeDefault(): string {
+  const sekarang = new Date()
+  const wib = new Date(sekarang.getTime() + 7 * 60 * 60 * 1000)
+  return `${wib.getUTCFullYear()}${String(wib.getUTCMonth() + 1).padStart(2, "0")}`
+}
 
 export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
   const [jendela, setJendela] = React.useState<JendelaLaporMandiri | null>(null)
@@ -52,7 +60,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
   const [periodeUjiError, setPeriodeUjiError] = React.useState<string | null>(
     null
   )
-  const [pilihanPeriode, setPilihanPeriode] = React.useState("202601")
+  const [pilihanPeriode, setPilihanPeriode] = React.useState(getPeriodeDefault)
   const [nomorLangganan, setNomorLangganan] = React.useState(nomorAwal ?? "")
   const [pratinjau, setPratinjau] = React.useState<PelangganPratinjau | null>(
     null
@@ -77,7 +85,11 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
     setJendelaPending(true)
     setJendelaError(null)
     try {
-      setJendela(await ambilJendelaLaporMandiri())
+      const dataJendela = await ambilJendelaLaporMandiri()
+      setJendela(dataJendela)
+      if (dataJendela?.periode) {
+        setPilihanPeriode((prev) => (prev === "202601" ? String(dataJendela.periode) : prev))
+      }
     } catch (err) {
       setJendelaError(
         err instanceof ApiError
@@ -126,7 +138,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
   }, [fotoPreviewUrl])
 
   const periodeOverride = periodeUji?.aktif
-    ? Number(pilihanPeriode) || 202601
+    ? Number(pilihanPeriode) || Number(getPeriodeDefault())
     : undefined
 
   const cari = React.useCallback(async (nomor: string, periode?: number) => {
@@ -135,7 +147,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
     setPratinjau(null)
     setCariPending(true)
     try {
-      const targetPeriode = periode ?? (Number(pilihanPeriode) || 202601)
+      const targetPeriode = periode ?? (Number(pilihanPeriode) || Number(getPeriodeDefault()))
       const hasil = await cariPelanggan(nomor, targetPeriode)
       if (id === pencarianTerbaru.current) setPratinjau(hasil)
     } catch (err) {
@@ -162,7 +174,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
   function ubahPeriode(nilai: string) {
     setPilihanPeriode(nilai)
     if (nomorLangganan.length === 11) {
-      void cari(nomorLangganan, Number(nilai) || 202601)
+      void cari(nomorLangganan, Number(nilai) || Number(getPeriodeDefault()))
     }
   }
 
@@ -174,7 +186,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
     const digits = value.replace(/\D/g, "").slice(0, 11)
     setNomorLangganan(digits)
     if (digits.length === 11) {
-      cari(digits, Number(pilihanPeriode) || 202601)
+      cari(digits, Number(pilihanPeriode) || Number(getPeriodeDefault()))
     } else {
       pencarianTerbaru.current++ // batalkan pencarian yang sedang berjalan
       setPratinjau(null)
@@ -212,7 +224,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
     setKirimError(null)
     setKirimPending(true)
     try {
-      const targetPeriode = Number(pilihanPeriode) || 202601
+      const targetPeriode = Number(pilihanPeriode) || Number(getPeriodeDefault())
       const form = new FormData()
       form.set("nomorLangganan", pratinjau.nomorLangganan)
       form.set("standDilaporkan", standInput)
@@ -477,17 +489,96 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
         )}
 
         {pratinjau?.sudahLaporBulanIni && !perluKirimUlang && (
-          <div className="mt-4 rounded-lg bg-amber-500/10 px-3 py-2.5">
-            <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-              Laporan periode {formatPeriode(pratinjau.periodeBerjalan)} sudah
-              ada (status: {pratinjau.statusLaporanBulanIni}). Satu laporan per
-              bulan.
-            </p>
+          <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/5 p-4 sm:p-5 dark:border-blue-500/30 dark:bg-blue-500/10 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 dark:text-sky-400">
+                <CheckCircle2 className="size-5" />
+              </div>
+              <div className="space-y-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="text-sm sm:text-base font-bold text-foreground">
+                    Laporan Periode {formatPeriode(pratinjau.periodeBerjalan)} Sudah Diterima
+                  </h4>
+                  {(() => {
+                    const statusInfo = statusLaporanMandiriWarga(
+                      pratinjau.statusLaporanBulanIni ?? "PENDING"
+                    )
+                    return (
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold",
+                          statusInfo.badgeClass
+                        )}
+                      >
+                        <span className={cn("size-1.5 rounded-full", statusInfo.dotClass)} />
+                        {statusInfo.label}
+                      </span>
+                    )
+                  })()}
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Laporan angka meter mandiri untuk sambungan <strong>{pratinjau.nomorLangganan}</strong> ({pratinjau.nama}) telah berhasil dicatat oleh sistem. Pelanggan tidak dapat mengirimkan laporan lebih dari 1 (satu) kali pada periode yang sama.
+                </p>
+              </div>
+            </div>
+
+            {pratinjau.laporanBulanIni && (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 rounded-xl border border-border bg-card/70 p-3 text-xs">
+                <div>
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                    Stand Dilaporkan
+                  </p>
+                  <p className="mt-0.5 font-mono text-sm font-bold text-foreground">
+                    {pratinjau.laporanBulanIni.standDilaporkan.toLocaleString("id-ID")}{" "}
+                    <span className="text-[11px] font-normal text-muted-foreground">m³</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                    Waktu Pengiriman
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-foreground">
+                    {formatWaktu(pratinjau.laporanBulanIni.createdAt)} WIB
+                  </p>
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                    Status Verifikasi
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-foreground">
+                    {pratinjau.statusLaporanBulanIni === "APPROVED"
+                      ? "Disahkan Petugas"
+                      : "Antrean Verifikasi"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              <Button
+                asChild
+                size="sm"
+                className="rounded-xl text-xs font-semibold h-9"
+              >
+                <Link href={`/lapor-meter?tab=cek&nomor=${encodeURIComponent(pratinjau.nomorLangganan)}`}>
+                  Cek Status Laporan Lengkap
+                </Link>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl text-xs h-9"
+                onClick={reset}
+              >
+                Lapor untuk Nomor Sambungan Lain
+              </Button>
+            </div>
           </div>
         )}
       </div>
 
-      {pratinjau && (
+      {pratinjau && (!pratinjau.sudahLaporBulanIni || perluKirimUlang) && (
         <>
           <div className="space-y-1.5">
             <Label htmlFor="standDilaporkan">Angka stand meter (m³)</Label>
@@ -572,7 +663,7 @@ export function LaporMeterForm({ nomorAwal }: { nomorAwal?: string } = {}) {
           menunggu input. `kirimPending` BUKAN alasan itu (permintaan sedang
           berjalan, tombolnya akan bisa ditekan lagi) — cincinnya tetap ada,
           cuma isinya berubah jadi spinner. */}
-      {pratinjau && (
+      {pratinjau && (!pratinjau.sudahLaporBulanIni || perluKirimUlang) && (
         <TombolUtama
           onClick={kirim}
           disabled={kirimPending}

@@ -1,37 +1,37 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
   Clock3,
   ImageIcon,
-} from "@/components/ui/hugeicons-compat"
-import { BingkaiFoto } from "@/components/BingkaiFoto"
-import { Button } from "@/components/ui/button"
-import { TombolUtama } from "./TombolUtama"
-import { statusLaporanMandiriWarga, formatWaktu } from "../lib/format"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/hugeicons-compat";
+import { BingkaiFoto } from "@/components/BingkaiFoto";
+import { Button } from "@/components/ui/button";
+import { TombolUtama } from "./TombolUtama";
+import { statusLaporanMandiriWarga, formatWaktu } from "../lib/format";
+import { cn } from "@/lib/utils";
 
 export interface HasilLaporanTampilan {
-  nomorLangganan: string
-  nama: string
-  periodeLabel: string
-  stand: number
-  fotoPreviewUrl: string
-  status: string
-  createdAt: string
-  pesan: string
+  nomorLangganan: string;
+  nama: string;
+  periodeLabel: string;
+  stand: number;
+  fotoPreviewUrl: string;
+  status: string;
+  createdAt: string;
+  pesan: string;
 }
 
 export function LaporMeterSukses({
   hasil,
   onReset,
 }: {
-  hasil: HasilLaporanTampilan
-  onReset: () => void
+  hasil: HasilLaporanTampilan;
+  onReset: () => void;
 }) {
-  const status = statusLaporanMandiriWarga(hasil.status)
+  const status = statusLaporanMandiriWarga(hasil.status);
 
   return (
     <div className="space-y-6">
@@ -59,7 +59,7 @@ export function LaporMeterSukses({
         <span
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-xs font-semibold shadow-2xs",
-            status.badgeClass
+            status.badgeClass,
           )}
         >
           <span className={cn("size-2 rounded-full", status.dotClass)} />
@@ -78,7 +78,11 @@ export function LaporMeterSukses({
           {[
             { label: "Nama Pelanggan", value: hasil.nama, mono: false },
             { label: "No. Langganan", value: hasil.nomorLangganan, mono: true },
-            { label: "Periode Tagihan", value: hasil.periodeLabel, mono: false },
+            {
+              label: "Periode Tagihan",
+              value: hasil.periodeLabel,
+              mono: false,
+            },
             {
               label: "Stand Dilaporkan",
               value: `${hasil.stand.toLocaleString("id-ID")} m³`,
@@ -95,7 +99,8 @@ export function LaporMeterSukses({
                 className={cn(
                   "text-foreground text-right font-medium",
                   mono && "font-mono",
-                  highlight && "text-base sm:text-lg font-bold text-blue-600 dark:text-sky-400 font-mono"
+                  highlight &&
+                    "text-base sm:text-lg font-bold text-blue-600 dark:text-sky-400 font-mono",
                 )}
               >
                 {value}
@@ -126,8 +131,9 @@ export function LaporMeterSukses({
       <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:text-amber-300">
         <Clock3 className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
         <p>
-          Petugas verifikator akan memeriksa foto sebelum angka ini disahkan menjadi
-          dasar rekening tagihan. Anda dapat memantau statusnya kapan saja lewat tab{" "}
+          Petugas verifikator akan memeriksa foto sebelum angka ini disahkan
+          menjadi dasar rekening tagihan. Anda dapat memantau statusnya kapan
+          saja lewat tab{" "}
           <strong className="text-foreground">Cek Status Laporan</strong>.
         </p>
       </div>
@@ -135,7 +141,11 @@ export function LaporMeterSukses({
       {/* Mobile-Friendly CTAs */}
       <div className="flex flex-col gap-2.5 sm:flex-row">
         <div className="min-w-0 flex-1">
-          <TombolUtama asChild size="lg" className="w-full font-semibold rounded-xl min-h-[44px]">
+          <TombolUtama
+            asChild
+            size="lg"
+            className="w-full font-semibold rounded-xl min-h-[44px]"
+          >
             <Link href={`/lapor-meter?tab=cek&nomor=${hasil.nomorLangganan}`}>
               <span>Cek Status Laporan Saya</span>
               <ArrowRight className="size-4" />
@@ -155,5 +165,5 @@ export function LaporMeterSukses({
         </div>
       </div>
     </div>
-  )
+  );
 }

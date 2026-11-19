@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { eq, and } from 'drizzle-orm';
-import { db, caterMandiriPelanggan } from '@cater/db';
+import { eq, and, desc } from 'drizzle-orm';
+import { db, caterMandiriPelanggan, periodePenagihan } from '@cater/db';
 import { authPlugin } from '../../plugins/auth';
 import { mandiriService } from '../../services/mandiri/mandiri.service';
 import { submitMandiriPublicBodySchema, verifikasiMandiriBodySchema } from './mandiri.schema';
@@ -33,7 +33,20 @@ export const mandiriRouter = new Elysia({ prefix: '/cater/mandiri' })
   .get(
     '/public/status/:nolg',
     async ({ params: { nolg }, query }) => {
-      const thbl = query.thbl ?? '202601';
+      let thbl = query.thbl;
+      if (!thbl) {
+        const [periodeAktif] = await db
+          .select({ periode: periodePenagihan.periode })
+          .from(periodePenagihan)
+          .where(eq(periodePenagihan.status, 'BERJALAN'))
+          .orderBy(desc(periodePenagihan.periode))
+          .limit(1);
+        const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+        thbl =
+          periodeAktif?.periode ??
+          `${wib.getUTCFullYear()}${String(wib.getUTCMonth() + 1).padStart(2, '0')}`;
+      }
+
       const [laporan] = await db
         .select()
         .from(caterMandiriPelanggan)
@@ -43,6 +56,7 @@ export const mandiriRouter = new Elysia({ prefix: '/cater/mandiri' })
             eq(caterMandiriPelanggan.thbl, thbl)
           )
         )
+        .orderBy(desc(caterMandiriPelanggan.createdAt))
         .limit(1);
 
       return {
