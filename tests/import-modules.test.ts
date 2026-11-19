@@ -56,6 +56,21 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
     expect(parsed[0].longitude).toBe(107.619123);
   });
 
+  test("2b. Parse official PDAM lapdatameter CSV format automatically", () => {
+    const lapDataCsv = `"No Pel";Nama;Alamat;Periode;"St AWAL";"St Akhir";"St Akhir Catat";Pakai;"Pakai Lau";persentase;Trf;Kd_kel;Nm_Kel;kd_petugas;kd_wm;Wil;Rute;"Zona Wil";"Kd Zonasi";"Nama Zonasi";Kecamatan;Kelurahan;tgl_catat;tgl_upload;"Nama Petugas"
+"\t00002801251";"INA GINARSIH";"SURYALAYA BARAT I NO.2";202601;4;4;0;10;10;0;2A4;H;"TIDAK DIPAKAI";OMAY;14000564;S;KC304;C5;B34;"ST SURYALAYA";LENGKONG;CIJAGRA;2026-01-01;2026-01-06;OMAY`;
+
+    const parsed = importDataService.parsePencatatanCsv(lapDataCsv);
+    expect(parsed.length).toBe(1);
+    expect(parsed[0].thbl).toBe("202601");
+    expect(parsed[0].nolg).toBe("00002801251");
+    expect(parsed[0].stml).toBe(4);
+    expect(parsed[0].stma).toBe(4);
+    expect(parsed[0].pakaiM3).toBe(10);
+    expect(parsed[0].petugasId).toBe("OMAY");
+    expect(parsed[0].ruteKode).toBe("KC304");
+  });
+
   test("3. Parse PBPK.csv accurately extracts all 26 official PDAM PB and PK rows", () => {
     expect(fs.existsSync(pbpkCsvPath)).toBe(true);
     const csvContent = fs.readFileSync(pbpkCsvPath, "utf-8");
@@ -84,7 +99,7 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
     expect(pkCount).toBe(4);
   });
 
-  test("4. GET /api/import/sample/pbpk returns parsed rows from packages/db/data/jan/PBPK.csv", async () => {
+  test("4. GET /api/import/sample/pbpk returns parsed rows from packages/db/data/raw/PBPK.csv", async () => {
     const res = await app.handle(
       new Request("http://localhost/api/import/sample/pbpk")
     );

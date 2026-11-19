@@ -327,9 +327,10 @@ export class ImportDataService {
   }
 
   /**
-   * Helper: Parser Format Baku CSV Data Pencatatan Mobile
-   * Header standar:
-   * thbl;nolg;stml;stma;pakai_m3;tgl_catat;petugas_id;rute_kode;kondisi;latitude;longitude;catatan
+   * Helper: Parser Format Baku CSV Data Pencatatan Mobile & LapDataMeter PDAM
+   * Mendukung 2 format:
+   * 1. Baku Mobile: thbl;nolg;stml;stma;pakai_m3;tgl_catat;petugas_id;rute_kode;kondisi;latitude;longitude;catatan
+   * 2. Laporan Data Meter PDAM (lapdatameter): "No Pel";Nama;Alamat;Periode;"St AWAL";"St Akhir";"St Akhir Catat";Pakai;...
    */
   parsePencatatanCsv(csvText: string): DataPencatatanItem[] {
     const lines = csvText
@@ -340,12 +341,14 @@ export class ImportDataService {
     if (lines.length < 2) return [];
 
     const delimiter = lines[0].includes(';') ? ';' : ',';
-    const header = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
+    const header = lines[0]
+      .split(delimiter)
+      .map((h) => h.replace(/^["']|["']$/g, '').trim().toLowerCase());
 
     const items: DataPencatatanItem[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(delimiter).map((p) => p.trim());
+      const parts = lines[i].split(delimiter).map((p) => p.replace(/^["']|["']$/g, '').trim());
       if (parts.length < 3) continue;
 
       const obj: any = {};
@@ -353,24 +356,39 @@ export class ImportDataService {
         obj[col] = parts[idx] ?? '';
       });
 
-      if (obj.nolg && obj.thbl) {
-        const stml = parseFloat(obj.stml) || 0;
-        const stma = parseFloat(obj.stma) || 0;
-        const pakaiM3 = obj.pakai_m3 ? parseFloat(obj.pakai_m3) : Math.max(0, stma - stml);
+      // Deteksi nomor pelanggan dan periode (mendukung format mobile & format resmi lapdatameter)
+      const rawNolg = (obj['no pel'] || obj['nolg'] || obj['nomor_pelanggan'])?.replace(/\s+/g, '');
+      const rawThbl = (obj['periode'] || obj['thbl'])?.replace(/\s+/g, '');
+
+      if (rawNolg && rawThbl) {
+        const stml = parseFloat(obj['st awal'] ?? obj['stml'] ?? '0') || 0;
+        const stma = parseFloat(obj['st akhir'] ?? obj['stma'] ?? '0') || 0;
+        const pakaiM3 = obj['pakai']
+          ? parseFloat(obj['pakai'])
+          : obj['pakai_m3']
+            ? parseFloat(obj['pakai_m3'])
+            : Math.max(0, stma - stml);
+
+        const ketCatat = obj['nm_kel'] || obj['kondisi'] || obj['ket_catat'] || 'Normal';
+        const petugasId = obj['kd_petugas'] || obj['nama petugas'] || obj['petugas_id'] || 'PETUGAS_OFFLINE';
+        const ruteKode = obj['rute'] || obj['rute_kode'] || '';
+        const catatan =
+          obj['catatan'] ||
+          (obj['nama zonasi'] ? `Zonasi: ${obj['nama zonasi']}` : 'Import Laporan Data Meter');
 
         items.push({
-          thbl: obj.thbl,
-          nolg: obj.nolg,
+          thbl: rawThbl,
+          nolg: rawNolg,
           stml,
           stma,
           pakaiM3,
-          tglCatat: obj.tgl_catat || new Date().toISOString(),
-          petugasId: obj.petugas_id || 'PETUGAS_OFFLINE',
-          ruteKode: obj.rute_kode || '',
-          ketCatat: obj.kondisi || obj.ket_catat || 'Normal',
-          latitude: obj.latitude ? parseFloat(obj.latitude) : undefined,
-          longitude: obj.longitude ? parseFloat(obj.longitude) : undefined,
-          catatan: obj.catatan || 'Import Data Pencatatan Mobile',
+          tglCatat: obj['tgl_catat'] || new Date().toISOString(),
+          petugasId,
+          ruteKode,
+          ketCatat,
+          latitude: obj['latitude'] ? parseFloat(obj['latitude']) : undefined,
+          longitude: obj['longitude'] ? parseFloat(obj['longitude']) : undefined,
+          catatan,
         });
       }
     }
@@ -512,7 +530,7 @@ export class ImportDataService {
 
   /**
    * 4. Parser & Import PBPK (Pasang Baru & Pemasangan Kembali)
-   * Berkas acuan: data/jan/PBPK.csv
+   * Berkas acuan: data/raw/PBPK.csv
    */
   parsePbpkCsv(csvText: string): PbpkCsvRow[] {
     const lines = csvText

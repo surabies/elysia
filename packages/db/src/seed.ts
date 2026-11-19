@@ -55,12 +55,13 @@ async function seed() {
     console.log('3. Seeding Master Kondisi Catat...');
     await seedMasterKondisi();
 
-    // 4. Seed Data Pelanggan & Pembacaan Meter (jika tabel masih kosong)
+    // 4. Seed Master Pelanggan (jika tabel masih kosong)
     console.log('4. Checking Pelanggan Dataset...');
     const [existing] = await db.select({ total: count() }).from(pelanggan);
     if (!existing || existing.total === 0) {
-      console.log('Populating initial pelanggan & cater records from CSV...');
-      await importProgresCater();
+      const masterOnly = process.env.SEED_MASTER_ONLY !== 'false';
+      console.log(`Populating initial master pelanggan from CSV (masterOnly: ${masterOnly})...`);
+      await importProgresCater({ masterOnly });
     } else {
       console.log(`Pelanggan already populated (${existing.total} records). Skipping ETL.`);
     }

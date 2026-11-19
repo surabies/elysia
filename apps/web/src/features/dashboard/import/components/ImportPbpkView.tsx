@@ -48,7 +48,7 @@ export function ImportPbpkView() {
     gagal: number;
   } | null>(null);
 
-  // Ambil sample dari data/jan/PBPK.csv saat pertama kali dibuka
+  // Ambil sample dari data/raw/PBPK.csv saat pertama kali dibuka
   React.useEffect(() => {
     handleLoadSample();
   }, []);
@@ -168,7 +168,7 @@ export function ImportPbpkView() {
       <ImportHeader
         title="Import PBPK (Pasang Baru & Pemasangan Kembali)"
         badge="DPM Integration"
-        description="Pendaftaran massal sambungan baru (PB) dan pengaktifan kembali sambungan langganan (PK) melalui file CSV resmi PDAM (data/jan/PBPK.csv). Data otomatis dibuatkan aset water meter dan didaftarkan ke DPM periode penagihan aktif."
+        description="Pendaftaran massal sambungan baru (PB) dan pengaktifan kembali sambungan langganan (PK) melalui file CSV resmi PDAM (data/raw/PBPK.csv). Data otomatis dibuatkan aset water meter dan didaftarkan ke DPM periode penagihan aktif."
         icon={FolderSync}
         actions={
           <div className="flex items-center gap-2">
@@ -270,7 +270,7 @@ export function ImportPbpkView() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-medium">
-                Pratinjau Data PBPK (data/jan/PBPK.csv)
+                Pratinjau Data PBPK (data/raw/PBPK.csv)
               </CardTitle>
               <CardDescription>
                 Daftar pelanggan baru (PB) dan pemasangan kembali (PK) yang siap

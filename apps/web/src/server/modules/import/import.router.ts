@@ -147,7 +147,7 @@ export const importRouter = new Elysia({ prefix: '/import' })
     }
   )
 
-  // 5. Sample Data PBPK dari file packages/db/data/jan/PBPK.csv
+  // 5. Sample Data PBPK dari file packages/db/data/raw/PBPK.csv
   .get('/sample/pbpk', async ({ set }) => {
     try {
       const candidates = [

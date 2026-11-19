@@ -23,15 +23,18 @@ export async function importProgresCater(options: {
   csvPath?: string;
   pbpkPath?: string;
   limit?: number;
+  masterOnly?: boolean;
 } = {}) {
   const rootDir = path.resolve(__dirname, '../../../');
-  const defaultCsv = path.resolve(__dirname, '../../data/jan/ProgresCater-PW5.csv');
-  const fallbackCsv = path.resolve(rootDir, 'src/db/jan/ProgresCater-PW5.csv');
-  const csvFile = options.csvPath || (fs.existsSync(defaultCsv) ? defaultCsv : fallbackCsv);
+  const defaultCsv = path.resolve(__dirname, '../../data/raw/ProgresCater-PW5.csv');
+  const fallbackCsv = path.resolve(rootDir, 'packages/db/data/raw/ProgresCater-PW5.csv');
+  const legacyCsv = path.resolve(__dirname, '../../data/jan/ProgresCater-PW5.csv');
+  const csvFile = options.csvPath || (fs.existsSync(defaultCsv) ? defaultCsv : fs.existsSync(fallbackCsv) ? fallbackCsv : legacyCsv);
 
-  const defaultPbpk = path.resolve(__dirname, '../../data/jan/PBPK.csv');
-  const fallbackPbpk = path.resolve(rootDir, 'src/db/jan/PBPK.csv');
-  const pbpkFile = options.pbpkPath || (fs.existsSync(defaultPbpk) ? defaultPbpk : fallbackPbpk);
+  const defaultPbpk = path.resolve(__dirname, '../../data/raw/PBPK.csv');
+  const fallbackPbpk = path.resolve(rootDir, 'packages/db/data/raw/PBPK.csv');
+  const legacyPbpk = path.resolve(__dirname, '../../data/jan/PBPK.csv');
+  const pbpkFile = options.pbpkPath || (fs.existsSync(defaultPbpk) ? defaultPbpk : fs.existsSync(fallbackPbpk) ? fallbackPbpk : legacyPbpk);
 
   console.log('=== STARTING CATER ETL IMPORT ===');
   console.log('Source CSV:', csvFile);
@@ -309,16 +312,20 @@ export async function importProgresCater(options: {
     await db.insert(pelanggan).values(chunk).onConflictDoNothing();
   }
 
-  console.log(`Inserting ${caterBatch.length} Transaksi Catat Meter records...`);
-  for (let i = 0; i < caterBatch.length; i += BATCH_SIZE) {
-    const chunk = caterBatch.slice(i, i + BATCH_SIZE);
-    await db.insert(caterBacaMeter).values(chunk).onConflictDoNothing();
-  }
+  if (options.masterOnly) {
+    console.log('Mode masterOnly aktif: Melewatkan seeding transaksi catat meter & rekening DRD.');
+  } else {
+    console.log(`Inserting ${caterBatch.length} Transaksi Catat Meter records...`);
+    for (let i = 0; i < caterBatch.length; i += BATCH_SIZE) {
+      const chunk = caterBatch.slice(i, i + BATCH_SIZE);
+      await db.insert(caterBacaMeter).values(chunk).onConflictDoNothing();
+    }
 
-  console.log(`Inserting ${billingBatch.length} Rekening DRD Billing records...`);
-  for (let i = 0; i < billingBatch.length; i += BATCH_SIZE) {
-    const chunk = billingBatch.slice(i, i + BATCH_SIZE);
-    await db.insert(rekeningDrd).values(chunk).onConflictDoNothing();
+    console.log(`Inserting ${billingBatch.length} Rekening DRD Billing records...`);
+    for (let i = 0; i < billingBatch.length; i += BATCH_SIZE) {
+      const chunk = billingBatch.slice(i, i + BATCH_SIZE);
+      await db.insert(rekeningDrd).values(chunk).onConflictDoNothing();
+    }
   }
 
   console.log('=== ETL IMPORT COMPLETED SUCCESSFULLY! ===');
