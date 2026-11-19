@@ -39,7 +39,7 @@ function resolveGeoJsonPath(filename: string): string | null {
   ];
 
   for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
+    if (fs.existsSync(/* turbopackIgnore: true */ p)) return p;
   }
   return null;
 }
@@ -50,7 +50,7 @@ function dapatkanVerifikasiFeatures(): any[] {
   try {
     const geoJsonPath = resolveGeoJsonPath('Data_verifikasi.geojson');
     if (geoJsonPath) {
-      const raw = JSON.parse(fs.readFileSync(geoJsonPath, 'utf-8'));
+      const raw = JSON.parse(fs.readFileSync(/* turbopackIgnore: true */ geoJsonPath, 'utf-8'));
       if (Array.isArray(raw.features)) {
         cachedVerifikasiFeatures = raw.features;
         return raw.features;
@@ -139,7 +139,7 @@ export async function batasKelurahanFC(): Promise<FC> {
     if (rows.length === 0) {
       const p = resolveGeoJsonPath('Area_layanan.geojson');
       if (p) {
-        const raw = JSON.parse(fs.readFileSync(p, 'utf-8'));
+        const raw = JSON.parse(fs.readFileSync(/* turbopackIgnore: true */ p, 'utf-8'));
         const normalize = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, '');
         for (const f of raw.features || []) {
           const desa = f.properties?.DESA_KELUR || f.properties?.DESA || '';
@@ -849,7 +849,7 @@ export async function pipaJaringanFC(limit = 6000): Promise<FC> {
   const p = resolveGeoJsonPath('pipa jaring.geojson');
   if (p) {
     try {
-      const raw = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      const raw = JSON.parse(fs.readFileSync(/* turbopackIgnore: true */ p, 'utf-8'));
       const features = (raw.features || []).slice(0, limit).map((f: any) => {
         const props = f.properties || {};
         return {

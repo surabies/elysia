@@ -41,7 +41,15 @@ export async function auth() {
       },
       session: sessionData.session,
     };
-  } catch (err) {
+  } catch (err: any) {
+    if (
+      err &&
+      typeof err === 'object' &&
+      (('digest' in err && (err as any).digest === 'DYNAMIC_SERVER_USAGE') ||
+        (typeof (err as any).message === 'string' && (err as any).message.includes('Dynamic server usage')))
+    ) {
+      throw err;
+    }
     console.error('[AUTH_RESOLVER_ERROR]', err);
     return null;
   }

@@ -25,7 +25,7 @@ function resolveGeoJsonPath(): string | null {
   ];
 
   for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
+    if (fs.existsSync(/* turbopackIgnore: true */ p)) return p;
   }
   return null;
 }
@@ -59,7 +59,7 @@ export async function batasKelurahanFC(): Promise<FeatureCollection | null> {
   try {
     const geoJsonPath = resolveGeoJsonPath();
     if (geoJsonPath) {
-      const raw = fs.readFileSync(geoJsonPath, 'utf-8');
+      const raw = fs.readFileSync(/* turbopackIgnore: true */ geoJsonPath, 'utf-8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed.features)) {
         return {

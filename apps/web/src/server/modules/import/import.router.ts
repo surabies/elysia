@@ -161,8 +161,8 @@ export const importRouter = new Elysia({ prefix: '/import' })
 
       let csvContent = '';
       for (const p of candidates) {
-        if (fs.existsSync(p)) {
-          csvContent = fs.readFileSync(p, 'utf-8');
+        if (fs.existsSync(/* turbopackIgnore: true */ p)) {
+          csvContent = fs.readFileSync(/* turbopackIgnore: true */ p, 'utf-8');
           break;
         }
       }

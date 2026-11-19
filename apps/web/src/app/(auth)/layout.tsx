@@ -9,6 +9,8 @@
 import type { Metadata } from "next"
 import { ThemeToggle } from "@/components/PengalihTema"
 
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   // Halaman auth tidak boleh diindeks mesin pencari.
   robots: { index: false, follow: false },

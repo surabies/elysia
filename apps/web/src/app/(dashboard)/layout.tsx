@@ -4,6 +4,8 @@ import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
 
+export const dynamic = "force-dynamic"
+
 import { auth, signOut } from "@/lib/auth/index"
 import { DashboardShell } from "@/components/layout/index"
 import { SidebarProvider } from "@/components/layout/shell/SidebarContext"

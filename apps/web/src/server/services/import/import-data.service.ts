@@ -149,19 +149,19 @@ export class ImportDataService {
     ];
     let uploadDir = publicDirCandidates[0];
     for (const dir of publicDirCandidates) {
-      if (fs.existsSync(path.dirname(path.dirname(dir)))) {
+      if (fs.existsSync(/* turbopackIgnore: true */ path.dirname(path.dirname(dir)))) {
         uploadDir = dir;
         break;
       }
     }
 
-    if (!fs.existsSync(uploadDir)) {
+    if (!fs.existsSync(/* turbopackIgnore: true */ uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
     const targetPath = path.join(uploadDir, parsed.rawFileName);
     const base64Data = fileData.replace(/^data:image\/\w+;base64,/, '');
-    fs.writeFileSync(targetPath, Buffer.from(base64Data, 'base64'));
+    fs.writeFileSync(/* turbopackIgnore: true */ targetPath, Buffer.from(base64Data, 'base64'));
 
     return `/uploads/cater/${parsed.thbl}/${parsed.rawFileName}`;
   }
