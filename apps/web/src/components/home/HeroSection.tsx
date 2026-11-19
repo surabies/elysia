@@ -119,7 +119,7 @@ export function HeroSection({ content }: HeroSectionProps) {
               aria-hidden="true"
               className="pointer-events-none absolute -inset-4 rounded-4xl bg-linear-to-tr from-[#0070f3]/12 via-emerald-500/8 to-transparent blur-2xl"
             />
-            <div className="relative w-full aspect-4/5 max-md:max-h-[300px] sm:max-md:max-h-[360px] rounded-2xl md:rounded-3xl overflow-hidden bg-neutral-950 shadow-2xl shadow-neutral-950/15 ring-1 ring-neutral-900/10 md:h-[calc(100vh-140px)] md:max-h-220 md:w-auto">
+            <div className="relative w-full aspect-4/5 rounded-3xl overflow-hidden bg-neutral-950 shadow-2xl shadow-neutral-950/15 ring-1 ring-neutral-900/10 md:h-[calc(100vh-140px)] md:max-h-220 md:w-auto">
               <HlsVideo
                 src={content.videoSrc}
                 poster="/images/hero-poster.webp"
