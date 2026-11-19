@@ -198,22 +198,6 @@ export function PenampilFoto({
         />
       )}
 
-      {onTutup && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          aria-label="Tutup foto (Escape)"
-          className="absolute top-3 right-3 z-10 hidden sm:inline-flex bg-background/80 text-foreground border border-border shadow-xs backdrop-blur-xs hover:bg-muted dark:bg-black/60 dark:text-white dark:border-white/20 dark:hover:bg-white/20"
-          onPointerDown={(e) => e.stopPropagation()}
-          onDoubleClick={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
-          onClick={onTutup}
-        >
-          <kbd className="font-mono text-xs">Esc</kbd>
-        </Button>
-      )}
-
       {/* Floating Toolbar Controls — Mendukung Tema Terang & Gelap */}
       <div
         className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border/80 bg-background/90 px-2.5 py-1.5 shadow-2xl backdrop-blur-md z-20 text-foreground dark:border-white/15 dark:bg-neutral-900/90 dark:text-neutral-100"
@@ -326,7 +310,6 @@ export function FotoLightbox({
         <PenampilFoto
           url={url}
           label={label}
-          onTutup={() => onBuka(false)}
           className="h-full rounded-none border-0 bg-muted/20 dark:bg-neutral-950"
         />
       </DialogContent>
@@ -385,16 +368,15 @@ export function BingkaiPotret({
               />
             )}
 
-            {/* Pill Petunjuk Perbesar — Adaptif Tema Terang & Gelap */}
-            <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-full border border-border/80 bg-background/85 px-2.5 py-1 text-[11px] font-medium text-foreground shadow-xs backdrop-blur-xs transition-opacity duration-200 group-hover:bg-background/95 dark:border-white/20 dark:bg-black/75 dark:text-white">
+            {/* Icon Perbesar di Pojok Kanan Bawah — Mendukung Tema Terang & Gelap */}
+            <span className="absolute right-2 bottom-2 grid size-7 place-items-center rounded-md border border-border/80 bg-background/90 text-foreground opacity-0 shadow-sm backdrop-blur-xs transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 dark:border-white/20 dark:bg-black/75 dark:text-white">
               <HugeiconsIcon
                 icon={Search01Icon}
                 strokeWidth={2}
-                className="size-3 text-blue-500 dark:text-blue-400"
+                className="size-3.5"
                 aria-hidden
               />
-              <span>Ketuk untuk perbesar</span>
-            </div>
+            </span>
           </AspectRatio>
         </button>
       </div>
