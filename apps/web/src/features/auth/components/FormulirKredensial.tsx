@@ -54,20 +54,29 @@ export function CredentialsForm({ callbackUrl }: { callbackUrl: string }) {
     }
 
     setPending(true)
-    const hasil = await signIn.email({
-      email: parsed.data.identifier,
-      password: parsed.data.password,
-      callbackURL: callbackUrl,
-    })
-    setPending(false)
+    try {
+      const hasil = await signIn.email({
+        email: parsed.data.identifier,
+        password: parsed.data.password,
+        callbackURL: callbackUrl,
+      })
 
-    if (hasil?.error) {
-      setPesanError(hasil.error.message || "Email/username atau password salah.")
-      return
+      if (hasil?.error) {
+        setPesanError(hasil.error.message || "Email/username atau password salah.")
+        return
+      }
+
+      router.push(callbackUrl)
+      router.refresh()
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : "Gagal terhubung ke server autentikasi. Silakan periksa koneksi internet Anda."
+      setPesanError(errorMsg)
+    } finally {
+      setPending(false)
     }
-
-    router.push(callbackUrl)
-    router.refresh()
   }
 
   return (

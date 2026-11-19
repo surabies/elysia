@@ -39,28 +39,46 @@ function GoogleLogo() {
 
 export function GoogleSignInButton({ callbackUrl }: { callbackUrl: string }) {
   const [pending, setPending] = React.useState(false)
+  const [galat, setGalat] = React.useState<string | null>(null)
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="lg"
-      className="w-full"
-      disabled={pending}
-      onClick={async () => {
-        setPending(true)
-        try {
-          await signIn.social({
-            provider: "google",
-            callbackURL: callbackUrl,
-          })
-        } catch {
-          setPending(false)
-        }
-      }}
-    >
-      {pending ? <Spinner className="size-4" /> : <GoogleLogo />}
-      {pending ? "Mengalihkan ke Google…" : "Masuk dengan Google"}
-    </Button>
+    <div className="flex flex-col gap-2">
+      {galat && (
+        <p className="text-xs text-destructive font-medium" role="alert">
+          {galat}
+        </p>
+      )}
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="w-full"
+        disabled={pending}
+        onClick={async () => {
+          setPending(true)
+          setGalat(null)
+          try {
+            const res = await signIn.social({
+              provider: "google",
+              callbackURL: callbackUrl,
+            })
+            if (res?.error) {
+              setGalat(res.error.message || "Gagal menghubungi layanan masuk Google.")
+            }
+          } catch (err: unknown) {
+            const pesan =
+              err instanceof Error
+                ? err.message
+                : "Terjadi gangguan saat menghubungkan ke akun Google."
+            setGalat(pesan)
+          } finally {
+            setPending(false)
+          }
+        }}
+      >
+        {pending ? <Spinner className="size-4" /> : <GoogleLogo />}
+        {pending ? "Mengalihkan ke Google…" : "Masuk dengan Google"}
+      </Button>
+    </div>
   )
 }

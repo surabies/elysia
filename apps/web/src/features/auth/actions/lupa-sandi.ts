@@ -74,7 +74,11 @@ export async function forgotPasswordAction(
     const baseUrl =
       process.env.BETTER_AUTH_URL ??
       process.env.NEXT_PUBLIC_APP_URL ??
-      "http://localhost:3000"
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:3000")
     const url = new URL(
       `/reset-password?token=${token}&email=${encodeURIComponent(email)}`,
       baseUrl
