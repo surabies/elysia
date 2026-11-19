@@ -23,10 +23,7 @@ const envSchema = z.object({
     .string()
     .url()
     .default('http://localhost:3000'),
-  NEXT_PUBLIC_APP_URL: z
-    .string()
-    .url()
-    .default('http://localhost:3000'),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
