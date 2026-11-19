@@ -14,7 +14,7 @@ import {
  */
 export function MockupPengaduan() {
   return (
-    <div className="group relative aspect-4/5 w-full overflow-hidden rounded-lg border border-border/80 bg-neutral-950 font-sans text-white select-none shadow-none">
+    <div className="group relative min-h-[340px] sm:aspect-4/5 w-full overflow-hidden rounded-lg border border-border/80 bg-neutral-950 font-sans text-white select-none shadow-none">
       {/* 1. Latar Belakang Peta Spasial Vektor GIS Bandung */}
       <div className="absolute inset-0 overflow-hidden bg-[#0c1017]">
         {/* Grid Garis Jalanan Vektor Kota Bandung */}
@@ -84,13 +84,13 @@ export function MockupPengaduan() {
         </svg>
 
         {/* Pin Lokasi Insiden Kebocoran Air (Titik Merah/Kuning Pulse) */}
-        <div className="absolute top-[35%] left-[58%] -translate-x-1/2 -translate-y-1/2">
+        <div className="absolute top-[42%] left-[60%] -translate-x-1/2 -translate-y-1/2">
           <div className="relative flex items-center justify-center">
             {/* Gelombang Ripple Air Bocor */}
-            <span className="absolute size-14 animate-ping rounded-full bg-amber-500/30 duration-1000" />
-            <span className="absolute size-9 rounded-full bg-amber-500/20" />
-            <div className="relative flex size-7 items-center justify-center rounded-full bg-amber-500 text-neutral-950 shadow-[0_0_15px_#f59e0b]">
-              <TriangleAlert className="size-4" />
+            <span className="absolute size-12 sm:size-14 animate-ping rounded-full bg-amber-500/30 duration-1000" />
+            <span className="absolute size-8 sm:size-9 rounded-full bg-amber-500/20" />
+            <div className="relative flex size-6 sm:size-7 items-center justify-center rounded-full bg-amber-500 text-neutral-950 shadow-[0_0_15px_#f59e0b]">
+              <TriangleAlert className="size-3.5 sm:size-4" />
             </div>
 
             {/* Label Lokasi Pin */}
@@ -100,11 +100,11 @@ export function MockupPengaduan() {
           </div>
         </div>
 
-        {/* Pin Armada TRC Bergerak */}
-        <div className="absolute top-[16%] left-[20%] -translate-x-1/2 -translate-y-1/2">
+        {/* Pin Armada TRC Bergerak (aman dari tepi kiri pada layar kecil) */}
+        <div className="absolute top-[24%] left-3 sm:left-5">
           <div className="flex items-center gap-1.5 rounded-full border border-ds-blue-700/50 bg-neutral-950/90 px-2.5 py-1 text-[9px] font-medium text-blue-400 shadow-lg backdrop-blur-md">
-            <span className="size-2 animate-ping rounded-full bg-blue-400" />
-            Armada TRC-03 (Menuju Lokasi)
+            <span className="size-1.5 sm:size-2 animate-ping rounded-full bg-blue-400 shrink-0" />
+            <span className="whitespace-nowrap">Armada TRC-03</span>
           </div>
         </div>
 
@@ -113,70 +113,74 @@ export function MockupPengaduan() {
       </div>
 
       {/* 2. Layer Konten UI HUD */}
-      <div className="relative z-10 flex h-full flex-col justify-between p-4.5 sm:p-6">
+      <div className="relative z-10 flex h-full min-h-[340px] flex-col justify-between gap-4 p-3 sm:p-5">
         {/* Header HUD */}
-        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-neutral-900/80 px-3.5 py-2.5 backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500 text-neutral-950">
-              <LocateFixed className="size-4" />
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-neutral-900/80 px-2.5 py-2 sm:px-3.5 sm:py-2.5 backdrop-blur-md">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-neutral-950">
+              <LocateFixed className="size-3.5 sm:size-4" />
             </div>
-            <div>
-              <p className="text-[11px] font-semibold tracking-wider text-white uppercase">
-                Peta Kendali Tanggap 24 Jam
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-white uppercase truncate">
+                Peta Kendali 24 Jam
               </p>
-              <p className="text-[10px] text-neutral-400">Tim Reaksi Cepat</p>
+              <p className="text-[9px] sm:text-[10px] text-neutral-400 truncate">
+                Tim Reaksi Cepat
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-1">
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 sm:px-2.5 sm:py-1">
             <span className="size-1.5 rounded-full bg-blue-400 animate-pulse" />
-            <span className="text-[10px] font-medium tracking-wide text-blue-400">
-              SLA ~18 Menit
+            <span className="text-[9px] sm:text-[10px] font-medium tracking-wide text-blue-400 whitespace-nowrap">
+              SLA ~18 Mnt
             </span>
           </div>
         </div>
 
         {/* Spacer */}
-        <div className="flex-1" />
+        <div className="flex-1 min-h-14" />
 
         {/* Card Status Tiket Terpadu */}
-        <div className="space-y-3 rounded-2xl border border-white/10 bg-neutral-900/90 p-4 shadow-xl backdrop-blur-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="rounded-md border border-neutral-700 bg-neutral-950 px-2 py-0.5 font-mono text-[11px] font-bold text-white tracking-wider">
+        <div className="space-y-2.5 sm:space-y-3 rounded-xl sm:rounded-2xl border border-white/10 bg-neutral-900/90 p-3 sm:p-4 shadow-xl backdrop-blur-xl">
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="rounded-md border border-neutral-700 bg-neutral-950 px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold text-white tracking-wider">
                 BP012611190001
               </span>
-              <span className="text-[10px] text-neutral-400">Coblong, Bandung</span>
+              <span className="hidden sm:inline text-[10px] text-neutral-400 truncate">
+                Coblong, Bandung
+              </span>
             </div>
-            <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-400">
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-400 shrink-0">
               <Wrench className="size-3" />
-              Diproses Lapangan
+              Diproses
             </span>
           </div>
 
           {/* Detail Gangguan */}
           <div className="rounded-xl border border-neutral-800 bg-neutral-950/70 p-2.5 text-xs">
-            <p className="font-semibold text-neutral-200">
+            <p className="font-semibold text-neutral-200 text-[11px] sm:text-xs leading-snug">
               Pipa Distribusi Tekanan Tinggi Bocor
             </p>
-            <p className="mt-0.5 text-[11px] text-neutral-400">
+            <p className="mt-0.5 text-[10px] sm:text-[11px] text-neutral-400 leading-relaxed">
               Laporan warga terverifikasi otomatis via koordinat GPS perangkat.
             </p>
           </div>
 
           {/* Mini Timeline Progres */}
-          <div className="grid grid-cols-3 gap-2 border-t border-neutral-800/80 pt-2 text-[10px]">
-            <div className="flex items-center gap-1 text-emerald-400 font-medium">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 border-t border-neutral-800/80 pt-2 text-[9px] sm:text-[10px]">
+            <div className="flex items-center gap-1 text-emerald-400 font-medium truncate">
               <CheckCircle2 className="size-3 shrink-0" />
-              <span>Diterima</span>
+              <span className="truncate">Diterima</span>
             </div>
-            <div className="flex items-center gap-1 text-blue-400 font-semibold">
-              <span className="size-1.5 animate-pulse rounded-full bg-blue-400" />
-              <span>Meluncur</span>
+            <div className="flex items-center gap-1 text-blue-400 font-semibold truncate">
+              <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-blue-400" />
+              <span className="truncate">Meluncur</span>
             </div>
-            <div className="flex items-center gap-1 text-neutral-500">
+            <div className="flex items-center gap-1 text-neutral-500 truncate">
               <ShieldCheck className="size-3 shrink-0" />
-              <span>Penanganan</span>
+              <span className="truncate">Selesai</span>
             </div>
           </div>
         </div>
