@@ -20,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { HaloBadge } from '@/components/ui/halo-badge'
 
 export interface BlokTarifItem {
   blok: number
@@ -232,14 +231,14 @@ export function SimulasiTarifSection() {
   return (
     <section
       aria-labelledby="simulasi-tarif-title"
-      className="mx-auto w-full max-w-360 px-4 lg:px-12 py-12 md:py-16 bg-transparent text-foreground"
+      className="mx-auto w-full max-w-360 px-4 lg:px-12 py-10 sm:py-14 md:py-16 bg-transparent text-foreground"
     >
       <motion.div
         initial={{ opacity: 0, y: 36 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-lg border border-border/80 bg-card text-foreground p-6 sm:p-8 md:p-10 relative overflow-hidden shadow-none"
+        className="rounded-lg border border-border/80 bg-card text-foreground p-5 sm:p-7 md:p-9 relative overflow-hidden shadow-none"
       >
         {/* Ambient Radial Accent Glow */}
         <div
@@ -251,33 +250,24 @@ export function SimulasiTarifSection() {
           className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"
         />
 
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
-          {/* Kolom Kiri: Form Kontrol Simulasi Terhubung Database */}
-          <div className="lg:col-span-7 space-y-6">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <HaloBadge
-                  live
-                  variant="outline"
-                  className="px-3 py-1 text-xs font-mono font-medium"
-                >
-                  Simulasi Tagihan Air Resmi
-                </HaloBadge>
-              </div>
+        {/* Header Seksi (Tanpa Badge, Ruang Vertikal Seimbang) */}
+        <div className="relative z-10 mb-6 sm:mb-8">
+          <h2
+            id="simulasi-tarif-title"
+            className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground"
+          >
+            Kalkulator Estimasi Biaya Pemakaian Air
+          </h2>
+          <p className="mt-1.5 text-xs sm:text-sm md:text-base text-muted-foreground max-w-2xl leading-relaxed">
+            Hitung perkiraan tagihan rekening air bulanan Anda langsung
+            berdasarkan master tarif blok progresif dan biaya tetap resmi
+            PERUMDA Tirtawening.
+          </p>
+        </div>
 
-              <h2
-                id="simulasi-tarif-title"
-                className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground"
-              >
-                Kalkulator Estimasi Biaya Pemakaian Air
-              </h2>
-              <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-                Hitung perkiraan tagihan rekening air bulanan Anda langsung
-                berdasarkan master tarif blok progresif dan biaya tetap resmi
-                PERUMDA Tirtawening.
-              </p>
-            </div>
-
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+          {/* Kolom Slider & Kontrol Pemakaian: di mobile ORDER 2 (di bawah card total), di desktop ORDER 1 (di kiri) */}
+          <div className="order-2 lg:order-1 lg:col-span-7 space-y-6">
             {/* Pilihan Golongan Tarif dari Database Menggunakan Shadcn UI Select */}
             <div className="space-y-2">
               <label
@@ -380,8 +370,8 @@ export function SimulasiTarifSection() {
             </div>
           </div>
 
-          {/* Kolom Kanan: FinTech Result Card (Sesuai Komponen DRD Database) */}
-          <div className="lg:col-span-5 rounded-lg border border-border/80 bg-muted/30 dark:bg-muted/20 p-5 sm:p-6 shadow-none space-y-5">
+          {/* Kolom Kanan: FinTech Result Card (di mobile ORDER 1 di atas, di desktop ORDER 2 di kanan) */}
+          <div className="order-1 lg:order-2 lg:col-span-5 rounded-lg border border-border/80 bg-muted/30 dark:bg-muted/20 p-5 sm:p-6 shadow-none space-y-5">
             <div className="pb-4 border-b border-border/80">
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                 <span>Total Estimasi Rekening</span>

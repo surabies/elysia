@@ -262,6 +262,7 @@ export function DokumentasiKegiatanSection() {
   const [modalItem, setModalItem] = React.useState<BroadcastGangguanItem | null>(null)
   const [modalBuka, setModalBuka] = React.useState(false)
   const [activeMobileIdx, setActiveMobileIdx] = React.useState(0)
+  const [isMobilePaused, setIsMobilePaused] = React.useState(false)
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 
   // Filter dinamis berdasarkan agenda pekerjaan
@@ -286,6 +287,29 @@ export function DokumentasiKegiatanSection() {
     const idx = Math.round(scrollLeft / (cardWidth + 16))
     setActiveMobileIdx(Math.max(0, Math.min(idx, daftarTerfilter.length - 1)))
   }
+
+  // Auto-Cycle Carousel di tampilan mobile (berganti otomatis seperti iklan)
+  React.useEffect(() => {
+    if (isMobilePaused || daftarTerfilter.length <= 1) return
+
+    const timer = setInterval(() => {
+      // Hanya berjalan pada viewport mobile (< 768px)
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) return
+
+      setActiveMobileIdx((prev) => {
+        const nextIdx = (prev + 1) % daftarTerfilter.length
+        const el = scrollContainerRef.current
+        if (el) {
+          const card = el.firstElementChild as HTMLElement | null
+          const cardWidth = card ? card.offsetWidth : 300
+          el.scrollTo({ left: nextIdx * (cardWidth + 16), behavior: 'smooth' })
+        }
+        return nextIdx
+      })
+    }, 4500)
+
+    return () => clearInterval(timer)
+  }, [isMobilePaused, daftarTerfilter.length])
 
   // Sinkronisasi data publik dari backend & event perubahan operator di dashboard
   React.useEffect(() => {
@@ -391,8 +415,8 @@ export function DokumentasiKegiatanSection() {
               Dokumentasi berkala pemeliharaan jaringan transmisi, tera akurasi meter digital, dan respons teknisi Perumda Tirtawening demi menjamin kontinuitas air minum bersih bagi warga.
             </p>
 
-            {/* Filter Tab Senada Pill Navigasi */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar shrink-0">
+            {/* Filter Tab Senada Pill Navigasi (Disembunyikan di Mobile) */}
+            <div className="hidden md:flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar shrink-0">
               {[
                 { id: 'SEMUA', label: 'Semua Agenda' },
                 { id: 'PIPA', label: 'Jaringan Pipa' },
@@ -420,10 +444,14 @@ export function DokumentasiKegiatanSection() {
             </div>
           </div>
 
-          {/* Carousel di Mobile, Grid di Layar Desktop */}
+          {/* Carousel Otomatis di Mobile, Grid di Layar Desktop */}
           <div
             ref={scrollContainerRef}
             onScroll={handleMobileScroll}
+            onMouseEnter={() => setIsMobilePaused(true)}
+            onMouseLeave={() => setIsMobilePaused(false)}
+            onTouchStart={() => setIsMobilePaused(true)}
+            onTouchEnd={() => setIsMobilePaused(false)}
             className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 pb-3 md:pb-0"
           >
             {daftarTerfilter.map((item, idx) => (
