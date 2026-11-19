@@ -93,7 +93,7 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onOpenModal(item)}
-      className="group relative flex flex-col justify-between rounded-lg border border-border/80 bg-card p-4 sm:p-5 shadow-none transition-all duration-200 hover:border-foreground/20 hover:shadow-xs cursor-pointer select-none"
+      className="group relative flex flex-col justify-between rounded-lg border border-border/80 bg-card p-4 sm:p-5 shadow-none transition-all duration-200 hover:border-foreground/20 hover:shadow-xs cursor-pointer select-none h-full"
     >
       <div className="space-y-3.5">
         {/* Frame Foto 16:10 dengan Auto-Crossfade Multi-Foto */}
@@ -261,6 +261,31 @@ export function DokumentasiKegiatanSection() {
   const [kategoriFilter, setKategoriFilter] = React.useState<string>('SEMUA')
   const [modalItem, setModalItem] = React.useState<BroadcastGangguanItem | null>(null)
   const [modalBuka, setModalBuka] = React.useState(false)
+  const [activeMobileIdx, setActiveMobileIdx] = React.useState(0)
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+
+  // Filter dinamis berdasarkan agenda pekerjaan
+  const daftarTerfilter = React.useMemo(() => {
+    if (kategoriFilter === 'SEMUA') return daftar
+    return daftar.filter((item) => {
+      const text = `${item.judul} ${item.ringkasan} ${item.lokasiWilayah || ''}`.toLowerCase()
+      if (kategoriFilter === 'PIPA') return text.includes('pipa') || text.includes('flushing')
+      if (kategoriFilter === 'METER') return text.includes('meter') || text.includes('tera')
+      if (kategoriFilter === 'PASANG_BARU') return text.includes('sambungan') || text.includes('pasang baru')
+      if (kategoriFilter === 'EDUKASI') return text.includes('sosialisasi') || text.includes('edukasi') || text.includes('jemput bola')
+      return true
+    })
+  }, [daftar, kategoriFilter])
+
+  const handleMobileScroll = () => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const scrollLeft = el.scrollLeft
+    const card = el.firstElementChild as HTMLElement | null
+    const cardWidth = card ? card.offsetWidth : 300
+    const idx = Math.round(scrollLeft / (cardWidth + 16))
+    setActiveMobileIdx(Math.max(0, Math.min(idx, daftarTerfilter.length - 1)))
+  }
 
   // Sinkronisasi data publik dari backend & event perubahan operator di dashboard
   React.useEffect(() => {
@@ -333,18 +358,7 @@ export function DokumentasiKegiatanSection() {
       .catch(() => {})
   }
 
-  // Filter dinamis berdasarkan agenda pekerjaan
-  const daftarTerfilter = React.useMemo(() => {
-    if (kategoriFilter === 'SEMUA') return daftar
-    return daftar.filter((item) => {
-      const text = `${item.judul} ${item.ringkasan} ${item.lokasiWilayah || ''}`.toLowerCase()
-      if (kategoriFilter === 'PIPA') return text.includes('pipa') || text.includes('flushing')
-      if (kategoriFilter === 'METER') return text.includes('meter') || text.includes('tera')
-      if (kategoriFilter === 'PASANG_BARU') return text.includes('sambungan') || text.includes('pasang baru')
-      if (kategoriFilter === 'EDUKASI') return text.includes('sosialisasi') || text.includes('edukasi') || text.includes('jemput bola')
-      return true
-    })
-  }, [daftar, kategoriFilter])
+
 
   if (daftar.length === 0) return null
 
@@ -389,7 +403,11 @@ export function DokumentasiKegiatanSection() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setKategoriFilter(tab.id)}
+                  onClick={() => {
+                    setKategoriFilter(tab.id)
+                    setActiveMobileIdx(0)
+                    scrollContainerRef.current?.scrollTo({ left: 0, behavior: 'smooth' })
+                  }}
                   className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all cursor-pointer select-none ${
                     kategoriFilter === tab.id
                       ? 'bg-foreground text-background font-semibold shadow-xs'
@@ -402,17 +420,51 @@ export function DokumentasiKegiatanSection() {
             </div>
           </div>
 
-          {/* Grid Kartu Dokumentasi dengan Auto-Cycle Multi-Foto */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {/* Carousel di Mobile, Grid di Layar Desktop */}
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleMobileScroll}
+            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 pb-3 md:pb-0"
+          >
             {daftarTerfilter.map((item, idx) => (
-              <KegiatanCardItem
+              <div
                 key={item.id}
-                item={item}
-                index={idx}
-                onOpenModal={handleBukaModal}
-              />
+                className="w-[85vw] max-w-[340px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink flex flex-col"
+              >
+                <KegiatanCardItem
+                  item={item}
+                  index={idx}
+                  onOpenModal={handleBukaModal}
+                />
+              </div>
             ))}
           </div>
+
+          {/* Indikator Titik Carousel Khusus Mobile */}
+          {daftarTerfilter.length > 1 && (
+            <div className="flex md:hidden items-center justify-center gap-1.5 pt-3 pb-1">
+              {daftarTerfilter.map((_, dotIdx) => (
+                <button
+                  key={dotIdx}
+                  type="button"
+                  onClick={() => {
+                    const el = scrollContainerRef.current
+                    if (!el) return
+                    const card = el.firstElementChild as HTMLElement | null
+                    const cardWidth = card ? card.offsetWidth : 300
+                    el.scrollTo({ left: dotIdx * (cardWidth + 16), behavior: 'smooth' })
+                  }}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                    dotIdx === activeMobileIdx
+                      ? "w-5 bg-foreground"
+                      : "w-1.5 bg-foreground/20 hover:bg-foreground/40"
+                  )}
+                  aria-label={`Lihat agenda ${dotIdx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </motion.div>
       </Container>
 
