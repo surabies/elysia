@@ -157,7 +157,8 @@ export async function importProgresCater(options: {
     const tagnunggak = cols[68]?.trim() || '0';
     const potensialPenagihan = cols[59]?.trim() || null;
     const potensialCater = cols[60]?.trim() || null;
-    const kategorialnama = cols[83]?.trim() || 'PELANGGAN AKTIF';
+    const statusPelanggan = cols[81]?.trim() || 'PELANGGAN AKTIF';
+    const metodeCatat = cols[83]?.trim() || 'ONSITE';
     const tglCatatStr = cols[84]?.trim();
     const tglCatat = tglCatatStr ? new Date(tglCatatStr) : new Date();
 
@@ -222,7 +223,7 @@ export async function importProgresCater(options: {
         noTelp,
         jmlPenghuni: pbpkData?.penghuni || 0,
         isMbr: ismbr,
-        status: kategorialnama,
+        status: statusPelanggan,
         tarifKode: trp,
         kelurahanKode: kdkel,
         ruteKode: ruteKode || null,
@@ -243,7 +244,7 @@ export async function importProgresCater(options: {
       pakaiM3: String(pakaiDrd),
       pakaiLalu: String(pakailalu),
       ketCatat: ketcatat,
-      metodeCatat: 'ONSITE',
+      metodeCatat,
       tglCatat,
       durasiDetik: durasi,
       statusVerifikasi: 'VERIFIED',

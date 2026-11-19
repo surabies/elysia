@@ -307,8 +307,29 @@ export class MandiriService {
           )
         );
 
-      const stml = Number(existingCater?.stml ?? 0);
-      const pakaiM3 = Math.max(0, stmaMandiri - stml);
+      let stml = existingCater?.stml ? Number(existingCater.stml) : null;
+      if (stml === null) {
+        // Fallback: Cari stand akhir dari periode pembacaan sebelumnya
+        const [prevCater] = await tx
+          .select({ stma: caterBacaMeter.stma })
+          .from(caterBacaMeter)
+          .where(
+            and(
+              eq(caterBacaMeter.nolg, mandiri.nolg),
+              lt(caterBacaMeter.thbl, mandiri.thbl)
+            )
+          )
+          .orderBy(desc(caterBacaMeter.thbl))
+          .limit(1);
+        if (prevCater?.stma) {
+          stml = Number(prevCater.stma);
+        }
+      }
+      if (stml === null) {
+        stml = 0;
+      }
+
+      const pakaiM3 = stmaMandiri >= stml ? stmaMandiri - stml : 0;
       const targetCaterId = existingCater?.id ?? caterId;
 
       // 2. Update status laporan mandiri beserta stand yang diverifikasi & kalkulasi pemakaian m3
@@ -351,6 +372,7 @@ export class MandiriService {
         .onConflictDoUpdate({
           target: caterBacaMeter.id,
           set: {
+            stml: String(stml),
             stma: String(stmaMandiri),
             pakaiM3: String(pakaiM3),
             pakaiTagih: String(pakaiM3),

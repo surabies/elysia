@@ -1,5 +1,5 @@
 import { db } from './client';
-import { places, pelanggan } from './schema';
+import { places, pelanggan, caterBacaMeter } from './schema';
 import { seedAccounts, FALLBACK_SEED_PASSWORD } from './seed-accounts';
 import { seedMasterKondisi } from './seed-kondisi';
 import { seedMasterTarif } from './seed-tarif';
@@ -60,15 +60,16 @@ async function seed() {
     console.log('3b. Seeding Master Golongan & Blok Tarif...');
     await seedMasterTarif();
 
-    // 4. Seed Master Pelanggan (jika tabel masih kosong)
-    console.log('4. Checking Pelanggan Dataset...');
-    const [existing] = await db.select({ total: count() }).from(pelanggan);
-    if (!existing || existing.total === 0) {
-      const masterOnly = process.env.SEED_MASTER_ONLY !== 'false';
-      console.log(`Populating initial master pelanggan from CSV (masterOnly: ${masterOnly})...`);
+    // 4. Seed Master Pelanggan & Transaksi Catat Meter (jika tabel masih kosong)
+    console.log('4. Checking Pelanggan & Cater Dataset...');
+    const [existingPelanggan] = await db.select({ total: count() }).from(pelanggan);
+    const [existingCater] = await db.select({ total: count() }).from(caterBacaMeter);
+    if (!existingPelanggan || existingPelanggan.total === 0 || !existingCater || existingCater.total === 0) {
+      const masterOnly = process.env.SEED_MASTER_ONLY === 'true';
+      console.log(`Populating dataset from CSV (masterOnly: ${masterOnly})...`);
       await importProgresCater({ masterOnly });
     } else {
-      console.log(`Pelanggan already populated (${existing.total} records). Skipping ETL.`);
+      console.log(`Pelanggan (${existingPelanggan.total}) and Cater (${existingCater.total}) already populated. Skipping ETL.`);
     }
 
     // 5. Sync Area Layanan (7 Kecamatan, 21 Kelurahan Resmi)

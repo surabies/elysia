@@ -13,6 +13,8 @@
     "db:seed:accounts": "bun run src/seed-accounts.ts",
     "db:seed:kondisi": "bun run src/seed-kondisi.ts",
     "db:seed:area-layanan": "bun run src/seed-area-layanan.ts",
+    "db:seed:transaksi": "bun run src/seed-transaksi.ts",
+    "db:seed:periode": "bun run src/seed-periode.ts",
     "db:seed:pengaduan": "bun run src/seed-pengaduan.ts"
   },
   "dependencies": {

@@ -524,13 +524,26 @@ export class VerifikasiGridService {
       // tampilkan seluruh pelanggan aktif yang belum tercatat di cater_baca_meter pada periode ini.
       const targetPeriod = period ?? "202611";
       const pConditions = [
-        eq(pelanggan.status, "PELANGGAN AKTIF"),
+        or(
+          eq(pelanggan.status, "PELANGGAN AKTIF"),
+          eq(pelanggan.status, "ONSITE"),
+          eq(pelanggan.status, "OFFSITE")
+        ),
         sql`NOT EXISTS (
           SELECT 1 FROM cater_baca_meter c
           WHERE c.nolg = ${pelanggan.nolg}
             AND c.thbl = ${targetPeriod}
         )`,
       ];
+      if (query.pencatatId) {
+        pConditions.push(
+          sql`EXISTS (
+            SELECT 1 FROM rute_cater rc
+            WHERE rc.kode = ${pelanggan.ruteKode}
+              AND rc.pencatat_default = ${query.pencatatId}
+          )`
+        );
+      }
       if (query.ruteId) {
         pConditions.push(eq(pelanggan.ruteKode, query.ruteId));
       }
@@ -559,6 +572,12 @@ export class VerifikasiGridService {
           noMeter: pelanggan.noMeter,
           tarifKode: pelanggan.tarifKode,
           urutan: pelanggan.noUrutRute,
+          standAwal: sql<string | null>`(
+            SELECT c.stma::text FROM cater_baca_meter c
+            WHERE c.nolg = ${pelanggan.nolg}
+            ORDER BY c.thbl DESC
+            LIMIT 1
+          )`,
         })
         .from(pelanggan)
         .leftJoin(ruteCater, eq(pelanggan.ruteKode, ruteCater.kode))
@@ -576,7 +595,7 @@ export class VerifikasiGridService {
           namaPelanggan: row.nama,
           alamatPelanggan: row.alamat,
           periode: Number(row.thbl),
-          standAwal: null,
+          standAwal: asNumber(row.standAwal),
           standAkhir: null,
           pemakaian: null,
           kondisi: "BELUM_DICATAT",
