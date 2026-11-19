@@ -2,11 +2,25 @@
 
 import * as React from "react"
 import { Camera, X, ZoomIn } from "@/components/ui/hugeicons-compat"
-import { BingkaiFoto, type RasioFoto } from "@/components/BingkaiFoto"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { FotoZoom, type RasioFoto } from "@/components/BingkaiFoto"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { compressImage } from "../lib/kompresi-gambar"
 
 const MAKS_FOTO_ASLI_BYTE = 15 * 1024 * 1024
+
+const RASIO_MAP = {
+  "16/9": 16 / 9,
+  "4/3": 4 / 3,
+  "1/1": 1 / 1,
+  "3/4": 3 / 4,
+} as const
 
 export function PemilihFoto({
   previewUrl,
@@ -17,7 +31,7 @@ export function PemilihFoto({
   deskripsi,
   disabled = false,
   rasio = "16/9",
-  mode = "utuh",
+  mode = "isi",
 }: {
   previewUrl: string | null
   onPilih: (file: File, previewUrl: string) => void
@@ -49,6 +63,8 @@ export function PemilihFoto({
     }
   }
 
+  const numericRatio = RASIO_MAP[rasio] || 16 / 9
+
   return (
     <Field>
       <FieldLabel>{label}</FieldLabel>
@@ -62,22 +78,35 @@ export function PemilihFoto({
       />
       {previewUrl ? (
         <div className="group relative w-full overflow-hidden rounded-xl border border-border bg-neutral-950 shadow-md [isolation:isolate] [transform:translateZ(0)]">
-          {/* Bingkai foto dengan dialog perbesar (FotoZoom) yang robust */}
-          <BingkaiFoto
-            src={previewUrl}
-            alt="Pratinjau foto bukti"
-            rasio={rasio}
-            mode={mode}
-            className="border-0 rounded-none bg-transparent"
-          />
+          <Dialog>
+            <DialogTrigger className="block w-full cursor-zoom-in text-left">
+              {/* Aspect Ratio resmi Shadcn UI — mengisi frame penuh tanpa ruang kosong kiri/kanan */}
+              <AspectRatio ratio={numericRatio} className="w-full bg-neutral-950">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewUrl}
+                  alt={label}
+                  className={`size-full rounded-[inherit] transition-transform duration-300 group-hover:scale-102 ${
+                    mode === "utuh" ? "object-contain" : "object-cover"
+                  }`}
+                />
 
-          {/* Label petunjuk interaktif di sudut kiri bawah */}
-          <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-xs border border-white/15 shadow-xs">
-            <ZoomIn className="size-3.5 text-blue-400" />
-            <span>Ketuk untuk perbesar</span>
-          </div>
+                {/* Petunjuk Ketuk untuk Perbesar di Sudut Kiri Bawah */}
+                <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-xs border border-white/20 shadow-xs">
+                  <ZoomIn className="size-3.5 text-blue-400" />
+                  <span>Ketuk untuk perbesar</span>
+                </div>
+              </AspectRatio>
+            </DialogTrigger>
 
-          {/* Tombol Hapus Foto */}
+            {/* Dialog Perbesar Foto (FotoZoom) yang Robust seperti Verifikasi */}
+            <DialogContent className="max-w-[calc(100vw-2rem)] p-3 sm:p-5 sm:max-w-4xl border border-border bg-card text-foreground shadow-2xl">
+              <DialogTitle className="sr-only">{label}</DialogTitle>
+              <FotoZoom url={previewUrl} label={label} />
+            </DialogContent>
+          </Dialog>
+
+          {/* Tombol Hapus Foto di Sudut Kanan Atas */}
           <button
             onClick={(e) => {
               e.stopPropagation()

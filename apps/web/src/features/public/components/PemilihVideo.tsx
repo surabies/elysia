@@ -1,33 +1,16 @@
 "use client"
 
 // features/public/components/PemilihVideo.tsx — pemilih + pratinjau SATU klip
-// video bukti (opsional) untuk pengaduan. Sengaja terpisah dari PemilihFoto:
-// aturan berkasnya beda (durasi & batas ukuran), dan validasi durasi butuh
-// memuat metadata video dulu.
-//
-// KENAPA TIDAK TRANSCODE DI BROWSER? Kompresi video sejati di browser
-// (MediaRecorder/captureStream/ffmpeg.wasm) berjalan real-time (klip 60 detik
-// = tunggu 60 detik), rapuh antar-codec, dan boros baterai di HP warga —
-// justru orang yang paling sering melapor dari seluler. Jadi di sini kita
-// hanya MEMVALIDASI durasi (≤60 dtk) & ukuran, lalu kompresi/optimasi
-// dilakukan di sisi pengiriman (Cloudinary q_auto,f_auto — lihat
-// urlVideoTeroptimasi di lib/format.ts). Kompresi pra-unggah yang berat
-// adalah tugas aplikasi Flutter (native, cepat), bukan web.
+// video bukti (opsional) untuk pengaduan.
 import * as React from "react"
 import { Video, X } from "@/components/ui/hugeicons-compat"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 
-/// Batas ukuran berkas video — SEJALAN dengan MAKS_UKURAN_VIDEO_BYTE server
-/// (50 MB) di server/lib/storage.ts. Ditolak di sini lebih dulu supaya warga
-/// tidak menunggu unggahan besar hanya untuk ditolak server.
 const MAKS_VIDEO_BYTE = 50 * 1024 * 1024
-/// Durasi maksimal. "30–60 detik saja" — batas atas ditegakkan; klip lebih
-/// pendek tetap diterima (mis. semburan pipa yang terekam 12 detik).
 const MAKS_DURASI_DETIK = 60
 
-/// Baca durasi video dari metadata TANPA memutarnya. Mengembalikan detik,
-/// atau null bila metadata gagal dibaca (berkas rusak / codec tak didukung).
 function bacaDurasi(file: File): Promise<number | null> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file)
@@ -94,11 +77,6 @@ export function PemilihVideo({
   return (
     <Field>
       <FieldLabel>{label}</FieldLabel>
-      {/* TANPA `capture` — alasan sama seperti pemilih-foto.tsx: atribut itu
-          memaksa kamera dan menutup akses ke galeri. Untuk video kebocoran
-          justru lebih menyakitkan: warga biasanya merekam SAAT kejadian
-          terlihat, lalu melapor setelah sampai rumah. Memaksa rekam ulang
-          berarti meminta bukti yang sudah tidak ada. */}
       <input
         ref={inputRef}
         type="file"
@@ -108,41 +86,41 @@ export function PemilihVideo({
         disabled={disabled || memeriksa}
       />
       {previewUrl ? (
-        <div className="relative">
-          {/* Rasio tetap 16/9 — tinggi frame TIDAK ditentukan dimensi file,
-              konsisten dengan BingkaiFoto. object-contain agar klip potret
-              tidak terpotong. */}
-          <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
-            {/* Klip bukti warga, tanpa <track> teks. */}
+        <div className="group relative w-full overflow-hidden rounded-xl border border-border bg-neutral-950 shadow-md [isolation:isolate] [transform:translateZ(0)]">
+          {/* AspectRatio resmi Shadcn UI — mengisi frame penuh tanpa ruang kosong kiri/kanan */}
+          <AspectRatio ratio={16 / 9} className="w-full bg-black">
             <video
               src={previewUrl}
               controls
               playsInline
-              className="absolute inset-0 size-full object-contain"
+              className="size-full object-cover rounded-[inherit]"
             />
-          </div>
+          </AspectRatio>
           <button
-            onClick={onHapus}
-            className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white"
+            onClick={(e) => {
+              e.stopPropagation()
+              onHapus()
+            }}
+            className="absolute top-2.5 right-2.5 z-20 flex size-8 items-center justify-center rounded-full bg-black/75 text-white border border-white/20 shadow-md backdrop-blur-xs transition-transform hover:scale-105 active:scale-95 cursor-pointer"
             aria-label="Hapus video"
             type="button"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         </div>
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border py-6 hover:bg-muted/50 disabled:opacity-60"
+          className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border py-6 hover:bg-muted/50 disabled:opacity-60 cursor-pointer transition-colors"
           type="button"
           disabled={disabled || memeriksa}
         >
           {memeriksa ? (
             <Spinner className="size-6" />
           ) : (
-            <Video className="h-7 w-7 text-muted-foreground" />
+            <Video className="size-7 text-muted-foreground" />
           )}
-          <p className="text-sm">
+          <p className="text-sm font-medium">
             {memeriksa ? "Memeriksa video…" : "Ambil / pilih video"}
           </p>
         </button>

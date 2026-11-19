@@ -19,6 +19,7 @@
 // memotong tepi selalu punya jalan untuk dilihat utuh.
 import * as React from "react"
 import { ImageOff, ZoomIn } from "@/components/ui/hugeicons-compat"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
 import {
   Dialog,
   DialogContent,
@@ -188,14 +189,14 @@ export function FotoZoom({ url, label }: { url: string; label: string }) {
   )
 }
 
-const KELAS_RASIO = {
-  "4/3": "aspect-[4/3]",
-  "16/9": "aspect-video",
-  "1/1": "aspect-square",
-  "3/4": "aspect-[3/4]",
+const RASIO_MAP = {
+  "16/9": 16 / 9,
+  "4/3": 4 / 3,
+  "1/1": 1 / 1,
+  "3/4": 3 / 4,
 } as const
 
-export type RasioFoto = keyof typeof KELAS_RASIO
+export type RasioFoto = keyof typeof RASIO_MAP
 
 export function BingkaiFoto({
   src,
@@ -220,10 +221,10 @@ export function BingkaiFoto({
   const [gagal, setGagal] = React.useState(false)
 
   const bingkai = (
-    <span
+    <AspectRatio
+      ratio={RASIO_MAP[rasio] || 4 / 3}
       className={cn(
         "relative block w-full overflow-hidden rounded-lg border border-border bg-muted/40 [isolation:isolate] [transform:translateZ(0)]",
-        KELAS_RASIO[rasio],
         className
       )}
     >
@@ -242,7 +243,7 @@ export function BingkaiFoto({
             onError={() => setGagal(true)}
             className={cn(
               "absolute inset-0 size-full rounded-[inherit]",
-              mode === "isi" ? "object-cover" : "object-contain"
+              mode === "utuh" ? "object-contain" : "object-cover"
             )}
           />
           {!tanpaDialog && (
@@ -252,7 +253,7 @@ export function BingkaiFoto({
           )}
         </>
       )}
-    </span>
+    </AspectRatio>
   )
 
   if (tanpaDialog || gagal) return bingkai
