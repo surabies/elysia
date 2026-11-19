@@ -14,17 +14,23 @@ import {
   inputPerubahanKategoriBodySchema,
 } from './closing.schema';
 
-const CLOSING_AUTHORIZED_ROLES: ReadonlySet<AppRole> = new Set([
+const CLOSING_ROLES: AppRole[] = [
   'SUPERADMIN',
   'EXECUTIVE',
   'VERIFIKATOR_3',
   'VERIFIKATOR_2',
   'VERIFIKATOR_1',
   'STAFF_ADMIN_BILLING',
-]);
+];
+
+const CLOSING_AUTHORIZED_ROLES: ReadonlySet<AppRole> = new Set(CLOSING_ROLES);
 
 function verifyClosingPermission(userRoles: AppRole[] | undefined): void {
-  if (!userRoles || userRoles.length === 0) return;
+  if (!userRoles || userRoles.length === 0) {
+    throw new Error(
+      'AKSES_DITOLAK: Akun Anda tidak memiliki wewenang untuk menjalankan proses tutup buku.'
+    );
+  }
   const hasPermission = userRoles.some((r) => CLOSING_AUTHORIZED_ROLES.has(r));
   if (!hasPermission) {
     throw new Error(
@@ -35,6 +41,9 @@ function verifyClosingPermission(userRoles: AppRole[] | undefined): void {
 
 export const closingRouter = new Elysia({ prefix: '/closing' })
   .use(authPlugin)
+  .guard({
+    requireRole: CLOSING_ROLES,
+  })
 
   // 0. Info Periode Kerja Aktif & Daftar Periode
   .get('/periode-kerja', async ({ set }) => {

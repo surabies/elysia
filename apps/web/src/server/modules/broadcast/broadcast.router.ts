@@ -1,17 +1,20 @@
 import { Elysia, t } from 'elysia';
+import type { AppRole } from '@cater/db';
+import { authPlugin } from '../../plugins/auth';
 import { broadcastService } from '../../services/broadcast/broadcast.service';
 
-export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
-  // 1. Ambil semua siaran (Dashboard Admin)
-  .get('/', async () => {
-    const data = await broadcastService.getAllBroadcasts();
-    return {
-      success: true,
-      data,
-    };
-  })
+const BROADCAST_ADMIN_ROLES: AppRole[] = [
+  'SUPERADMIN',
+  'EXECUTIVE',
+  'STAFF_ADMIN_BILLING',
+];
 
-  // 2. Ambil siaran aktif untuk konsumsi publik
+export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
+  .use(authPlugin)
+
+  // === ENDPOINT PUBLIK (Read-only untuk tampilan Landing Page) ===
+
+  // 1. Ambil siaran aktif untuk konsumsi publik
   .get('/public', async () => {
     const data = await broadcastService.getPublicBroadcasts();
     return {
@@ -20,7 +23,7 @@ export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
     };
   })
 
-  // 2b. Ambil & Simpan Konten Seksi Landing Page (CMS Dinamis: Kemudahan, Mengapa, & 3 Fitur Utama)
+  // 2. Ambil Konten Seksi Landing Page (CMS Dinamis publik)
   .get('/landing-sections', async () => {
     const data = await broadcastService.getLandingCMS();
     return {
@@ -28,6 +31,22 @@ export const broadcastRouter = new Elysia({ prefix: '/broadcast' })
       data,
     };
   })
+
+  // === ENDPOINT TERPROTEKSI (Hanya Admin / Staf Berwenang) ===
+  .guard({
+    requireRole: BROADCAST_ADMIN_ROLES,
+  })
+
+  // 3. Ambil semua siaran (Dashboard Admin)
+  .get('/', async () => {
+    const data = await broadcastService.getAllBroadcasts();
+    return {
+      success: true,
+      data,
+    };
+  })
+
+  // 4. Simpan & Reset Konten Seksi Landing Page
   .put(
     '/landing-sections',
     async ({ body, set }) => {

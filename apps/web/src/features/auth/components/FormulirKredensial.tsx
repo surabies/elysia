@@ -66,7 +66,24 @@ export function CredentialsForm({ callbackUrl }: { callbackUrl: string }) {
         return
       }
 
-      router.push(callbackUrl)
+      // Cek role aktual user dari server agar pelanggan (USER) diarahkan ke beranda publik (/)
+      // dan hanya petugas/staf internal yang diarahkan ke dashboard operasional.
+      let targetUrl = "/"
+      try {
+        const meRes = await fetch("/api/me", { credentials: "include" })
+        if (meRes.ok) {
+          const meJson = await meRes.json()
+          if (meJson?.data?.user?.isInternal) {
+            targetUrl = callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+              ? callbackUrl
+              : "/dashboard"
+          }
+        }
+      } catch {
+        targetUrl = "/"
+      }
+
+      router.push(targetUrl)
       router.refresh()
     } catch (err: unknown) {
       const errorMsg =

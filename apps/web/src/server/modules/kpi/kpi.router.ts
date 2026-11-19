@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia"
+import { authPlugin } from "../../plugins/auth"
 import {
   dapatkanPerspektifScorecard,
   tambahKpiBaru,
@@ -8,6 +9,10 @@ import {
 } from "../../services/kpi/kpi.service"
 
 export const kpiRouter = new Elysia({ prefix: "/kpi" })
+  .use(authPlugin)
+  .guard({
+    requireRole: ["SUPERADMIN", "EXECUTIVE"],
+  })
   // 1. Ambil Scorecard Tree per Periode
   .get(
     "/",

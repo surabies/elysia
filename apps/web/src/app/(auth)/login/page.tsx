@@ -11,13 +11,17 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth/index"
+import {
+  getPostAuthRedirect,
+  sanitizeCallbackUrl,
+} from "@/lib/auth/access-control"
 import { LoginCard } from "@/features/auth"
 
 export const metadata: Metadata = {
   // Judul lengkap dirangkai template di app/layout.tsx -> "Masuk — PERUMDA Tirtawening"
   title: "Masuk",
   description:
-    "Masuk ke dashboard operasional PERUMDA Tirtawening Kota Bandung",
+    "Masuk ke portal PERUMDA Tirtawening Kota Bandung",
 }
 
 // searchParams adalah Promise di Next.js 15+ (async request APIs) — WAJIB
@@ -28,15 +32,12 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; callbackUrl?: string }>
 }) {
   const { error, callbackUrl } = await searchParams
+  const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl, "/dashboard")
 
-  // Sudah punya sesi -> tidak ada gunanya melihat halaman masuk.
-  // Default "/dashboard" (BUKAN "/"): halaman ini khusus staf, lihat
-  // metadata.description di atas — tanpa ini, login yang berhasil tanpa
-  // ?callbackUrl= eksplisit mendarat di landing page publik, yang
-  // header-nya tidak menampilkan status login sama sekali. Terlihat
-  // seperti login gagal padahal sesinya sudah terbentuk.
   const session = await auth()
-  if (session?.user) redirect(callbackUrl ?? "/dashboard")
+  if (session?.user) {
+    redirect(getPostAuthRedirect(session.user.roles, safeCallbackUrl))
+  }
 
-  return <LoginCard error={error} callbackUrl={callbackUrl ?? "/dashboard"} />
+  return <LoginCard error={error} callbackUrl={safeCallbackUrl} />
 }

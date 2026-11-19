@@ -36,6 +36,7 @@ export async function auth() {
         name: sessionData.user.name ?? 'Warga',
         email: sessionData.user.email ?? '',
         image: sessionData.user.image ?? null,
+        nolg: (sessionData.user as { nolg?: string | null }).nolg ?? null,
         role: roles[0] ?? 'USER',
         roles,
       },

@@ -72,7 +72,6 @@ export const navGroups: NavGroup[] = [
       "VERIFIKATOR_3",
       "PENCATAT",
       "PELAKSANA",
-      "USER",
     ],
     items: [
       {
@@ -89,7 +88,6 @@ export const navGroups: NavGroup[] = [
           "VERIFIKATOR_3",
           "PENCATAT",
           "PELAKSANA",
-          "USER",
         ],
       },
       {
@@ -348,7 +346,6 @@ export const navGroups: NavGroup[] = [
       "VERIFIKATOR_3",
       "PENCATAT",
       "PELAKSANA",
-      "USER",
     ],
     items: [
       {
@@ -365,7 +362,6 @@ export const navGroups: NavGroup[] = [
           "VERIFIKATOR_3",
           "PENCATAT",
           "PELAKSANA",
-          "USER",
         ],
       },
       {
@@ -394,7 +390,6 @@ export const navGroups: NavGroup[] = [
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
           "PELAKSANA",
-          "USER",
         ],
       },
       {
@@ -410,7 +405,6 @@ export const navGroups: NavGroup[] = [
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
           "PELAKSANA",
-          "USER",
         ],
       },
       {
@@ -557,7 +551,6 @@ export const navGroups: NavGroup[] = [
       "VERIFIKATOR_3",
       "PENCATAT",
       "PELAKSANA",
-      "USER",
     ],
     items: [
       {
@@ -574,7 +567,6 @@ export const navGroups: NavGroup[] = [
           "VERIFIKATOR_3",
           "PENCATAT",
           "PELAKSANA",
-          "USER",
         ],
       },
       {

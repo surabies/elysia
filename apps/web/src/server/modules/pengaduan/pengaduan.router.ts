@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia';
+import type { AppRole } from '@cater/db';
 import { authPlugin } from '../../plugins/auth';
 import { pengaduanService } from '../../services/pengaduan/pengaduan.service';
 import {
@@ -7,8 +8,21 @@ import {
   ubahStatusPengaduanBodySchema,
 } from './pengaduan.schema';
 
+const PENGADUAN_INTERNAL_ROLES: AppRole[] = [
+  'SUPERADMIN',
+  'EXECUTIVE',
+  'STAFF_ADMIN_BILLING',
+  'VERIFIKATOR_1',
+  'VERIFIKATOR_2',
+  'VERIFIKATOR_3',
+  'PELAKSANA',
+];
+
 const pengaduanRoutes = new Elysia()
   .use(authPlugin)
+  .guard({
+    requireRole: PENGADUAN_INTERNAL_ROLES,
+  })
 
   // 1. Ringkasan Statistik Antrean Pengaduan (Desk Kartu KPI)
   .get('/statistik', async () => {

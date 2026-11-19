@@ -497,7 +497,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
-      requireAuth: true,
+      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3', 'EXECUTIVE'],
       params: thblParamsSchema,
       query: ikhtisarQuerySchema,
     }
@@ -516,7 +516,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
-      requireAuth: true,
+      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3', 'EXECUTIVE'],
       params: thblParamsSchema,
       query: ikhtisarQuerySchema,
     }

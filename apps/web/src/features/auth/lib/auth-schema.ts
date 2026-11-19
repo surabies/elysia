@@ -14,6 +14,12 @@ export const forgotPasswordSchema = z.object({
 
 export const registerSchema = z
   .object({
+    nolg: z
+      .string()
+      .trim()
+      .min(3, "Nomor pelanggan wajib diisi")
+      .max(20, "Nomor pelanggan maksimal 20 karakter")
+      .regex(/^[A-Za-z0-9._-]+$/, "Format nomor pelanggan tidak valid"),
     name: z.string().trim().min(2, "Nama minimal 2 karakter"),
     email: z.string().email("Format email tidak valid").trim().toLowerCase(),
     password: z

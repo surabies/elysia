@@ -31,6 +31,7 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
 
     const fd = new FormData(e.currentTarget)
     const parsed = registerSchema.safeParse({
+      nolg: fd.get("nolg"),
       name: fd.get("name"),
       email: fd.get("email"),
       password: fd.get("password"),
@@ -49,10 +50,11 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
 
     setPending(true)
     const hasil = await signUp.email({
+      nolg: parsed.data.nolg,
       name: parsed.data.name,
       email: parsed.data.email,
       password: parsed.data.password,
-      callbackURL: callbackUrl,
+      callbackURL: "/",
     })
     setPending(false)
 
@@ -61,7 +63,8 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
       return
     }
 
-    router.push(callbackUrl)
+    // Pelanggan selalu diarahkan ke beranda publik setelah mendaftar.
+    router.push("/")
     router.refresh()
   }
 
@@ -74,6 +77,26 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
             <AlertDescription>{pesanError}</AlertDescription>
           </Alert>
         )}
+
+        <Field data-invalid={!!errors.nolg}>
+          <FieldLabel htmlFor="nolg">Nomor Pelanggan (NOLG)</FieldLabel>
+          <Input
+            id="nolg"
+            name="nolg"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Contoh: 00703600750"
+            aria-invalid={!!errors.nolg}
+            disabled={pending}
+          />
+          {errors.nolg ? (
+            <FieldError>{errors.nolg}</FieldError>
+          ) : (
+            <FieldDescription>
+              Wajib menggunakan Nomor Pelanggan PERUMDA Tirtawening yang terdaftar.
+            </FieldDescription>
+          )}
+        </Field>
 
         <Field data-invalid={!!errors.name}>
           <FieldLabel htmlFor="name">Nama lengkap</FieldLabel>

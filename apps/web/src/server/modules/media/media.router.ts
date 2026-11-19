@@ -1,13 +1,19 @@
 import { Elysia, t } from 'elysia';
 import { authPlugin } from '../../plugins/auth';
+import { isInternalUser } from '@/lib/auth/access-control';
 import {
   uploadToCloudinary,
   isCloudinaryConfigured,
   generatePhotoPublicId,
-  getCloudinaryFolder,
   type ModulFoto,
   type JenisFoto,
 } from '../../lib/cloudinary';
+
+const INTERNAL_ONLY_MEDIA_MODULS: ReadonlySet<string> = new Set([
+  'cater',
+  'gwm',
+  'broadcast',
+]);
 
 /**
  * Media Router: Menangani endpoint unggah foto & media terstandar Cloudinary
@@ -16,21 +22,45 @@ import {
 export const mediaRouter = new Elysia({ prefix: '/media' })
   .use(authPlugin)
 
-  // Status Koneksi Cloudinary
-  .get('/status', () => {
-    return {
-      success: true,
-      configured: isCloudinaryConfigured(),
-      message: isCloudinaryConfigured()
-        ? 'Cloudinary CDN terhubung dan siap digunakan.'
-        : 'Cloudinary belum dikonfigurasi di .env.local',
-    };
-  })
+  // Status Koneksi Cloudinary (khusus staf internal)
+  .get(
+    '/status',
+    () => {
+      return {
+        success: true,
+        configured: isCloudinaryConfigured(),
+        message: isCloudinaryConfigured()
+          ? 'Cloudinary CDN terhubung dan siap digunakan.'
+          : 'Cloudinary belum dikonfigurasi di .env.local',
+      };
+    },
+    {
+      requireRole: [
+        'SUPERADMIN',
+        'EXECUTIVE',
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+      ],
+    }
+  )
 
-  // Upload Foto Media
+  // Upload Foto Media (wajib login; modul internal hanya untuk staf)
   .post(
     '/upload',
-    async ({ body, set }) => {
+    async ({ body, userRoles, set }) => {
+      if (
+        INTERNAL_ONLY_MEDIA_MODULS.has(body.modul) &&
+        !isInternalUser(userRoles)
+      ) {
+        set.status = 403;
+        return {
+          success: false,
+          error: 'Forbidden: modul media ini khusus petugas internal.',
+        };
+      }
+
       try {
         if (!isCloudinaryConfigured()) {
           set.status = 503;
@@ -71,6 +101,7 @@ export const mediaRouter = new Elysia({ prefix: '/media' })
       }
     },
     {
+      requireAuth: true,
       body: t.Object({
         file: t.String({ description: 'Base64 DataURL gambar' }),
         modul: t.Union([

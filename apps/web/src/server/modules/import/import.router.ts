@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import fs from 'fs';
 import path from 'path';
-import { db, pelanggan } from '@cater/db';
+import { db, pelanggan, type AppRole } from '@cater/db';
 import { inArray } from 'drizzle-orm';
 import { authPlugin } from '../../plugins/auth';
 import { importDataService } from '../../services/import/import-data.service';
@@ -12,8 +12,17 @@ import {
   importPbpkBodySchema,
 } from './import.schema';
 
+const IMPORT_ROLES: AppRole[] = [
+  'SUPERADMIN',
+  'STAFF_ADMIN_BILLING',
+  'VERIFIKATOR_3',
+];
+
 export const importRouter = new Elysia({ prefix: '/import' })
   .use(authPlugin)
+  .guard({
+    requireRole: IMPORT_ROLES,
+  })
 
   // 1. Import Paket Foto Backup (Format: {THBL}_{JENIS}_{NOLG}.jpg)
   // Contoh: 202601_stand_00703600750.jpg, 202601_segel_00703600750.jpg, 202601_rumah_00703600750.jpg

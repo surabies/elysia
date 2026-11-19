@@ -1,10 +1,31 @@
 import { Elysia, t } from 'elysia';
+import type { AppRole } from '@cater/db';
 import { authPlugin } from '../../plugins/auth';
 import { masterPetugasService } from '../../services/master/master-petugas.service';
 import { masterExtendedService } from '../../services/master/master-extended.service';
 
+const MASTER_READ_ROLES: AppRole[] = [
+  'SUPERADMIN',
+  'EXECUTIVE',
+  'STAFF_ADMIN_BILLING',
+  'VERIFIKATOR_1',
+  'VERIFIKATOR_2',
+  'VERIFIKATOR_3',
+];
+
+const MASTER_WRITE_ROLES: AppRole[] = [
+  'SUPERADMIN',
+  'STAFF_ADMIN_BILLING',
+  'VERIFIKATOR_1',
+  'VERIFIKATOR_2',
+  'VERIFIKATOR_3',
+];
+
 export const masterRouter = new Elysia({ prefix: '/master' })
   .use(authPlugin)
+  .guard({
+    requireRole: MASTER_READ_ROLES,
+  })
 
   // 1. Daftar seluruh petugas cater
   .get('/petugas', async () => {
@@ -179,11 +200,17 @@ export const masterRouter = new Elysia({ prefix: '/master' })
     }
   )
 
-  // 11. Manajemen User
-  .get('/users', async () => {
-    const data = await masterExtendedService.getDaftarUsers();
-    return { success: true, data };
-  })
+  // 11. Manajemen User (Hanya Superadmin & Otoritas Berwenang)
+  .get(
+    '/users',
+    async () => {
+      const data = await masterExtendedService.getDaftarUsers();
+      return { success: true, data };
+    },
+    {
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3'],
+    }
+  )
 
   // 11b. Update Peran & Status User (Hanya Superadmin & Otoritas Berwenang)
   .put(
@@ -211,10 +238,16 @@ export const masterRouter = new Elysia({ prefix: '/master' })
   )
 
   // 12. Matriks Hak Akses RBAC
-  .get('/otorisasi', async () => {
-    const data = await masterExtendedService.getMatriksOtorisasi();
-    return { success: true, data };
-  })
+  .get(
+    '/otorisasi',
+    async () => {
+      const data = await masterExtendedService.getMatriksOtorisasi();
+      return { success: true, data };
+    },
+    {
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3'],
+    }
+  )
 
   // 13. Update Matriks Hak Akses RBAC (Hanya Superadmin & Otoritas Berwenang)
   .put(

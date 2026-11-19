@@ -159,7 +159,14 @@ export const geoModule = new Elysia({ prefix: '/places' })
       };
     },
     {
-      requireAuth: true,
+      requireRole: [
+        'SUPERADMIN',
+        'EXECUTIVE',
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+      ],
       body: t.Object({
         name: t.String({
           minLength: 1,
@@ -316,7 +323,14 @@ export const geoModule = new Elysia({ prefix: '/places' })
       };
     },
     {
-      requireAuth: true,
+      requireRole: [
+        'SUPERADMIN',
+        'EXECUTIVE',
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+      ],
       params: t.Object({
         id: t.String({ minLength: 1 }),
       }),

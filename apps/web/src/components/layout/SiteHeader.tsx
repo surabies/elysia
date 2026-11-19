@@ -6,6 +6,10 @@ import Link from "next/link"
 import { AutoHideHeader } from "@/components/layout/AutoHideHeader"
 import { Logo } from "@/components/layout/Logo"
 import { MobileMenu } from "@/components/layout/MobileMenu"
+import {
+  PublicUserMenu,
+  usePublicUserSession,
+} from "@/components/layout/PublicUserMenu"
 import { SearchExperience } from "@/components/layout/SearchExperience"
 import { PillButton } from "@/components/shared/PillButton"
 import { BroadcastGangguanBanner } from "@/components/home/BroadcastGangguanBanner"
@@ -16,6 +20,17 @@ import { topEventsContent } from "@/data/home"
 export function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const { promptInstall, isInstalled } = usePwa()
+  const { isAuthenticated, user } = usePublicUserSession()
+
+  const visibleNavLinks = React.useMemo(
+    () =>
+      isAuthenticated
+        ? mainNavLinks.filter(
+            (link) => link.href !== "/login" && link.href !== "/daftar"
+          )
+        : mainNavLinks,
+    [isAuthenticated]
+  )
 
   return (
     <AutoHideHeader>
@@ -44,7 +59,7 @@ export function SiteHeader() {
           <div className="ml-auto flex items-center shrink-0 gap-2">
             {/* Menu Link Desktop (md+) */}
             <ul className="hidden items-center md:flex shrink-0">
-              {mainNavLinks.map((link) => (
+              {visibleNavLinks.map((link) => (
                 <li key={link.href} className="mx-2 lg:mx-3 xl:mx-4 shrink-0">
                   <Link
                     href={link.href}
@@ -56,28 +71,37 @@ export function SiteHeader() {
               ))}
             </ul>
 
-          {/* Icon Search Mobile (< xl) - Berdampingan langsung dengan Icon Hamburger */}
-          <SearchExperience
-            events={topEventsContent.events}
-            mode="mobile"
-            isMenuOpen={mobileMenuOpen}
-            onOpen={() => setMobileMenuOpen(false)}
-          />
+            {/* Icon Search Mobile (< xl) - Berdampingan langsung dengan Icon Hamburger */}
+            <SearchExperience
+              events={topEventsContent.events}
+              mode="mobile"
+              isMenuOpen={mobileMenuOpen}
+              onOpen={() => setMobileMenuOpen(false)}
+            />
 
-          {/* Icon Hamburger Menu (< md) */}
-          <MobileMenu
-            open={mobileMenuOpen}
-            onOpenChange={setMobileMenuOpen}
-          />
+            {/* Avatar Dropdown User khusus desktop (md+) saat sudah login */}
+            {isAuthenticated && user ? (
+              <div className="hidden md:flex items-center">
+                <PublicUserMenu user={user} />
+              </div>
+            ) : null}
 
-          {/* Tombol Unduh App (md+) */}
-          <PillButton
-            type="button"
-            onClick={promptInstall}
-            className="ml-2 hidden last:mr-0 md:inline-flex shrink-0 whitespace-nowrap cursor-pointer"
-          >
-            {isInstalled ? "BUKA APP" : downloadAppLink.label}
-          </PillButton>
+            {/* Icon Hamburger Menu (< md) — profil akun ditampilkan di dalam menu ini */}
+            <MobileMenu
+              open={mobileMenuOpen}
+              onOpenChange={setMobileMenuOpen}
+              isAuthenticated={isAuthenticated}
+              user={user}
+            />
+
+            {/* Tombol Unduh App (md+) */}
+            <PillButton
+              type="button"
+              onClick={promptInstall}
+              className="ml-2 hidden last:mr-0 md:inline-flex shrink-0 whitespace-nowrap cursor-pointer"
+            >
+              {isInstalled ? "BUKA APP" : downloadAppLink.label}
+            </PillButton>
         </div>
         </nav>
       </div>
