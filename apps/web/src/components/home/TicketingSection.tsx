@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'motion/react'
-import { Receipt, Camera, MapPin, Sparkles } from 'lucide-react'
+import { Receipt, Camera, MapPin } from 'lucide-react'
 import { Container } from '@/components/shared/Container'
 import { HaloBadge } from '@/components/ui/halo-badge'
 import {
@@ -68,6 +68,41 @@ const DEFAULT_META = [
 
 export function TicketingSection({ content: initialContent }: TicketingSectionProps) {
   const [content, setContent] = React.useState<TicketingContent>(initialContent)
+  const [activeMobileIdx, setActiveMobileIdx] = React.useState(0)
+  const [isMobilePaused, setIsMobilePaused] = React.useState(false)
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+
+  const handleMobileScroll = () => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const scrollLeft = el.scrollLeft
+    const card = el.firstElementChild as HTMLElement | null
+    const cardWidth = card ? card.offsetWidth : el.clientWidth
+    const idx = Math.round(scrollLeft / (cardWidth + 16))
+    setActiveMobileIdx(Math.max(0, Math.min(idx, content.items.length - 1)))
+  }
+
+  // Auto-cycle bergerak otomatis setiap 4 detik pada tampilan mobile (seperti iklan)
+  React.useEffect(() => {
+    if (isMobilePaused || content.items.length <= 1) return
+
+    const timer = setInterval(() => {
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) return
+
+      setActiveMobileIdx((prev) => {
+        const nextIdx = (prev + 1) % content.items.length
+        const el = scrollContainerRef.current
+        if (el) {
+          const card = el.firstElementChild as HTMLElement | null
+          const cardWidth = card ? card.offsetWidth : el.clientWidth
+          el.scrollTo({ left: nextIdx * (cardWidth + 16), behavior: 'smooth' })
+        }
+        return nextIdx
+      })
+    }, 4000)
+
+    return () => clearInterval(timer)
+  }, [isMobilePaused, content.items.length])
 
   // Sinkronisasi dinamis dengan backend & dashboard (/broadcast)
   React.useEffect(() => {
@@ -111,8 +146,9 @@ export function TicketingSection({ content: initialContent }: TicketingSectionPr
 
   return (
     <section
+      id="layanan-mandiri"
       aria-labelledby="ticketing-title"
-      className="section-white relative bg-transparent py-14 md:py-20 text-foreground"
+      className="section-white relative bg-transparent py-12 md:py-20 text-foreground"
     >
       <Container className="max-w-360 px-4 lg:px-12">
         <motion.div
@@ -120,35 +156,33 @@ export function TicketingSection({ content: initialContent }: TicketingSectionPr
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-50px' }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
+          className="mb-6 md:mb-10"
         >
-          <div>
-            <h2
-              id="ticketing-title"
-              className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground"
-            >
-              {content.title}
-            </h2>
-            {content.subtitle && (
-              <p className="mt-2 text-copy-14 sm:text-copy-15 max-w-2xl text-muted-foreground leading-relaxed">
-                {content.subtitle}
-              </p>
-            )}
-          </div>
-
-          <HaloBadge
-            live
-            variant="outline"
-            className="hidden sm:inline-flex text-xs font-mono text-muted-foreground shrink-0"
+          <h2
+            id="ticketing-title"
+            className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground"
           >
-            Akses Langsung Tanpa Antre
-          </HaloBadge>
+            {content.title}
+          </h2>
+          {content.subtitle && (
+            <p className="mt-2 text-copy-14 sm:text-copy-15 max-w-2xl text-muted-foreground leading-relaxed">
+              {content.subtitle}
+            </p>
+          )}
         </motion.div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
+        {/* Mobile Carousel (1 Konten Penuh Lebar Layar), Grid di Layar Desktop */}
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleMobileScroll}
+          onMouseEnter={() => setIsMobilePaused(true)}
+          onMouseLeave={() => setIsMobilePaused(false)}
+          onTouchStart={() => setIsMobilePaused(true)}
+          onTouchEnd={() => setIsMobilePaused(false)}
+          className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 lg:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar pb-3 md:pb-0"
+        >
           {content.items.map((item, idx) => {
             const fallback = DEFAULT_META[idx % DEFAULT_META.length]
-            const Icon = fallback.icon
             const title = item.title || fallback.title
             const badge = item.badge || fallback.badge
             const eyebrow = fallback.eyebrow
@@ -158,17 +192,13 @@ export function TicketingSection({ content: initialContent }: TicketingSectionPr
             const imageAlt = item.image?.alt || title
 
             return (
-              <motion.div
+              <div
                 key={`${title}-${idx}`}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.55, delay: idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="flex"
+                className="w-full shrink-0 snap-center md:w-auto md:shrink flex flex-col"
               >
                 <OrganicCard
                   href={href}
-                  className="w-full max-w-none"
+                  className="w-full max-w-none h-full flex flex-col justify-between"
                 >
                   <OrganicCardBody>
                     <div>
@@ -214,10 +244,36 @@ export function TicketingSection({ content: initialContent }: TicketingSectionPr
                     <OrganicCardFooterIcon className={fallback.hoverIconBg} />
                   </OrganicCardFooter>
                 </OrganicCard>
-              </motion.div>
+              </div>
             )
           })}
         </div>
+
+        {/* Indikator Titik Carousel Khusus Mobile */}
+        {content.items.length > 1 && (
+          <div className="flex md:hidden items-center justify-center gap-1.5 pt-3 pb-1">
+            {content.items.map((_, dotIdx) => (
+              <button
+                key={dotIdx}
+                type="button"
+                onClick={() => {
+                  const el = scrollContainerRef.current
+                  if (!el) return
+                  const card = el.firstElementChild as HTMLElement | null
+                  const cardWidth = card ? card.offsetWidth : el.clientWidth
+                  el.scrollTo({ left: dotIdx * (cardWidth + 16), behavior: 'smooth' })
+                }}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                  dotIdx === activeMobileIdx
+                    ? "w-5 bg-foreground"
+                    : "w-1.5 bg-foreground/20 hover:bg-foreground/40"
+                )}
+                aria-label={`Lihat layanan ${dotIdx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </Container>
     </section>
   )

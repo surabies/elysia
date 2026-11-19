@@ -283,7 +283,7 @@ export function DokumentasiKegiatanSection() {
     if (!el) return
     const scrollLeft = el.scrollLeft
     const card = el.firstElementChild as HTMLElement | null
-    const cardWidth = card ? card.offsetWidth : 300
+    const cardWidth = card ? card.offsetWidth : el.clientWidth
     const idx = Math.round(scrollLeft / (cardWidth + 16))
     setActiveMobileIdx(Math.max(0, Math.min(idx, daftarTerfilter.length - 1)))
   }
@@ -301,7 +301,7 @@ export function DokumentasiKegiatanSection() {
         const el = scrollContainerRef.current
         if (el) {
           const card = el.firstElementChild as HTMLElement | null
-          const cardWidth = card ? card.offsetWidth : 300
+          const cardWidth = card ? card.offsetWidth : el.clientWidth
           el.scrollTo({ left: nextIdx * (cardWidth + 16), behavior: 'smooth' })
         }
         return nextIdx
@@ -444,7 +444,7 @@ export function DokumentasiKegiatanSection() {
             </div>
           </div>
 
-          {/* Carousel Otomatis di Mobile, Grid di Layar Desktop */}
+          {/* Carousel Otomatis di Mobile (1 Konten Penuh Lebar Layar), Grid di Layar Desktop */}
           <div
             ref={scrollContainerRef}
             onScroll={handleMobileScroll}
@@ -452,12 +452,12 @@ export function DokumentasiKegiatanSection() {
             onMouseLeave={() => setIsMobilePaused(false)}
             onTouchStart={() => setIsMobilePaused(true)}
             onTouchEnd={() => setIsMobilePaused(false)}
-            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 pb-3 md:pb-0"
+            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar pb-3 md:pb-0"
           >
             {daftarTerfilter.map((item, idx) => (
               <div
                 key={item.id}
-                className="w-[85vw] max-w-[340px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink flex flex-col"
+                className="w-full shrink-0 snap-center md:w-auto md:max-w-none md:shrink flex flex-col"
               >
                 <KegiatanCardItem
                   item={item}
@@ -479,7 +479,7 @@ export function DokumentasiKegiatanSection() {
                     const el = scrollContainerRef.current
                     if (!el) return
                     const card = el.firstElementChild as HTMLElement | null
-                    const cardWidth = card ? card.offsetWidth : 300
+                    const cardWidth = card ? card.offsetWidth : el.clientWidth
                     el.scrollTo({ left: dotIdx * (cardWidth + 16), behavior: 'smooth' })
                   }}
                   className={cn(
