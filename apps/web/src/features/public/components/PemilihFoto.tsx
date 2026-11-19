@@ -6,6 +6,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
@@ -99,9 +100,12 @@ export function PemilihFoto({
               </AspectRatio>
             </DialogTrigger>
 
-            {/* Dialog Perbesar Foto (FotoZoom) yang Robust seperti Verifikasi */}
-            <DialogContent className="max-w-[calc(100vw-2rem)] p-3 sm:p-5 sm:max-w-4xl border border-border bg-card text-foreground shadow-2xl">
+            {/* Dialog Perbesar Foto (FotoZoom) yang Robust & Seamless seperti Verifikasi */}
+            <DialogContent className="max-w-[calc(100vw-1.5rem)] sm:max-w-4xl p-0 gap-0 overflow-hidden border border-white/15 bg-neutral-950 text-white shadow-2xl rounded-2xl [&_[data-slot=dialog-close]]:text-white [&_[data-slot=dialog-close]]:bg-black/60 [&_[data-slot=dialog-close]]:border [&_[data-slot=dialog-close]]:border-white/20 [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:hover:bg-white/20 [&_[data-slot=dialog-close]]:size-8 [&_[data-slot=dialog-close]]:top-3 [&_[data-slot=dialog-close]]:right-3 [&_[data-slot=dialog-close]]:z-30">
               <DialogTitle className="sr-only">{label}</DialogTitle>
+              <DialogDescription className="sr-only">
+                Penampil foto interaktif dengan zoom, geser, dan putar. Tekan Esc untuk menutup.
+              </DialogDescription>
               <FotoZoom url={previewUrl} label={label} />
             </DialogContent>
           </Dialog>

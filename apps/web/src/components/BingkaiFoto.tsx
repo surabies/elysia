@@ -18,172 +18,223 @@
 // Apa pun modenya, klik membuka dialog zoom (FotoZoom) — cover yang
 // memotong tepi selalu punya jalan untuk dilihat utuh.
 import * as React from "react"
-import { ImageOff, ZoomIn } from "@/components/ui/hugeicons-compat"
+import {
+  ImageOff,
+  Minus,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  RotateCw,
+  ZoomIn,
+} from "@/components/ui/hugeicons-compat"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
-const ZOOM_MIN = 1
-const ZOOM_MAKS = 8
-/// Per unit deltaY. ~0.002 terasa sat-set tapi masih bisa dihentikan tepat
-/// di angka yang dituju pada trackpad maupun mouse wheel.
-const ZOOM_LAJU = 0.002
+const SKALA_MIN = 0.5
+const SKALA_MAKS = 6
+const LANGKAH = 0.25
+const batas = (n: number) =>
+  Math.min(SKALA_MAKS, Math.max(SKALA_MIN, Math.round(n * 100) / 100))
 
-function jepit(n: number) {
-  return Math.min(ZOOM_MAKS, Math.max(ZOOM_MIN, n))
-}
-
-/// Foto yang bisa diperiksa: wheel = zoom (bukan scroll halaman), drag =
-/// geser, klik ganda = reset. Zoom diikat ke posisi kursor supaya digit yang
-/// sedang diperiksa tidak lari dari layar saat diperbesar. (Dipindah dari
-/// features/dashboard/verifikasi/components/foto-bukti.tsx supaya bisa
-/// dipakai bingkai foto di seluruh web, bukan cuma panel verifikasi.)
-export function FotoZoom({ url, label }: { url: string; label: string }) {
+/// Penampil foto zoom interaktif seamless berbasis CSS Transform (persis modal verifikasi petugas).
+/// Tidak memakai scrollbar native sehingga tidak ada bilah abu-abu di bawah atau di samping.
+export function FotoZoom({
+  url,
+  label,
+  className,
+}: {
+  url: string
+  label: string
+  className?: string
+}) {
   const wadahRef = React.useRef<HTMLDivElement>(null)
-  const [zoom, setZoom] = React.useState(1)
-  // Titik jangkar (koordinat konten & kursor) dari wheel terakhir, dipakai
-  // useLayoutEffect di bawah setelah ukuran gambar berubah.
-  const jangkarRef = React.useRef<{
+  const [skala, setSkala] = React.useState(1)
+  const [putar, setPutar] = React.useState(0)
+  const [geser, setGeser] = React.useState({ x: 0, y: 0 })
+  const [menyeret, setMenyeret] = React.useState(false)
+  const [gagal, setGagal] = React.useState(false)
+  const awal = React.useRef<{
     x: number
     y: number
-    kx: number
-    ky: number
+    gx: number
+    gy: number
   } | null>(null)
 
-  // Listener wheel dipasang manual: React memasang wheel-nya sendiri sebagai
-  // passive, jadi preventDefault() dari prop onWheel diabaikan dan dialog
-  // ikut ter-scroll setiap kali pengguna men-zoom.
+  const ubahSkala = React.useCallback((delta: number) => {
+    setSkala((s) => {
+      const n = batas(s + delta)
+      if (n <= 1) setGeser({ x: 0, y: 0 })
+      return n
+    })
+  }, [])
+
+  const reset = React.useCallback(() => {
+    setSkala(1)
+    setPutar(0)
+    setGeser({ x: 0, y: 0 })
+  }, [])
+
   React.useEffect(() => {
     const el = wadahRef.current
     if (!el) return
     function saatWheel(e: WheelEvent) {
-      const el = wadahRef.current
-      if (!el) return
       e.preventDefault()
-      setZoom((lama) => {
-        const baru = jepit(lama - e.deltaY * ZOOM_LAJU * lama)
-        if (baru === lama) return lama
-        const kotak = el.getBoundingClientRect()
-        const kx = e.clientX - kotak.left
-        const ky = e.clientY - kotak.top
-        jangkarRef.current = {
-          x: ((el.scrollLeft + kx) / lama) * baru,
-          y: ((el.scrollTop + ky) / lama) * baru,
-          kx,
-          ky,
-        }
-        return baru
-      })
+      ubahSkala(e.deltaY < 0 ? LANGKAH : -LANGKAH)
     }
     el.addEventListener("wheel", saatWheel, { passive: false })
     return () => el.removeEventListener("wheel", saatWheel)
-  }, [])
+  }, [ubahSkala])
 
-  React.useLayoutEffect(() => {
-    const el = wadahRef.current
-    const jangkar = jangkarRef.current
-    if (!el || !jangkar) return
-    el.scrollLeft = jangkar.x - jangkar.kx
-    el.scrollTop = jangkar.y - jangkar.ky
-    jangkarRef.current = null
-  }, [zoom])
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "+" || e.key === "=") ubahSkala(LANGKAH)
+    else if (e.key === "-") ubahSkala(-LANGKAH)
+    else if (e.key.toLowerCase() === "r")
+      setPutar((p) => p + (e.shiftKey ? -90 : 90))
+    else if (e.key === "0") reset()
+    else return
+    e.preventDefault()
+  }
 
-  // Geser dengan drag. Pointer capture supaya kursor boleh keluar frame
-  // tanpa memutus drag di tengah jalan.
-  const geserRef = React.useRef<{
-    x: number
-    y: number
-    kiri: number
-    atas: number
-  } | null>(null)
-
-  function saatPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    const el = wadahRef.current
-    if (!el || zoom === 1) return
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (skala <= 1) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    geserRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      kiri: el.scrollLeft,
-      atas: el.scrollTop,
+    awal.current = { x: e.clientX, y: e.clientY, gx: geser.x, gy: geser.y }
+    setMenyeret(true)
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const a = awal.current
+    if (a) {
+      setGeser({ x: a.gx + e.clientX - a.x, y: a.gy + e.clientY - a.y })
     }
   }
 
-  function saatPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    const el = wadahRef.current
-    const awal = geserRef.current
-    if (!el || !awal) return
-    el.scrollLeft = awal.kiri - (e.clientX - awal.x)
-    el.scrollTop = awal.atas - (e.clientY - awal.y)
+  function onPointerUp() {
+    awal.current = null
+    setMenyeret(false)
   }
 
-  function saatPointerUp() {
-    geserRef.current = null
+  function onDoubleClick() {
+    if (skala > 1) {
+      reset()
+    } else {
+      setSkala(2)
+      setGeser({ x: 0, y: 0 })
+    }
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div
-        ref={wadahRef}
-        onPointerDown={saatPointerDown}
-        onPointerMove={saatPointerMove}
-        onPointerUp={saatPointerUp}
-        onPointerCancel={saatPointerUp}
-        onDoubleClick={() => setZoom(1)}
-        className={
-          zoom === 1
-            ? "max-h-[75dvh] sm:max-h-[80dvh] cursor-zoom-in overflow-auto overscroll-contain bg-neutral-900/40 rounded-lg flex items-center justify-center select-none"
-            : "max-h-[75dvh] sm:max-h-[80dvh] cursor-grab overflow-auto overscroll-contain bg-neutral-900/40 rounded-lg active:cursor-grabbing select-none"
-        }
-      >
-        {/* <img> biasa, bukan next/image — sumbernya Cloudinary/storage
-            eksternal yang domainnya tidak terdaftar di next.config. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+    <div
+      ref={wadahRef}
+      tabIndex={0}
+      role="group"
+      aria-label={`Penampil foto: ${label}`}
+      onKeyDown={onKeyDown}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onDoubleClick={onDoubleClick}
+      className={cn(
+        "relative flex h-[70vh] sm:h-[80vh] w-full touch-none items-center justify-center overflow-hidden bg-neutral-950 outline-none select-none",
+        skala > 1
+          ? menyeret
+            ? "cursor-grabbing"
+            : "cursor-grab"
+          : "cursor-zoom-in",
+        className
+      )}
+    >
+      {gagal ? (
+        <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
+          <ImageOff className="size-6 text-muted-foreground" aria-hidden />
+          <p className="text-xs">Foto gagal dimuat.</p>
+        </div>
+      ) : (
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={url}
           alt={label}
           draggable={false}
-          className="max-h-none w-full max-w-none origin-top-left object-contain select-none"
-          style={{ width: `${zoom * 100}%` }}
+          onError={() => setGagal(true)}
+          className="max-h-full max-w-full object-contain select-none pointer-events-none"
+          style={{
+            transform: `translate(${geser.x}px, ${geser.y}px) rotate(${putar}deg) scale(${skala})`,
+            transition: menyeret ? "none" : "transform 150ms ease-out",
+          }}
         />
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-1.5 border-t border-border/40">
-        <p className="text-[11px] text-muted-foreground">
-          Scroll / tombol untuk zoom · seret untuk geser · klik ganda reset
-          {zoom > 1 ? ` · ${zoom.toFixed(1)}×` : ""}
-        </p>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setZoom((z) => jepit(z - 0.5))}
-            disabled={zoom <= ZOOM_MIN}
-            className="flex size-7 items-center justify-center rounded-md border border-border bg-card text-xs font-bold hover:bg-muted disabled:opacity-40 cursor-pointer transition-colors"
-            aria-label="Perkecil"
-          >
-            -
-          </button>
-          <button
-            type="button"
-            onClick={() => setZoom(1)}
-            className="px-2 h-7 rounded-md border border-border bg-card text-xs font-mono font-medium hover:bg-muted cursor-pointer transition-colors"
-          >
-            1×
-          </button>
-          <button
-            type="button"
-            onClick={() => setZoom((z) => jepit(z + 0.5))}
-            disabled={zoom >= ZOOM_MAKS}
-            className="flex size-7 items-center justify-center rounded-md border border-border bg-card text-xs font-bold hover:bg-muted disabled:opacity-40 cursor-pointer transition-colors"
-            aria-label="Perbesar"
-          >
-            +
-          </button>
-        </div>
+      )}
+
+      {/* Floating Toolbar Controls */}
+      <div
+        className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/20 bg-neutral-900/90 px-2.5 py-1.5 shadow-2xl backdrop-blur-md z-20 text-white"
+        onPointerDown={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => ubahSkala(-LANGKAH)}
+          disabled={skala <= SKALA_MIN}
+          title="Perkecil (−)"
+          aria-label="Perkecil (−)"
+          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 disabled:opacity-30 cursor-pointer transition-colors"
+        >
+          <Minus className="size-3.5" />
+        </button>
+
+        <span className="w-12 text-center font-mono text-xs font-semibold text-white/90 tabular-nums select-none">
+          {Math.round(skala * 100)}%
+        </span>
+
+        <button
+          type="button"
+          onClick={() => ubahSkala(LANGKAH)}
+          disabled={skala >= SKALA_MAKS}
+          title="Perbesar (+)"
+          aria-label="Perbesar (+)"
+          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 disabled:opacity-30 cursor-pointer transition-colors"
+        >
+          <Plus className="size-3.5" />
+        </button>
+
+        <div className="mx-1 h-4 w-px bg-white/20" />
+
+        <button
+          type="button"
+          onClick={() => setPutar((p) => p - 90)}
+          title="Putar Kiri (Shift+R)"
+          aria-label="Putar Kiri (Shift+R)"
+          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 cursor-pointer transition-colors"
+        >
+          <RotateCcw className="size-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPutar((p) => p + 90)}
+          title="Putar Kanan (R)"
+          aria-label="Putar Kanan (R)"
+          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 cursor-pointer transition-colors"
+        >
+          <RotateCw className="size-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={reset}
+          title="Atur Ulang (0)"
+          aria-label="Atur Ulang (0)"
+          className="flex size-7 items-center justify-center rounded-full hover:bg-white/10 active:scale-95 cursor-pointer transition-colors"
+        >
+          <RefreshCw className="size-3.5" />
+        </button>
       </div>
     </div>
   )
@@ -263,9 +314,12 @@ export function BingkaiFoto({
       <DialogTrigger className="block w-full cursor-zoom-in text-left">
         {bingkai}
       </DialogTrigger>
-      {/* sm:max-w-4xl: dialog foto responsif penuh yang kokoh seperti verifikasi */}
-      <DialogContent className="max-w-[calc(100vw-2rem)] p-3 sm:p-5 sm:max-w-4xl border border-border bg-card text-foreground shadow-2xl">
+      {/* sm:max-w-4xl: dialog foto responsif penuh yang kokoh dan seamless seperti verifikasi */}
+      <DialogContent className="max-w-[calc(100vw-1.5rem)] sm:max-w-4xl p-0 gap-0 overflow-hidden border border-white/15 bg-neutral-950 text-white shadow-2xl rounded-2xl [&_[data-slot=dialog-close]]:text-white [&_[data-slot=dialog-close]]:bg-black/60 [&_[data-slot=dialog-close]]:border [&_[data-slot=dialog-close]]:border-white/20 [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:hover:bg-white/20 [&_[data-slot=dialog-close]]:size-8 [&_[data-slot=dialog-close]]:top-3 [&_[data-slot=dialog-close]]:right-3 [&_[data-slot=dialog-close]]:z-30">
         <DialogTitle className="sr-only">{alt}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Penampil foto interaktif dengan zoom, geser, dan putar. Tekan Esc untuk menutup.
+        </DialogDescription>
         <FotoZoom url={src} label={alt} />
       </DialogContent>
     </Dialog>
