@@ -231,7 +231,7 @@ export function SimulasiTarifSection() {
   return (
     <section
       aria-labelledby="simulasi-tarif-title"
-      className="mx-auto w-full max-w-360 px-4 lg:px-12 py-10 sm:py-14 md:py-16 bg-transparent text-foreground"
+      className="mx-auto w-full max-w-360 px-4 lg:px-12 py-10 sm:py-14 md:py-18 bg-transparent text-foreground"
     >
       <motion.div
         initial={{ opacity: 0, y: 36 }}

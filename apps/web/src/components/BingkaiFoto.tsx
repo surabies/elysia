@@ -136,8 +136,8 @@ export function FotoZoom({ url, label }: { url: string; label: string }) {
         onDoubleClick={() => setZoom(1)}
         className={
           zoom === 1
-            ? "max-h-[80dvh] cursor-zoom-in overflow-auto overscroll-contain bg-muted/30"
-            : "max-h-[80dvh] cursor-grab overflow-auto overscroll-contain bg-muted/30 active:cursor-grabbing"
+            ? "max-h-[75dvh] sm:max-h-[80dvh] cursor-zoom-in overflow-auto overscroll-contain bg-neutral-900/40 rounded-lg flex items-center justify-center select-none"
+            : "max-h-[75dvh] sm:max-h-[80dvh] cursor-grab overflow-auto overscroll-contain bg-neutral-900/40 rounded-lg active:cursor-grabbing select-none"
         }
       >
         {/* <img> biasa, bukan next/image — sumbernya Cloudinary/storage
@@ -151,10 +151,39 @@ export function FotoZoom({ url, label }: { url: string; label: string }) {
           style={{ width: `${zoom * 100}%` }}
         />
       </div>
-      <p className="text-center text-[11px] text-muted-foreground">
-        Scroll untuk zoom · seret untuk menggeser · klik ganda untuk reset
-        {zoom > 1 ? ` · ${zoom.toFixed(1)}×` : ""}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-1.5 border-t border-border/40">
+        <p className="text-[11px] text-muted-foreground">
+          Scroll / tombol untuk zoom · seret untuk geser · klik ganda reset
+          {zoom > 1 ? ` · ${zoom.toFixed(1)}×` : ""}
+        </p>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setZoom((z) => jepit(z - 0.5))}
+            disabled={zoom <= ZOOM_MIN}
+            className="flex size-7 items-center justify-center rounded-md border border-border bg-card text-xs font-bold hover:bg-muted disabled:opacity-40 cursor-pointer transition-colors"
+            aria-label="Perkecil"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoom(1)}
+            className="px-2 h-7 rounded-md border border-border bg-card text-xs font-mono font-medium hover:bg-muted cursor-pointer transition-colors"
+          >
+            1×
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoom((z) => jepit(z + 0.5))}
+            disabled={zoom >= ZOOM_MAKS}
+            className="flex size-7 items-center justify-center rounded-md border border-border bg-card text-xs font-bold hover:bg-muted disabled:opacity-40 cursor-pointer transition-colors"
+            aria-label="Perbesar"
+          >
+            +
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -193,7 +222,7 @@ export function BingkaiFoto({
   const bingkai = (
     <span
       className={cn(
-        "relative block w-full overflow-hidden rounded-lg border border-border bg-muted/40",
+        "relative block w-full overflow-hidden rounded-lg border border-border bg-muted/40 [isolation:isolate] [transform:translateZ(0)]",
         KELAS_RASIO[rasio],
         className
       )}
@@ -212,12 +241,12 @@ export function BingkaiFoto({
             loading="lazy"
             onError={() => setGagal(true)}
             className={cn(
-              "absolute inset-0 size-full",
+              "absolute inset-0 size-full rounded-[inherit]",
               mode === "isi" ? "object-cover" : "object-contain"
             )}
           />
           {!tanpaDialog && (
-            <span className="absolute right-1.5 bottom-1.5 rounded-md bg-black/50 p-1 text-white">
+            <span className="absolute right-2 bottom-2 rounded-md bg-black/60 p-1.5 text-white backdrop-blur-xs border border-white/20 shadow-xs">
               <ZoomIn className="size-3.5" />
             </span>
           )}
@@ -233,10 +262,8 @@ export function BingkaiFoto({
       <DialogTrigger className="block w-full cursor-zoom-in text-left">
         {bingkai}
       </DialogTrigger>
-      {/* sm:max-w-4xl (bukan max-w-4xl): kelas dasar DialogContent memuat
-          sm:max-w-sm — override tanpa prefix sm: kalah spesifik di
-          tailwind-merge dan dialog terkunci selebar 24rem di layar ≥640px. */}
-      <DialogContent className="max-w-[calc(100vw-2rem)] p-2 sm:max-w-4xl">
+      {/* sm:max-w-4xl: dialog foto responsif penuh yang kokoh seperti verifikasi */}
+      <DialogContent className="max-w-[calc(100vw-2rem)] p-3 sm:p-5 sm:max-w-4xl border border-border bg-card text-foreground shadow-2xl">
         <DialogTitle className="sr-only">{alt}</DialogTitle>
         <FotoZoom url={src} label={alt} />
       </DialogContent>

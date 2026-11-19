@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Camera, X } from "@/components/ui/hugeicons-compat"
+import { Camera, X, ZoomIn } from "@/components/ui/hugeicons-compat"
 import { BingkaiFoto, type RasioFoto } from "@/components/BingkaiFoto"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { compressImage } from "../lib/kompresi-gambar"
@@ -61,17 +61,29 @@ export function PemilihFoto({
         disabled={disabled}
       />
       {previewUrl ? (
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-neutral-950 shadow-md">
+        <div className="group relative w-full overflow-hidden rounded-xl border border-border bg-neutral-950 shadow-md [isolation:isolate] [transform:translateZ(0)]">
+          {/* Bingkai foto dengan dialog perbesar (FotoZoom) yang robust */}
           <BingkaiFoto
             src={previewUrl}
             alt="Pratinjau foto bukti"
             rasio={rasio}
             mode={mode}
-            tanpaDialog
+            className="border-0 rounded-none bg-transparent"
           />
+
+          {/* Label petunjuk interaktif di sudut kiri bawah */}
+          <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-xs border border-white/15 shadow-xs">
+            <ZoomIn className="size-3.5 text-blue-400" />
+            <span>Ketuk untuk perbesar</span>
+          </div>
+
+          {/* Tombol Hapus Foto */}
           <button
-            onClick={onHapus}
-            className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-neutral-950/80 text-white shadow-md backdrop-blur-sm transition-transform hover:scale-105 active:scale-95"
+            onClick={(e) => {
+              e.stopPropagation()
+              onHapus()
+            }}
+            className="absolute top-2.5 right-2.5 z-20 flex size-8 items-center justify-center rounded-full bg-black/75 text-white border border-white/20 shadow-md backdrop-blur-xs transition-transform hover:scale-105 active:scale-95 cursor-pointer"
             aria-label="Hapus foto"
             type="button"
           >
@@ -81,7 +93,7 @@ export function PemilihFoto({
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
-          className="group relative flex w-full flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-border bg-muted/40 p-6 sm:p-8 text-foreground transition-all hover:border-blue-500 hover:bg-blue-500/5 active:scale-[0.99]"
+          className="group relative flex w-full flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-border bg-muted/40 p-6 sm:p-8 text-foreground transition-all hover:border-blue-500 hover:bg-blue-500/5 active:scale-[0.99] cursor-pointer"
           type="button"
           disabled={disabled}
         >

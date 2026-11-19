@@ -359,7 +359,7 @@ export function PromoBannerSpotlight() {
       aria-labelledby="promo-spotlight-title"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="section-white relative bg-transparent pt-2 md:pt-4 pb-14 md:pb-20 text-foreground overflow-hidden"
+      className="section-white relative bg-transparent pt-2 md:pt-4 pb-10 sm:pb-14 md:pb-18 text-foreground overflow-hidden"
     >
       {/* Kontainer Sejajar Lebar Navbar (max-w-360 / 1440px) dengan Scroll-In-View Motion */}
       <motion.div

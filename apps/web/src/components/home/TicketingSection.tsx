@@ -148,7 +148,7 @@ export function TicketingSection({ content: initialContent }: TicketingSectionPr
     <section
       id="layanan-mandiri"
       aria-labelledby="ticketing-title"
-      className="section-white relative bg-transparent py-12 md:py-20 text-foreground"
+      className="section-white relative bg-transparent py-10 sm:py-14 md:py-18 text-foreground"
     >
       <Container className="max-w-360 px-4 lg:px-12">
         <motion.div

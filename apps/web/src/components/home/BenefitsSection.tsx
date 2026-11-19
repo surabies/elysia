@@ -79,7 +79,7 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
       aria-labelledby="benefits-title"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="section-white relative bg-transparent py-12 text-foreground lg:py-20"
+      className="section-white relative bg-transparent py-10 sm:py-14 md:py-18 text-foreground"
     >
       <Container className="max-w-360 px-4 lg:px-12">
         <motion.div
