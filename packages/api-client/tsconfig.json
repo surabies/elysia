@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "declaration": false,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../apps/web/src/*"],
+      "@cater/types": ["../../packages/types/src"],
+      "@cater/db": ["../../packages/db/src"]
+    }
+  },
+  "include": ["src/**/*"]
+}
