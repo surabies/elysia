@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type React from "react";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import Tilt from "react-parallax-tilt";
 import { cn } from "@/lib/utils";
 import "./holo-card.css";
@@ -105,11 +105,23 @@ export const HoloCard = ({
 	const [hover, setHover] = useState(false);
 	const [animated, setAnimated] = useState(true);
 	const [isFlipped, setIsFlipped] = useState(false);
+	const [isTouchOrMobile, setIsTouchOrMobile] = useState(false);
 	const [activeBackgroundPosition, setActiveBackgroundPosition] = useState({
 		tp: 0,
 		lp: 0,
 	});
 	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const mq = window.matchMedia("(hover: none), (max-width: 767px)");
+		const sync = () => setIsTouchOrMobile(mq.matches);
+		const frameId = window.requestAnimationFrame(sync);
+		mq.addEventListener("change", sync);
+		return () => {
+			window.cancelAnimationFrame(frameId);
+			mq.removeEventListener("change", sync);
+		};
+	}, []);
 
 	const {
 		name,
@@ -263,8 +275,8 @@ export const HoloCard = ({
 			className="pointer-events-none absolute inset-0 z-[3]"
 			style={{
 				background: overlayColor,
-				mixBlendMode: "overlay",
-				opacity: overlayOpacity / 100,
+				mixBlendMode: isTouchOrMobile ? "normal" : "overlay",
+				opacity: (isTouchOrMobile ? Math.min(overlayOpacity, 28) : overlayOpacity) / 100,
 			}}
 		/>
 	) : null;
@@ -406,12 +418,12 @@ export const HoloCard = ({
 		</div>
 	);
 
-	// Render card face (either static or with tilt)
+	// Render card face (either static/mobile or with desktop tilt)
 	const renderCardFace = (
 		content: React.ReactNode,
 		isStatic: boolean = false,
 	) => {
-		if (isStatic || forceSide) {
+		if (isStatic || forceSide || isTouchOrMobile) {
 			return (
 				<div className="relative h-full w-full overflow-hidden rounded-2xl shadow-xl">
 					{OverlayLayer}

@@ -250,16 +250,14 @@ export function SimulasiTarifSection() {
           className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"
         />
 
-        {/* Ambient Grid Kotak-Kotak 32x32px dengan Gradasi Blur & Memudar ke Bawah */}
+        {/* Ambient Dot Matrix 20x20px Memudar ke Bawah */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 opacity-70 dark:opacity-40 [mask-image:linear-gradient(to_bottom,black_10%,rgba(0,0,0,0.5)_50%,transparent_90%)]"
+          className="pointer-events-none absolute inset-0 z-0 opacity-75 dark:opacity-45 [mask-image:linear-gradient(to_bottom,black_10%,rgba(0,0,0,0.5)_55%,transparent_92%)]"
           style={{
-            backgroundImage: `
-              linear-gradient(to right, rgba(100, 116, 139, 0.18) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(100, 116, 139, 0.18) 1px, transparent 1px)
-            `,
-            backgroundSize: '32px 32px',
+            backgroundImage:
+              'radial-gradient(circle, rgba(100, 116, 139, 0.32) 1.25px, transparent 1.25px)',
+            backgroundSize: '20px 20px',
           }}
         />
         <div
@@ -387,8 +385,19 @@ export function SimulasiTarifSection() {
             </div>
           </div>
 
-          {/* Kolom Kanan: FinTech Result Card (di mobile ORDER 1 di atas, di desktop ORDER 2 di kanan) */}
-          <div className="order-1 lg:order-2 lg:col-span-5 rounded-lg border border-border/80 bg-muted/30 dark:bg-muted/20 p-5 sm:p-6 shadow-none space-y-5">
+          {/* Kolom Kanan: FinTech Result Card dengan Gradient Blur Solid (di mobile ORDER 1 di atas, di desktop ORDER 2 di kanan) */}
+          <div className="order-1 lg:order-2 lg:col-span-5 relative overflow-hidden rounded-xl border border-border/80 bg-linear-to-br from-sky-50 via-card to-emerald-50/80 dark:from-slate-900 dark:via-card dark:to-sky-950/70 p-5 sm:p-6 shadow-xs">
+            {/* Soft Gradient Blur Orbs di dalam Card Total Estimasi */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-sky-400/20 dark:bg-sky-500/20 blur-3xl"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-16 -left-16 size-48 rounded-full bg-emerald-400/18 dark:bg-emerald-500/15 blur-3xl"
+            />
+
+            <div className="relative z-10 space-y-5">
             <div className="pb-4 border-b border-border/80">
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                 <span>Total Estimasi Rekening</span>
@@ -445,6 +454,7 @@ export function SimulasiTarifSection() {
                 <span>Cek Rekening Asli Pelanggan</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
+            </div>
             </div>
           </div>
         </div>

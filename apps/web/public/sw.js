@@ -1,11 +1,11 @@
 // Service Worker PWA PERUMDA Tirtawening Kota Bandung
-const CACHE_NAME = 'tirtawening-pwa-v1';
+const CACHE_NAME = 'tirtawening-pwa-v2';
 
 const STATIC_ASSETS = [
   '/',
   '/offline',
   '/manifest.webmanifest',
-  '/favicon.svg',
+  '/images/favicon.svg',
   '/favicon-32x32.png',
   '/apple-touch-icon.png',
   '/icons/icon-192.png',
@@ -15,11 +15,13 @@ const STATIC_ASSETS = [
   '/images/logo.png',
 ];
 
-// Install: Cache core static assets & offline page
+// Install: Cache core static assets & offline page secara tahan-galat (satu aset 404 tidak menggagalkan SW)
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.allSettled(
+        STATIC_ASSETS.map((asset) => cache.add(asset))
+      );
     })
   );
   self.skipWaiting();

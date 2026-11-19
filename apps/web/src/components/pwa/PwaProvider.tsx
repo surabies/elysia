@@ -7,10 +7,8 @@ import {
   Smartphone,
   Share2,
   PlusSquare,
-  CheckCircle2,
+  Loader2,
   X,
-  ExternalLink,
-  Laptop,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -34,6 +32,7 @@ interface BeforeInstallPromptEvent extends Event {
 interface PwaContextValue {
   isInstallable: boolean
   isInstalled: boolean
+  isInstalling: boolean
   isIos: boolean
   promptInstall: () => Promise<void>
 }
@@ -41,6 +40,7 @@ interface PwaContextValue {
 const PwaContext = React.createContext<PwaContextValue>({
   isInstallable: false,
   isInstalled: false,
+  isInstalling: false,
   isIos: false,
   promptInstall: async () => {},
 })
@@ -50,108 +50,138 @@ export function usePwa() {
 }
 
 export function PwaProvider({ children }: { children: React.ReactNode }) {
-  const [deferredPrompt, setDeferredPrompt] = React.useState<BeforeInstallPromptEvent | null>(null)
+  const [deferredPrompt, setDeferredPrompt] =
+    React.useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = React.useState(false)
+  const [isInstalling, setIsInstalling] = React.useState(false)
   const [isIos, setIsIos] = React.useState(false)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [showBottomBanner, setShowBottomBanner] = React.useState(false)
 
   // Inisialisasi Service Worker & Deteksi Lingkungan PWA
   React.useEffect(() => {
-    // 1. Registrasi Service Worker di browser yang mendukung
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/sw.js')
-          .then((registration) => {
-            // Service worker terdaftar dengan baik
-            console.log('[PWA] Service Worker aktif:', registration.scope)
-          })
-          .catch((error) => {
-            console.warn('[PWA] Gagal meregistrasi Service Worker:', error)
-          })
-      })
+    // 1. Registrasi Service Worker segera (jangan hanya menunggu event 'load' yang mungkin sudah lewat di Next.js)
+    const registerSw = () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
+          console.warn('[PWA] Gagal meregistrasi Service Worker:', error)
+        })
+      }
     }
 
-    // 2. Deteksi apakah sudah berjalan di mode standalone (sudah diinstall)
-    const checkIsStandalone = () => {
-      const isStandaloneMode =
-        window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone === true ||
-        document.referrer.includes('android-app://')
-      setIsInstalled(isStandaloneMode)
-      return isStandaloneMode
+    if (document.readyState === 'complete') {
+      registerSw()
+    } else {
+      window.addEventListener('load', registerSw, { once: true })
     }
 
-    const alreadyInstalled = checkIsStandalone()
+    // 2. Deteksi apakah sudah berjalan di mode standalone (benar-benar terpasang & dibuka sebagai app)
+    const isStandaloneMode =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
+      document.referrer.includes('android-app://')
 
-    // 3. Deteksi apakah perangkat adalah iOS (iPhone / iPad)
     const userAgent = window.navigator.userAgent.toLowerCase()
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent)
-    setIsIos(isIosDevice)
 
-    // 4. Tangkap event beforeinstallprompt (Android / Chrome / Edge)
+    const frameId = window.requestAnimationFrame(() => {
+      setIsInstalled(isStandaloneMode)
+      setIsIos(isIosDevice)
+    })
+
+    // 3. Tangkap event beforeinstallprompt (Android Chrome / Edge / Desktop Chromium)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       const promptEvent = e as BeforeInstallPromptEvent
       setDeferredPrompt(promptEvent)
 
-      // Tampilkan bottom banner di handphone jika belum diinstall dan belum pernah ditutup
-      const bannerDismissed = sessionStorage.getItem('pwa_banner_dismissed')
-      if (!alreadyInstalled && !bannerDismissed && window.innerWidth < 768) {
+      let bannerDismissed = false
+      try {
+        bannerDismissed = sessionStorage.getItem('pwa_banner_dismissed') === 'true'
+      } catch {
+        // Abaikan jika sessionStorage tidak tersedia
+      }
+
+      if (!isStandaloneMode && !bannerDismissed && window.innerWidth < 768) {
         setShowBottomBanner(true)
       }
     }
 
-    // 5. Tangkap event appinstalled
+    // 4. Tangkap event appinstalled (dipicu browser setelah proses instalasi sistem selesai)
     const handleAppInstalled = () => {
       setDeferredPrompt(null)
+      setIsInstalling(false)
       setIsInstalled(true)
       setShowBottomBanner(false)
       setIsModalOpen(false)
-      toast.success('Aplikasi Tirtawening berhasil dipasang di perangkat Anda!')
+      toast.success('Aplikasi Tirtawening selesai dipasang.', {
+        description: 'Cek ikon Tirtawening di layar utama atau laci aplikasi perangkat Anda.',
+      })
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleAppInstalled)
 
     return () => {
+      window.cancelAnimationFrame(frameId)
+      window.removeEventListener('load', registerSw)
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
   }, [])
 
-  // Fungsi utama untuk memicu instalasi
+  // Fungsi utama untuk memicu instalasi secara mulus & jujur terhadap status sistem
   const promptInstall = React.useCallback(async () => {
-    // Jika sudah terpasang
+    if (isInstalling) return
+
     if (isInstalled) {
       toast.info('Aplikasi Tirtawening sudah terpasang di perangkat Anda.')
       return
     }
 
-    // Jika browser mendukung native install prompt (Android Chrome, Edge, desktop Chrome)
+    // Jika browser menyediakan native install prompt
     if (deferredPrompt) {
+      setIsInstalling(true)
       try {
         await deferredPrompt.prompt()
         const choice = await deferredPrompt.userChoice
+
         if (choice.outcome === 'accepted') {
           setDeferredPrompt(null)
           setShowBottomBanner(false)
+          setIsModalOpen(false)
+          toast.info('Sedang memasang aplikasi Tirtawening...', {
+            description:
+              'Browser sedang menyiapkan ikon aplikasi di latar belakang (sekitar 5–15 detik).',
+          })
+          // Reset state installing jika browser tidak mengirim appinstalled dalam 12 detik
+          window.setTimeout(() => {
+            setIsInstalling(false)
+          }, 12000)
+        } else {
+          setIsInstalling(false)
+          toast.message('Pemasangan dibatalkan. Anda dapat memasangnya kapan saja.')
         }
       } catch (err) {
         console.warn('[PWA] Error saat memicu install prompt:', err)
+        setIsInstalling(false)
+        setDeferredPrompt(null)
         setIsModalOpen(true)
       }
       return
     }
 
-    // Jika di iOS atau browser yang butuh instruksi manual, buka modal panduan
+    // Jika belum ada native prompt (iOS Safari, Firefox, WebView, atau kriteria browser belum terpenuhi)
     setIsModalOpen(true)
-  }, [deferredPrompt, isInstalled])
+  }, [deferredPrompt, isInstalled, isInstalling])
 
   const dismissBanner = () => {
     setShowBottomBanner(false)
-    sessionStorage.setItem('pwa_banner_dismissed', 'true')
+    try {
+      sessionStorage.setItem('pwa_banner_dismissed', 'true')
+    } catch {
+      // Abaikan
+    }
   }
 
   const isInstallable = !isInstalled && (!!deferredPrompt || isIos)
@@ -161,6 +191,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       value={{
         isInstallable,
         isInstalled,
+        isInstalling,
         isIos,
         promptInstall,
       }}
@@ -194,11 +225,16 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-1.5 shrink-0">
               <Button
                 size="xs"
+                disabled={isInstalling}
                 onClick={promptInstall}
                 className="gap-1 font-semibold rounded-lg shadow-sm"
               >
-                <Download className="size-3.5" />
-                <span>Pasang</span>
+                {isInstalling ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Download className="size-3.5" />
+                )}
+                <span>{isInstalling ? 'Memasang...' : 'Pasang'}</span>
               </Button>
               <button
                 type="button"
@@ -282,7 +318,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
                     1
                   </span>
                   <span>
-                    Ketuk menu titik tiga (<strong>⋮</strong>) di pojok kanan atas browser Chrome / browser HP Anda.
+                    Pastikan Anda membuka situs ini di <strong>Google Chrome</strong> atau <strong>Microsoft Edge</strong> (bukan browser di dalam aplikasi WhatsApp/Instagram).
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">
@@ -290,7 +326,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
                     2
                   </span>
                   <span>
-                    Pilih opsi <strong>&quot;Pasang Aplikasi&quot;</strong> atau <strong>&quot;Tambahkan ke Layar Utama&quot;</strong>.
+                    Ketuk menu titik tiga (<strong>⋮</strong>) di pojok kanan atas browser, lalu pilih <strong>&quot;Pasang Aplikasi&quot;</strong> atau <strong>&quot;Tambahkan ke Layar Utama&quot;</strong>.
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">
@@ -298,7 +334,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
                     3
                   </span>
                   <span>
-                    Konfirmasi dan aplikasi Tirtawening siap digunakan dengan kecepatan tinggi!
+                    Konfirmasi pemasangan dan tunggu beberapa detik hingga ikon Tirtawening muncul di layar utama HP Anda.
                   </span>
                 </li>
               </ol>
@@ -307,18 +343,20 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Mengerti
+              Tutup
             </Button>
             {deferredPrompt && (
               <Button
-                onClick={() => {
-                  promptInstall()
-                  setIsModalOpen(false)
-                }}
+                disabled={isInstalling}
+                onClick={promptInstall}
                 className="gap-1.5 font-semibold"
               >
-                <Download className="size-4" />
-                <span>Pasang Sekarang</span>
+                {isInstalling ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Download className="size-4" />
+                )}
+                <span>{isInstalling ? 'Memasang...' : 'Pasang Sekarang'}</span>
               </Button>
             )}
           </div>

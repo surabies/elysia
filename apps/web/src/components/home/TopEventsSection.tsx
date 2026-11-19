@@ -39,9 +39,11 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
     const singleWidth = singleSetWidthRef.current
     if (singleWidth <= 0) return
 
+    // Clamp delta agar tidak melompat/berkedip setelah tab-switch atau jeda scroll mobile
+    const safeDelta = Math.min(delta, 50)
     // Kecepatan 34 pixel per detik (halus dan nyaman dibaca)
     const speed = 34
-    xPos.current -= (speed * delta) / 1000
+    xPos.current -= (speed * safeDelta) / 1000
 
     // Wrap mulus saat mencapai ujung satu set kartu
     if (xPos.current <= -singleWidth) {
@@ -118,20 +120,10 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
           {/* Set 2: Duplikasi Seamless Loop */}
           <ul
             aria-hidden="true"
-            className="flex gap-4 shrink-0 m-0 p-0 list-none"
-          >
-            {content.events.map((event) => (
-              <EventCard key={`set2-${event.id}`} event={event} />
-            ))}
-          </ul>
-
-          {/* Set 3: Duplikasi untuk Monitor Lebar */}
-          <ul
-            aria-hidden="true"
             className="flex gap-4 shrink-0 m-0 p-0 list-none pe-4 md:pe-8"
           >
             {content.events.map((event) => (
-              <EventCard key={`set3-${event.id}`} event={event} />
+              <EventCard key={`set2-${event.id}`} event={event} />
             ))}
           </ul>
         </motion.div>

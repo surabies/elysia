@@ -476,6 +476,7 @@
   --ds-background-100: #ffffff;
   --ds-background-200: #fafafa;
   --organic-card-bg: var(--card);
+  --organic-card-gradient-end: #effaf6;
 
   /* Gray (Official Vercel Geist 10-step scale) */
   --ds-gray-100: #f2f2f2;
@@ -750,6 +751,7 @@
   --ds-background-100: #000000;
   --ds-background-200: #0a0a0a;
   --organic-card-bg: var(--card);
+  --organic-card-gradient-end: #0c2238;
 
   /* Brand & def tokens (Dark Mode - Merged from styles.css) */
   --highlight: #3291ff;
@@ -2255,5 +2257,14 @@ aside .sidebar-scroll::-webkit-scrollbar-thumb:active,
   .motion-card-interactive:hover {
     transform: none !important;
   }
+}
+
+/* Sembunyikan scrollbar bawaan browser pada carousel/scroll-snap horizontal */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 

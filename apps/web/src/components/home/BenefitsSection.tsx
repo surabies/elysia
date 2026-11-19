@@ -195,19 +195,35 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
                     onClick={() => setActiveIndex(index)}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={cn(
-                      "group relative w-full text-left rounded-lg border p-4 sm:p-5 transition-all duration-200 cursor-pointer outline-none shadow-none",
+                      "group relative w-full overflow-hidden text-left rounded-xl border p-4 sm:p-5 transition-all duration-200 cursor-pointer outline-none",
                       isActive
-                        ? "border-foreground/30 bg-card ring-1 ring-foreground/15 shadow-xs"
-                        : "border-border/80 bg-card/60 hover:bg-card hover:border-foreground/20 hover:shadow-xs"
+                        ? "border-sky-300/80 dark:border-sky-700/60 bg-linear-to-br from-sky-50 via-card to-emerald-50/80 dark:from-slate-900 dark:via-card dark:to-sky-950/70 shadow-xs ring-1 ring-sky-400/20"
+                        : "border-border/80 bg-linear-to-br from-sky-50/45 via-card to-emerald-50/35 dark:from-slate-900/75 dark:via-card dark:to-sky-950/40 hover:border-sky-300/60 dark:hover:border-sky-700/50 hover:shadow-xs"
                     )}
                   >
-                    <div className="flex items-start gap-4">
+                    {/* Soft Gradient Blur Orbs (selaras dengan Card Total Estimasi) */}
+                    <div
+                      aria-hidden="true"
+                      className={cn(
+                        "pointer-events-none absolute -top-12 -right-12 size-36 rounded-full bg-sky-400/20 dark:bg-sky-500/20 blur-2xl transition-opacity duration-300",
+                        isActive ? "opacity-100" : "opacity-45 group-hover:opacity-80"
+                      )}
+                    />
+                    <div
+                      aria-hidden="true"
+                      className={cn(
+                        "pointer-events-none absolute -bottom-12 -left-12 size-36 rounded-full bg-emerald-400/18 dark:bg-emerald-500/15 blur-2xl transition-opacity duration-300",
+                        isActive ? "opacity-100" : "opacity-40 group-hover:opacity-75"
+                      )}
+                    />
+
+                    <div className="relative z-10 flex items-start gap-4">
                       <div
                         className={cn(
-                          "flex size-10 shrink-0 items-center justify-center rounded-md border transition-colors",
+                          "flex size-10 shrink-0 items-center justify-center rounded-lg border transition-colors",
                           isActive
-                            ? "border-foreground/20 bg-muted/80"
-                            : "border-border/80 bg-muted/40"
+                            ? "border-sky-300/60 dark:border-sky-700/50 bg-background/85"
+                            : "border-border/80 bg-background/70"
                         )}
                       >
                         <Image

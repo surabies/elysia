@@ -6,50 +6,77 @@ interface AutoHideHeaderProps {
   children: ReactNode
 }
 
+/**
+ * Header navigasi responsif:
+ * - Di mobile (< 768px): tetap sticky di atas agar tidak pernah hilang sendiri akibat
+ *   momentum scroll / jitter sentuhan / address bar browser HP.
+ * - Di desktop (>= 768px): auto-hide dengan deadzone scroll yang tegas (sembunyi hanya
+ *   jika sengaja scroll turun >= 60px & sudah melewati 120px; langsung muncul saat scroll naik >= 12px).
+ */
 export function AutoHideHeader({ children }: AutoHideHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
-  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [hidden, setHidden] = useState(false)
-
   const [scrolled, setScrolled] = useState(false)
 
   const revealHeader = useCallback(() => {
-    if (hideTimeoutRef.current !== null) {
-      clearTimeout(hideTimeoutRef.current)
-      hideTimeoutRef.current = null
-    }
     setHidden(false)
   }, [])
 
   useEffect(() => {
     let previousScrollY = window.scrollY
-    setScrolled(previousScrollY > 8)
+    let accumulatedDelta = 0
+
+    const syncInitial = () => setScrolled(window.scrollY > 8)
+    const frameId = window.requestAnimationFrame(syncInitial)
 
     const handleScroll = () => {
-      const currentScrollY = window.scrollY
+      const currentScrollY = Math.max(0, window.scrollY)
       setScrolled(currentScrollY > 8)
+
+      const isMobile = window.innerWidth < 768
       const menuOpen = headerRef.current?.querySelector('[data-open="true"]')
 
-      if (currentScrollY <= 0 || currentScrollY < previousScrollY || menuOpen) {
-        revealHeader()
-      } else if (
-        currentScrollY > previousScrollY &&
-        hideTimeoutRef.current === null
-      ) {
-        hideTimeoutRef.current = setTimeout(() => setHidden(true), 250)
+      // Di mobile atau saat menu terbuka / dekat puncak halaman: selalu tampilkan header
+      if (isMobile || menuOpen || currentScrollY <= 80) {
+        accumulatedDelta = 0
+        setHidden(false)
+        previousScrollY = currentScrollY
+        return
+      }
+
+      const delta = currentScrollY - previousScrollY
+
+      // Reset akumulasi jika arah scroll berubah
+      if ((delta > 0 && accumulatedDelta < 0) || (delta < 0 && accumulatedDelta > 0)) {
+        accumulatedDelta = 0
+      }
+      accumulatedDelta += delta
+
+      if (accumulatedDelta >= 60 && currentScrollY > 120) {
+        setHidden(true)
+        accumulatedDelta = 0
+      } else if (accumulatedDelta <= -12) {
+        setHidden(false)
+        accumulatedDelta = 0
       }
 
       previousScrollY = currentScrollY
     }
 
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => {
-      window.removeEventListener("scroll", handleScroll)
-      if (hideTimeoutRef.current !== null) {
-        clearTimeout(hideTimeoutRef.current)
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setHidden(false)
       }
     }
-  }, [revealHeader])
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    window.addEventListener("resize", handleResize, { passive: true })
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [])
 
   return (
     <header
@@ -64,7 +91,7 @@ export function AutoHideHeader({ children }: AutoHideHeaderProps) {
         scrolled
           ? "shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_-4px_rgba(0,112,243,0.06)] bg-background/90"
           : "shadow-[0_1px_0_0_rgba(0,0,0,0.02)]"
-      } ${hidden ? "pointer-events-none -translate-y-full" : ""}`}
+      } ${hidden ? "md:pointer-events-none md:-translate-y-full" : ""}`}
     >
       {children}
     </header>

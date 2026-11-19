@@ -444,7 +444,7 @@ export function DokumentasiKegiatanSection() {
             </div>
           </div>
 
-          {/* Carousel Otomatis di Mobile (1 Konten Penuh Lebar Layar), Grid di Layar Desktop */}
+          {/* Carousel Otomatis di Mobile (1 Konten Penuh Lebar Layar tanpa scrollbar/celah tepi), Grid di Layar Desktop */}
           <div
             ref={scrollContainerRef}
             onScroll={handleMobileScroll}
@@ -452,12 +452,12 @@ export function DokumentasiKegiatanSection() {
             onMouseLeave={() => setIsMobilePaused(false)}
             onTouchStart={() => setIsMobilePaused(true)}
             onTouchEnd={() => setIsMobilePaused(false)}
-            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar pb-3 md:pb-0"
+            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 overflow-x-auto overflow-y-hidden md:overflow-visible snap-x snap-mandatory no-scrollbar pb-2 md:pb-0"
           >
             {daftarTerfilter.map((item, idx) => (
               <div
                 key={item.id}
-                className="w-full shrink-0 snap-center md:w-auto md:max-w-none md:shrink flex flex-col"
+                className="w-full min-w-full shrink-0 snap-center overflow-hidden md:w-auto md:min-w-0 md:max-w-none md:shrink flex flex-col"
               >
                 <KegiatanCardItem
                   item={item}

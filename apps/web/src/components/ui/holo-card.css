@@ -62,7 +62,7 @@
 
 	width: var(--holo-width);
 	height: var(--holo-height);
-	background-color: #211799;
+	background-color: #0f172a;
 	background-size: cover;
 	background-repeat: no-repeat;
 	background-position: center;
@@ -105,23 +105,24 @@
 	);
 }
 
-/* Sparkles effect */
+/* Sparkles effect (tanpa aset GIF eksternal agar tidak berkedip/gagal muat) */
 .holo-card--sparkles::after {
 	background-image:
-		url("https://assets.codepen.io/13471/sparkles.gif"),
+		radial-gradient(circle at 22% 28%, rgba(255, 255, 255, 0.22) 0%, transparent 32%),
+		radial-gradient(circle at 78% 68%, rgba(56, 189, 248, 0.24) 0%, transparent 36%),
 		linear-gradient(
 			125deg,
-			rgba(255, 0, 132, 0.31) 15%,
-			rgba(252, 164, 0, 0.25) 30%,
-			rgba(255, 255, 0, 0.19) 40%,
-			rgba(0, 255, 138, 0.13) 60%,
-			rgba(0, 207, 255, 0.25) 70%,
-			rgba(204, 76, 250, 0.31) 85%
+			rgba(255, 0, 132, 0.2) 15%,
+			rgba(252, 164, 0, 0.16) 30%,
+			rgba(255, 255, 0, 0.12) 40%,
+			rgba(0, 255, 138, 0.1) 60%,
+			rgba(0, 207, 255, 0.18) 70%,
+			rgba(204, 76, 250, 0.2) 85%
 		);
 	background-position: center;
-	background-size: 180%;
+	background-size: 160%;
 	mix-blend-mode: color-dodge;
-	opacity: 1;
+	opacity: 0.75;
 	z-index: 1;
 }
 
@@ -194,4 +195,21 @@
 		3px 3px 3px 0 rgba(247, 89, 228, 0.2),
 		0 0 6px 2px rgba(255, 231, 89, 0.2),
 		0 35px 25px -15px rgba(0, 0, 0, 0.15);
+}
+
+/* Optimasi GPU Mobile: hentikan animasi filter & blend-mode berat yang menyebabkan kedipan gambar */
+@media (hover: none), (max-width: 767px) {
+	.holo-card {
+		box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.28);
+	}
+
+	.holo-card::before,
+	.holo-card::after,
+	.holo-card--animated::before,
+	.holo-card--animated::after {
+		animation: none !important;
+		filter: none !important;
+		mix-blend-mode: normal !important;
+		opacity: 0.12 !important;
+	}
 }

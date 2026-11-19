@@ -198,10 +198,20 @@ export function TicketingSection({ content: initialContent }: TicketingSectionPr
               >
                 <OrganicCard
                   href={href}
+                  backgroundColor="var(--organic-card-gradient-end)"
                   className="w-full max-w-none h-full flex flex-col justify-between"
                 >
-                  <OrganicCardBody>
-                    <div>
+                  <OrganicCardBody className="relative overflow-hidden bg-linear-to-b from-sky-50 via-[#f6fbfb] to-[#effaf6] dark:from-slate-900 dark:via-[#0d1926] dark:to-[#0c2238]">
+                    {/* Soft Gradient Blur Orbs (selaras dengan Card Total Estimasi) */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -top-14 -right-14 size-40 rounded-full bg-sky-400/20 dark:bg-sky-500/20 blur-3xl"
+                    />
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -bottom-10 -left-12 size-36 rounded-full bg-emerald-400/18 dark:bg-emerald-500/15 blur-3xl"
+                    />
+                    <div className="relative z-10">
                       {/* Visual Image Preview with Floating Step Badge */}
                       <div className="relative mb-4 overflow-hidden rounded-xl bg-neutral-900/10 dark:bg-neutral-900/40">
                         <OrganicCardImage
