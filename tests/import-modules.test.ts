@@ -6,7 +6,9 @@ import { importDataService } from "../apps/web/src/server/services/import/import
 import { navGroups } from "../apps/web/src/config/navigasi";
 
 describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor, PBPK)", () => {
-  const pbpkCsvPath = path.resolve(process.cwd(), "packages/db/data/jan/PBPK.csv");
+  const pbpkCsvPath = fs.existsSync(path.resolve(process.cwd(), "packages/db/data/raw/PBPK.csv"))
+    ? path.resolve(process.cwd(), "packages/db/data/raw/PBPK.csv")
+    : path.resolve(process.cwd(), "packages/db/data/jan/PBPK.csv");
 
   test("1. Parse photo filename conforms strictly to {THBL}_{JENIS}_{NOLG}.jpg standard", () => {
     // 1. Stand meter photo
@@ -266,7 +268,7 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
     }
 
     // Test getCekFotoList returns fotoSegelUrl property
-    const cekFotoRes = await caterProgressService.getCekFotoList("202601", { limit: 10, offset: 0 });
+    const cekFotoRes = await caterProgressService.getCekFotoList("202601", undefined, undefined, 10, 0);
     expect(cekFotoRes).toBeDefined();
     expect(Array.isArray(cekFotoRes.items)).toBe(true);
     const itemCekSegel = cekFotoRes.items.find((item) => Boolean(item.fotoSegelUrl));

@@ -475,6 +475,7 @@
   /* Backgrounds */
   --ds-background-100: #ffffff;
   --ds-background-200: #fafafa;
+  --organic-card-bg: var(--card);
 
   /* Gray (Official Vercel Geist 10-step scale) */
   --ds-gray-100: #f2f2f2;
@@ -747,7 +748,8 @@
 .dark {
   /* Backgrounds */
   --ds-background-100: #000000;
-    --ds-background-200: #0a0a0a;
+  --ds-background-200: #0a0a0a;
+  --organic-card-bg: var(--card);
 
   /* Brand & def tokens (Dark Mode - Merged from styles.css) */
   --highlight: #3291ff;

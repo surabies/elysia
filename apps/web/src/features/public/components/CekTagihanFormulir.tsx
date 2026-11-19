@@ -48,15 +48,28 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-3xl border border-border bg-card text-card-foreground p-5 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <div className="flex items-center justify-between">
-          <label
-            htmlFor="nomorLangganan"
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold tracking-wide text-foreground"
-          >
-            <CreditCard className="size-4 text-blue-600 dark:text-sky-400" />
-            Nomor Langganan
-          </label>
+      <div className="overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-xs">
+        <div className="flex flex-row items-center justify-between border-b border-border/80 bg-muted/30 px-4 py-3 sm:px-6 sm:py-3.5">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <h2 className="text-xs sm:text-sm font-bold text-foreground tracking-tight">
+              Formulir Cek Tagihan Rekening Air
+            </h2>
+          </div>
+          <span className="inline-flex items-center rounded-full border border-border/80 bg-card px-2.5 py-0.5 font-mono text-[10px] sm:text-xs font-semibold text-muted-foreground">
+            Layanan Mandiri
+          </span>
+        </div>
+
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="nomorLangganan"
+              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold tracking-wide text-foreground"
+            >
+              <CreditCard className="size-4 text-blue-600 dark:text-sky-400" />
+              Nomor Langganan
+            </label>
           <span
             className={cn(
               "font-mono text-[11px] sm:text-xs transition-colors",
@@ -133,6 +146,7 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
             <AlertDescription>{pesanError}</AlertDescription>
           </Alert>
         )}
+        </div>
       </div>
 
       {hasil && (

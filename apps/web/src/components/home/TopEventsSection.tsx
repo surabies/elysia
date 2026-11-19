@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react"
 import { EventCard } from "@/components/home/EventCard"
 import { Container } from "@/components/shared/Container"
 import { PillButton } from "@/components/shared/PillButton"
+import { HaloBadge } from "@/components/ui/halo-badge"
 import type { TopEventsContent } from "@/types/home"
 
 interface TopEventsSectionProps {
@@ -100,9 +101,9 @@ export function TopEventsSection({ content }: TopEventsSectionProps) {
               >
                 {content.title}
               </h2>
-              <span className="hidden sm:inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-label-12 font-mono font-medium text-muted-foreground">
+              <HaloBadge tabularNums variant="secondary" className="hidden sm:inline-flex text-label-12 font-mono font-medium">
                 {content.events.length} Layanan Aktif
-              </span>
+              </HaloBadge>
             </div>
 
             {/* Kontrol Navigasi & Motion Tracker */}

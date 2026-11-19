@@ -36,6 +36,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { HaloBadge } from '@/components/ui/halo-badge'
 import { Progress } from '@/components/ui/progress'
 import type {
   BroadcastGangguanItem,
@@ -183,38 +184,32 @@ export function BroadcastDetailModal({
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                     {/* Badge Kategori Terpisah Rapi */}
                     {isKegiatan ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold shadow-2xs shrink-0">
-                        <Camera className="size-3 text-emerald-600 dark:text-emerald-400" />
-                        <span>{broadcast.lokasiWilayah || 'Pelayanan Wilayah 5'}</span>
-                      </span>
+                      <HaloBadge live variant="outline" className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold shrink-0">
+                        {broadcast.lokasiWilayah || 'Pelayanan Wilayah 5'}
+                      </HaloBadge>
                     ) : isPromoOrEvent ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold text-foreground shadow-2xs shrink-0">
-                        <span className="size-1.5 rounded-full bg-blue-600 animate-pulse" />
-                        <span>Program Resmi</span>
-                      </span>
+                      <HaloBadge live variant="outline" className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold shrink-0">
+                        Program Resmi
+                      </HaloBadge>
                     ) : (
-                      <Badge
-                        variant={isDarurat ? 'red-subtle' : isPemeliharaan ? 'amber-subtle' : 'blue-subtle'}
-                        size="sm"
-                        className="shrink-0"
+                      <HaloBadge
+                        live
+                        variant={isDarurat ? 'destructive' : 'outline'}
+                        className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-semibold shrink-0"
                       >
-                        {isDarurat && <AlertTriangle className="size-2.5 mr-1" />}
-                        {isPemeliharaan && <Wrench className="size-2.5 mr-1" />}
-                        <span>{broadcast.kategori}</span>
-                      </Badge>
+                        {broadcast.kategori}
+                      </HaloBadge>
                     )}
 
                     {/* Chip Tanggal Periode Terpisah Mandiri */}
                     {promo?.periode ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono text-muted-foreground max-w-[190px] sm:max-w-none truncate shrink-0">
-                        <Calendar className="size-3 text-muted-foreground shrink-0" />
-                        <span className="truncate">{promo.periode}</span>
-                      </span>
+                      <HaloBadge variant="secondary" className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono max-w-[190px] sm:max-w-none truncate shrink-0">
+                        {promo.periode}
+                      </HaloBadge>
                     ) : broadcast.estimasiSelesai ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono text-muted-foreground max-w-[190px] sm:max-w-none truncate shrink-0">
-                        <Clock className="size-3 text-muted-foreground shrink-0" />
-                        <span className="truncate">Target: {broadcast.estimasiSelesai}</span>
-                      </span>
+                      <HaloBadge variant="secondary" className="px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-label-12 font-mono max-w-[190px] sm:max-w-none truncate shrink-0">
+                        Target: {broadcast.estimasiSelesai}
+                      </HaloBadge>
                     ) : null}
 
                     <Badge variant="outline" size="sm" className="font-mono text-muted-foreground text-[9px] sm:text-xs shrink-0">

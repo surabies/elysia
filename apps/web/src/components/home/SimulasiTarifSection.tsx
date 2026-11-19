@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import NumberFlow from '@number-flow/react'
 import {
-  Calculator,
   Droplets,
   HelpCircle,
   Sparkles,
@@ -21,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { HaloBadge } from '@/components/ui/halo-badge'
 
 export interface BlokTarifItem {
   blok: number
@@ -247,10 +247,13 @@ export function SimulasiTarifSection() {
           <div className="lg:col-span-7 space-y-6">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-sky-400 border border-blue-500/20">
-                  <Calculator className="h-3.5 w-3.5" />
-                  <span>Simulasi Tagihan Air Resmi</span>
-                </div>
+                <HaloBadge
+                  live
+                  variant="outline"
+                  className="px-3 py-1 text-xs font-mono font-medium"
+                >
+                  Simulasi Tagihan Air Resmi
+                </HaloBadge>
               </div>
 
               <h2

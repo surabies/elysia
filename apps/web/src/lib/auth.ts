@@ -17,6 +17,35 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  socialProviders: {
+    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (createdUser) => {
+          try {
+            await db
+              .insert(schema.userRoles)
+              .values({
+                userId: createdUser.id,
+                role: 'USER',
+              })
+              .onConflictDoNothing();
+          } catch (err) {
+            console.error('[AUTH_USER_ROLE_CREATE_ERROR]', err);
+          }
+        },
+      },
+    },
+  },
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
   trustedOrigins: env.CORS_ALLOWED_ORIGINS

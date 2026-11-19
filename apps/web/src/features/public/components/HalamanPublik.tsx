@@ -1,6 +1,6 @@
 import * as React from "react"
-import { Sparkles } from "@/components/ui/hugeicons-compat"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Info } from "lucide-react"
+import { HaloBadge } from "@/components/ui/halo-badge"
 import { cn } from "@/lib/utils"
 
 /** Layout bersama untuk halaman layanan pelanggan yang ramah layar mobile & desktop (Mendukung Light & Dark Mode) */
@@ -23,21 +23,10 @@ export function HalamanPublik({
       {/* Header Banner - Mobile-First dengan Ambient Glow Biru + Hijau Emerald Tipis */}
       <section className="relative overflow-hidden bg-[radial-gradient(ellipse_75%_60%_at_50%_-15%,rgba(0,112,243,0.09),rgba(16,185,129,0.04)_45%,transparent)]">
         <div className="relative mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-9 md:px-8 lg:py-12">
-          {/* Live Telemetry Pill */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-1 shadow-[0_1px_4px_rgba(0,0,0,0.03)] backdrop-blur-md">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-            </span>
-            <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-wider text-foreground uppercase">
-              {eyebrow}
-            </span>
-            <span className="h-3 w-px bg-border" />
-            <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-muted-foreground">
-              <Sparkles className="size-3 text-amber-500" />
-              Pelayanan Mandiri 24 Jam
-            </span>
-          </div>
+          {/* Eyebrow Badge Bersih */}
+          <HaloBadge live variant="outline" className="px-3 py-1 text-xs font-mono font-medium">
+            {eyebrow} · Layanan 24 Jam
+          </HaloBadge>
 
           {/* Heading & Lede */}
           <h1 className="mt-4 sm:mt-5 max-w-3xl text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-balance text-foreground">
@@ -50,10 +39,36 @@ export function HalamanPublik({
       </section>
 
       {/* Main Grid Content - Mobile optimized layout */}
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 sm:py-8 md:px-8 lg:grid-cols-12 lg:gap-8 lg:py-12 bg-transparent">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-8 px-4 py-6 sm:px-6 sm:py-8 md:px-8 lg:grid-cols-12 lg:gap-10 lg:py-12 bg-transparent">
+        {/* Kolom Formulir Utama (Tampil pertama di mobile, interaktif) */}
         <div className="min-w-0 lg:col-span-7 lg:col-start-6">{children}</div>
-        <aside className="lg:order-first lg:col-span-4 lg:col-start-1 lg:row-start-1">
-          <div className="flex flex-col gap-4 sm:gap-6 lg:sticky lg:top-24">{aside}</div>
+
+        {/* Kolom Panduan & Referensi (Panel visual terpisah yang tegas agar tidak tertukar dengan input) */}
+        <aside className="lg:order-first lg:col-span-5 lg:col-start-1 lg:row-start-1">
+          <div className="rounded-2xl border border-border/70 bg-muted/25 dark:bg-muted/10 p-4 sm:p-5 backdrop-blur-xs lg:sticky lg:top-24 space-y-4">
+            {/* Header Blok Panduan yang tegas membedakan dengan Formulir Input */}
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Info className="size-3.5" />
+                </span>
+                <div>
+                  <h2 className="text-xs sm:text-sm font-bold text-foreground tracking-tight">
+                    Panduan &amp; Bantuan
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground font-normal">
+                    Referensi informasi pengisian
+                  </p>
+                </div>
+              </div>
+              <span className="font-mono text-[10px] font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full border border-border/60">
+                Informasi
+              </span>
+            </div>
+
+            {/* Kumpulan Card Panduan */}
+            <div className="flex flex-col gap-3.5">{aside}</div>
+          </div>
         </aside>
       </div>
     </div>
@@ -68,21 +83,20 @@ export function AsideBlok({
   children: React.ReactNode
 }) {
   return (
-    <Card
+    <div
       aria-label={label}
-      className="overflow-hidden rounded-2xl border border-border gradient-card-subtle text-card-foreground shadow-[0_2px_10px_-3px_rgba(0,0,0,0.03)] transition-all hover:border-foreground/25 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)]"
+      className="rounded-xl border border-border/70 bg-card/85 dark:bg-card/60 p-3.5 sm:p-4 shadow-none transition-colors hover:border-foreground/20 hover:bg-card"
     >
-      <CardHeader className="pb-2 pt-3.5 px-4 sm:px-5">
-        <CardTitle className="text-xs sm:text-heading-14 font-semibold text-foreground tracking-tight">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="size-1.5 rounded-full bg-primary/70 shrink-0" />
+        <h3 className="text-xs sm:text-sm font-semibold text-foreground tracking-tight">
           {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
-        <div className="text-xs sm:text-copy-13 leading-relaxed text-muted-foreground">
-          {children}
-        </div>
-      </CardContent>
-    </Card>
+        </h3>
+      </div>
+      <div className="text-xs leading-relaxed text-muted-foreground">
+        {children}
+      </div>
+    </div>
   )
 }
 
@@ -96,22 +110,22 @@ export function LangkahList({
       {langkah.map((langkahItem, i) => (
         <li
           key={langkahItem.judul}
-          className="relative flex gap-3 pb-4.5 last:pb-0"
+          className="relative flex gap-3 pb-3.5 last:pb-0"
         >
           {i < langkah.length - 1 && (
             <span
               aria-hidden="true"
-              className="absolute top-6 left-2.75 h-[calc(100%-1.1rem)] w-px bg-border"
+              className="absolute top-5 left-2.75 h-[calc(100%-0.9rem)] w-px bg-border/60"
             />
           )}
-          <span className="flex size-5.5 sm:size-6 shrink-0 items-center justify-center rounded-full border border-border bg-muted font-mono text-[10px] sm:text-[11px] font-semibold text-foreground shadow-2xs">
+          <span className="flex size-5.5 shrink-0 items-center justify-center rounded-full border border-border/80 bg-muted font-mono text-[10px] font-semibold text-foreground shadow-2xs">
             {i + 1}
           </span>
           <span className="flex flex-col gap-0.5 pt-0.5">
-            <span className="text-xs sm:text-label-14 font-semibold text-foreground tracking-tight">
+            <span className="text-xs font-semibold text-foreground tracking-tight">
               {langkahItem.judul}
             </span>
-            <span className="text-[11px] sm:text-copy-12 leading-relaxed text-muted-foreground">
+            <span className="text-[11px] leading-relaxed text-muted-foreground">
               {langkahItem.detail}
             </span>
           </span>
@@ -135,27 +149,30 @@ export function KartuBerbingkai({
   children: React.ReactNode
 }) {
   return (
-    <Card
+    <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border gradient-card-subtle text-card-foreground shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)]",
+        "overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-xs",
         className
       )}
     >
       {label && (
-        <CardHeader className="flex flex-row items-center justify-between border-b border-border bg-muted/40 px-4 py-3 sm:px-6 sm:py-3.5 space-y-0">
-          <CardTitle className="text-[10px] sm:text-label-11-mono font-semibold text-muted-foreground uppercase tracking-widest">
-            {label}
-          </CardTitle>
+        <div className="flex flex-row items-center justify-between border-b border-border/80 bg-muted/30 px-4 py-3 sm:px-6 sm:py-3.5">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <h2 className="text-xs sm:text-sm font-bold text-foreground tracking-tight">
+              {label}
+            </h2>
+          </div>
           {chip && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[10px] sm:text-label-11-mono font-medium text-foreground shadow-2xs">
+            <span className="inline-flex items-center rounded-full border border-border/80 bg-card px-2.5 py-0.5 font-mono text-[10px] sm:text-xs font-semibold text-muted-foreground">
               {chip}
             </span>
           )}
-        </CardHeader>
+        </div>
       )}
-      <CardContent className={cn("p-4 sm:p-6", contentClassName)}>
+      <div className={cn("p-4 sm:p-6", contentClassName)}>
         {children}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

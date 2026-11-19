@@ -42,15 +42,24 @@ export default async function CekTagihanPage({
               <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-sky-400">
                 <HelpCircle className="size-4" />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2.5 w-full">
                 <p>
                   Tertera di rekening atau struk pembayaran air Anda — selalu{" "}
                   <strong className="text-foreground">11 digit angka</strong>, termasuk nol di depan.
                 </p>
-                <div className="rounded-lg border border-border bg-muted/60 px-3 py-2 font-mono text-xs text-foreground">
-                  <span className="text-muted-foreground select-none">Contoh: </span>
-                  <span className="font-semibold text-foreground">00401700010</span>
+                <div className="rounded-lg border border-dashed border-border/80 bg-muted/40 p-2.5 font-mono text-xs">
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                    <span>FORMAT NOMOR PELANGGAN</span>
+                    <span className="font-semibold text-primary">11 DIGIT</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-card rounded-md border border-border/70 px-2.5 py-1.5">
+                    <span className="text-muted-foreground text-[11px]">Contoh:</span>
+                    <span className="font-bold tracking-wider text-foreground select-all">00401700010</span>
+                  </div>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Ketik nomor ini pada kolom formulir di samping/atas.
+                </p>
               </div>
             </div>
           </AsideBlok>

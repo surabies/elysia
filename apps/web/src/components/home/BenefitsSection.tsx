@@ -7,6 +7,7 @@ import { CheckCircle2, Sparkles } from "lucide-react"
 
 import { Container } from "@/components/shared/Container"
 import { ImageFrame } from "@/components/shared/ImageFrame"
+import { HaloBadge } from "@/components/ui/halo-badge"
 import { cn } from "@/lib/utils"
 import type { BenefitsContent } from "@/types/home"
 
@@ -88,25 +89,28 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Header Seksi */}
-          <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <h2
                 id="benefits-title"
-                className="text-heading-24 sm:text-heading-28 md:text-heading-32 font-bold tracking-tight text-foreground"
+                className="text-2xl sm:text-3xl lg:text-[2rem] font-bold tracking-tight text-foreground leading-tight"
               >
                 {content.title}
               </h2>
               {content.subtitle && (
-                <p className="mt-1.5 text-copy-14 sm:text-copy-15 max-w-2xl text-muted-foreground leading-relaxed">
+                <p className="mt-2 text-sm sm:text-base max-w-2xl text-muted-foreground leading-relaxed font-normal">
                   {content.subtitle}
                 </p>
               )}
             </div>
 
-            <div className="hidden sm:inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-mono text-muted-foreground shadow-2xs shrink-0">
-              <Sparkles className="size-3.5 text-emerald-500" />
-              <span>Standar Pelayanan Terverifikasi</span>
-            </div>
+            <HaloBadge
+              live
+              variant="outline"
+              className="hidden sm:inline-flex text-xs font-mono text-muted-foreground shrink-0"
+            >
+              Standar Pelayanan Terverifikasi
+            </HaloBadge>
           </div>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
@@ -129,12 +133,14 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
                         sizes="(min-width: 1280px) 480px, 100vw"
                         className="h-full w-full object-cover"
                       />
-                      <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 via-black/40 to-transparent p-4 text-white">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-mono font-semibold text-emerald-300">
-                          <CheckCircle2 className="size-3" />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 text-white">
+                        <HaloBadge
+                          variant="outline"
+                          className="text-[11px] font-mono font-semibold text-emerald-300 border-emerald-400/40"
+                        >
                           {item.metric || DEFAULT_METRICS[index % DEFAULT_METRICS.length]}
-                        </span>
-                        <p className="mt-1.5 text-copy-13 font-semibold text-white line-clamp-2">
+                        </HaloBadge>
+                        <p className="mt-1.5 text-sm sm:text-base font-semibold text-white/95 leading-snug line-clamp-2">
                           {item.title}
                         </p>
                       </div>
@@ -181,32 +187,28 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
                           width={24}
                           height={24}
                           unoptimized
-                          className="size-5.5 dark:invert"
+                          className="size-5 dark:invert"
                         />
                       </div>
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                          <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
                             Keunggulan 0{index + 1}
                           </span>
-                          <span
-                            className={cn(
-                              "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold border",
-                              isActive
-                                ? "bg-[#0070f3]/10 text-[#0070f3] dark:text-sky-400 border-[#0070f3]/30"
-                                : "bg-muted text-muted-foreground border-border"
-                            )}
+                          <HaloBadge
+                            variant={isActive ? "default" : "secondary"}
+                            className="px-2.5 py-0.5 text-[10px] font-mono font-semibold"
                           >
                             {metric}
-                          </span>
+                          </HaloBadge>
                         </div>
 
-                        <h3 className="text-heading-16 sm:text-heading-18 font-bold tracking-tight text-foreground leading-snug">
+                        <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-snug">
                           {item.title}
                         </h3>
 
-                        <p className="mt-1.5 text-copy-13 text-muted-foreground leading-relaxed">
+                        <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2 font-normal">
                           {desc}
                         </p>
                       </div>

@@ -4,9 +4,10 @@ import * as React from 'react'
 import Link from 'next/link'
 import useEmblaCarousel from 'embla-carousel-react'
 import { motion } from 'motion/react'
-import { ChevronLeft, ChevronRight, Maximize2, Tag, Check, Images, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Maximize2, Tag, Check } from 'lucide-react'
 
 import { PillButton } from '@/components/shared/PillButton'
+import { HaloBadge } from '@/components/ui/halo-badge'
 import { BroadcastDetailModal } from '@/components/home/BroadcastDetailModal'
 import { DAFTAR_BROADCAST_AWAL } from '@/data/broadcast'
 import type { BroadcastGangguanItem } from '@/types/broadcast'
@@ -82,9 +83,14 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
 
             {/* Badge Hitungan Foto (Jika multi-foto) */}
             {allPhotos.length > 1 && (
-              <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-label-11 font-mono font-semibold text-white">
-                <Images className="size-3" />
-                <span>{activePhotoIdx + 1}/{allPhotos.length}</span>
+              <div className="absolute top-3 right-3 z-20">
+                <HaloBadge
+                  tabularNums
+                  variant="secondary"
+                  className="px-2.5 py-1 text-label-11 font-mono font-semibold"
+                >
+                  {activePhotoIdx + 1}/{allPhotos.length}
+                </HaloBadge>
               </div>
             )}
 
@@ -158,16 +164,14 @@ function PromoSlideCard({ item, onOpenModal }: PromoSlideCardProps) {
           <div className="space-y-4">
             {/* Tag Program dan Periode Tanggal Terpisah Secara Bersih & Rapi */}
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 text-label-12 font-semibold text-foreground shadow-2xs">
-                <span className="size-1.5 rounded-full bg-[#0070f3] animate-pulse" />
-                <span>Program Resmi</span>
-              </span>
+              <HaloBadge live variant="outline" className="px-3 py-1 text-label-12 font-semibold">
+                Program Resmi
+              </HaloBadge>
 
               {details?.periode && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-3 py-1 text-label-12 font-mono text-muted-foreground">
-                  <Calendar className="size-3.5 text-muted-foreground shrink-0" />
-                  <span>{details.periode}</span>
-                </span>
+                <HaloBadge variant="secondary" className="px-3 py-1 text-label-12 font-mono">
+                  {details.periode}
+                </HaloBadge>
               )}
             </div>
 
@@ -369,9 +373,9 @@ export function PromoBannerSpotlight() {
             >
               Program &amp; Penawaran Warga
             </h2>
-            <span className="hidden sm:inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-label-12 font-mono font-medium text-muted-foreground">
+            <HaloBadge tabularNums variant="secondary" className="hidden sm:inline-flex text-label-12 font-mono font-medium">
               {daftarPromo.length} Program Aktif
-            </span>
+            </HaloBadge>
           </div>
 
           {daftarPromo.length > 1 && (

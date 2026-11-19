@@ -2,16 +2,13 @@
 
 import * as React from "react";
 import {
-  AlertTriangle,
   ChevronRight,
   X,
-  Wrench,
-  Sparkles,
-  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { BroadcastDetailModal } from "@/components/home/BroadcastDetailModal";
+import { HaloBadge } from "@/components/ui/halo-badge";
 import { DAFTAR_BROADCAST_AWAL } from "@/data/broadcast";
 import type { BroadcastGangguanItem } from "@/types/broadcast";
 
@@ -136,31 +133,27 @@ export function BroadcastGangguanBanner({
     switch (kategori) {
       case "DARURAT":
         return (
-          <span className="inline-flex items-center gap-1 rounded-sm bg-white/18 border border-white/30 px-1.5 py-px text-[9px] font-bold text-white shrink-0 uppercase tracking-wider">
-            <AlertTriangle className="size-2.5 text-amber-200 shrink-0" />
-            <span>Darurat</span>
-          </span>
+          <HaloBadge live variant="destructive" className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0">
+            Darurat
+          </HaloBadge>
         );
       case "PEMELIHARAAN":
         return (
-          <span className="inline-flex items-center gap-1 rounded-sm bg-white/15 border border-white/25 px-1.5 py-px text-[9px] font-bold text-white shrink-0 uppercase tracking-wider">
-            <Wrench className="size-2.5 text-sky-200 shrink-0" />
-            <span>Pemeliharaan</span>
-          </span>
+          <HaloBadge live variant="outline" className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0 text-white border-white/30">
+            Pemeliharaan
+          </HaloBadge>
         );
       case "EVENT":
         return (
-          <span className="inline-flex items-center gap-1 rounded-sm bg-white/20 border border-white/30 px-1.5 py-px text-[9px] font-bold text-white shrink-0 uppercase tracking-wider">
-            <Sparkles className="size-2.5 text-cyan-200 shrink-0" />
-            <span>Program Resmi</span>
-          </span>
+          <HaloBadge live variant="outline" className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0 text-white border-white/30">
+            Program Resmi
+          </HaloBadge>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-sm bg-white/15 border border-white/25 px-1.5 py-px text-[9px] font-bold text-white shrink-0 uppercase tracking-wider">
-            <Info className="size-2.5 text-white/90 shrink-0" />
-            <span>Info</span>
-          </span>
+          <HaloBadge live variant="secondary" className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0 text-white border-white/25">
+            Info
+          </HaloBadge>
         );
     }
   };

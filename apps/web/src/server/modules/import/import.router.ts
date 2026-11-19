@@ -151,8 +151,11 @@ export const importRouter = new Elysia({ prefix: '/import' })
   .get('/sample/pbpk', async ({ set }) => {
     try {
       const candidates = [
+        path.resolve(process.cwd(), 'packages/db/data/raw/PBPK.csv'),
         path.resolve(process.cwd(), 'packages/db/data/jan/PBPK.csv'),
+        path.resolve(process.cwd(), '../../packages/db/data/raw/PBPK.csv'),
         path.resolve(process.cwd(), '../../packages/db/data/jan/PBPK.csv'),
+        path.resolve(__dirname, '../../../../../../packages/db/data/raw/PBPK.csv'),
         path.resolve(__dirname, '../../../../../../packages/db/data/jan/PBPK.csv'),
       ];
 

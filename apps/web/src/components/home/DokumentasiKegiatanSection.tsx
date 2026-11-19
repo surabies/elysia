@@ -6,9 +6,6 @@ import {
   Camera,
   Calendar,
   MapPin,
-  CheckCircle2,
-  Clock,
-  Images,
   ChevronLeft,
   ChevronRight,
   ArrowUpRight,
@@ -16,6 +13,7 @@ import {
 
 import { cn } from '@/lib/utils'
 import { Container } from '@/components/shared/Container'
+import { HaloBadge } from '@/components/ui/halo-badge'
 import { BroadcastDetailModal } from '@/components/home/BroadcastDetailModal'
 import { DAFTAR_BROADCAST_AWAL } from '@/data/broadcast'
 import type { BroadcastGangguanItem } from '@/types/broadcast'
@@ -132,9 +130,14 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
 
           {/* Badge Indikator Jumlah Foto */}
           {photos.length > 1 && (
-            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md px-2.5 py-1 text-[11px] font-mono font-semibold text-white shadow-xs">
-              <Images className="size-3 text-cyan-400" />
-              <span>{activePhotoIdx + 1}/{photos.length}</span>
+            <div className="absolute top-3 right-3 z-20">
+              <HaloBadge
+                tabularNums
+                variant="secondary"
+                className="px-2.5 py-1 text-[11px] font-mono font-semibold"
+              >
+                {activePhotoIdx + 1}/{photos.length}
+              </HaloBadge>
             </div>
           )}
 
@@ -205,15 +208,13 @@ function KegiatanCardItem({ item, index, onOpenModal }: KegiatanCardItemProps) {
             </span>
 
             {isSelesai ? (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300 rounded-full px-2 py-0.5 shrink-0">
-                <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
-                <span>Selesai 100%</span>
-              </span>
+              <HaloBadge live variant="default" className="text-[10px] font-semibold shrink-0">
+                Selesai 100%
+              </HaloBadge>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300 rounded-full px-2 py-0.5 shrink-0">
-                <Clock className="size-3 text-blue-600 dark:text-blue-400" />
-                <span>{item.progresPersen}% Progres</span>
-              </span>
+              <HaloBadge live variant="outline" className="text-[10px] font-semibold shrink-0">
+                {item.progresPersen}% Progres
+              </HaloBadge>
             )}
           </div>
 
@@ -370,12 +371,11 @@ export function DokumentasiKegiatanSection() {
             </h2>
 
             {/* Quick Live Status Badge */}
-            <div className="hidden sm:flex items-center gap-2 text-[12px] font-mono text-muted-foreground bg-card border border-border rounded-full px-3.5 py-1.5 shadow-2xs">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <HaloBadge live variant="outline" className="hidden sm:inline-flex text-[12px] font-mono gap-2 py-1.5 px-3.5">
               <span className="font-semibold text-foreground">{daftar.length} Agenda Aktif</span>
               <span className="text-border">|</span>
               <span>Unit Lapangan</span>
-            </div>
+            </HaloBadge>
           </div>
 
           {/* Subtitle & Filter Baris */}

@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { CheckCircle2, Camera, Sparkles } from "@/components/ui/hugeicons-compat"
+import { CheckCircle2, Camera } from "@/components/ui/hugeicons-compat"
 
 /**
  * Mockup visual interaktif untuk fitur "Pelaporan Stand Meter Mandiri yang Akurat".
@@ -64,8 +64,8 @@ export function MockupLaporMeter() {
           <div className="absolute inset-x-2 top-1/2 h-0.5 -translate-y-1/2 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-75 shadow-[0_0_12px_#22d3ee]" />
 
           {/* Badge Indikator Fokus */}
-          <div className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-md bg-neutral-900/90 px-2 py-0.5 text-[9px] font-mono text-cyan-300 backdrop-blur-sm border border-cyan-500/30">
-            <Sparkles className="size-2.5" />
+          <div className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-md bg-neutral-900/90 px-2.5 py-0.5 text-[9px] font-mono text-cyan-300 backdrop-blur-sm border border-cyan-500/30">
+            <span className="size-1.5 rounded-full bg-cyan-400 animate-pulse" />
             Fokus Terkunci (99.4%)
           </div>
         </div>

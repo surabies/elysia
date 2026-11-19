@@ -9,6 +9,7 @@ import { Check } from "lucide-react"
 import { Container } from "@/components/shared/Container"
 import { PillButton } from "@/components/shared/PillButton"
 import { SwipeRevealMedia } from "@/components/shared/SwipeRevealMedia"
+import { HaloBadge } from "@/components/ui/halo-badge"
 import { cn } from "@/lib/utils"
 import type { FeatureMedia, FeatureSectionContent } from "@/types/home"
 import { MockupLaporMeter } from "./MockupLaporMeter"
@@ -38,11 +39,10 @@ function FeatureMediaView({ media }: { media: FeatureMedia }) {
           sizes="(min-width: 1280px) 516px, (min-width: 768px) 50vw, 100vw"
           className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-103"
         />
-        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/30 to-transparent p-4 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-mono font-semibold">Jaringan Distribusi Aktif</span>
-          </div>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 text-white flex items-center justify-between">
+          <HaloBadge live variant="outline" className="text-xs font-mono font-medium text-white border-white/20">
+            Jaringan Distribusi Aktif
+          </HaloBadge>
           <span className="text-[11px] font-mono text-neutral-300">Kota Bandung</span>
         </div>
       </div>
@@ -140,22 +140,30 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
 
           {/* Kolom Konten Interaktif */}
           <div className="flex flex-1 flex-col justify-center space-y-5">
-            <h2
-              id={titleId}
-              className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground leading-tight"
-            >
-              {title}
-            </h2>
+            {badge && (
+              <HaloBadge live variant="outline" className="self-start text-xs font-mono font-medium text-muted-foreground px-3 py-1">
+                {badge}
+              </HaloBadge>
+            )}
 
-            <p className="text-sm sm:text-base whitespace-pre-line text-muted-foreground leading-relaxed">
-              {description}
-            </p>
+            <div className="space-y-3">
+              <h2
+                id={titleId}
+                className="text-2xl sm:text-3xl lg:text-[2rem] font-bold tracking-tight text-foreground leading-tight"
+              >
+                {title}
+              </h2>
+
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-normal">
+                {description}
+              </p>
+            </div>
 
             {/* Daftar Poin Keunggulan */}
             {highlights && highlights.length > 0 && (
               <div className="space-y-2.5 pt-1">
                 {highlights.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
+                  <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90 font-normal">
                     <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                       <Check className="size-2.5 stroke-[2.5]" />
                     </span>
@@ -186,7 +194,7 @@ export function FeatureSection({ section: initialSection }: FeatureSectionProps)
 
             {cta ? (
               <div className="pt-2">
-                <PillButton asChild className="uppercase text-xs sm:text-xs font-semibold tracking-wider cursor-pointer">
+                <PillButton asChild>
                   <Link href={cta.href}>
                     {cta.label}
                   </Link>

@@ -6,6 +6,7 @@ import { motion, useScroll, useTransform } from 'motion/react'
 import { HlsVideo } from '@/components/shared/HlsVideo'
 import { SwipeHeading } from '@/components/shared/SwipeHeading'
 import { HeroCommandHub } from '@/components/home/HeroCommandHub'
+import { HaloBadge } from '@/components/ui/halo-badge'
 import type { HeroContent } from '@/types/home'
 
 interface HeroSectionProps {
@@ -93,8 +94,11 @@ export function HeroSection({ content }: HeroSectionProps) {
             className="w-full flex flex-col justify-center gap-5 max-md:order-2 md:gap-6 py-2"
           >
             {/* Eyebrow Pill Halus ala Geist / Next.js */}
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-border bg-card/90 px-3 py-1 text-[11px] font-medium text-foreground shadow-2xs backdrop-blur-xs">
-              <span className="size-1.5 rounded-full bg-[#0070f3]" />
+            <HaloBadge
+              live
+              variant="outline"
+              className="self-start gap-2 py-1 px-3 text-[11px] font-medium backdrop-blur-xs"
+            >
               <span className="font-mono uppercase tracking-wider text-muted-foreground">
                 PERUMDA Tirtawening
               </span>
@@ -102,7 +106,7 @@ export function HeroSection({ content }: HeroSectionProps) {
               <span className="text-[#0070f3] dark:text-sky-400 font-semibold">
                 Portal Layanan 24 Jam
               </span>
-            </div>
+            </HaloBadge>
 
             <div className="w-full max-w-full">
               <SwipeHeading text={content.title} />

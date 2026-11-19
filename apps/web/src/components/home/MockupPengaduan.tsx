@@ -4,7 +4,6 @@ import {
   LocateFixed,
   TriangleAlert,
   CheckCircle2,
-  Clock,
   Wrench,
   ShieldCheck,
 } from "@/components/ui/hugeicons-compat"
@@ -130,7 +129,7 @@ export function MockupPengaduan() {
           </div>
 
           <div className="flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-1">
-            <Clock className="size-3 text-blue-400" />
+            <span className="size-1.5 rounded-full bg-blue-400 animate-pulse" />
             <span className="text-[10px] font-medium tracking-wide text-blue-400">
               SLA ~18 Menit
             </span>
