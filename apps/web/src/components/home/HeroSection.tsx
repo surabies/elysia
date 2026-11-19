@@ -6,7 +6,6 @@ import { motion, useScroll, useTransform } from 'motion/react'
 import { HlsVideo } from '@/components/shared/HlsVideo'
 import { SwipeHeading } from '@/components/shared/SwipeHeading'
 import { HeroCommandHub } from '@/components/home/HeroCommandHub'
-import { HaloBadge } from '@/components/ui/halo-badge'
 import type { HeroContent } from '@/types/home'
 
 interface HeroSectionProps {
@@ -84,35 +83,23 @@ export function HeroSection({ content }: HeroSectionProps) {
       </div>
 
       {/* Main Content Container */}
-      <div className="mx-auto w-full max-w-360 px-4 lg:px-12 pt-4 md:pt-6 pb-10 md:pb-16 lg:pb-20">
+      <div className="mx-auto w-full max-w-360 px-4 lg:px-12 pt-2 md:pt-6 pb-8 md:pb-16 lg:pb-20">
         <div className="flex flex-col md:grid md:grid-cols-2 md:grid-rows-[1fr] md:gap-x-12 items-center">
           {/* Kolom Teks & Fast Command Hub */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full flex flex-col justify-center gap-5 max-md:order-2 md:gap-6 py-2"
+            className="w-full flex flex-col justify-center gap-3 sm:gap-4 md:gap-6 max-md:order-2 py-1 md:py-2"
           >
-            {/* Eyebrow Pill Halus ala Geist / Next.js */}
-            <HaloBadge
-              live
-              variant="outline"
-              className="self-start gap-2 py-1 px-3 text-[11px] font-medium backdrop-blur-xs"
-            >
-              <span className="font-mono uppercase tracking-wider text-muted-foreground">
-                PERUMDA Tirtawening
-              </span>
-              <span className="text-border">·</span>
-              <span className="text-[#0070f3] dark:text-sky-400 font-semibold">
-                Portal Layanan 24 Jam
-              </span>
-            </HaloBadge>
-
             <div className="w-full max-w-full">
-              <SwipeHeading text={content.title} />
+              <SwipeHeading
+                text={content.title}
+                mobileText={"URUSAN AIR DALAM\nGENGGAMAN"}
+              />
             </div>
 
-            <p className="w-full max-w-xl text-copy-15 md:text-copy-17 text-muted-foreground leading-relaxed font-normal">
+            <p className="w-full max-w-xl text-xs sm:text-copy-15 md:text-copy-17 text-muted-foreground leading-relaxed font-normal">
               {content.description}
             </p>
 
@@ -125,16 +112,17 @@ export function HeroSection({ content }: HeroSectionProps) {
           {/* Kolom Video: Tampil Penuh & Proporsional Tanpa Disempitkan */}
           <motion.div
             style={{ y: videoY, scale: videoScale }}
-            className="relative w-full flex justify-center md:justify-end max-md:order-1 max-md:mb-6"
+            className="relative w-full flex justify-center md:justify-end max-md:order-1 max-md:mb-2.5"
           >
             {/* Soft Ambient Blue & Emerald Halo Behind Video Frame */}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute -inset-4 rounded-4xl bg-linear-to-tr from-[#0070f3]/12 via-emerald-500/8 to-transparent blur-2xl"
             />
-            <div className="relative w-full aspect-4/5 rounded-3xl overflow-hidden bg-neutral-950 shadow-2xl shadow-neutral-950/15 ring-1 ring-neutral-900/10 md:h-[calc(100vh-140px)] md:max-h-220 md:w-auto">
+            <div className="relative w-full aspect-4/5 max-md:max-h-[300px] sm:max-md:max-h-[360px] rounded-2xl md:rounded-3xl overflow-hidden bg-neutral-950 shadow-2xl shadow-neutral-950/15 ring-1 ring-neutral-900/10 md:h-[calc(100vh-140px)] md:max-h-220 md:w-auto">
               <HlsVideo
                 src={content.videoSrc}
+                poster="/images/hero-poster.webp"
                 className="w-full h-full object-cover"
               />
             </div>

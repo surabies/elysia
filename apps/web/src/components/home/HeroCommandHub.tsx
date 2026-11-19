@@ -82,10 +82,10 @@ export function HeroCommandHub() {
             onChange={(e) => setInputVal(e.target.value)}
             placeholder={
               tabTujuan === 'aduan'
-                ? 'Ketik nomor tiket aduan (cth: ADU-2026-001)...'
-                : 'Ketik 11 digit nomor langganan...'
+                ? 'Nomor tiket aduan (cth: ADU-001)...'
+                : '11 digit nomor langganan...'
             }
-            className="w-full min-w-0 bg-transparent px-3 text-xs sm:text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="w-full min-w-0 bg-transparent px-2.5 sm:px-3 text-xs sm:text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
 
           {inputVal && (
@@ -103,9 +103,10 @@ export function HeroCommandHub() {
             <button
               type="submit"
               disabled={!inputVal.trim()}
-              className="inline-flex items-center justify-center gap-1.5 h-8 sm:h-9 px-3.5 rounded-lg bg-foreground text-background text-xs font-semibold shadow-xs hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center justify-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-lg bg-foreground text-background text-xs font-semibold shadow-xs hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              <span>Cek Layanan</span>
+              <span className="hidden sm:inline">Cek Layanan</span>
+              <span className="sm:hidden">Cek</span>
               <ArrowRight className="size-3.5" />
             </button>
           </div>
