@@ -37,7 +37,7 @@ export interface RiwayatStatus {
 
 export interface Pengaduan {
   id: string
-  nomor: string // format resmi tiket: TW-YYMM-XXXXXX
+  nomor: string // format resmi tiket: [KODE][WILAYAH][TANGGAL][URUT] (14 karakter)
   kategori: KategoriPengaduan
   judul?: string
   deskripsi: string

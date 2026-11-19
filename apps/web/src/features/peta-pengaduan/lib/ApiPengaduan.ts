@@ -192,7 +192,7 @@ export function petakanBarisDbKePengaduan(rows: unknown[]): Pengaduan[] {
 const FALLBACK_PENGADUAN: Pengaduan[] = [
   {
     id: "sample-1",
-    nomor: "TW-2611-BOCOR01",
+    nomor: "BP012611190001",
     kategori: "BOCOR_PIPA_DINAS",
     judul: "Pipa Distribusi Bocor di Trotoar",
     deskripsi: "Pipa transmisi di tepi trotoar retak, air mengalir deras ke jalan.",
@@ -217,7 +217,7 @@ const FALLBACK_PENGADUAN: Pengaduan[] = [
   },
   {
     id: "sample-2",
-    nomor: "TW-2611-KERUH02",
+    nomor: "AK022611190002",
     kategori: "AIR_KERUH_BAU_BERWARNA",
     judul: "Air Berwarna Cokelat dan Keruh",
     deskripsi: "Air keran berwarna kecokelatan dan berbau lumpur sejak pagi hari.",
@@ -241,7 +241,7 @@ const FALLBACK_PENGADUAN: Pengaduan[] = [
   },
   {
     id: "sample-3",
-    nomor: "TW-2611-MATI03",
+    nomor: "TA052611190004",
     kategori: "TIDAK_ADA_AIR",
     judul: "Air Tidak Mengalir di Satu RT",
     deskripsi: "Aliran air mati total sejak semalam di perumahan warga.",
@@ -264,7 +264,7 @@ const FALLBACK_PENGADUAN: Pengaduan[] = [
   },
   {
     id: "sample-4",
-    nomor: "TW-2611-TEKAN04",
+    nomor: "LA022611190006",
     kategori: "LONJAKAN_PEMAKAIAN_AIR",
     judul: "Lonjakan Pemakaian Tidak Wajar",
     deskripsi: "Angka kubikasi melonjak drastis padahal pemakaian keluarga sama seperti bulan lalu.",

@@ -147,10 +147,10 @@ Berikut adalah daftar temuan audit dan perbaikan konkret yang telah diimplementa
 ### Skenario 3: Penanganan Upaya Aduan Ganda (Duplicate Ticket Protection)
 - **Konteks:** Seorang pelanggan panik melihat genangan air dan mengirimkan 4 kali laporan kebocoran pipa dalam waktu 15 menit menggunakan nomor pelanggan yang sama.
 - **Langkah-langkah:**
-  1. Laporan pertama dikirim $\rightarrow$ Sistem menerbitkan tiket baru nomor `TW-2611-ABC123` dengan status `BARU`.
+  1. Laporan pertama dikirim $\rightarrow$ Sistem menerbitkan tiket baru nomor `BP012611190001` dengan status `BARU`.
   2. Laporan kedua, ketiga, dan keempat dikirim dengan nomor langganan yang sama dan jenis aduan yang sama (`PIPA_BOCOR`).
   3. Backend mendeteksi adanya tiket aktif pada nomor langganan tersebut yang statusnya berada di `STATUS_TERBUKA`.
-  4. Sistem mengembalikan pesan informatif: *"Pengaduan aktif untuk jenis PIPA_BOCOR dengan nomor langganan ini sudah tercatat (Tiket: TW-2611-ABC123, Status: BARU). Petugas kami sedang menindaklanjuti."*
+  4. Sistem mengembalikan pesan informatif: *"Pengaduan aktif untuk jenis PIPA_BOCOR dengan nomor langganan ini sudah tercatat (Tiket: BP012611190001, Status: BARU). Petugas kami sedang menindaklanjuti."*
 - **Kriteria Keberhasilan:**
   - Database tidak terkotori oleh baris tiket redundan.
   - Petugas di lapangan tidak menerima tugas ganda untuk titik masalah yang identik.

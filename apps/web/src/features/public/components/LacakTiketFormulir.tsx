@@ -65,7 +65,7 @@ export function LacakTiketForm({ nomorAwal }: { nomorAwal?: string } = {}) {
                 Nomor Tiket Pengaduan
               </FieldLabel>
               <span className="font-mono text-[11px] text-muted-foreground">
-                Format: TW-YYMM-XXXXXX
+                Format: 14 Karakter Resmi PDAM
               </span>
             </div>
 
@@ -77,7 +77,8 @@ export function LacakTiketForm({ nomorAwal }: { nomorAwal?: string } = {}) {
                   autoComplete="off"
                   autoCapitalize="characters"
                   spellCheck={false}
-                  placeholder="TW-2607-4F2A9K"
+                  placeholder="BP012611190001"
+                  maxLength={14}
                   value={nomor}
                   onChange={(e) => setNomor(e.target.value.toUpperCase())}
                   disabled={pending}
@@ -109,15 +110,15 @@ export function LacakTiketForm({ nomorAwal }: { nomorAwal?: string } = {}) {
 
             <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <FieldDescription className="text-xs text-muted-foreground">
-                Kunci pelacakan yang terbit setelah pengaduan dikirimkan.
+                Kunci pelacakan 14 karakter yang terbit setelah pengaduan dikirimkan.
               </FieldDescription>
               <button
                 type="button"
-                onClick={() => setNomor("TW-2607-4F2A9K")}
-                className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] text-blue-600 dark:text-sky-400 hover:bg-muted transition-colors"
+                onClick={() => setNomor("BP012611190001")}
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] text-blue-600 dark:text-sky-400 hover:bg-muted transition-colors cursor-pointer"
               >
                 <Sparkles className="size-3 text-amber-500" />
-                Contoh: TW-2607-4F2A9K
+                Contoh: BP012611190001
               </button>
             </div>
           </Field>

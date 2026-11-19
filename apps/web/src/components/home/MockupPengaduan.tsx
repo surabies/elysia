@@ -144,7 +144,7 @@ export function MockupPengaduan() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="rounded-md border border-neutral-700 bg-neutral-950 px-2 py-0.5 font-mono text-[11px] font-bold text-white tracking-wider">
-                TW-2611-BCR09
+                BP012611190001
               </span>
               <span className="text-[10px] text-neutral-400">Coblong, Bandung</span>
             </div>

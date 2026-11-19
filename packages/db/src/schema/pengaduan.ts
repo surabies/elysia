@@ -74,7 +74,7 @@ export const pengaduan = pgTable(
     id: text('id')
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    nomorTiket: varchar('nomor_tiket', { length: 30 }).notNull().unique(), // Format: TW-YYMM-XXXXXX (Base32 Crockford)
+    nomorTiket: varchar('nomor_tiket', { length: 30 }).notNull().unique(), // Format Standar: [KODE][WILAYAH][TANGGAL][URUT] (14 Karakter, mis. BP012611190001)
     clientRequestId: varchar('client_request_id', { length: 100 }).unique(),
     pelangganId: varchar('pelanggan_id', { length: 20 }).references(() => pelanggan.nolg),
     nomorLangganan: varchar('nomor_langganan', { length: 20 }),
