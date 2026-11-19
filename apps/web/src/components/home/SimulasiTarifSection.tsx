@@ -343,7 +343,7 @@ export function SimulasiTarifSection() {
 
               {/* Preset Buttons */}
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-xs text-muted-foreground mr-1">Preset Cepat:</span>
+                <span className="hidden sm:inline text-xs text-muted-foreground mr-1">Preset Cepat:</span>
                 {[10, 15, 20, 30, 45].map((preset) => (
                   <button
                     key={preset}

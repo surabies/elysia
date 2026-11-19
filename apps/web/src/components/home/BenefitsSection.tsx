@@ -27,6 +27,41 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
   const [content, setContent] = React.useState<BenefitsContent>(initialContent)
   const [activeIndex, setActiveIndex] = React.useState(0)
   const [isPaused, setIsPaused] = React.useState(false)
+  const [activeMobileIdx, setActiveMobileIdx] = React.useState(0)
+  const [isMobilePaused, setIsMobilePaused] = React.useState(false)
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+
+  const handleMobileScroll = () => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const scrollLeft = el.scrollLeft
+    const card = el.firstElementChild as HTMLElement | null
+    const cardWidth = card ? card.offsetWidth : 300
+    const idx = Math.round(scrollLeft / (cardWidth + 16))
+    setActiveMobileIdx(Math.max(0, Math.min(idx, content.items.length - 1)))
+  }
+
+  // Auto-cycle mobile carousel setiap 4 detik (seperti iklan)
+  React.useEffect(() => {
+    if (isMobilePaused || content.items.length <= 1) return
+
+    const timer = setInterval(() => {
+      if (typeof window !== "undefined" && window.innerWidth >= 1024) return
+
+      setActiveMobileIdx((prev) => {
+        const nextIdx = (prev + 1) % content.items.length
+        const el = scrollContainerRef.current
+        if (el) {
+          const card = el.firstElementChild as HTMLElement | null
+          const cardWidth = card ? card.offsetWidth : 300
+          el.scrollTo({ left: nextIdx * (cardWidth + 16), behavior: "smooth" })
+        }
+        return nextIdx
+      })
+    }, 4000)
+
+    return () => clearInterval(timer)
+  }, [isMobilePaused, content.items.length])
 
   // Sinkronisasi dinamis dengan backend & dashboard (/broadcast)
   React.useEffect(() => {
@@ -88,32 +123,121 @@ export function BenefitsSection({ content: initialContent }: BenefitsSectionProp
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* Header Seksi */}
-          <div className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2
-                id="benefits-title"
-                className="text-2xl sm:text-3xl lg:text-[2rem] font-bold tracking-tight text-foreground leading-tight"
-              >
-                {content.title}
-              </h2>
-              {content.subtitle && (
-                <p className="mt-2 text-sm sm:text-base max-w-2xl text-muted-foreground leading-relaxed font-normal">
-                  {content.subtitle}
-                </p>
-              )}
-            </div>
-
-            <HaloBadge
-              live
-              variant="outline"
-              className="hidden sm:inline-flex text-xs font-mono text-muted-foreground shrink-0"
+          {/* Header Seksi (Tanpa Badge) */}
+          <div className="mb-6 md:mb-10">
+            <h2
+              id="benefits-title"
+              className="text-2xl sm:text-3xl lg:text-[2rem] font-bold tracking-tight text-foreground leading-tight"
             >
-              Standar Pelayanan Terverifikasi
-            </HaloBadge>
+              {content.title}
+            </h2>
+            {content.subtitle && (
+              <p className="mt-2 text-sm sm:text-base max-w-2xl text-muted-foreground leading-relaxed font-normal">
+                {content.subtitle}
+              </p>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
+          {/* ========================================================
+              TAMPILAN KHUSUS MOBILE: HORIZONTAL CAROUSEL AUTO-CYCLE
+              ======================================================== */}
+          <div className="block lg:hidden">
+            <div
+              ref={scrollContainerRef}
+              onScroll={handleMobileScroll}
+              onMouseEnter={() => setIsMobilePaused(true)}
+              onMouseLeave={() => setIsMobilePaused(false)}
+              onTouchStart={() => setIsMobilePaused(true)}
+              onTouchEnd={() => setIsMobilePaused(false)}
+              className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-4 px-4 pb-3"
+            >
+              {content.items.map((item, index) => {
+                const desc =
+                  item.description || DEFAULT_DESCRIPTIONS[index % DEFAULT_DESCRIPTIONS.length]
+                const metric =
+                  item.metric || DEFAULT_METRICS[index % DEFAULT_METRICS.length]
+
+                return (
+                  <div
+                    key={`mob-${item.title}-${index}`}
+                    className="w-[85vw] max-w-[340px] shrink-0 snap-center rounded-lg border border-border/80 bg-card p-4 shadow-none flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Visual Foto Miniatur */}
+                      <div className="relative aspect-16/10 w-full overflow-hidden rounded-md bg-neutral-950 mb-3 border border-border/80">
+                        <ImageFrame
+                          image={item.image}
+                          sizes="(max-width: 768px) 340px, 480px"
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-2.5 flex items-end justify-between">
+                          <span className="font-mono text-[10px] font-semibold text-emerald-300 bg-black/60 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                            {metric}
+                          </span>
+                          <span className="font-mono text-[10px] text-white/80">
+                            0{index + 1}/0{content.items.length}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Icon + Title + Description */}
+                      <div className="flex items-start gap-3">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border/80 bg-muted/50">
+                          <Image
+                            src={item.icon.src}
+                            alt={item.icon.alt}
+                            width={20}
+                            height={20}
+                            unoptimized
+                            className="size-4.5 dark:invert"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-bold text-foreground leading-snug line-clamp-2">
+                            {item.title}
+                          </h3>
+                          <p className="mt-1 text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                            {desc}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Indikator Titik Carousel Khusus Mobile */}
+            {content.items.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 pt-3 pb-1">
+                {content.items.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    type="button"
+                    onClick={() => {
+                      const el = scrollContainerRef.current
+                      if (!el) return
+                      const card = el.firstElementChild as HTMLElement | null
+                      const cardWidth = card ? card.offsetWidth : 300
+                      el.scrollTo({ left: dotIdx * (cardWidth + 16), behavior: "smooth" })
+                    }}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                      dotIdx === activeMobileIdx
+                        ? "w-5 bg-foreground"
+                        : "w-1.5 bg-foreground/20 hover:bg-foreground/40"
+                    )}
+                    aria-label={`Lihat keunggulan ${dotIdx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ========================================================
+              TAMPILAN KHUSUS DESKTOP (>= 1024px): SHOWCASE & SELECTOR
+              ======================================================== */}
+          <div className="hidden lg:grid lg:grid-cols-12 lg:items-center gap-8">
             {/* Kolom Kiri: Visual Showcase Interaktif */}
             <div className="lg:col-span-5">
               <div className="relative overflow-hidden rounded-lg border border-border/80 bg-card p-2 shadow-none">
