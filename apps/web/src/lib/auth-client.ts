@@ -1,17 +1,29 @@
 import { createAuthClient } from 'better-auth/react';
 
-// Di browser (client-side), prioritaskan window.location.origin agar selalu
-// menembak domain tempat aplikasi diakses (misal https://surabiedev.vercel.app),
-// bukan http://localhost:3000. Fallback env hanya digunakan saat SSR.
-const authBaseUrl =
-  typeof window !== 'undefined'
-    ? window.location.origin
-    : (process.env.BETTER_AUTH_URL ||
-       process.env.NEXT_PUBLIC_APP_URL ||
-       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'));
+function getAuthClientBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  if (process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.includes('localhost')) {
+    return process.env.BETTER_AUTH_URL.replace(/\/$/, '');
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes('localhost')) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://surabiedev.vercel.app';
+  }
+  return process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+}
 
 export const authClient = createAuthClient({
-  baseURL: authBaseUrl,
+  baseURL: getAuthClientBaseUrl(),
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;

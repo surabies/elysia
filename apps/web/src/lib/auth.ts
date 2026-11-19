@@ -4,13 +4,32 @@ import { db } from '@cater/db';
 import * as schema from '@cater/db';
 import { env } from '@/lib/env';
 
-const serverBaseUrl =
-  env.BETTER_AUTH_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000');
+function resolveServerBaseUrl(): string {
+  const rawBetterAuthUrl = process.env.BETTER_AUTH_URL;
+  if (rawBetterAuthUrl && !rawBetterAuthUrl.includes('localhost')) {
+    return rawBetterAuthUrl.replace(/\/$/, '');
+  }
+
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  const rawPublicUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (rawPublicUrl && !rawPublicUrl.includes('localhost')) {
+    return rawPublicUrl.replace(/\/$/, '');
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://surabiedev.vercel.app';
+  }
+
+  return rawBetterAuthUrl ? rawBetterAuthUrl.replace(/\/$/, '') : 'http://localhost:3000';
+}
+
+const serverBaseUrl = resolveServerBaseUrl();
 
 const configuredOrigins = env.CORS_ALLOWED_ORIGINS
   ? env.CORS_ALLOWED_ORIGINS.split(',').map((s) => s.trim().replace(/\/$/, ''))
