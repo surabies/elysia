@@ -1,68 +1,84 @@
-Kamu adalah front-end engineer senior. Buatkan bagian pembuka (preloader) dan halaman hero untuk website layanan publik "Perumda Tirtawening Kota Bandung" (perusahaan air minum Kota Bandung). Website ini punya tiga layanan utama: Cek Tagihan, Pengaduan Air, dan Lapor Meter.
+# TUGAS: Inspeksi, Analisis, dan Rancang Skema + Seed Data Awal Produksi
 
-## Langkah awal (wajib)
+## 1. Konteks
 
-1. Baca struktur repo dulu: framework, library animasi, library UI, sistem styling, token warna, font, dan konvensi penamaan file/folder yang sudah ada.
-2. Ikuti stack dan konvensi yang sudah ada. Jangan menambah library baru kalau yang ada sudah cukup. Kalau belum ada library animasi, pakai Framer Motion (React) atau GSAP, pilih satu saja.
-3. Tulis rencana singkat (file apa yang dibuat/diubah) sebelum mulai coding.
+Aplikasi baca meter air untuk Perumda Tirtawening Kota Bandung sedang disiapkan masuk produksi. Data **progrescater** adalah data matang hasil export aplikasi lama: sudah lengkap dengan stand meter awal, stand meter akhir, pemakaian, dan data pelanggan. Data ini merupakan hasil **closing tutup-buka bulan Oktober**.
 
-## Referensi
+Peran progrescater: **data master awal (data pembuka)** untuk mengisi tabel-tabel database agar aplikasi bisa langsung berjalan. Setelah seed selesai, aplikasi **tidak boleh bergantung lagi** pada file/tabel progrescater.
 
-Tiru POLA interaksinya dari https://www.pln.co.id/main. Jangan menyalin logo, teks, gambar, atau video milik PLN. Semua konten harus milik Tirtawening seperti di bawah.
+Kondisi proyek saat ini: logika masih banyak bug dan sering bolak-balik diperbaiki. Karena itu, **jangan menambal gejala**. Cari akar masalah di desain skema dan alur datanya.
 
-## Bagian 1: Preloader (intro animation)
+## 2. Tujuan Akhir
 
-Layar penuh yang tampil saat halaman pertama dibuka, lalu terbuka (reveal) menuju hero.
+1. Progrescater menjadi titik awal produksi: pelanggan, meter, rute pencatatan, dan data pendukung lain terisi benar lewat seed.
+2. Aplikasi bisa melanjutkan pencatatan **bulan berikutnya (November) dan seterusnya** tanpa error.
+3. Aplikasi **dinamis terhadap periode**. Dijalankan dengan data periode kapan pun, perilakunya tetap benar dan tidak mengacu pada bulan tertentu. Kondisi aplikasi ditentukan oleh data di database (hasil seed + proses berjalan), bukan oleh konstanta di kode.
 
-- Latar solid biru tua (selaras dengan identitas air), teks putih, tipografi besar.
-- Kata-kata berganti satu per satu (text rotator) dengan animasi naik dari bawah ke atas memakai mask (overflow hidden), urutannya:
-  1. "Cek Tagihan"
-  2. "Pengaduan Air"
-  3. "Lapor Meter"
-- Di pojok ada penanda urutan seperti "01 / 03", "02 / 03", "03 / 03" yang ikut berganti (padanan penanda "#1" di referensi).
-- Tiap kata tampil sekitar 0,8–1 detik. Total preloader maksimal sekitar 3,5 detik.
-- Setelah kata terakhir, tampilkan sebentar nama "Tirtawening", lalu preloader terangkat ke atas (curtain reveal / slide-up atau clip-path) sampai hero terlihat penuh.
-- Hero harus sudah dirender di belakang preloader supaya transisinya mulus. Video dan poster hero harus mulai dimuat sejak awal.
-- Preloader hanya tampil sekali per sesi (simpan flag di sessionStorage, dibungkus try/catch). Kunjungan berikutnya langsung ke hero.
-- Sediakan tombol "Lewati" yang kecil dan jelas.
-- Hormati `prefers-reduced-motion`: kalau aktif, lewati animasi kata dan cukup fade singkat atau langsung tampilkan hero.
-- Saat preloader aktif, kunci scroll body, lalu kembalikan setelah selesai. Pastikan fokus keyboard tidak "bocor" ke konten di belakangnya (inert/aria-hidden).
-- Tambahkan `aria-live="polite"` atau teks alternatif yang masuk akal untuk pembaca layar.
+## 3. Prinsip Wajib (jangan dilanggar)
 
-## Bagian 2: Hero (full-screen video background)
+- **Tidak ada hardcode periode.** Larang string/angka seperti "Oktober", `month === 10`, atau tahun tetap di logika bisnis, query, dan seed. Periode harus berupa data (mis. tanggal awal periode atau pasangan tahun+bulan) dan perpindahan Desember → Januari harus aman.
+- **Pisahkan 3 lapisan data:**
+  1. _Referensi_: golongan/kelompok tarif, wilayah/zona, status meter, status pelanggan, dan sejenisnya.
+  2. _Master_: pelanggan, meter, rute/urutan pencatatan, penugasan petugas ke rute (jika ada di skema).
+  3. _Transaksi periode_: periode, pembacaan meter (stand awal, stand akhir, pemakaian), status verifikasi, status closing.
+- **Opening state = hasil closing yang sah.** Seed harus menghasilkan kondisi yang sama dengan yang dihasilkan proses closing normal:
+  - Periode Oktober: berstatus _closed_, pembacaannya tersimpan utuh sebagai riwayat.
+  - Periode berikutnya (November): berstatus _open_, **stand awal tiap meter = stand akhir Oktober** (carry-forward), belum ada pembacaan.
+  - Mekanisme carry-forward untuk seed harus **satu logika yang sama** dengan yang dipakai proses closing di aplikasi, jangan dibuat dua jalur berbeda.
+- **Seed harus idempoten**: dijalankan berulang tidak membuat duplikat dan tidak merusak data. Pakai kunci alami yang stabil (mis. nomor pelanggan / nomor meter) untuk upsert.
+- **Satu sumber kebenaran per fakta.** Pemakaian sebaiknya diturunkan dari stand akhir − stand awal. Jika disimpan, harus ada aturan konsistensi dan validasi yang jelas.
+- **Jangan menghapus atau menimpa data yang sudah ada** tanpa persetujuan eksplisit saya.
 
-- Tinggi layar penuh (gunakan `100svh`, bukan `100vh`, supaya aman di mobile).
-- Video latar: `<video autoplay muted loop playsinline>` dengan `poster`. Pakai aset lokal `/public/videos/hero-air.mp4` dan `/public/images/hero-poster.jpg`. Jika file belum ada, buat placeholder yang jelas (gradient biru + poster kosong) dan beri komentar TODO tempat mengganti aset. Jangan mengarang URL video eksternal.
-- Di layar kecil atau saat `prefers-reduced-motion` aktif atau koneksi hemat data, tampilkan poster saja tanpa memutar video.
-- Overlay gradient gelap di atas video agar teks tetap terbaca (kontras minimal WCAG AA).
-- Navbar transparan di atas hero: logo (placeholder), menu "Beranda", "Layanan", "Informasi", "Kontak". Di mobile jadi menu hamburger.
-- Konten utama (rata kiri):
-  - Headline (h1): "Layanan Air Bersih, Lebih Dekat dengan Warga Bandung"
-  - Subjudul: "Cek tagihan, sampaikan pengaduan, dan laporkan angka meter air Anda kapan saja, langsung dari ponsel."
-  - Tombol utama: "Cek Tagihan". Tombol sekunder: "Lapor Meter".
-- Di bagian bawah hero, tiga kartu layanan (padanan carousel 3 kartu di referensi):
-  1. Cek Tagihan: "Lihat tagihan air bulan ini dan riwayat pembayaran."
-  2. Pengaduan Air: "Laporkan air mati, keruh, kebocoran, atau gangguan lainnya."
-  3. Lapor Meter: "Kirim angka meter air Anda secara mandiri."
-     Tiap kartu berisi ikon, judul, deskripsi singkat, dan link ke rute layanan masing-masing. Gunakan link placeholder (`/cek-tagihan`, `/pengaduan`, `/lapor-meter`) jika rute belum ada. Di desktop tampil sejajar tiga kolom, di mobile bisa digeser horizontal (scroll-snap).
-- Setelah preloader terbuka, konten hero muncul bertahap (stagger): headline, subjudul, tombol, lalu kartu.
+## 4. Cara Kerja (ikuti urutan, jangan loncat)
 
-## Gaya visual
+### Fase A. Inspeksi (baca saja, belum ubah kode)
 
-- Nuansa air: biru tua, biru muda, dan putih. Warna aksen cukup satu. Pakai token warna yang sudah ada di proyek; kalau belum ada, definisikan sebagai CSS variables.
-- Tipografi tegas dan bersih, ukuran headline responsif memakai `clamp()`.
-- Jangan menambahkan statistik atau angka karangan (jumlah pelanggan, dsb.). Hanya pakai teks yang tertulis di prompt ini.
+1. Petakan struktur proyek: skema database/ORM, migrasi, file seed yang ada, dan lokasi/format data progrescater.
+2. Baca setiap kolom progrescater: nama, tipe, contoh nilai, jumlah baris, kolom kosong/duplikat.
+3. Daftar semua tempat di kode yang **menentukan atau mengasumsikan periode** (hardcode bulan/tahun, "periode aktif", filter tanggal, proses closing, pembuatan pembacaan baru).
+4. Daftar semua tempat yang membaca stand awal, stand akhir, dan pemakaian, serta bagaimana nilainya dihitung.
 
-## Struktur kode
+### Fase B. Analisis
 
-- Pisahkan jadi komponen kecil yang jelas, misalnya `Preloader`, `HeroSection`, `LayananCard`, `Navbar`. Jangan dipecah berlebihan.
-- Konten teks (kata preloader, kartu layanan) disimpan sebagai data/konstanta terpisah dari komponen supaya mudah diubah.
-- Kode rapi, semantik (`header`, `nav`, `main`, `section`, `h1`), tanpa warning di console.
+1. **Tabel pemetaan**: kolom progrescater → tabel.kolom tujuan (tipe, transformasi, nullable, aturan). Tandai kolom yang tidak punya tujuan dan tujuan yang tidak punya sumber.
+2. **Daftar celah dan bug akar masalah** antara skema/logika sekarang dan prinsip di bagian 3. Urutkan dari dampak terbesar, sebutkan file dan fungsi terkait.
+3. **Audit kualitas data progrescater** (laporkan angka, jangan diam-diam diperbaiki):
+   - stand_akhir ≥ stand_awal? Pemakaian = akhir − awal?
+   - Kasus meter ganti/reset/putar balik (stand akhir < stand awal).
+   - Pelanggan tanpa meter, meter tanpa pelanggan, meter dipakai ganda.
+   - Pelanggan tanpa rute, rute tanpa urutan, urutan duplikat.
+   - Duplikat nomor pelanggan/meter, nilai kosong, format tidak seragam.
+   - Pelanggan nonaktif/putus/tutup: ikut di-seed atau tidak, dan bagaimana ditandai.
+4. Jelaskan bagaimana tiap skenario ini berjalan di desain baru: bulan berikutnya normal, pelanggan baru muncul, meter diganti, pelanggan nonaktif, lompat periode (ada bulan terlewat), pergantian tahun.
 
-## Kriteria selesai
+### Fase C. Rancangan (berikan sebagai usulan, tunggu persetujuan saya)
 
-- Preloader tampil sekali per sesi, urutannya benar, tombol "Lewati" berfungsi, dan transisi ke hero mulus tanpa kedipan.
-- Hero tampil penuh di mobile (≈375px), tablet, dan desktop tanpa scroll horizontal.
-- Mode reduced-motion berjalan tanpa animasi berat.
-- Navigasi keyboard dan pembaca layar tidak terjebak di preloader.
-- Lint dan build lolos. Di akhir, jelaskan secara singkat file apa yang dibuat/diubah dan aset apa yang masih perlu saya sediakan (logo, video, poster).
+1. **Skema final**: tabel, kolom, tipe, PK/FK, unique constraint, index, dan enum status. Tampilkan diagram relasi (teks/mermaid).
+2. **Model periode**: bagaimana periode aktif ditentukan dari data, status siklusnya (mis. open → closed), dan aturan transisi.
+3. **Rencana seed bertahap** dan urutannya (referensi → master → periode closed → periode open dengan carry-forward), termasuk transaksi/transaksi atomik dan rollback jika gagal.
+4. **Validasi pasca-seed** (query rekonsiliasi): jumlah pelanggan/meter/rute cocok dengan sumber, tidak ada FK yatim, stand awal periode open = stand akhir periode closed, total pemakaian periode closed cocok dengan sumber.
+5. **Dampak ke proses closing**: pastikan logika closing, pembuatan periode berikutnya, dan seed memakai fungsi carry-forward yang sama.
+
+### Fase D. Implementasi (hanya setelah rencana disetujui)
+
+- Kerjakan per langkah kecil yang bisa diuji. Setiap langkah: apa yang berubah, kenapa, cara memverifikasi.
+- Ikuti konvensi di `/docs/STRUKTUR-KODE.md` (folder semantik, PascalCase, tidak memecah file berlebihan).
+- Tambahkan tes/skrip verifikasi: seed dijalankan dua kali hasilnya sama, simulasi closing November → Desember → Januari tidak error, aplikasi berjalan dengan periode awal yang berbeda (uji dengan data seed periode lain).
+
+## 5. Format Keluaran
+
+Untuk Fase A–C kirim satu laporan terstruktur berisi:
+
+1. Ringkasan temuan (maks 10 baris).
+2. Tabel pemetaan progrescater → database.
+3. Daftar bug/celah akar masalah, berurutan menurut prioritas.
+4. Hasil audit kualitas data (dengan angka).
+5. Usulan skema + model periode + rencana seed.
+6. **Daftar pertanyaan/asumsi** yang butuh keputusan saya.
+
+## 6. Aturan Perilaku
+
+- Jika ada hal ambigu (arti kolom, aturan bisnis tarif/tagihan, penanganan meter ganti), **tanyakan atau tulis sebagai asumsi eksplisit**. Jangan menebak diam-diam.
+- Jangan mengubah kode atau data sebelum Fase C disetujui.
+- Jangan menambah fitur di luar lingkup ini.
+- Jika menemukan bug di luar lingkup, catat saja di bagian terpisah.

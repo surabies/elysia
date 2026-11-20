@@ -6,11 +6,13 @@
 import { eq, and, sql, desc } from 'drizzle-orm';
 import {
   db,
+  waterMeter,
   waterMeterMutasi,
   grandWaterMeter,
   gwmBacaMeter,
   caterBacaMeter,
   caterVerifikasiLog,
+  daftarCatat,
   pelanggan,
 } from '@cater/db';
 import type { AlasanGantiMeter } from '@cater/types';
@@ -265,23 +267,50 @@ export class GwmService {
     const periodeStr = String(mutasi.periode);
     const caterId = `cater-${periodeStr}-${mutasi.nolg}`;
 
-    const [existingCater] = await db
-      .select()
-      .from(caterBacaMeter)
-      .where(eq(caterBacaMeter.id, caterId));
-
-    if (!existingCater) {
-      throw new Error(
-        `Laporan pembacaan pelanggan ${mutasi.nolg} periode ${periodeStr} belum ditemukan.`,
-      );
-    }
     if (standBacaBaru === undefined) {
       throw new Error(
         'Stand baca meter baru wajib diisi sebelum mutasi disetujui.',
       );
     }
 
-    const standLalu = Number(existingCater.stml);
+    const [existingCater] = await db
+      .select()
+      .from(caterBacaMeter)
+      .where(eq(caterBacaMeter.id, caterId));
+
+    const [existingDpm] = await db
+      .select()
+      .from(daftarCatat)
+      .where(and(eq(daftarCatat.periode, periodeStr), eq(daftarCatat.nolg, mutasi.nolg)));
+
+    // Jika caterBacaMeter bulan berjalan belum ada, ambil standLalu dari daftar_catat.stand_awal atau bacaan terakhir
+    let standLaluStr = existingCater?.stml ?? existingDpm?.standAwal ?? null;
+    let pakaiLaluStr = existingCater?.pakaiLalu ?? existingDpm?.pakaiLalu ?? '0';
+    let ruteKodeVal = existingCater?.ruteKode ?? existingDpm?.ruteKode ?? null;
+    let petugasIdVal = existingCater?.petugasId ?? existingDpm?.petugasId ?? null;
+
+    if (standLaluStr === null) {
+      const [lastReading] = await db
+        .select({
+          stma: caterBacaMeter.stma,
+          stmaRevisi: caterBacaMeter.stmaRevisi,
+          pakaiTagih: caterBacaMeter.pakaiTagih,
+          pakaiM3: caterBacaMeter.pakaiM3,
+          ruteKode: caterBacaMeter.ruteKode,
+          petugasId: caterBacaMeter.petugasId,
+        })
+        .from(caterBacaMeter)
+        .where(and(eq(caterBacaMeter.nolg, mutasi.nolg), sql`${caterBacaMeter.thbl} < ${periodeStr}`))
+        .orderBy(desc(caterBacaMeter.thbl))
+        .limit(1);
+
+      standLaluStr = String(lastReading?.stmaRevisi ?? lastReading?.stma ?? '0');
+      pakaiLaluStr = String(lastReading?.pakaiTagih ?? lastReading?.pakaiM3 ?? '0');
+      ruteKodeVal = ruteKodeVal ?? lastReading?.ruteKode ?? null;
+      petugasIdVal = petugasIdVal ?? lastReading?.petugasId ?? null;
+    }
+
+    const standLalu = Number(standLaluStr);
     const bacaBaru = standBacaBaru;
 
     const kalkulasi = hitungKubikasiGantiMeter({
@@ -308,6 +337,43 @@ export class GwmService {
         })
         .where(eq(waterMeterMutasi.id, mutasiId));
 
+      // 1b. Buat/update aset water_meter baru dan tautkan ke master pelanggan (mendukung pelanggan yang awalnya no_meter = NULL)
+      if (mutasi.noMeterBaru && mutasi.noMeterBaru.trim() !== '-') {
+        const cleanMeterBaru = mutasi.noMeterBaru.trim();
+        const ukuranBaru = mutasi.ukuranBaru || '1/2';
+        await tx
+          .insert(waterMeter)
+          .values({
+            noMeter: cleanMeterBaru,
+            merk: mutasi.merkBaru ?? null,
+            ukuran: ukuranBaru,
+            noSegel: mutasi.noSegelBaru ?? null,
+            tglPasang: mutasi.tglGanti ?? new Date(),
+            kondisi: 'Normal',
+          })
+          .onConflictDoUpdate({
+            target: waterMeter.noMeter,
+            set: {
+              merk: mutasi.merkBaru ?? null,
+              ukuran: ukuranBaru,
+              noSegel: mutasi.noSegelBaru ?? null,
+              tglPasang: mutasi.tglGanti ?? new Date(),
+            },
+          });
+
+        await tx
+          .update(pelanggan)
+          .set({
+            noMeter: cleanMeterBaru,
+            ukuranMeter: ukuranBaru,
+            merkMeter: mutasi.merkBaru ?? null,
+            tglPasangMeter: mutasi.tglGanti ?? new Date(),
+            perluVerifikasi: false,
+            updatedAt: new Date(),
+          })
+          .where(eq(pelanggan.nolg, mutasi.nolg));
+      }
+
       // 2. Simpan / Perbarui transaksi pembacaan meter utama
       await tx
         .insert(caterBacaMeter)
@@ -315,10 +381,13 @@ export class GwmService {
           id: caterId,
           thbl: periodeStr,
           nolg: mutasi.nolg,
-          stml: existingCater.stml,
+          ruteKode: ruteKodeVal,
+          petugasId: petugasIdVal,
+          stml: standLaluStr,
           stma: String(bacaBaru),
           pakaiM3: String(kalkulasi.totalPemakaianM3),
           pakaiTagih: String(kalkulasi.totalPemakaianM3),
+          pakaiLalu: pakaiLaluStr,
           tmss: '4',                        // Kode STI '4 - MB'
           ketCatat: 'MB',
           waterMeterMutasiId: mutasi.id,
@@ -326,9 +395,9 @@ export class GwmService {
           catatan: `[Ganti Meter/MB] Stand Angkat: ${mutasi.standAngkat} | Stand Pasang: ${mutasi.standPasang}`,
         })
         .onConflictDoUpdate({
-          target: caterBacaMeter.id,
+          target: [caterBacaMeter.thbl, caterBacaMeter.nolg],
           set: {
-            stml: existingCater.stml,
+            stml: standLaluStr,
             stma: String(bacaBaru),
             pakaiM3: String(kalkulasi.totalPemakaianM3),
             pakaiTagih: String(kalkulasi.totalPemakaianM3),
@@ -340,6 +409,16 @@ export class GwmService {
             updatedAt: new Date(),
           },
         });
+
+      // 2b. Tandai DPM periode berjalan sebagai DICATAT
+      await tx
+        .update(daftarCatat)
+        .set({
+          status: 'DICATAT',
+          selesaiAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(and(eq(daftarCatat.periode, periodeStr), eq(daftarCatat.nolg, mutasi.nolg)));
 
       // 3. Catat di audit log verifikasi
       await tx.insert(caterVerifikasiLog).values({

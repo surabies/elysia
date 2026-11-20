@@ -17,6 +17,7 @@ export const user = pgTable(
     nolg: varchar('nolg', { length: 20 })
       .unique()
       .references(() => pelanggan.nolg, { onDelete: 'set null' }),
+    wajibGantiPassword: boolean('wajib_ganti_password').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

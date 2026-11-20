@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, numeric, integer, timestamp, index, geometry } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, numeric, integer, timestamp, index, unique, geometry } from 'drizzle-orm/pg-core';
 import { pelanggan } from './pelanggan';
 import { ruteCater, petugasCater } from './wilayah';
 import { masterKondisiCatat } from './kondisi';
@@ -56,6 +56,7 @@ export const caterBacaMeter = pgTable(
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
+    unique('cater_thbl_nolg_unique').on(table.thbl, table.nolg),
     index('cater_thbl_nolg_idx').on(table.thbl, table.nolg),
     index('cater_rute_kode_idx').on(table.ruteKode),
     index('cater_petugas_idx').on(table.petugasId),

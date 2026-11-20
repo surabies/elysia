@@ -169,14 +169,40 @@ export interface PerbandinganPeriodeResult {
 
 export class ClosingService {
   /**
-   * Mengambil seluruh blok tarif dan biaya tetap aktif untuk periode penagihan
+   * Mengambil seluruh blok tarif, golongan tarif, dan biaya tetap yang berlaku pada periode penagihan.
+   * ATURAN KETAT: Tidak ada fallback angka default (15000/5000/0).
+   * - Tarif dipilih yang masa berlakunya mencakup periodeStr (`berlaku_mulai <= akhirPeriode` dan `berlaku_sampai IS NULL OR berlaku_sampai >= awalPeriode`).
+   * - bea_beban diambil dari tabel referensi `biaya_tetap` berdasarkan ukuran meter pelanggan.
+   * - bea_admin, air_kotor, lain_lain diambil dari `golongan_tarif` milik pelanggan.
    */
-  private async muatKonteksTarif() {
-    const semuaBlok = await db.select().from(tarifBlok);
-    const semuaBiaya = await db.select().from(biayaTetap);
+  private async muatKonteksTarif(periodeStr?: string) {
+    const [semuaBlok, semuaBiaya, semuaGolongan] = await Promise.all([
+      db.select().from(tarifBlok),
+      db.select().from(biayaTetap),
+      db.select().from(golonganTarif),
+    ]);
+
+    let awalPeriode: Date | null = null;
+    let akhirPeriode: Date | null = null;
+    if (periodeStr && periodeStr.length === 6) {
+      const yr = parseInt(periodeStr.slice(0, 4), 10);
+      const mo = parseInt(periodeStr.slice(4, 6), 10);
+      if (!isNaN(yr) && !isNaN(mo)) {
+        awalPeriode = new Date(Date.UTC(yr, mo - 1, 1, 0, 0, 0));
+        akhirPeriode = new Date(Date.UTC(yr, mo, 0, 23, 59, 59));
+      }
+    }
+
+    const isBerlaku = (mulai: Date | null, sampai: Date | null) => {
+      if (!awalPeriode || !akhirPeriode) return true;
+      if (mulai && mulai > akhirPeriode) return false;
+      if (sampai && sampai < awalPeriode) return false;
+      return true;
+    };
 
     const blokPerTarif = new Map<string, HargaBlok[]>();
     for (const b of semuaBlok) {
+      if (!isBerlaku(b.berlakuMulai, b.berlakuSampai)) continue;
       const list = blokPerTarif.get(b.tarifKode) ?? [];
       list.push({
         blok: b.blok,
@@ -187,22 +213,89 @@ export class ClosingService {
       blokPerTarif.set(b.tarifKode, list);
     }
 
-    const beaBebanPerUkuran = new Map<string, number>();
-    let beaAdminDefault = 5000;
-    let airKotorDefault = 0;
+    const golonganMap = new Map<
+      string,
+      { beaAdmin: number; airKotor: number; lainLain: number }
+    >();
+    for (const g of semuaGolongan) {
+      if (g.beaAdmin === null || g.airKotor === null) {
+        throw new Error(
+          `Golongan tarif '${g.kode}' memiliki komponen biaya tetap (bea_admin/air_kotor) yang kosong di database.`
+        );
+      }
+      golonganMap.set(g.kode, {
+        beaAdmin: Number(g.beaAdmin),
+        airKotor: Number(g.airKotor),
+        lainLain: Number(g.lainLain ?? 0),
+      });
+    }
 
+    const beaBebanPerUkuran = new Map<string, number>();
     for (const b of semuaBiaya) {
+      if (!isBerlaku(b.berlakuMulai, b.berlakuSampai)) continue;
       const nominal = Number(b.nominal);
       if (b.jenis === 'BEA_BEBAN' && b.ukuranMeter) {
-        beaBebanPerUkuran.set(b.ukuranMeter, nominal);
-      } else if (b.jenis === 'BEA_ADMIN') {
-        beaAdminDefault = nominal;
-      } else if (b.jenis === 'AIR_KOTOR') {
-        airKotorDefault = nominal;
+        beaBebanPerUkuran.set(b.ukuranMeter.trim(), nominal);
       }
     }
 
-    return { blokPerTarif, beaBebanPerUkuran, beaAdminDefault, airKotorDefault };
+    return { blokPerTarif, golonganMap, beaBebanPerUkuran };
+  }
+
+  /**
+   * Menghitung komponen tagihan satu pelanggan secara ketat tanpa fallback default.
+   * Melempar error jelas jika golongan tarif atau ukuran meter tidak ditemukan di referensi.
+   */
+  private hitungKomponenTagihanPelanggan(
+    nolg: string,
+    tarifKode: string | null,
+    ukuranMeter: string | null,
+    volumeM3: number,
+    konteks: {
+      blokPerTarif: Map<string, HargaBlok[]>;
+      golonganMap: Map<string, { beaAdmin: number; airKotor: number; lainLain: number }>;
+      beaBebanPerUkuran: Map<string, number>;
+    }
+  ) {
+    if (!tarifKode) {
+      throw new Error(
+        `Closing gagal: Pelanggan '${nolg}' tidak memiliki kode golongan tarif (tarif_kode kosong).`
+      );
+    }
+    const golongan = konteks.golonganMap.get(tarifKode);
+    const tarifList = konteks.blokPerTarif.get(tarifKode);
+    if (!golongan || !tarifList || tarifList.length === 0) {
+      throw new Error(
+        `Closing gagal: Golongan tarif '${tarifKode}' untuk pelanggan '${nolg}' tidak ditemukan di tabel referensi golongan_tarif / tarif_blok.`
+      );
+    }
+
+    const ukuranKey = ukuranMeter?.trim() || '';
+    if (!ukuranKey || !konteks.beaBebanPerUkuran.has(ukuranKey)) {
+      throw new Error(
+        `Closing gagal: Ukuran meter '${ukuranKey || '(kosong)'}' untuk pelanggan '${nolg}' tidak ditemukan di tabel referensi biaya_tetap (BEA_BEBAN).`
+      );
+    }
+
+    const beaBeban = konteks.beaBebanPerUkuran.get(ukuranKey)!;
+    const { total: jmlHargaAir, rincian: rincianBlok } = hitungRincianHargaAir(volumeM3, tarifList);
+    const totalRekening = hitungTotalTagihan({
+      jmlHargaAir,
+      beaBeban,
+      beaAdmin: golongan.beaAdmin,
+      airKotor: golongan.airKotor,
+      lainLain: golongan.lainLain,
+    });
+
+    return {
+      jmlHargaAir,
+      rincianBlok,
+      beaBeban,
+      beaAdmin: golongan.beaAdmin,
+      airKotor: golongan.airKotor,
+      lainLain: golongan.lainLain,
+      totalTagihan: totalRekening,
+    };
   }
 
   /**
@@ -233,16 +326,22 @@ export class ClosingService {
       }
     }
 
-    // 2. Data Transaksi Pembacaan & Verifikasi
+    // 2. Data Transaksi Pembacaan & Verifikasi (Join dengan Pelanggan & WaterMeter untuk Tarif & Ukuran Meter)
     const caterRows = await db
       .select({
         id: caterBacaMeter.id,
         nolg: caterBacaMeter.nolg,
         pakaiM3: caterBacaMeter.pakaiM3,
+        pakaiM3Revisi: caterBacaMeter.pakaiM3Revisi,
         pakaiTagih: caterBacaMeter.pakaiTagih,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
+        tarifKode: pelanggan.tarifKode,
+        ukuranMeterPelanggan: pelanggan.ukuranMeter,
+        ukuranMeterAset: waterMeter.ukuran,
       })
       .from(caterBacaMeter)
+      .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+      .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
       .where(eq(caterBacaMeter.thbl, periodeStr));
 
     // Fallback DPM jika daftarCatat belum diisi di legacy data:
@@ -305,16 +404,26 @@ export class ClosingService {
     }
 
     if (dpmBelumSelesai > 0) {
+      const belumDicatatList = await db
+        .select({ nolg: daftarCatat.nolg })
+        .from(daftarCatat)
+        .where(
+          and(
+            eq(daftarCatat.periode, periodeStr),
+            eq(daftarCatat.status, 'BELUM_DICATAT')
+          )
+        )
+        .limit(MAKS_CONTOH_HAMBATAN);
+
       hambatan.push({
         kode: 'DPM_BELUM_SELESAI',
-        pesan: `Target pencatatan meter belum mencapai 100% (tercapai ${readRatePersen}%). Masih ada ${dpmBelumSelesai.toLocaleString('id-ID')} pelanggan yang belum dicatat.`,
+        pesan: `Target pencatatan meter belum mencapai 100% (tercapai ${readRatePersen}%). Masih ada ${dpmBelumSelesai.toLocaleString('id-ID')} pelanggan aktif yang belum dicatat.`,
         jumlah: dpmBelumSelesai,
-        contoh: [],
+        contoh: belumDicatatList.map((b) => b.nolg),
       });
     }
 
-    const { blokPerTarif, beaBebanPerUkuran, beaAdminDefault, airKotorDefault } =
-      await this.muatKonteksTarif();
+    const konteksTarif = await this.muatKonteksTarif(periodeStr);
 
     let perkiraanTotalM3 = 0;
     let perkiraanTotalTagihan = 0;
@@ -323,19 +432,18 @@ export class ClosingService {
     for (const c of caterRows) {
       if (setSudahDitagih.has(c.nolg)) continue;
       akanDitagihCount++;
-      const volumeM3 = Number(c.pakaiTagih ?? c.pakaiM3);
+      const volumeM3 = Number(c.pakaiTagih ?? c.pakaiM3Revisi ?? c.pakaiM3);
       perkiraanTotalM3 += volumeM3;
 
-      const tarifList = blokPerTarif.get('2A2') ?? [];
-      const { total: jmlHargaAir } = hitungRincianHargaAir(volumeM3, tarifList);
-      const beaBeban = beaBebanPerUkuran.get('1/2') ?? 15000;
-      const totalRekening = hitungTotalTagihan({
-        jmlHargaAir,
-        beaBeban,
-        beaAdmin: beaAdminDefault,
-        airKotor: airKotorDefault,
-      });
-      perkiraanTotalTagihan += totalRekening;
+      const ukuranEfektif = c.ukuranMeterAset ?? c.ukuranMeterPelanggan;
+      const rincian = this.hitungKomponenTagihanPelanggan(
+        c.nolg,
+        c.tarifKode,
+        ukuranEfektif,
+        volumeM3,
+        konteksTarif
+      );
+      perkiraanTotalTagihan += rincian.totalTagihan;
     }
 
     let finalJumlahSl = akanDitagihCount;
@@ -394,6 +502,7 @@ export class ClosingService {
         statusPeriode !== 'TERKUNCI' &&
         pendingMutasiRows.length === 0 &&
         verifBelumSelesai === 0 &&
+        dpmBelumSelesai === 0 &&
         caterRows.length > 0,
       audit: {
         ditutupAt: periodeRow?.ditutupAt ? periodeRow.ditutupAt.toISOString() : null,
@@ -473,20 +582,49 @@ export class ClosingService {
         );
       }
 
-      const { blokPerTarif, beaBebanPerUkuran, beaAdminDefault, airKotorDefault } =
-        await this.muatKonteksTarif();
+      // Guard 3: Pastikan tidak ada pelanggan aktif di DPM (daftar_catat) yang masih BELUM_DICATAT
+      const belumDicatatRows = await db
+        .select({
+          nolg: daftarCatat.nolg,
+          nama: pelanggan.nama,
+          ruteKode: daftarCatat.ruteKode,
+        })
+        .from(daftarCatat)
+        .leftJoin(pelanggan, eq(daftarCatat.nolg, pelanggan.nolg))
+        .where(
+          and(
+            eq(daftarCatat.periode, periodeStr),
+            eq(daftarCatat.status, 'BELUM_DICATAT')
+          )
+        );
 
-      // Ambil pembacaan meter periode ini
+      if (belumDicatatRows.length > 0) {
+        const daftarContoh = belumDicatatRows
+          .slice(0, MAKS_CONTOH_HAMBATAN)
+          .map((r) => `${r.nolg} (${r.nama ?? '-'}, Rute ${r.ruteKode ?? '-'})`)
+          .join(', ');
+        throw new Error(
+          `Tutup buku ditolak karena masih ada ${belumDicatatRows.length.toLocaleString('id-ID')} pelanggan aktif pada DPM periode ${periodeStr} yang berstatus BELUM_DICATAT. Daftar pelanggan: [${daftarContoh}]${belumDicatatRows.length > MAKS_CONTOH_HAMBATAN ? ` ...dan ${belumDicatatRows.length - MAKS_CONTOH_HAMBATAN} lainnya` : ''}.`
+        );
+      }
+
+      const konteksTarif = await this.muatKonteksTarif(periodeStr);
+
+      // Ambil pembacaan meter periode ini beserta tarif & ukuran meter pelanggan (LEFT JOIN water_meter)
       const caterList = await db
         .select({
           id: caterBacaMeter.id,
           nolg: caterBacaMeter.nolg,
           pakaiM3: caterBacaMeter.pakaiM3,
+          pakaiM3Revisi: caterBacaMeter.pakaiM3Revisi,
           pakaiTagih: caterBacaMeter.pakaiTagih,
           tarifKode: pelanggan.tarifKode,
+          ukuranMeterPelanggan: pelanggan.ukuranMeter,
+          ukuranMeterAset: waterMeter.ukuran,
         })
         .from(caterBacaMeter)
         .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
         .where(eq(caterBacaMeter.thbl, periodeStr));
 
       const existingDrd = await db
@@ -515,24 +653,23 @@ export class ClosingService {
           );
         }
 
-        // 1. Batch insert tagihan rekening DRD jika ada yang belum terbit
+        // 1. Batch insert tagihan rekening DRD jika ada yang belum terbit (snapshot biaya tetap)
         if (siapDitagih.length > 0) {
           for (let mulai = 0; mulai < siapDitagih.length; mulai += UKURAN_BATCH) {
             const batch = siapDitagih.slice(mulai, mulai + UKURAN_BATCH);
             const drdRows = batch.map((item) => {
-              const volumeM3 = Number(item.pakaiTagih ?? item.pakaiM3);
-              const tarifList = blokPerTarif.get(item.tarifKode ?? '2A2') ?? [];
-              const { total: jmlHargaAir } = hitungRincianHargaAir(volumeM3, tarifList);
-              const beaBeban = beaBebanPerUkuran.get('1/2') ?? 15000;
-              const totalTagihan = hitungTotalTagihan({
-                jmlHargaAir,
-                beaBeban,
-                beaAdmin: beaAdminDefault,
-                airKotor: airKotorDefault,
-              });
+              const volumeM3 = Number(item.pakaiTagih ?? item.pakaiM3Revisi ?? item.pakaiM3);
+              const ukuranEfektif = item.ukuranMeterAset ?? item.ukuranMeterPelanggan;
+              const rincian = this.hitungKomponenTagihanPelanggan(
+                item.nolg,
+                item.tarifKode,
+                ukuranEfektif,
+                volumeM3,
+                konteksTarif
+              );
 
               akumulasiTotalM3 += volumeM3;
-              akumulasiTotalTagihan += totalTagihan;
+              akumulasiTotalTagihan += rincian.totalTagihan;
 
               return {
                 id: `drd-${periodeStr}-${item.nolg}`,
@@ -540,16 +677,35 @@ export class ClosingService {
                 nolg: item.nolg,
                 pakaiM3: String(volumeM3),
                 blokM3: tentukanBlok(volumeM3),
-                jmlHargaAir: String(jmlHargaAir),
-                beaBeban: String(beaBeban),
-                beaAdmin: String(beaAdminDefault),
-                airKotor: String(airKotorDefault),
-                totalTagihan: String(totalTagihan),
+                rincianBlok: rincian.rincianBlok,
+                jmlHargaAir: String(rincian.jmlHargaAir),
+                beaBeban: String(rincian.beaBeban),
+                beaAdmin: String(rincian.beaAdmin),
+                airKotor: String(rincian.airKotor),
+                lainLain: String(rincian.lainLain),
+                totalTagihan: String(rincian.totalTagihan),
                 statusLunas: false,
               };
             });
 
-            await tx.insert(rekeningDrd).values(drdRows).onConflictDoNothing();
+            await tx
+              .insert(rekeningDrd)
+              .values(drdRows)
+              .onConflictDoUpdate({
+                target: [rekeningDrd.thbl, rekeningDrd.nolg],
+                set: {
+                  pakaiM3: sql`EXCLUDED.pakai_m3`,
+                  blokM3: sql`EXCLUDED.blok_m3`,
+                  rincianBlok: sql`EXCLUDED.rincian_blok`,
+                  jmlHargaAir: sql`EXCLUDED.jml_harga_air`,
+                  beaBeban: sql`EXCLUDED.bea_beban`,
+                  beaAdmin: sql`EXCLUDED.bea_admin`,
+                  airKotor: sql`EXCLUDED.air_kotor`,
+                  lainLain: sql`EXCLUDED.lain_lain`,
+                  totalTagihan: sql`EXCLUDED.total_tagihan`,
+                  updatedAt: waktuTutup,
+                },
+              });
             diterbitkan += batch.length;
           }
         }
@@ -1246,20 +1402,14 @@ export class ClosingService {
     }));
 
     const openPeriod = daftarPeriode.find((p) => p.status === 'BERJALAN');
-    const latestPeriod = daftarPeriode[0]?.periode ?? '202611';
-    const periodeAktif = openPeriod ? openPeriod.periode : '202611';
+    const latestPeriod = daftarPeriode[0]?.periode ?? '';
+    const periodeAktif = openPeriod ? openPeriod.periode : latestPeriod;
     const saranPeriode = openPeriod ? openPeriod.periode : latestPeriod;
 
     return {
       periodeAktif,
       saranPeriode,
-      daftarPeriode:
-        daftarPeriode.length > 0
-          ? daftarPeriode
-          : [
-              { periode: '202611', status: 'BERJALAN' as const, jumlahSl: null },
-              { periode: '202610', status: 'TERKUNCI' as const, jumlahSl: null },
-            ],
+      daftarPeriode,
     };
   }
 
@@ -1395,10 +1545,13 @@ export class ClosingService {
     const allPelanggan = await db
       .select({
         nolg: pelanggan.nolg,
+        status: pelanggan.status,
         ruteKode: pelanggan.ruteKode,
         noUrutRute: pelanggan.noUrutRute,
+        pencatatDefault: ruteCater.pencatatDefault,
       })
-      .from(pelanggan);
+      .from(pelanggan)
+      .leftJoin(ruteCater, eq(pelanggan.ruteKode, ruteCater.kode));
 
     const existingDpm = await db
       .select({ nolg: daftarCatat.nolg })
@@ -1406,7 +1559,9 @@ export class ClosingService {
       .where(eq(daftarCatat.periode, periodeStr));
 
     const setDpm = new Set(existingDpm.map((d) => d.nolg));
-    const belumMasukDpm = allPelanggan.filter((p) => !setDpm.has(p.nolg));
+    const belumMasukDpm = allPelanggan.filter(
+      (p) => !setDpm.has(p.nolg) && p.status !== 'DICABUT'
+    );
 
     let diinjeksi = 0;
 
@@ -1415,10 +1570,14 @@ export class ClosingService {
         for (let i = 0; i < belumMasukDpm.length; i += UKURAN_BATCH) {
           const batch = belumMasukDpm.slice(i, i + UKURAN_BATCH);
           const rows = batch.map((p, idx) => ({
+            id: `dpm-${periodeStr}-${p.nolg}`,
             periode: periodeStr,
             nolg: p.nolg,
             ruteKode: p.ruteKode,
+            petugasId: p.pencatatDefault ?? null,
             urutan: p.noUrutRute && p.noUrutRute > 0 ? p.noUrutRute : idx + 1,
+            standAwal: '0',
+            pakaiLalu: '0',
             sumber: 'PBPK',
             status: 'BELUM_DICATAT',
             createdAt: new Date(),

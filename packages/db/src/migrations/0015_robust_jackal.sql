@@ -1,0 +1,1 @@
+ALTER TABLE "rekening_drd" ADD COLUMN "rincian_blok" jsonb;

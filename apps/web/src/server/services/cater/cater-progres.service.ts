@@ -4,7 +4,7 @@
  */
 
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { db, caterBacaMeter, petugasCater, pelanggan, periodePenagihan } from '@cater/db';
+import { db, caterBacaMeter, petugasCater, pelanggan, periodePenagihan, getActivePeriode } from '@cater/db';
 
 export interface PetugasProgresItem {
   petugasId: string;
@@ -56,7 +56,8 @@ function getPreviousThbl(thbl: string): string {
 }
 
 export class CaterProgresService {
-  async getMonitoringProgres(thbl: string = '202610'): Promise<MonitoringProgresResult> {
+  async getMonitoringProgres(thblParam?: string): Promise<MonitoringProgresResult> {
+    const thbl = thblParam || (await getActivePeriode());
     // 0. Cek status siklus penagihan & tentukan periode bulan sebelumnya sebagai baseline target
     const [periodeInfo] = await db
       .select({ status: periodePenagihan.status })

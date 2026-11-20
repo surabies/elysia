@@ -113,12 +113,14 @@ export interface KesiapanBilling {
 
 export class DashboardService {
   /**
-   * Mengambil periode (THBL) terbaru yang sudah memiliki data di database
-   * (menggunakan ORDER BY thbl DESC agar langsung beralih begitu bulan berjalan mulai di-import)
+   * Mengambil periode (THBL) aktif dari tabel periode_penagihan (status = 'BERJALAN')
+   * atau periode terbaru di database tanpa hardcode.
    */
   async getActivePeriod(): Promise<PeriodeInfo> {
     const raw = await db.execute(sql`
       SELECT coalesce(
+        (SELECT max(periode) FROM periode_penagihan WHERE status = 'BERJALAN'),
+        (SELECT max(periode) FROM periode_penagihan),
         (
           SELECT max(thbl) FROM (
             SELECT thbl FROM cater_baca_meter WHERE thbl IS NOT NULL AND length(trim(thbl)) = 6

@@ -1,5 +1,14 @@
-import { pgTable, text, varchar, numeric, integer, boolean, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, numeric, integer, boolean, timestamp, index, unique, jsonb } from 'drizzle-orm/pg-core';
 import { pelanggan } from './pelanggan';
+
+export interface RincianBlokSnapshotItem {
+  blok: number;
+  dariM3: number;
+  sampaiM3: number;
+  volumeM3: number;
+  hargaPerM3: number;
+  subtotal: number;
+}
 
 // Data Rekening DRD (Daftar Rekening Ditagih) & Billing
 export const rekeningDrd = pgTable(
@@ -14,6 +23,7 @@ export const rekeningDrd = pgTable(
       .references(() => pelanggan.nolg, { onDelete: 'cascade' }),
     pakaiM3: numeric('pakai_m3', { precision: 10, scale: 2 }).default('0'),
     blokM3: integer('blok_m3').default(1),
+    rincianBlok: jsonb('rincian_blok').$type<RincianBlokSnapshotItem[]>(),
     jmlHargaAir: numeric('jml_harga_air', { precision: 12, scale: 2 }).default('0'),
     beaBeban: numeric('bea_beban', { precision: 12, scale: 2 }).default('0'),
     beaAdmin: numeric('bea_admin', { precision: 12, scale: 2 }).default('0'),
@@ -29,6 +39,7 @@ export const rekeningDrd = pgTable(
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
+    unique('drd_thbl_nolg_unique').on(table.thbl, table.nolg),
     index('drd_thbl_nolg_idx').on(table.thbl, table.nolg),
     index('drd_status_lunas_idx').on(table.statusLunas),
   ]

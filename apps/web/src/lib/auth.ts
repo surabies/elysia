@@ -75,6 +75,12 @@ export const auth = betterAuth({
         required: false,
         input: true,
       },
+      wajibGantiPassword: {
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
     },
   },
   emailAndPassword: {
@@ -176,6 +182,25 @@ export const auth = betterAuth({
               .onConflictDoNothing();
           } catch (err) {
             console.error('[AUTH_USER_ROLE_CREATE_ERROR]', err);
+          }
+        },
+      },
+    },
+    account: {
+      update: {
+        after: async (updatedAccount) => {
+          try {
+            if (updatedAccount.userId && updatedAccount.password) {
+              await db
+                .update(schema.user)
+                .set({
+                  wajibGantiPassword: false,
+                  updatedAt: new Date(),
+                })
+                .where(eq(schema.user.id, updatedAccount.userId));
+            }
+          } catch (err) {
+            console.error('[AUTH_ACCOUNT_PASSWORD_UPDATE_HOOK_ERROR]', err);
           }
         },
       },

@@ -14,6 +14,7 @@ import {
   pegawai,
   daftarCatat,
   rolePermissions,
+  getActivePeriode,
   type AppRole,
 } from '@cater/db';
 
@@ -231,7 +232,6 @@ export class MasterExtendedService {
    * 1. Mengambil urutan jalan pembacaan meter pelanggan dalam satu rute
    */
   async getUrutanRute(ruteKode: string): Promise<{ ruteKode: string; items: PelangganUrutanItem[] }> {
-    // Ambil pelanggan pada rute tersebut
     const rows = await db
       .select({
         nolg: pelanggan.nolg,
@@ -239,23 +239,13 @@ export class MasterExtendedService {
         alamat: pelanggan.alamat,
         tarifKode: pelanggan.tarifKode,
         ruteKode: pelanggan.ruteKode,
+        noUrutRute: pelanggan.noUrutRute,
         noMeter: pelanggan.noMeter,
       })
       .from(pelanggan)
       .where(eq(pelanggan.ruteKode, ruteKode))
-      .orderBy(asc(pelanggan.nolg))
-      .limit(200);
-
-    // Ambil urutan dari daftarCatat jika ada
-    const dpmRows = await db
-      .select({
-        nolg: daftarCatat.nolg,
-        urutan: daftarCatat.urutan,
-      })
-      .from(daftarCatat)
-      .where(eq(daftarCatat.ruteKode, ruteKode));
-
-    const urutanMap = new Map(dpmRows.map((d) => [d.nolg, d.urutan]));
+      .orderBy(asc(pelanggan.noUrutRute), asc(pelanggan.nolg))
+      .limit(500);
 
     const items: PelangganUrutanItem[] = rows.map((r, idx) => ({
       nolg: r.nolg,
@@ -263,11 +253,10 @@ export class MasterExtendedService {
       alamat: r.alamat,
       tarifKode: r.tarifKode,
       ruteKode: r.ruteKode,
-      urutan: urutanMap.get(r.nolg) ?? idx + 1,
+      urutan: r.noUrutRute && r.noUrutRute > 0 ? r.noUrutRute : idx + 1,
       noMeter: r.noMeter,
     }));
 
-    // Urutkan berdasarkan nomor langkah
     items.sort((a, b) => a.urutan - b.urutan);
 
     return {
@@ -277,34 +266,43 @@ export class MasterExtendedService {
   }
 
   /**
-   * 2. Simpan urutan langkah baru rute
+   * 2. Simpan urutan langkah baru rute secara permanen di master pelanggan & DPM periode berjalan
    */
   async simpanUrutanRute(
     ruteKode: string,
     items: { nolg: string; urutan: number }[],
-    periode: string = '202611'
+    periode?: string
   ): Promise<{ success: boolean; totalUpdated: number }> {
-    for (const item of items) {
-      const dpmId = `dpm-${periode}-${item.nolg}`;
-      await db
-        .insert(daftarCatat)
-        .values({
-          id: dpmId,
-          periode,
-          nolg: item.nolg,
-          ruteKode,
-          urutan: item.urutan,
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: [daftarCatat.periode, daftarCatat.nolg],
-          set: {
+    const targetPeriode = periode || (await getActivePeriode());
+
+    await db.transaction(async (tx) => {
+      for (const item of items) {
+        // 1. Simpan permanen di master pelanggan.no_urut_rute
+        await tx
+          .update(pelanggan)
+          .set({
+            noUrutRute: item.urutan,
+            ruteKode,
+            updatedAt: new Date(),
+          })
+          .where(eq(pelanggan.nolg, item.nolg));
+
+        // 2. Sinkronkan juga ke daftar_catat periode berjalan jika pelanggan ada di DPM
+        await tx
+          .update(daftarCatat)
+          .set({
             urutan: item.urutan,
             ruteKode,
             updatedAt: new Date(),
-          },
-        });
-    }
+          })
+          .where(
+            and(
+              eq(daftarCatat.periode, targetPeriode),
+              eq(daftarCatat.nolg, item.nolg)
+            )
+          );
+      }
+    });
 
     return {
       success: true,

@@ -47,3 +47,11 @@ Thumbs.db
 # Legacy Reference
 backend-hono-prisma/
 frontend-lama/
+
+# Database Backups, Raw Source Data, & Audit CSV Exports
+packages/db/backups/
+*.sql.bak
+*.dump
+packages/db/data/exports/
+packages/db/data/raw/*.csv
+packages/db/data/jan/*.csv

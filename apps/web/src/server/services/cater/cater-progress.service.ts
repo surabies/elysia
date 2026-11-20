@@ -14,6 +14,7 @@ import {
   kecamatan,
   daftarCatat,
   periodePenagihan,
+  getActivePeriode,
 } from '@cater/db';
 
 export interface WilayahProgresItem {
@@ -120,7 +121,8 @@ export class CaterProgressService {
   /**
    * Monitoring Progress Pembacaan Meter Per Wilayah / Kelurahan
    */
-  async getProgressPerWilayah(thbl: string = '202610'): Promise<WilayahProgresResult> {
+  async getProgressPerWilayah(thblParam?: string): Promise<WilayahProgresResult> {
+    const thbl = thblParam || (await getActivePeriode());
     // 0. Cek status siklus penagihan
     const [periodeInfo] = await db
       .select({ status: periodePenagihan.status })

@@ -148,19 +148,20 @@ function statsFromCounts(
 async function periodsFor(
   table: typeof caterBacaMeter | typeof caterMandiriPelanggan,
 ) {
-  const rows = await db
-    .selectDistinct({ periode: table.thbl })
-    .from(table)
-    .orderBy(desc(table.thbl));
-  const list = rows.map((row) => Number(row.periode));
-  if (list.length === 0 && table === caterMandiriPelanggan) {
-    const fallbackRows = await db
-      .selectDistinct({ periode: caterBacaMeter.thbl })
-      .from(caterBacaMeter)
-      .orderBy(desc(caterBacaMeter.thbl));
-    return fallbackRows.map((r) => Number(r.periode));
-  }
-  return list;
+  const [fromPeriode, fromTable] = await Promise.all([
+    db
+      .select({ periode: periodePenagihan.periode })
+      .from(periodePenagihan)
+      .orderBy(desc(periodePenagihan.periode)),
+    db
+      .selectDistinct({ periode: table.thbl })
+      .from(table)
+      .orderBy(desc(table.thbl)),
+  ]);
+  const set = new Set<number>();
+  for (const r of fromPeriode) set.add(Number(r.periode));
+  for (const r of fromTable) set.add(Number(r.periode));
+  return Array.from(set).sort((a, b) => b - a);
 }
 
 export class VerifikasiGridService {
@@ -633,6 +634,7 @@ export class VerifikasiGridService {
         noMeter: pelanggan.noMeter,
         tarifKode: pelanggan.tarifKode,
         urutan: daftarCatat.urutan,
+        standAwal: daftarCatat.standAwal,
       })
       .from(daftarCatat)
       .innerJoin(pelanggan, eq(daftarCatat.nolg, pelanggan.nolg))
@@ -650,7 +652,7 @@ export class VerifikasiGridService {
         namaPelanggan: row.nama,
         alamatPelanggan: row.alamat,
         periode: Number(row.thbl),
-        standAwal: null,
+        standAwal: asNumber(row.standAwal),
         standAkhir: null,
         pemakaian: null,
         kondisi: "BELUM_DICATAT",
@@ -938,7 +940,7 @@ export class VerifikasiGridService {
   }
 
   async getWorkPeriods() {
-    let rows = await db
+    const rows = await db
       .select({
         periode: periodePenagihan.periode,
         status: periodePenagihan.status,
@@ -946,16 +948,10 @@ export class VerifikasiGridService {
       .from(periodePenagihan)
       .orderBy(desc(periodePenagihan.periode));
 
-    if (rows.length === 0) {
-      rows = [
-        { periode: '202611', status: 'BERJALAN' },
-        { periode: '202610', status: 'TERKUNCI' },
-      ];
-    }
-
     const open = rows.find((row) => row.status === "BERJALAN");
+    const firstPeriode = rows[0]?.periode ? Number(rows[0].periode) : 0;
     return {
-      periodeKerja: open ? Number(open.periode) : Number(rows[0]!.periode),
+      periodeKerja: open ? Number(open.periode) : firstPeriode,
       periode: rows.map((row) => ({
         periode: Number(row.periode),
         terkunci: row.status !== "BERJALAN",

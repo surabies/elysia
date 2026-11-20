@@ -1,10 +1,19 @@
-import { eq, desc, and, sql } from "drizzle-orm";
-import { db, caterBacaMeter, caterVerifikasiLog } from "@cater/db";
+import { eq, desc, and, sql, or, ilike } from "drizzle-orm";
+import {
+  db,
+  caterBacaMeter,
+  caterVerifikasiLog,
+  daftarCatat,
+  pelanggan,
+  golonganTarif,
+  masterKondisiCatat,
+} from "@cater/db";
 import { evaluasiPemakaianMeter } from "../../domain/cater/cater-anomali.engine";
 import {
-  apakahKondisiTaksasiOtomatis,
-  PEMAKAIAN_MINIMUM_PERDIR,
-} from "../../domain/taksasi/taksasi.engine";
+  hitungPemakaianDanRekonsiliasiTaksasi,
+  type ModeHitungKondisiInput,
+  type TagihanSaatKelebihanMode,
+} from "../../domain/tagihan/tagihan.engine";
 import { isCloudinaryConfigured, uploadToCloudinary } from "../../lib/cloudinary";
 
 export interface SubmitReadingInput {
@@ -58,6 +67,14 @@ export interface StaffCorrectionInput {
   alasan: string;
 }
 
+export interface ResolusiKreditTaksasiInput {
+  caterId: string;
+  action: "SET_KONDISI_KELEBIHAN" | "ADJUST_KREDIT_TAKSASI" | "CORRECT_STAND";
+  akumulasiTaksasiBaru?: number;
+  stmaKoreksi?: number;
+  alasan: string;
+}
+
 export class CaterVerifikasiService {
   /**
    * Menyimpan / memperbarui pembacaan meter dari aplikasi mobile petugas
@@ -84,62 +101,93 @@ export class CaterVerifikasiService {
       latitude,
     } = input;
 
-    // Jika kondisi termasuk 14 kondisi taksasi otomatis (misal DK, TERHALANG, RUMAH_KOSONG, METER_RUSAK):
-    // 1. Kunci ST Akhir = ST Awal agar stand riil meter tidak melompat.
-    // 2. Hitung pemakaian otomatis dari histori pelanggan bila belum ada override.
-    const isTaksasiOtomatis = apakahKondisiTaksasiOtomatis(kondisiCatat);
-    const stmaEfektif = isTaksasiOtomatis ? stml : stma;
+    // 1. Muat konfigurasi mode_hitung dari master_kondisi_catat, pemakaian_minimum_m3 dari golongan_tarif,
+    //    serta stand_awal, pakai_lalu, dan akumulasi_taksasi_m3 dari daftar_catat (DPM)
+    const [dpmRow, pelRow, kondisiRows] = await Promise.all([
+      db
+        .select({
+          standAwal: daftarCatat.standAwal,
+          pakaiLalu: daftarCatat.pakaiLalu,
+          akumulasiTaksasiM3: daftarCatat.akumulasiTaksasiM3,
+          akumulasiPerluVerifikasi: daftarCatat.akumulasiPerluVerifikasi,
+        })
+        .from(daftarCatat)
+        .where(and(eq(daftarCatat.periode, thbl), eq(daftarCatat.nolg, nolg)))
+        .limit(1),
+      db
+        .select({
+          tarifKode: pelanggan.tarifKode,
+          pemakaianMinimumM3: golonganTarif.pemakaianMinimumM3,
+          tagihanSaatKelebihan: golonganTarif.tagihanSaatKelebihan,
+        })
+        .from(pelanggan)
+        .leftJoin(golonganTarif, eq(pelanggan.tarifKode, golonganTarif.kode))
+        .where(eq(pelanggan.nolg, nolg))
+        .limit(1),
+      db
+        .select({
+          kodeTmss: masterKondisiCatat.kodeTmss,
+          nama: masterKondisiCatat.nama,
+          modeHitung: masterKondisiCatat.modeHitung,
+        })
+        .from(masterKondisiCatat),
+    ]);
 
-    let pakaiTaksasiOtomatis: number | undefined;
-    if (isTaksasiOtomatis && pakaiM3Override === undefined) {
-      if (pakaiLalu !== undefined && pakaiLalu > 0) {
-        pakaiTaksasiOtomatis = Math.ceil(pakaiLalu);
-      } else {
-        const riwayat = await db
-          .select({ pakaiM3: caterBacaMeter.pakaiM3 })
-          .from(caterBacaMeter)
-          .where(
-            and(
-              eq(caterBacaMeter.nolg, nolg),
-              sql`${caterBacaMeter.thbl} < ${thbl}`,
-            ),
-          )
-          .orderBy(desc(caterBacaMeter.thbl))
-          .limit(12);
-        const nilaiValid = riwayat
-          .map((r) => Number(r.pakaiM3 ?? 0))
-          .filter((n) => Number.isFinite(n) && n > 0);
-        if (nilaiValid.length >= 12) {
-          pakaiTaksasiOtomatis = Math.ceil(
-            nilaiValid.slice(0, 12).reduce((a, b) => a + b, 0) / 12,
-          );
-        } else if (nilaiValid.length >= 3) {
-          const tigaTertinggi = [...nilaiValid].sort((a, b) => b - a).slice(0, 3);
-          pakaiTaksasiOtomatis = Math.ceil(
-            tigaTertinggi.reduce((a, b) => a + b, 0) / 3,
-          );
-        } else if (nilaiValid.length > 0) {
-          pakaiTaksasiOtomatis = Math.ceil(
-            nilaiValid.reduce((a, b) => a + b, 0) / nilaiValid.length,
-          );
-        } else {
-          pakaiTaksasiOtomatis = PEMAKAIAN_MINIMUM_PERDIR;
-        }
-      }
-    }
+    const dpm = dpmRow[0];
+    const pemakaianMinimumM3 = Number(pelRow[0]?.pemakaianMinimumM3 ?? 0);
+    const tagihanSaatKelebihan = ((pelRow[0]?.tagihanSaatKelebihan as TagihanSaatKelebihanMode) || "MINIMUM");
+    const akumulasiTaksasiM3 = Number(dpm?.akumulasiTaksasiM3 ?? 0);
+    const akumulasiPerluVerifikasi = Boolean(dpm?.akumulasiPerluVerifikasi ?? false);
+    const pakaiLaluEfektif =
+      pakaiLalu !== undefined
+        ? pakaiLalu
+        : dpm?.pakaiLalu !== undefined && dpm?.pakaiLalu !== null
+          ? Number(dpm.pakaiLalu)
+          : null;
 
-    // Evaluasi bisnis via Domain Engine murni
-    const evaluasi = evaluasiPemakaianMeter({
+    const rawKondisi = (kondisiCatat || "Normal").trim();
+    const matchKondisi =
+      kondisiRows.find(
+        (k) =>
+          k.nama.trim().toUpperCase() === rawKondisi.toUpperCase() ||
+          k.kodeTmss.trim().toUpperCase() === rawKondisi.toUpperCase()
+      ) || kondisiRows.find((k) => k.nama === "Normal");
+
+    const kodeTmssFinal = matchKondisi?.kodeTmss ?? " ";
+    const namaKondisiFinal = matchKondisi?.nama ?? rawKondisi;
+    const modeHitung = (matchKondisi?.modeHitung ?? "SELISIH_FISIK") as ModeHitungKondisiInput;
+
+    // 2. Hitung pemakaian & rekonsiliasi akumulasi_taksasi_m3 via Domain Engine generik
+    const hasilMode = hitungPemakaianDanRekonsiliasiTaksasi({
       stml,
-      stma: stmaEfektif,
-      pakaiLalu,
+      stma: modeHitung === "NOL" ? stml : stma,
+      modeHitung,
+      pakaiLalu: pakaiLaluEfektif,
+      pemakaianMinimumM3,
+      akumulasiTaksasiM3,
+      akumulasiPerluVerifikasi,
+      tagihanSaatKelebihan,
     });
-    const pakaiM3Final =
-      pakaiM3Override !== undefined
-        ? pakaiM3Override
-        : pakaiTaksasiOtomatis !== undefined
-          ? pakaiTaksasiOtomatis
-          : evaluasi.pakaiM3;
+
+    const stmaEfektif = hasilMode.stmaEfektif;
+
+    // 3. Evaluasi anomali bacaan meter (untuk METER_BARU, stand awal evaluasi adalah 0 / stand pasang, bukan stml meter lama)
+    const evaluasi = evaluasiPemakaianMeter({
+      stml: modeHitung === "METER_BARU" ? 0 : stml,
+      stma: stmaEfektif,
+      pakaiLalu: pakaiLaluEfektif ?? undefined,
+    });
+
+    const pakaiM3Fisik = Math.max(0, hasilMode.selisihFisikM3);
+    const pakaiTagihFinal =
+      pakaiM3Override !== undefined ? pakaiM3Override : hasilMode.pakaiTagihM3;
+
+    const statusVerifikasiFinal = hasilMode.isAnomaliKreditTaksasi
+      ? "ANOMALY"
+      : hasilMode.isStandTetap
+        ? "SUBMITTED"
+        : evaluasi.statusVerifikasi;
+
     const id = `cater-${thbl}-${nolg}`;
     const lokasiGps =
       longitude !== undefined && latitude !== undefined
@@ -147,6 +195,13 @@ export class CaterVerifikasiService {
         : null;
     const catatanBaca = [
       catatan,
+      hasilMode.isStandTetap
+        ? "[STAND_TETAP] Stand akhir sama dengan stand awal pada kondisi Normal; menunggu keputusan verifikator"
+        : null,
+      hasilMode.perluReviewVerifikatorAkumulasi && akumulasiTaksasiM3 > 0
+        ? `[VERIFIKASI_AKUMULASI] Riwayat taksasi sebelum Oktober belum terverifikasi infolang (akumulasi tercatat: ${akumulasiTaksasiM3} m³); verifikator wajib memeriksa sebelum tagihan diputuskan`
+        : null,
+      hasilMode.pesanAnomali ? `[Anomali Kredit Taksasi] ${hasilMode.pesanAnomali}` : null,
       evaluasi.isAnomali && evaluasi.pesan ? `[Anomali] ${evaluasi.pesan}` : null,
     ]
       .filter(Boolean)
@@ -188,58 +243,89 @@ export class CaterVerifikasiService {
       }
     }
 
-    await db
-      .insert(caterBacaMeter)
-      .values({
-        id,
-        thbl,
-        nolg,
-        ruteKode,
-        petugasId,
-        stml: String(stml),
-        stma: String(stmaEfektif),
-        pakaiLalu: pakaiLalu === undefined ? null : String(pakaiLalu),
-        pakaiM3: String(pakaiM3Final),
-        ketCatat: kondisiCatat || "Normal",
-        metodeCatat: (metodeCatat as any) || "ONSITE",
-        sumberCatat: sumberCatat || "PETUGAS_ONSITE",
-        fotoMeterUrl: processedFotoMeter,
-        fotoRumahUrl: processedFotoRumah,
-        durasiDetik: durasiDetik || 0,
-        statusVerifikasi: evaluasi.statusVerifikasi,
-        catatan: catatanBaca,
-        lokasiGps,
-      })
-      .onConflictDoUpdate({
-        target: caterBacaMeter.id,
-        set: {
+    const isDicabut = kodeTmssFinal === "D" || namaKondisiFinal === "DICABUT";
+
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(caterBacaMeter)
+        .values({
+          id,
+          thbl,
+          nolg,
           ruteKode,
           petugasId,
           stml: String(stml),
           stma: String(stmaEfektif),
-          pakaiLalu: pakaiLalu === undefined ? null : String(pakaiLalu),
-          pakaiM3: String(pakaiM3Final),
-          ketCatat: kondisiCatat || "Normal",
+          pakaiLalu: pakaiLaluEfektif === null ? null : String(pakaiLaluEfektif),
+          pakaiM3: String(pakaiM3Fisik),
+          pakaiTagih: String(pakaiTagihFinal),
+          alasanTaksir: hasilMode.alasanTaksir,
+          tmss: kodeTmssFinal,
+          ketCatat: namaKondisiFinal,
           metodeCatat: (metodeCatat as any) || "ONSITE",
           sumberCatat: sumberCatat || "PETUGAS_ONSITE",
           fotoMeterUrl: processedFotoMeter,
           fotoRumahUrl: processedFotoRumah,
-          lokasiGps,
           durasiDetik: durasiDetik || 0,
-          statusVerifikasi: evaluasi.statusVerifikasi,
+          statusVerifikasi: statusVerifikasiFinal,
           catatan: catatanBaca,
+          lokasiGps,
+        })
+        .onConflictDoUpdate({
+          target: [caterBacaMeter.thbl, caterBacaMeter.nolg],
+          set: {
+            ruteKode,
+            petugasId,
+            stml: String(stml),
+            stma: String(stmaEfektif),
+            pakaiLalu: pakaiLaluEfektif === null ? null : String(pakaiLaluEfektif),
+            pakaiM3: String(pakaiM3Fisik),
+            pakaiTagih: String(pakaiTagihFinal),
+            alasanTaksir: hasilMode.alasanTaksir,
+            tmss: kodeTmssFinal,
+            ketCatat: namaKondisiFinal,
+            metodeCatat: (metodeCatat as any) || "ONSITE",
+            sumberCatat: sumberCatat || "PETUGAS_ONSITE",
+            fotoMeterUrl: processedFotoMeter,
+            fotoRumahUrl: processedFotoRumah,
+            lokasiGps,
+            durasiDetik: durasiDetik || 0,
+            statusVerifikasi: statusVerifikasiFinal,
+            catatan: catatanBaca,
+            updatedAt: new Date(),
+          },
+        });
+
+      await tx
+        .update(daftarCatat)
+        .set({
+          status: isDicabut ? "DICABUT" : "DICATAT",
+          selesaiAt: new Date(),
           updatedAt: new Date(),
-        },
-      });
+        })
+        .where(and(eq(daftarCatat.periode, thbl), eq(daftarCatat.nolg, nolg)));
+
+      if (isDicabut) {
+        await tx
+          .update(pelanggan)
+          .set({
+            status: "DICABUT",
+            updatedAt: new Date(),
+          })
+          .where(eq(pelanggan.nolg, nolg));
+      }
+    });
 
     return {
       id,
       nolg,
       stml,
       stma: stmaEfektif,
-      pakaiM3: pakaiM3Final,
-      isAnomali: evaluasi.isAnomali,
-      statusVerifikasi: evaluasi.statusVerifikasi,
+      pakaiM3: pakaiTagihFinal,
+      pakaiM3Fisik,
+      akumulasiTaksasiDikurangkan: hasilMode.akumulasiTaksasiDikurangkan,
+      isAnomali: evaluasi.isAnomali || hasilMode.isAnomaliKreditTaksasi,
+      statusVerifikasi: statusVerifikasiFinal,
     };
   }
 
@@ -478,6 +564,170 @@ export class CaterVerifikasiService {
       pakaiM3Baru,
       statusVerifikasi: "CORRECTED_POST_VERIF",
       message: "Koreksi administratif pasca-verifikasi berhasil disimpan",
+    };
+  }
+
+  /**
+   * Resolusi Anomali Kredit Taksasi (kredit > selisih fisik) oleh Verifikator:
+   * 1. SET_KONDISI_KELEBIHAN: Menetapkan kondisi M | KELEBIHAN (mode_hitung = 'KREDIT_TAKSASI')
+   * 2. ADJUST_KREDIT_TAKSASI: Mengurangi/menghapus akumulasi_taksasi_m3 dengan alasan wajib
+   * 3. CORRECT_STAND: Memperbaiki angka bacaan fisik stma apabila terjadi salah baca
+   * Seluruh perubahan dicatat lengkap di `cater_verifikasi_log`.
+   */
+  async resolusiAnomaliKreditTaksasi(
+    input: ResolusiKreditTaksasiInput,
+    userId: string
+  ) {
+    const { caterId, action, akumulasiTaksasiBaru, stmaKoreksi, alasan } = input;
+    if (!alasan || alasan.trim().length < 5) {
+      throw new Error("Alasan wajib diisi minimal 5 karakter untuk audit verifikasi.");
+    }
+
+    const [cater] = await db
+      .select()
+      .from(caterBacaMeter)
+      .where(eq(caterBacaMeter.id, caterId));
+
+    if (!cater) {
+      throw new Error("Data baca meter tidak ditemukan");
+    }
+
+    const [dpmRow, pelRow, kondisiKelebihanRow] = await Promise.all([
+      db
+        .select({
+          akumulasiTaksasiM3: daftarCatat.akumulasiTaksasiM3,
+          akumulasiPerluVerifikasi: daftarCatat.akumulasiPerluVerifikasi,
+        })
+        .from(daftarCatat)
+        .where(
+          and(
+            eq(daftarCatat.periode, cater.thbl),
+            eq(daftarCatat.nolg, cater.nolg)
+          )
+        )
+        .limit(1),
+      db
+        .select({
+          pemakaianMinimumM3: golonganTarif.pemakaianMinimumM3,
+          tagihanSaatKelebihan: golonganTarif.tagihanSaatKelebihan,
+        })
+        .from(pelanggan)
+        .leftJoin(golonganTarif, eq(pelanggan.tarifKode, golonganTarif.kode))
+        .where(eq(pelanggan.nolg, cater.nolg))
+        .limit(1),
+      db
+        .select({
+          kodeTmss: masterKondisiCatat.kodeTmss,
+          nama: masterKondisiCatat.nama,
+          modeHitung: masterKondisiCatat.modeHitung,
+        })
+        .from(masterKondisiCatat)
+        .where(eq(masterKondisiCatat.modeHitung, "KREDIT_TAKSASI"))
+        .limit(1),
+    ]);
+
+    const dpm = dpmRow[0];
+    const pemakaianMinimumM3 = Number(pelRow[0]?.pemakaianMinimumM3 ?? 0);
+    const tagihanSaatKelebihan =
+      ((pelRow[0]?.tagihanSaatKelebihan as TagihanSaatKelebihanMode) || "MINIMUM");
+    const akumulasiLama = Number(dpm?.akumulasiTaksasiM3 ?? 0);
+
+    const stmlNum = Number(cater.stml);
+    let stmaTarget = Number(cater.stma);
+    let akumulasiTarget = akumulasiLama;
+    let tmssTarget = cater.tmss;
+    let ketCatatTarget = cater.ketCatat;
+    let modeHitungTarget: ModeHitungKondisiInput = "SELISIH_FISIK";
+
+    if (action === "SET_KONDISI_KELEBIHAN") {
+      const kondisiM = kondisiKelebihanRow[0];
+      tmssTarget = kondisiM?.kodeTmss ?? "M";
+      ketCatatTarget = kondisiM?.nama ?? "KELEBIHAN";
+      modeHitungTarget = "KREDIT_TAKSASI";
+    } else if (action === "ADJUST_KREDIT_TAKSASI") {
+      if (akumulasiTaksasiBaru === undefined || akumulasiTaksasiBaru < 0) {
+        throw new Error("akumulasiTaksasiBaru wajib diisi (>= 0) untuk penyesuaian kredit taksasi.");
+      }
+      akumulasiTarget = akumulasiTaksasiBaru;
+    } else if (action === "CORRECT_STAND") {
+      if (stmaKoreksi === undefined || stmaKoreksi < stmlNum) {
+        throw new Error("stmaKoreksi wajib diisi dan >= stml untuk koreksi angka stand.");
+      }
+      stmaTarget = stmaKoreksi;
+    }
+
+    const hasilMode = hitungPemakaianDanRekonsiliasiTaksasi({
+      stml: stmlNum,
+      stma: stmaTarget,
+      modeHitung: modeHitungTarget,
+      pakaiLalu: cater.pakaiLalu !== null ? Number(cater.pakaiLalu) : null,
+      pemakaianMinimumM3,
+      akumulasiTaksasiM3: akumulasiTarget,
+      akumulasiPerluVerifikasi: false,
+      tagihanSaatKelebihan,
+    });
+
+    const nextStatus = hasilMode.isAnomaliKreditTaksasi ? "ANOMALY" : "VERIFIED_L1";
+    const pakaiFisikBaru = Math.max(0, hasilMode.selisihFisikM3);
+    const pakaiTagihBaru = hasilMode.pakaiTagihM3;
+
+    await db.transaction(async (tx) => {
+      if (action === "ADJUST_KREDIT_TAKSASI") {
+        await tx
+          .update(daftarCatat)
+          .set({
+            akumulasiTaksasiM3: akumulasiTarget.toFixed(2),
+            akumulasiPerluVerifikasi: false,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(daftarCatat.periode, cater.thbl),
+              eq(daftarCatat.nolg, cater.nolg)
+            )
+          );
+      }
+
+      await tx.insert(caterVerifikasiLog).values({
+        caterId,
+        userId,
+        stage: "V1",
+        action,
+        stmaSebelum: cater.stma,
+        stmaSesudah: String(hasilMode.stmaEfektif),
+        pakaiSebelum: cater.pakaiTagih ?? cater.pakaiM3,
+        pakaiSesudah: String(pakaiTagihBaru),
+        alasan: `[Resolusi Kredit Taksasi: ${action}] Kredit: ${akumulasiLama} -> ${akumulasiTarget} m³ (Sisa bulan depan: ${hasilMode.akumulasiTaksasiBerikutnya} m³) | ${alasan}`,
+      });
+
+      await tx
+        .update(caterBacaMeter)
+        .set({
+          stma: String(hasilMode.stmaEfektif),
+          pakaiM3: String(pakaiFisikBaru),
+          pakaiTagih: String(pakaiTagihBaru),
+          alasanTaksir: hasilMode.alasanTaksir,
+          tmss: tmssTarget,
+          ketCatat: ketCatatTarget,
+          statusVerifikasi: nextStatus,
+          catatan: `[RESOLUSI_KREDIT_TAKSASI:${action}] ${alasan}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(caterBacaMeter.id, caterId));
+    });
+
+    return {
+      caterId,
+      action,
+      tmss: tmssTarget,
+      ketCatat: ketCatatTarget,
+      stml: stmlNum,
+      stma: hasilMode.stmaEfektif,
+      pakaiFisikM3: pakaiFisikBaru,
+      pakaiTagihM3: pakaiTagihBaru,
+      akumulasiTaksasiDikurangkan: hasilMode.akumulasiTaksasiDikurangkan,
+      akumulasiTaksasiBerikutnya: hasilMode.akumulasiTaksasiBerikutnya,
+      statusVerifikasi: nextStatus,
     };
   }
 }

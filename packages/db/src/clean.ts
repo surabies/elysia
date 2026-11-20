@@ -33,6 +33,45 @@ async function truncateIfExists(tables: string[]) {
  *     bun run db:clean --all
  */
 async function cleanDatabase() {
+  // Guard 1: Wajib cek ALLOW_RESET_DB cocok persis dengan nama database aktif di PostgreSQL
+  const [dbInfo] = await db.execute(sql`SELECT current_database() AS db_name`);
+  const currentDbName = String((dbInfo as any).db_name || '');
+  const allowedResetDb = (process.env.ALLOW_RESET_DB || '').trim();
+
+  if (!allowedResetDb || allowedResetDb !== currentDbName) {
+    console.error(
+      `❌ [SECURITY GUARD] Reset database DITOLAK! Nama database target adalah '${currentDbName}', tetapi env ALLOW_RESET_DB='${allowedResetDb || '(kosong)'}'. Untuk mengizinkan reset, Anda WAJIB menyetel ALLOW_RESET_DB=${currentDbName} secara eksplisit.`
+    );
+    process.exit(1);
+  }
+
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_DB_RESET !== 'true') {
+    console.error(
+      '❌ [SECURITY GUARD] Pembersihan/reset database DILARANG saat NODE_ENV=production! Jika ini benar-benar disengaja, set ALLOW_PRODUCTION_DB_RESET=true.'
+    );
+    process.exit(1);
+  }
+
+  // Guard 2: Tolak jika periode yang sedang OPEN (BERJALAN) sudah memiliki pembacaan meter (kecuali FORCE_CLEAN_OPEN_READINGS=true)
+  try {
+    const openReadings = await db.execute(sql`
+      SELECT p.periode, count(c.id)::int AS cnt
+      FROM periode_penagihan p
+      JOIN cater_baca_meter c ON c.thbl = p.periode
+      WHERE p.status = 'BERJALAN'
+      GROUP BY p.periode
+    `);
+    if ((openReadings as any[]).length > 0 && process.env.FORCE_CLEAN_OPEN_READINGS !== 'true') {
+      const info = (openReadings as any[]).map((r) => `${r.periode} (${r.cnt} bacaan)`).join(', ');
+      console.error(
+        `❌ [SECURITY GUARD] Reset database DITOLAK karena periode open sudah memiliki pembacaan aktif: [${info}]. Set FORCE_CLEAN_OPEN_READINGS=true jika ingin memaksa penghapusan.`
+      );
+      process.exit(1);
+    }
+  } catch {
+    // Abaikan jika tabel belum ada
+  }
+
   const isCleanAll = process.argv.includes('--all') || process.env.CLEAN_ALL === 'true';
 
   console.log('====================================================');
@@ -75,6 +114,7 @@ async function cleanDatabase() {
       'kelurahan',
       'kecamatan',
       'wilayah_administrasi',
+      'zona_distribusi',
       'golongan_tarif',
       'biaya_tetap',
       'tarif_blok',

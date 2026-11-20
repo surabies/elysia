@@ -7,6 +7,7 @@
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "types": ["bun"],
     "paths": {
       "@cater/types": ["../types/src"]
     }

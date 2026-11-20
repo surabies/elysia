@@ -7,10 +7,12 @@ import { eq, and, sql, desc, inArray, isNotNull, or, ilike } from 'drizzle-orm';
 import {
   db,
   caterBacaMeter,
+  daftarCatat,
   pelanggan,
   ruteCater,
   petugasCater,
   kelurahan,
+  getActivePeriode,
 } from '@cater/db';
 import { PEMAKAIAN_MINIMUM_PERDIR } from '../../domain/taksasi/taksasi.engine';
 
@@ -123,19 +125,19 @@ export class ManualAddMasalService {
    * Preview kalkulasi taksasi masal per Petugas atau per Rute
    */
   async getPreviewTaksasi(params: {
-    thbl: string;
+    thbl?: string;
     petugasId?: string;
     ruteKode?: string;
     hanyaBelumBaca?: boolean;
     limit?: number;
   }): Promise<PreviewTaksasiResult> {
     const {
-      thbl = '202611',
       petugasId,
       ruteKode,
       hanyaBelumBaca = true,
       limit,
     } = params;
+    const thbl = params.thbl || (await getActivePeriode());
 
     // 1. Tentukan rute-rute yang menjadi target
     let targetRuteList: string[] = [];
@@ -342,7 +344,7 @@ export class ManualAddMasalService {
     const fullCatatan = `[Manual ADD Masal: ${alasanKategori}] ${catatanBeritaAcara.trim()}`.trim();
     const now = new Date();
 
-    // Batch upsert per pelanggan
+    // Batch upsert per pelanggan & sinkronkan status DPM daftar_catat
     for (const item of items) {
       const caterId = `cater-${periode}-${item.nolg}`;
 
@@ -356,6 +358,7 @@ export class ManualAddMasalService {
           stml: String(item.stml),
           stma: String(item.stml),
           pakaiM3: String(item.pakaiM3),
+          pakaiTagih: String(item.pakaiM3),
           ketCatat: 'Taksasi Perdir',
           metodeCatat: 'OFFSITE',
           sumberCatat: 'MANUAL',
@@ -365,11 +368,12 @@ export class ManualAddMasalService {
           updatedAt: now,
         })
         .onConflictDoUpdate({
-          target: caterBacaMeter.id,
+          target: [caterBacaMeter.thbl, caterBacaMeter.nolg],
           set: {
             stml: String(item.stml),
             stma: String(item.stml),
             pakaiM3: String(item.pakaiM3),
+            pakaiTagih: String(item.pakaiM3),
             ketCatat: 'Taksasi Perdir',
             metodeCatat: 'OFFSITE',
             sumberCatat: 'MANUAL',
@@ -378,6 +382,16 @@ export class ManualAddMasalService {
             updatedAt: now,
           },
         });
+
+      await db
+        .update(daftarCatat)
+        .set({
+          status: 'DICATAT',
+          selesaiAt: now,
+          catatan: fullCatatan,
+          updatedAt: now,
+        })
+        .where(and(eq(daftarCatat.periode, periode), eq(daftarCatat.nolg, item.nolg)));
     }
 
     return {

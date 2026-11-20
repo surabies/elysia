@@ -8,6 +8,8 @@ export const golonganTarif = pgTable('golongan_tarif', {
   beaAdmin: numeric('bea_admin', { precision: 12, scale: 2 }).default('0'),
   airKotor: numeric('air_kotor', { precision: 12, scale: 2 }).default('0'),
   lainLain: numeric('lain_lain', { precision: 12, scale: 2 }).default('0'),
+  pemakaianMinimumM3: numeric('pemakaian_minimum_m3', { precision: 10, scale: 2 }).notNull().default('0'), // Default 0 (nonaktif); di-seed 5.00 untuk Tirtawening
+  tagihanSaatKelebihan: varchar('tagihan_saat_kelebihan', { length: 20 }).notNull().default('MINIMUM'), // 'NOL' | 'MINIMUM'
 });
 
 // 2. Tarif Blok Konsumsi Air Progresif (Tirtawening Tiered Tariff)

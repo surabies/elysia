@@ -1,13 +1,15 @@
-import { sql, eq, desc, and } from 'drizzle-orm';
+import { sql, eq, desc, and, asc } from 'drizzle-orm';
 import {
   db,
   pelanggan,
   caterBacaMeter,
+  daftarCatat,
   rekeningDrd,
   ruteCater,
   petugasCater,
   caterVerifikasiLog,
   periodePenagihan,
+  getActivePeriode,
 } from '@cater/db';
 
 export class CaterKueriService {
@@ -15,11 +17,7 @@ export class CaterKueriService {
    * Menghitung ringkasan statistik pembacaan meter dan penagihan
    */
   async getStats(thbl?: string) {
-    const targetThbl = thbl || (
-      await db
-        .select({ maxThbl: sql<string>`MAX(${caterBacaMeter.thbl})` })
-        .from(caterBacaMeter)
-    )[0]?.maxThbl || '202611';
+    const targetThbl = thbl || (await getActivePeriode());
 
     const [periodeRow] = await db
       .select({ status: periodePenagihan.status, jumlahSl: periodePenagihan.jumlahSl })
@@ -110,8 +108,9 @@ export class CaterKueriService {
   async getRoutePelanggan(
     ruteKode: string,
     limit: number = 500,
-    thbl: string = '202611'
+    thbl?: string
   ) {
+    const targetThbl = thbl || (await getActivePeriode());
     const list = await db
       .select({
         nolg: pelanggan.nolg,
@@ -125,38 +124,53 @@ export class CaterKueriService {
         status: pelanggan.status,
         tarifKode: pelanggan.tarifKode,
         noMeter: pelanggan.noMeter,
+        noUrutRute: pelanggan.noUrutRute,
         readingId: caterBacaMeter.id,
-        stml: caterBacaMeter.stml,
-        pakaiLalu: caterBacaMeter.pakaiLalu,
+        stml: sql<string | null>`COALESCE(${caterBacaMeter.stml}, ${daftarCatat.standAwal})`,
+        pakaiLalu: sql<string | null>`COALESCE(${caterBacaMeter.pakaiLalu}, ${daftarCatat.pakaiLalu})`,
         stmaTerakhir: caterBacaMeter.stma,
         ketCatatTerakhir: caterBacaMeter.ketCatat,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
-        standSebelumnya: sql<string | null>`(
-          select previous.stma
-          from cater_baca_meter previous
-          where previous.nolg = ${pelanggan.nolg}
-            and previous.thbl < ${thbl}
-          order by previous.thbl desc
-          limit 1
+        standSebelumnya: sql<string | null>`COALESCE(
+          ${daftarCatat.standAwal},
+          (
+            select COALESCE(previous.stma_revisi, previous.stma)
+            from cater_baca_meter previous
+            where previous.nolg = ${pelanggan.nolg}
+              and previous.thbl < ${targetThbl}
+            order by previous.thbl desc
+            limit 1
+          )
         )`,
-        pakaiSebelumnya: sql<string | null>`(
-          select previous.pakai_m3
-          from cater_baca_meter previous
-          where previous.nolg = ${pelanggan.nolg}
-            and previous.thbl < ${thbl}
-          order by previous.thbl desc
-          limit 1
+        pakaiSebelumnya: sql<string | null>`COALESCE(
+          ${daftarCatat.pakaiLalu},
+          (
+            select COALESCE(previous.pakai_tagih, previous.pakai_m3_revisi, previous.pakai_m3)
+            from cater_baca_meter previous
+            where previous.nolg = ${pelanggan.nolg}
+              and previous.thbl < ${targetThbl}
+            order by previous.thbl desc
+            limit 1
+          )
         )`,
       })
       .from(pelanggan)
       .leftJoin(
+        daftarCatat,
+        and(
+          eq(pelanggan.nolg, daftarCatat.nolg),
+          eq(daftarCatat.periode, targetThbl)
+        )
+      )
+      .leftJoin(
         caterBacaMeter,
         and(
           eq(pelanggan.nolg, caterBacaMeter.nolg),
-          eq(caterBacaMeter.thbl, thbl)
+          eq(caterBacaMeter.thbl, targetThbl)
         )
       )
-      .where(eq(pelanggan.ruteKode, ruteKode))
+      .where(and(eq(pelanggan.ruteKode, ruteKode), sql`${pelanggan.status} != 'DICABUT'`))
+      .orderBy(asc(pelanggan.noUrutRute), asc(pelanggan.nolg))
       .limit(limit);
 
     return {

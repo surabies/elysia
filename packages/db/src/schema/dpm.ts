@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, integer, timestamp, index, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, integer, numeric, boolean, timestamp, index, unique } from 'drizzle-orm/pg-core';
 import { pelanggan } from './pelanggan';
 import { ruteCater, petugasCater } from './wilayah';
 
@@ -16,6 +16,10 @@ export const daftarCatat = pgTable(
     ruteKode: varchar('rute_kode', { length: 20 }).references(() => ruteCater.kode, { onDelete: 'set null' }),
     petugasId: varchar('petugas_id', { length: 50 }).references(() => petugasCater.id, { onDelete: 'set null' }),
     urutan: integer('urutan').notNull().default(0),
+    standAwal: numeric('stand_awal', { precision: 10, scale: 2 }).notNull().default('0'),
+    pakaiLalu: numeric('pakai_lalu', { precision: 10, scale: 2 }).default('0'),
+    akumulasiTaksasiM3: numeric('akumulasi_taksasi_m3', { precision: 10, scale: 2 }).notNull().default('0'),
+    akumulasiPerluVerifikasi: boolean('akumulasi_perlu_verifikasi').notNull().default(false),
     
     sumber: varchar('sumber', { length: 20 }).notNull().default('CARRY_OVER'), // 'CARRY_OVER' | 'PBPK' | 'MANUAL'
     status: varchar('status', { length: 30 }).notNull().default('BELUM_DICATAT'), // 'BELUM_DICATAT' | 'DICATAT' | 'TIDAK_TERCATAT' | 'DICABUT'

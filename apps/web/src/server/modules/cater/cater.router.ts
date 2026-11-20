@@ -1,4 +1,5 @@
 import { Elysia } from 'elysia';
+import { getActivePeriode } from '@cater/db';
 import { authPlugin } from '../../plugins/auth';
 import { caterKueriService } from '../../services/cater/cater-kueri.service';
 import { caterVerifikasiService } from '../../services/cater/cater-verifikasi.service';
@@ -572,7 +573,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/progress/monitoring-lapangan',
     async ({ query, set }) => {
       try {
-        const thbl = (query as any)?.thbl ?? '202601';
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
         const result = await caterProgresService.getMonitoringProgres(thbl);
         return { success: true, data: result };
       } catch (err: any) {
@@ -587,7 +588,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/laporan/monitoring-koreksi',
     async ({ query, set }) => {
       try {
-        const thbl = (query as any)?.thbl ?? '202601';
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
         const result = await laporanKoreksiService.getLaporanKoreksi(thbl);
         return { success: true, data: result };
       } catch (err: any) {
@@ -602,7 +603,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/laporan/kelainan-meter',
     async ({ query, set }) => {
       try {
-        const thbl = (query as any)?.thbl ?? '202601';
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
         const result = await laporanKelainanService.getLaporanKelainan(thbl);
         return { success: true, data: result };
       } catch (err: any) {
@@ -617,7 +618,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/laporan/evaluasi-petugas',
     async ({ query, set }) => {
       try {
-        const thbl = (query as any)?.thbl ?? '202601';
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
         const result = await laporanEvaluasiService.getEvaluasiPetugas(thbl);
         return { success: true, data: result };
       } catch (err: any) {
@@ -632,7 +633,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/laporan/stand-awal-akhir',
     async ({ query, set }) => {
       try {
-        const thbl = (query as any)?.thbl ?? '202601';
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
         const limit = Number((query as any)?.limit ?? 100);
         const result = await laporanStandAwalAkhirService.getStandAwalAkhir(thbl, limit);
         return { success: true, data: result };
@@ -648,7 +649,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/progress/monitoring-wilayah',
     async ({ query, set }) => {
       try {
-        const thbl = (query as any)?.thbl ?? '202601';
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
         const result = await caterProgressService.getProgressPerWilayah(thbl);
         return { success: true, data: result };
       } catch (err: any) {
@@ -663,7 +664,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/progress/anomali',
     async ({ query, set }) => {
       try {
-        const thbl = (query as any)?.thbl ?? '202601';
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
         const jenis = (query as any)?.jenis;
         const limit = Number((query as any)?.limit ?? 100);
         const search = (query as any)?.search;
@@ -681,7 +682,7 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/meter/cek-foto',
     async ({ query, set }) => {
       try {
-        const thbl = (query as any)?.thbl ?? '202601';
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
         const filterKondisi = (query as any)?.filterKondisi;
         const ruteKode = (query as any)?.ruteKode;
         const limit = Number((query as any)?.limit ?? 30);

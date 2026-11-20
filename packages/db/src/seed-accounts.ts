@@ -10,7 +10,12 @@ import path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../../../.env.local") });
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
-export const FALLBACK_SEED_PASSWORD = "wiskaprayoga12";
+export const DISALLOWED_WEAK_PASSWORDS = new Set([
+  "wiskaprayoga12",
+  "change-me-min-12-chars",
+  "password123456",
+  "123456789012",
+]);
 
 export interface SeedAccountDef {
   id: string;
@@ -59,18 +64,6 @@ export const SEED_MANAGEMENT_ACCOUNTS: SeedAccountDef[] = [
     name: "Direksi Verifikator 3",
     email: "verifikator3@pdam.co.id",
     roles: ["VERIFIKATOR_3"],
-  },
-  {
-    id: "seed-user-1",
-    name: "Demo Admin",
-    email: "demo@example.com",
-    roles: [
-      "SUPERADMIN",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-    ],
   },
 ];
 
@@ -148,19 +141,35 @@ export const SEED_PENCATAT_ACCOUNTS: SeedAccountDef[] = [
  * 3. FALLBACK_SEED_PASSWORD ('wiskaprayoga12').
  */
 export async function seedAccounts(defaultPassword?: string) {
-  const effectiveDefaultPassword =
+  const effectiveDefaultPassword = (
     defaultPassword ||
     process.env.SEED_DEFAULT_PASSWORD ||
-    FALLBACK_SEED_PASSWORD;
+    ""
+  ).trim();
 
-  if (effectiveDefaultPassword.length < 12) {
+  if (!effectiveDefaultPassword) {
     throw new Error(
-      "Default seed password must be at least 12 characters long.",
+      "[SECURITY GUARD] Variabel lingkungan SEED_DEFAULT_PASSWORD wajib diset secara eksplisit (tidak ada fallback password bawaan di kode, terlepas dari NODE_ENV)."
     );
   }
 
+  if (effectiveDefaultPassword.length < 12) {
+    throw new Error(
+      "[SECURITY GUARD] SEED_DEFAULT_PASSWORD wajib memiliki panjang minimal 12 karakter."
+    );
+  }
+
+  if (DISALLOWED_WEAK_PASSWORDS.has(effectiveDefaultPassword.toLowerCase())) {
+    throw new Error(
+      "[SECURITY GUARD] SEED_DEFAULT_PASSWORD menggunakan nilai bawaan/contoh yang dilarang. Gunakan password yang kuat dan unik."
+    );
+  }
+
+  // Hapus akun demo@example.com (seed-user-1) jika pernah ada di database
+  await db.delete(user).where(eq(user.email, "demo@example.com"));
+
   console.log(
-    "Seeding official accounts (5 Management/Roles + 9 Pencatat Lapangan + Demo)...",
+    "Seeding official accounts (5 Management/Roles + 9 Pencatat Lapangan)...",
   );
   const allAccounts = [...SEED_MANAGEMENT_ACCOUNTS, ...SEED_PENCATAT_ACCOUNTS];
 
@@ -185,7 +194,7 @@ export async function seedAccounts(defaultPassword?: string) {
 
     const hashedPassword = await getHashedPassword(rawPassword);
 
-    // 1. Upsert User
+    // 1. Upsert User (wajibGantiPassword = true untuk semua akun hasil seed awal)
     const primaryRole = acc.roles[0]?.toLowerCase() || 'petugas';
     await db
       .insert(user)
@@ -195,6 +204,7 @@ export async function seedAccounts(defaultPassword?: string) {
         email: acc.email,
         emailVerified: true,
         role: primaryRole,
+        wajibGantiPassword: true,
       })
       .onConflictDoUpdate({
         target: user.id,
@@ -203,6 +213,7 @@ export async function seedAccounts(defaultPassword?: string) {
           email: acc.email,
           emailVerified: true,
           role: primaryRole,
+          wajibGantiPassword: true,
           updatedAt: new Date(),
         },
       });
@@ -279,9 +290,7 @@ export async function seedAccounts(defaultPassword?: string) {
 }
 
 if (import.meta.main) {
-  const seedPassword =
-    process.env.SEED_DEFAULT_PASSWORD || FALLBACK_SEED_PASSWORD;
-  seedAccounts(seedPassword)
+  seedAccounts(process.env.SEED_DEFAULT_PASSWORD)
     .then(() => {
       console.log("Finished seeding accounts.");
       process.exit(0);

@@ -3,7 +3,7 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM & Query)
  */
 
-import { eq, or, ilike, desc } from 'drizzle-orm';
+import { eq, or, ilike, desc, isNull, sql } from 'drizzle-orm';
 import {
   db,
   pelanggan,
@@ -12,6 +12,7 @@ import {
   golonganTarif,
   waterMeter,
   petugasCater,
+  sambungKembaliPelanggan,
 } from '@cater/db';
 
 export class PelangganService {
@@ -171,6 +172,132 @@ export class PelangganService {
       tarifKodeBaru,
       message: `Golongan tarif berhasil diubah ke ${tarifKodeBaru}.`,
     };
+  }
+
+  /**
+   * Daftar Pelanggan Tanpa Nomor Meter Valid (no_meter IS NULL) untuk dilengkapi lewat UI
+   */
+  async getPelangganTanpaMeterValid(limit: number = 100, offset: number = 0) {
+    const [countRow] = await db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(pelanggan)
+      .where(isNull(pelanggan.noMeter));
+
+    const rows = await db
+      .select({
+        nolg: pelanggan.nolg,
+        nama: pelanggan.nama,
+        ruteKode: pelanggan.ruteKode,
+        noMeterAsli: pelanggan.noMeterAsli,
+        ukuranMeter: pelanggan.ukuranMeter,
+        merkMeter: pelanggan.merkMeter,
+        tglPasangMeter: pelanggan.tglPasangMeter,
+        perluVerifikasi: pelanggan.perluVerifikasi,
+        catatanVerifikasi: pelanggan.catatanVerifikasi,
+      })
+      .from(pelanggan)
+      .where(isNull(pelanggan.noMeter))
+      .orderBy(pelanggan.ruteKode, pelanggan.nolg)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      total: countRow?.total ?? 0,
+      items: rows,
+    };
+  }
+
+  /**
+   * Melengkapi / Memperbarui Nomor Meter Valid untuk Pelanggan (termasuk pelanggan yang awalnya no_meter = NULL)
+   * Memastikan nomor meter baru tidak dipakai pelanggan lain sebelum membuat baris water_meter dan menautkannya.
+   */
+  async lengkapiNomorMeterValid(input: {
+    nolg: string;
+    noMeterBaru: string;
+    merk?: string;
+    ukuran?: string;
+    noSegel?: string;
+    tglPasang?: Date;
+  }) {
+    const { nolg, noMeterBaru, merk, ukuran, noSegel, tglPasang } = input;
+    const cleanNoMeter = noMeterBaru.trim();
+    if (!cleanNoMeter || cleanNoMeter === '-' || cleanNoMeter === '0' || cleanNoMeter === '00000000') {
+      throw new Error(`Nomor meter '${noMeterBaru}' tidak valid.`);
+    }
+
+    const [cust] = await db
+      .select()
+      .from(pelanggan)
+      .where(eq(pelanggan.nolg, nolg));
+
+    if (!cust) {
+      throw new Error(`Pelanggan ${nolg} tidak ditemukan.`);
+    }
+
+    const [usedByOther] = await db
+      .select({ nolg: pelanggan.nolg, nama: pelanggan.nama })
+      .from(pelanggan)
+      .where(eq(pelanggan.noMeter, cleanNoMeter));
+
+    if (usedByOther && usedByOther.nolg !== nolg) {
+      throw new Error(
+        `Nomor meter '${cleanNoMeter}' sudah terdaftar pada pelanggan lain (${usedByOther.nolg} - ${usedByOther.nama}).`
+      );
+    }
+
+    const ukuranFinal = ukuran?.trim() || cust.ukuranMeter || '1/2';
+    const merkFinal = merk?.trim() || cust.merkMeter || null;
+    const tglPasangFinal = tglPasang || cust.tglPasangMeter || new Date();
+
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(waterMeter)
+        .values({
+          noMeter: cleanNoMeter,
+          merk: merkFinal,
+          ukuran: ukuranFinal,
+          noSegel: noSegel ?? null,
+          tglPasang: tglPasangFinal,
+          kondisi: 'Normal',
+        })
+        .onConflictDoUpdate({
+          target: waterMeter.noMeter,
+          set: {
+            merk: merkFinal,
+            ukuran: ukuranFinal,
+            noSegel: noSegel ?? null,
+            tglPasang: tglPasangFinal,
+          },
+        });
+
+      await tx
+        .update(pelanggan)
+        .set({
+          noMeter: cleanNoMeter,
+          ukuranMeter: ukuranFinal,
+          merkMeter: merkFinal,
+          tglPasangMeter: tglPasangFinal,
+          perluVerifikasi: false,
+          catatanVerifikasi: `[METER TERVERIFIKASI] Nomor meter dilengkapi: ${cleanNoMeter} (sebelumnya: ${cust.noMeterAsli ?? '-'})`,
+          updatedAt: new Date(),
+        })
+        .where(eq(pelanggan.nolg, nolg));
+    });
+
+    return {
+      nolg,
+      noMeter: cleanNoMeter,
+      ukuranMeter: ukuranFinal,
+      merkMeter: merkFinal,
+      message: `Nomor meter ${cleanNoMeter} berhasil ditautkan ke pelanggan ${nolg}.`,
+    };
+  }
+
+  /**
+   * Jalur Resmi Sambung Kembali Pelanggan DICABUT -> PELANGGAN AKTIF & Masuk DPM Periode Open
+   */
+  async sambungKembali(nolg: string, periodeAktif?: string, catatan?: string) {
+    return sambungKembaliPelanggan({ nolg, periodeAktif, catatan });
   }
 }
 
