@@ -31,44 +31,13 @@ export async function importProgresCater(options: {
   const legacyCsv = path.resolve(__dirname, '../../data/jan/ProgresCater-PW5.csv');
   const csvFile = options.csvPath || (fs.existsSync(defaultCsv) ? defaultCsv : fs.existsSync(fallbackCsv) ? fallbackCsv : legacyCsv);
 
-  const defaultPbpk = path.resolve(__dirname, '../../data/raw/PBPK.csv');
-  const fallbackPbpk = path.resolve(rootDir, 'packages/db/data/raw/PBPK.csv');
-  const legacyPbpk = path.resolve(__dirname, '../../data/jan/PBPK.csv');
-  const pbpkFile = options.pbpkPath || (fs.existsSync(defaultPbpk) ? defaultPbpk : fs.existsSync(fallbackPbpk) ? fallbackPbpk : legacyPbpk);
-
   console.log('=== STARTING CATER ETL IMPORT ===');
   console.log('Source CSV:', csvFile);
   if (!fs.existsSync(csvFile)) {
     throw new Error(`CSV file not found at: ${csvFile}`);
   }
 
-  // 1. Read optional coordinates from PBPK if available
-  const pbpkMap = new Map<string, { lon?: number; lat?: number; penghuni?: number }>();
-  if (fs.existsSync(pbpkFile)) {
-    console.log('Reading PBPK coordinates & metadata from:', pbpkFile);
-    const pbpkStream = fs.createReadStream(pbpkFile);
-    const pbpkRl = readline.createInterface({ input: pbpkStream, crlfDelay: Infinity });
-    let pbpkHeader = true;
-    for await (const line of pbpkRl) {
-      if (pbpkHeader) { pbpkHeader = false; continue; }
-      const cols = line.split(';');
-      if (cols.length < 20) continue;
-      const nolg = cols[0]?.trim();
-      const lon = parseFloat(cols[18]?.trim() || '');
-      const lat = parseFloat(cols[19]?.trim() || '');
-      const penghuni = parseInt(cols[9]?.trim() || '0', 10);
-      if (nolg) {
-        pbpkMap.set(nolg, {
-          lon: !isNaN(lon) ? lon : undefined,
-          lat: !isNaN(lat) ? lat : undefined,
-          penghuni: !isNaN(penghuni) ? penghuni : 0,
-        });
-      }
-    }
-    console.log(`Loaded ${pbpkMap.size} records from PBPK.`);
-  }
-
-  // 2. Stream ProgresCater-PW5.csv
+  // Stream ProgresCater-PW5.csv (Data Master Resmi 22.524 Pelanggan)
   const fileStream = fs.createReadStream(csvFile);
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
@@ -105,7 +74,7 @@ export async function importProgresCater(options: {
     rowCount++;
 
     // Attributes extraction
-    const thbl = cols[0]?.trim() || '202601';
+    const thbl = cols[0]?.trim() || '202610';
     const nolg = cols[1]?.trim();
     if (!nolg) continue;
 
@@ -137,9 +106,13 @@ export async function importProgresCater(options: {
     const rt = cols[29]?.trim() || null;
     const caterseksikode = cols[30]?.trim() || null;
     const caterseksinama = cols[31]?.trim() || null;
-    const ruteKode = cols[32]?.trim();
+    let ruteKode = cols[32]?.trim();
     const pencatatRaw = cols[33]?.trim() || '';
-    const pencatat = pencatatRaw && pencatatRaw !== '-' ? pencatatRaw : null;
+    let pencatat = pencatatRaw && pencatatRaw !== '-' ? pencatatRaw : null;
+    if ((!pencatat || pencatat === '-') && (ruteKode === 'KC308' || nprs?.startsWith('KD308'))) {
+      ruteKode = 'KD308';
+      pencatat = 'PERIYADI';
+    }
 
     const ismbr = cols[47]?.trim()?.toLowerCase() === 't';
     const kdMerkMeter = cols[48]?.trim() || null;
@@ -212,7 +185,6 @@ export async function importProgresCater(options: {
     // Pelanggan
     if (!seenPelanggan.has(nolg)) {
       seenPelanggan.add(nolg);
-      const pbpkData = pbpkMap.get(nolg);
       pelangganBatch.push({
         nolg,
         nprs,
@@ -221,14 +193,14 @@ export async function importProgresCater(options: {
         rt,
         rw,
         noTelp,
-        jmlPenghuni: pbpkData?.penghuni || 0,
+        jmlPenghuni: 0,
         isMbr: ismbr,
         status: statusPelanggan,
         tarifKode: trp,
         kelurahanKode: kdkel,
         ruteKode: ruteKode || null,
         noMeter: noMeter || null,
-        titikLokasi: pbpkData?.lon && pbpkData?.lat ? { x: pbpkData.lon, y: pbpkData.lat } : null,
+        titikLokasi: null,
       });
     }
 

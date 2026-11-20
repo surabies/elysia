@@ -200,6 +200,17 @@ export class DashboardService {
   async getExecutiveSummary(thbl?: string): Promise<DashboardMetricSummary> {
     const targetThbl = thbl || (await this.getActivePeriod()).thbl;
 
+    // Cek status siklus penagihan & snapshot SL jika periode sudah closing / TERKUNCI
+    const rawPeriode = await db.execute(sql`
+      SELECT status, jumlah_sl 
+      FROM periode_penagihan 
+      WHERE periode = ${targetThbl} 
+      LIMIT 1
+    `);
+    const periodeRow = rawPeriode[0] as any;
+    const isLocked = periodeRow?.status === 'TERKUNCI';
+    const snapshotSl = periodeRow?.jumlah_sl != null ? Number(periodeRow.jumlah_sl) : null;
+
     const raw = await db.execute(sql`
       SELECT
         (SELECT count(*) FROM pelanggan)::int AS total_pelanggan,
@@ -231,9 +242,19 @@ export class DashboardService {
     `);
 
     const row = (raw[0] || {}) as any;
-    const totalPelanggan = Number(row.total_pelanggan || 0);
+    const rawTotalPelanggan = Number(row.total_pelanggan || 0);
     const totalCater = Number(row.total_cater || 0);
-    const persenSelesai = totalPelanggan > 0 ? Math.min(100, Math.round((totalCater / totalPelanggan) * 1000) / 10) : 0;
+
+    // KUNCI LOGIKA:
+    // Jika periode sudah TERKUNCI (closing selesai), target pelanggan adalah snapshot SL resmi periode tersebut
+    // (misalnya 22.524 di Oktober 2026), BUKAN jumlah master pelanggan saat ini yang bertambah di bulan baru (22.528).
+    const totalPelanggan = isLocked
+      ? (snapshotSl ?? totalCater)
+      : Math.max(rawTotalPelanggan, snapshotSl ?? 0);
+
+    const persenSelesai = isLocked
+      ? 100
+      : (totalPelanggan > 0 ? Math.min(100, Math.round((totalCater / totalPelanggan) * 1000) / 10) : 0);
 
     return {
       totalPelanggan,

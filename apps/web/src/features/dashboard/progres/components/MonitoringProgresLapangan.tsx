@@ -47,6 +47,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { PageContainer } from '@/components/layout/page/PageContainer';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
+import { VerticalProgress } from '@/components/ui/vertical-progress';
 import { cn } from '@/lib/utils';
 import type { PetugasProgresItem, MonitoringProgresResult } from '@/server/services/cater/cater-progres.service';
 
@@ -57,7 +59,7 @@ function formatNumber(value: number) {
 export function MonitoringProgresLapangan() {
   const [data, setData] = React.useState<MonitoringProgresResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
   const [search, setSearch] = React.useState('');
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table');
   const [autoRefreshInterval, setAutoRefreshInterval] = React.useState<number>(0);
@@ -117,10 +119,11 @@ export function MonitoringProgresLapangan() {
                 Monitoring Progres Petugas Lapangan
               </h1>
               <Badge
-                variant="outline"
-                className="bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400 gap-1.5 font-medium"
+                variant="green-subtle"
+                size="sm"
+                className="gap-1.5 font-medium"
               >
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="size-1.5 rounded-full bg-(--ds-green-700) animate-pulse" />
                 Live Database
               </Badge>
             </div>
@@ -139,9 +142,11 @@ export function MonitoringProgresLapangan() {
                 size="xs"
                 className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
               >
-                <NativeSelectOption value="202601">Januari 2026 (202601)</NativeSelectOption>
-                <NativeSelectOption value="202512">Desember 2025 (202512)</NativeSelectOption>
-                <NativeSelectOption value="202511">November 2025 (202511)</NativeSelectOption>
+                {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                  <NativeSelectOption key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </NativeSelectOption>
+                ))}
               </NativeSelect>
             </div>
 
@@ -190,10 +195,10 @@ export function MonitoringProgresLapangan() {
         {/* 2. KPI METRIC CARDS (Vercel Style, Sinkron Database)      */}
         {/* ========================================================= */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Card 1: Realisasi DPM */}
+          {/* Card 1: Target Catat & Capaian Progres */}
           <Card className="p-4 border-border bg-card">
             <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-12 font-medium">Realisasi Beban (DPM)</span>
+              <span className="text-label-12 font-medium">Target Catat &amp; Capaian</span>
               <CheckCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -201,18 +206,21 @@ export function MonitoringProgresLapangan() {
                 {data ? formatNumber(data.kpi.totalTerbaca) : '...'}
               </span>
               <span className="text-[11px] text-muted-foreground font-mono">
-                / {data ? formatNumber(data.kpi.totalTarget) : '...'} SL
+                / {data ? formatNumber(data.kpi.totalTarget) : '...'} SL (Target)
               </span>
             </div>
-            {/* Progress bar line */}
-            <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-                style={{ width: `${Math.min(100, data?.kpi.readRatePersen ?? 100)}%` }}
-              />
-            </div>
-            <p className="mt-1.5 text-copy-12 text-emerald-600 dark:text-emerald-400 font-medium">
-              {data?.kpi.readRatePersen ?? 100}% Selesai Tercatat
+            {/* Gaya ||| Bar Vertikal */}
+            <VerticalProgress
+              value={data?.kpi.readRatePersen ?? 100}
+              ticks={28}
+              variant="emerald"
+              heightClass="h-2.5"
+              gapClass="gap-[3px]"
+              className="mt-2.5 mb-1.5"
+              ariaLabel="Capaian Terhadap Target Catat"
+            />
+            <p className="mt-1 text-copy-12 text-emerald-600 dark:text-emerald-400 font-medium">
+              {data?.kpi.readRatePersen ?? 100}% Tercatat dari Target Pembanding
             </p>
           </Card>
 
@@ -316,7 +324,7 @@ export function MonitoringProgresLapangan() {
                   <tr>
                     <th className="py-2.5 px-4 font-medium">Petugas Cater</th>
                     <th className="py-2.5 px-3 font-medium text-center">Rute Binaan</th>
-                    <th className="py-2.5 px-4 font-medium text-right">Realisasi (SL)</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Target Catat (SL)</th>
                     <th className="py-2.5 px-4 font-medium text-right">Volume (m³)</th>
                     <th className="py-2.5 px-4 font-medium text-center">Anomali</th>
                     <th className="py-2.5 px-4 font-medium">Siklus Pengerjaan</th>
@@ -365,7 +373,7 @@ export function MonitoringProgresLapangan() {
                         <td className="py-2 px-3 text-center">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Badge variant="outline" className="font-mono text-[10px] py-0 px-2 cursor-help">
+                              <Badge variant="gray-subtle" size="sm" className="font-mono cursor-help">
                                 {petugas.totalRute} Rute
                               </Badge>
                             </TooltipTrigger>
@@ -379,17 +387,24 @@ export function MonitoringProgresLapangan() {
 
                         {/* Kolom 3: Realisasi Beban SL */}
                         <td className="py-2 px-4 text-right">
-                          <div className="flex flex-col items-end">
-                            <span className="font-mono font-bold text-foreground tabular-nums">
-                              {formatNumber(petugas.terbaca)}{' '}
-                              <span className="text-[10px] font-normal text-muted-foreground">/ {formatNumber(petugas.target)}</span>
-                            </span>
-                            <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden mt-1">
-                              <div
-                                className="h-full bg-emerald-500 rounded-full"
-                                style={{ width: `${Math.min(100, petugas.persentase)}%` }}
-                              />
+                          <div className="flex flex-col items-end w-28 ml-auto">
+                            <div className="flex items-baseline justify-between w-full">
+                              <span className="font-mono font-bold text-foreground tabular-nums text-label-12">
+                                {petugas.persentase}%
+                              </span>
+                              <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                                {formatNumber(petugas.terbaca)}/{formatNumber(petugas.target)}
+                              </span>
                             </div>
+                            <VerticalProgress
+                              value={petugas.persentase}
+                              ticks={14}
+                              variant={petugas.persentase >= 100 ? "emerald" : "blue"}
+                              heightClass="h-2"
+                              gapClass="gap-[2px]"
+                              className="mt-1"
+                              ariaLabel={`Capaian ${petugas.nama}`}
+                            />
                           </div>
                         </td>
 
@@ -401,15 +416,23 @@ export function MonitoringProgresLapangan() {
                         {/* Kolom 5: Temuan Anomali */}
                         <td className="py-2 px-4 text-center">
                           <div className="flex items-center justify-center gap-1 font-mono text-[10px]">
-                            <span className="px-1.5 py-0.2 rounded bg-red-500/10 text-red-600 dark:text-red-400 font-semibold" title="Lonjakan Ekstrem">
-                              {petugas.totalEkstrim}
-                            </span>
-                            <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold" title="Stand 0 m³">
-                              {petugas.totalNol}
-                            </span>
-                            <span className="px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold" title="Turun Drastis">
-                              {petugas.totalTurun}
-                            </span>
+                            {petugas.totalEkstrim > 0 ? (
+                              <Badge variant="red-subtle" size="sm" className="font-mono font-semibold px-1.5 py-0 min-w-5 justify-center" title="Lonjakan Ekstrem">
+                                {petugas.totalEkstrim}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground/40 font-mono text-[11px] px-1">-</span>
+                            )}
+                            {petugas.totalNol > 0 && (
+                              <Badge variant="amber-subtle" size="sm" className="font-mono font-semibold px-1.5 py-0 min-w-5 justify-center" title="Stand 0 m³">
+                                {petugas.totalNol}
+                              </Badge>
+                            )}
+                            {petugas.totalTurun > 0 && (
+                              <Badge variant="blue-subtle" size="sm" className="font-mono font-semibold px-1.5 py-0 min-w-5 justify-center" title="Turun Drastis">
+                                {petugas.totalTurun}
+                              </Badge>
+                            )}
                           </div>
                         </td>
 
@@ -427,13 +450,9 @@ export function MonitoringProgresLapangan() {
                         {/* Kolom 7: Status */}
                         <td className="py-2 px-3 text-center">
                           <Badge
-                            variant="outline"
-                            className={cn(
-                              'text-[10px] font-mono py-0 px-1.5',
-                              petugas.statusKerja === 'SELESAI'
-                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400'
-                                : 'bg-blue-500/10 text-blue-600 border-blue-500/25'
-                            )}
+                            variant={petugas.statusKerja === 'SELESAI' ? 'green-subtle' : 'blue-subtle'}
+                            size="sm"
+                            className="font-mono"
                           >
                             {petugas.statusKerja === 'SELESAI' ? '100% Selesai' : 'Aktif'}
                           </Badge>
@@ -515,33 +534,36 @@ export function MonitoringProgresLapangan() {
                       </div>
                     </div>
                     <Badge
-                      variant="outline"
-                      className="bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400 font-mono text-[10px]"
+                      variant={petugas.statusKerja === 'SELESAI' ? 'green-subtle' : 'blue-subtle'}
+                      size="sm"
+                      className="font-mono"
                     >
-                      100% Selesai
+                      {petugas.statusKerja === 'SELESAI' ? '100% Selesai' : `${petugas.persentase}% Aktif`}
                     </Badge>
                   </div>
 
-                  {/* Realisasi Beban & Volume Bar */}
+                  {/* Realisasi Beban & Volume Bar Gaya ||| Vertikal */}
                   <div className="mt-4 space-y-1.5">
                     <div className="flex justify-between items-baseline text-label-12">
-                      <span className="text-muted-foreground">Volume Kubikasi Air:</span>
+                      <span className="text-muted-foreground">Progres Catat &amp; Volume:</span>
                       <span className="font-mono tabular-nums font-bold text-foreground">
-                        {formatNumber(petugas.totalM3)} m³
+                        {petugas.persentase}% · {formatNumber(petugas.totalM3)} m³
                       </span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-emerald-500"
-                        style={{ width: `${Math.min(100, petugas.persentase)}%` }}
-                      />
-                    </div>
+                    <VerticalProgress
+                      value={petugas.persentase}
+                      ticks={24}
+                      variant={petugas.persentase >= 100 ? "emerald" : "blue"}
+                      heightClass="h-2.5"
+                      gapClass="gap-[3px]"
+                      ariaLabel={`Progres ${petugas.nama}`}
+                    />
                   </div>
 
-                  {/* 3 Metric Columns: Target | Terbaca | Anomali */}
+                  {/* 3 Metric Columns: Target Catat | Terbaca | Sisa */}
                   <div className="mt-4 grid grid-cols-3 gap-2 text-center rounded-md bg-[var(--ds-background-100)] p-2.5 border border-border/70">
                     <div>
-                      <span className="text-[10px] text-muted-foreground block font-medium uppercase">Target</span>
+                      <span className="text-[10px] text-muted-foreground block font-medium uppercase">Target Catat</span>
                       <span className="font-mono tabular-nums text-label-12 font-bold text-foreground">
                         {formatNumber(petugas.target)}
                       </span>
@@ -553,9 +575,9 @@ export function MonitoringProgresLapangan() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-muted-foreground block font-medium uppercase">Anomali</span>
-                      <span className="font-mono tabular-nums text-label-12 font-bold text-amber-600 dark:text-amber-400">
-                        {formatNumber(petugas.anomali)}
+                      <span className="text-[10px] text-muted-foreground block font-medium uppercase">Sisa</span>
+                      <span className="font-mono tabular-nums text-label-12 font-bold text-muted-foreground">
+                        {formatNumber(petugas.sisa)}
                       </span>
                     </div>
                   </div>
@@ -612,8 +634,12 @@ export function MonitoringProgresLapangan() {
               <DialogHeader>
                 <DialogTitle className="text-heading-18 font-bold flex items-center gap-2">
                   <span>Profil Kinerja: {selectedPetugas.nama}</span>
-                  <Badge variant="outline" className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 border-emerald-500/25">
-                    100% Selesai
+                  <Badge
+                    variant={selectedPetugas.statusKerja === 'SELESAI' ? 'green-subtle' : 'blue-subtle'}
+                    size="sm"
+                    className="font-mono"
+                  >
+                    {selectedPetugas.statusKerja === 'SELESAI' ? '100% Selesai' : `${selectedPetugas.persentase}% Aktif`}
                   </Badge>
                 </DialogTitle>
                 <DialogDescription>
@@ -636,6 +662,24 @@ export function MonitoringProgresLapangan() {
                       {formatNumber(selectedPetugas.totalM3)} m³
                     </span>
                   </div>
+                </div>
+
+                {/* Gaya ||| Bar Vertikal di Modal */}
+                <div className="space-y-1.5 rounded-md border border-border p-2.5 bg-muted/10">
+                  <div className="flex items-center justify-between text-label-12">
+                    <span className="text-muted-foreground font-medium">Progres Terhadap Target Catat Bulan Lalu ({selectedPetugas.persentase}%)</span>
+                    <span className="font-mono text-foreground font-bold tabular-nums">
+                      {formatNumber(selectedPetugas.terbaca)} / {formatNumber(selectedPetugas.target)} Target
+                    </span>
+                  </div>
+                  <VerticalProgress
+                    value={selectedPetugas.persentase}
+                    ticks={28}
+                    variant={selectedPetugas.persentase >= 100 ? 'emerald' : 'blue'}
+                    heightClass="h-2.5"
+                    gapClass="gap-[3px]"
+                    ariaLabel={`Capaian target ${selectedPetugas.nama}`}
+                  />
                 </div>
 
                 {/* 3 Pilar Temuan Anomali Petugas */}

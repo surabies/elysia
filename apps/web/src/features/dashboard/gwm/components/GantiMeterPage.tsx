@@ -3,6 +3,7 @@
 import * as React from "react";
 import { RefreshCw, Wrench, CheckCircle2, Clock, XCircle, Search, Gauge } from "lucide-react";
 import { toast } from "sonner";
+import { PERIODE_BERJALAN_AKTIF } from "@/config/periode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -123,7 +124,7 @@ export function GantiMeterPage() {
   const [aksiId, setAksiId] = React.useState<string | null>(null);
 
   const [nolg, setNolg] = React.useState("");
-  const [periode, setPeriode] = React.useState("202601");
+  const [periode, setPeriode] = React.useState(PERIODE_BERJALAN_AKTIF);
   const [alasan, setAlasan] = React.useState<AlasanMutasi>("RUSAK");
   const [noMeterLama, setNoMeterLama] = React.useState("");
   const [standAngkat, setStandAngkat] = React.useState("");
@@ -184,7 +185,7 @@ export function GantiMeterPage() {
       });
       toast.success("Berita acara ganti meter berhasil dicatat.");
       setNolg("");
-      setPeriode("202601");
+      setPeriode(PERIODE_BERJALAN_AKTIF);
       setAlasan("RUSAK");
       setNoMeterLama("");
       setStandAngkat("");
@@ -300,7 +301,7 @@ export function GantiMeterPage() {
               step={1}
               value={periode}
               onChange={(event) => setPeriode(event.target.value)}
-              placeholder="202601"
+              placeholder={PERIODE_BERJALAN_AKTIF}
               className="font-mono"
             />
           </Field>

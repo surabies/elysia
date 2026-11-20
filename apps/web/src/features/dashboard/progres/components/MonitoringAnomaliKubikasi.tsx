@@ -42,6 +42,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { PageContainer } from '@/components/layout/page/PageContainer';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import { cn } from '@/lib/utils';
 import type {
   AnomaliKubikasiItem,
@@ -54,7 +55,7 @@ const numberFormat = new Intl.NumberFormat('id-ID');
 export function MonitoringAnomaliKubikasi() {
   const [data, setData] = React.useState<AnomaliKubikasiResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
   const [jenisFilter, setJenisFilter] = React.useState<'all' | 'ekstrim' | 'nol' | 'turun'>('all');
   const [search, setSearch] = React.useState('');
   const [selectedItem, setSelectedItem] = React.useState<AnomaliKubikasiItem | null>(null);
@@ -105,9 +106,11 @@ export function MonitoringAnomaliKubikasi() {
               size="xs"
               className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
             >
-              <NativeSelectOption value="202601">Januari 2026 (202601)</NativeSelectOption>
-              <NativeSelectOption value="202512">Desember 2025 (202512)</NativeSelectOption>
-              <NativeSelectOption value="202511">November 2025 (202511)</NativeSelectOption>
+              {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                <NativeSelectOption key={opt.value} value={opt.value}>
+                  {opt.label}
+                </NativeSelectOption>
+              ))}
             </NativeSelect>
           </div>
 
@@ -344,15 +347,15 @@ export function MonitoringAnomaliKubikasi() {
                     </TableCell>
                     <TableCell className="text-center font-sans">
                       {isEkstrim ? (
-                        <Badge variant="outline" className="text-rose-600 border-rose-500/25 bg-rose-500/10 dark:text-rose-400">
+                        <Badge variant="red-subtle" size="sm">
                           Lonjakan Ekstrem
                         </Badge>
                       ) : isNol ? (
-                        <Badge variant="outline" className="text-amber-600 border-amber-500/25 bg-amber-500/10 dark:text-amber-400">
+                        <Badge variant="amber-subtle" size="sm">
                           Stand 0 m³
                         </Badge>
                       ) : isTurun ? (
-                        <Badge variant="outline" className="text-(--ds-blue-900) border-(--ds-blue-400) bg-(--ds-blue-100)">
+                        <Badge variant="blue-subtle" size="sm">
                           Turun Drastis
                         </Badge>
                       ) : null}
@@ -422,7 +425,16 @@ export function MonitoringAnomaliKubikasi() {
             <div className="rounded-lg border border-border p-3 space-y-2 text-copy-12">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Kategori Anomali:</span>
-                <Badge variant="outline">
+                <Badge
+                  variant={
+                    selectedItem.jenisAnomali.toLowerCase().includes('ekstrim')
+                      ? 'red-subtle'
+                      : selectedItem.jenisAnomali.toLowerCase().includes('nol')
+                      ? 'amber-subtle'
+                      : 'blue-subtle'
+                  }
+                  size="sm"
+                >
                   {selectedItem.jenisAnomali}
                 </Badge>
               </div>

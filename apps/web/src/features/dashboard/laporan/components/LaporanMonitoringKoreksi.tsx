@@ -31,6 +31,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { PageContainer } from '@/components/layout/page/PageContainer';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -71,7 +72,7 @@ export interface LaporanKoreksiData {
 export function LaporanMonitoringKoreksi() {
   const [data, setData] = React.useState<LaporanKoreksiData | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
   const [search, setSearch] = React.useState('');
   const [filterSelisih, setFilterSelisih] = React.useState<'ALL' | 'PLUS' | 'MINUS'>('ALL');
 
@@ -181,15 +182,21 @@ export function LaporanMonitoringKoreksi() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-card border border-border rounded-md px-3 py-1 text-label-12">
+          <div className="flex items-center gap-2 bg-card border border-border rounded-md px-2.5 py-1 text-label-12">
             <Calendar className="size-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Periode:</span>
-            <input
-              type="text"
+            <span className="text-muted-foreground mr-1">Periode:</span>
+            <NativeSelect
               value={periode}
               onChange={(e) => setPeriode(e.target.value)}
-              className="w-16 font-mono font-semibold bg-transparent border-none text-foreground focus:outline-none"
-            />
+              size="xs"
+              className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
+            >
+              {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                <NativeSelectOption key={opt.value} value={opt.value}>
+                  {opt.label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
           </div>
 
           <Button

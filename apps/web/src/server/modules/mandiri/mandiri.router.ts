@@ -18,8 +18,8 @@ export const mandiriRouter = new Elysia({ prefix: '/cater/mandiri' })
       success: true,
       data: {
         aktif: false,
-        periodes: [202601, 202602],
-        periodeDatabase: 202601,
+        periodes: [202610, 202611],
+        periodeDatabase: 202611,
         catatan:
           'Fitur periode uji dinonaktifkan karena tahap pengujian/UAT telah selesai.',
       },

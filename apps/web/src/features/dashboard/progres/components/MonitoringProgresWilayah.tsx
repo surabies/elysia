@@ -31,6 +31,8 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { PageContainer } from '@/components/layout/page/PageContainer';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
+import { VerticalProgress } from '@/components/ui/vertical-progress';
 import { cn } from '@/lib/utils';
 import type {
   WilayahProgresItem,
@@ -42,7 +44,7 @@ const numberFormat = new Intl.NumberFormat('id-ID');
 export function MonitoringProgresWilayah() {
   const [data, setData] = React.useState<WilayahProgresResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
   const [search, setSearch] = React.useState('');
   const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('table');
   const [sortBy, setSortBy] = React.useState<'persen' | 'target' | 'anomali'>('persen');
@@ -127,9 +129,11 @@ export function MonitoringProgresWilayah() {
               size="xs"
               className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
             >
-              <NativeSelectOption value="202601">Januari 2026 (202601)</NativeSelectOption>
-              <NativeSelectOption value="202512">Desember 2025 (202512)</NativeSelectOption>
-              <NativeSelectOption value="202511">November 2025 (202511)</NativeSelectOption>
+              {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                <NativeSelectOption key={opt.value} value={opt.value}>
+                  {opt.label}
+                </NativeSelectOption>
+              ))}
             </NativeSelect>
           </div>
 
@@ -186,12 +190,16 @@ export function MonitoringProgresWilayah() {
           <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
             {data ? `${data.kpi.persenRataRata}%` : '...'}
           </div>
-          <div className="mt-2 flex h-1.5 w-full overflow-hidden rounded-full bg-(--ds-gray-200)">
-            <div
-              className="bg-foreground transition-all duration-500"
-              style={{ width: `${Math.min(100, data?.kpi.persenRataRata ?? 0)}%` }}
-            />
-          </div>
+          {/* Gaya ||| Bar Vertikal */}
+          <VerticalProgress
+            value={data?.kpi.persenRataRata ?? 0}
+            ticks={28}
+            variant="emerald"
+            heightClass="h-2.5"
+            gapClass="gap-[3px]"
+            className="mt-2"
+            ariaLabel="Rata-rata Capaian"
+          />
         </Card>
 
         {/* Total Kubikasi */}
@@ -393,25 +401,19 @@ export function MonitoringProgresWilayah() {
                       {numberFormat.format(row.sisa)}
                     </TableCell>
                     <TableCell className="font-sans">
-                      <div className="space-y-1">
+                      <div className="space-y-1 w-32">
                         <div className="flex justify-between text-label-11 font-mono">
-                          <span className="font-medium text-foreground">{row.persenSelesai}%</span>
+                          <span className="font-semibold text-foreground">{row.persenSelesai}%</span>
+                          <span className="text-[10px] text-muted-foreground">{numberFormat.format(row.terbaca)}/{numberFormat.format(row.target)}</span>
                         </div>
-                        <div className="h-1.5 w-full rounded-full bg-(--ds-gray-200) overflow-hidden">
-                          <div
-                            className={cn(
-                              'h-full transition-all',
-                              isComplete
-                                ? 'bg-emerald-500'
-                                : isGood
-                                ? 'bg-foreground'
-                                : isLow
-                                ? 'bg-rose-500'
-                                : 'bg-amber-500'
-                            )}
-                            style={{ width: `${Math.min(100, row.persenSelesai)}%` }}
-                          />
-                        </div>
+                        <VerticalProgress
+                          value={row.persenSelesai}
+                          ticks={16}
+                          variant={isComplete ? "emerald" : isGood ? "blue" : isLow ? "red" : "amber"}
+                          heightClass="h-2"
+                          gapClass="gap-[2px]"
+                          ariaLabel={`Capaian ${row.kelurahanNama}`}
+                        />
                       </div>
                     </TableCell>
                     <TableCell className="text-right text-foreground">
@@ -428,15 +430,15 @@ export function MonitoringProgresWilayah() {
                     </TableCell>
                     <TableCell className="text-center font-sans">
                       {isComplete ? (
-                        <Badge variant="outline" className="text-emerald-600 border-emerald-500/25 bg-emerald-500/10 dark:text-emerald-400">
+                        <Badge variant="green-subtle" size="sm">
                           Selesai
                         </Badge>
                       ) : isGood ? (
-                        <Badge variant="outline" className="text-(--ds-blue-900) border-(--ds-blue-400) bg-(--ds-blue-100)">
+                        <Badge variant="blue-subtle" size="sm">
                           Lancar
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-amber-600 border-amber-500/25 bg-amber-500/10 dark:text-amber-400">
+                        <Badge variant="amber-subtle" size="sm">
                           Berjalan
                         </Badge>
                       )}
@@ -471,22 +473,24 @@ export function MonitoringProgresWilayah() {
                   </span>
                 </div>
 
-                <div className="mt-3 space-y-1">
-                  <div className="h-1.5 w-full rounded-full bg-(--ds-gray-200) overflow-hidden">
-                    <div
-                      className={cn(
-                        'h-full transition-all',
-                        row.persenSelesai >= 100
-                          ? 'bg-emerald-500'
-                          : row.persenSelesai >= 70
-                          ? 'bg-foreground'
-                          : row.persenSelesai < 40
-                          ? 'bg-rose-500'
-                          : 'bg-amber-500'
-                      )}
-                      style={{ width: `${Math.min(100, row.persenSelesai)}%` }}
-                    />
-                  </div>
+                {/* Gaya ||| Bar Vertikal */}
+                <div className="mt-3">
+                  <VerticalProgress
+                    value={row.persenSelesai}
+                    ticks={24}
+                    variant={
+                      row.persenSelesai >= 100
+                        ? 'emerald'
+                        : row.persenSelesai >= 70
+                        ? 'blue'
+                        : row.persenSelesai < 40
+                        ? 'red'
+                        : 'amber'
+                    }
+                    heightClass="h-2.5"
+                    gapClass="gap-[3px]"
+                    ariaLabel={`Capaian ${row.kelurahanNama}`}
+                  />
                 </div>
 
                 <div className="mt-3 grid grid-cols-3 gap-1 rounded-md border border-border bg-(--ds-gray-100) p-2 text-center font-mono tabular-nums text-label-12">

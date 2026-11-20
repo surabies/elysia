@@ -36,6 +36,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import type {
   LaporanKelainanResult,
   KelainanDetailItem,
@@ -46,7 +47,7 @@ const numberFormat = new Intl.NumberFormat('id-ID');
 export function LaporanKelainanMeter() {
   const [data, setData] = React.useState<LaporanKelainanResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
   const [search, setSearch] = React.useState('');
   const [filterKategori, setFilterKategori] = React.useState<string>('ALL');
   const [selectedItem, setSelectedItem] = React.useState<KelainanDetailItem | null>(null);
@@ -167,9 +168,11 @@ export function LaporanKelainanMeter() {
               size="xs"
               className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
             >
-              <NativeSelectOption value="202601">Januari 2026 (202601)</NativeSelectOption>
-              <NativeSelectOption value="202512">Desember 2025 (202512)</NativeSelectOption>
-              <NativeSelectOption value="202511">November 2025 (202511)</NativeSelectOption>
+              {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                <NativeSelectOption key={opt.value} value={opt.value}>
+                  {opt.label}
+                </NativeSelectOption>
+              ))}
             </NativeSelect>
           </div>
 

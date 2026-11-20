@@ -462,6 +462,13 @@ export const navGroups: NavGroup[] = [
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
+        title: "Lap Data Meter",
+        href: "/import/lapdatameter",
+        description: "Import laporan data meter bulanan (lapdatameter) PDAM ke tabel cater_baca_meter.",
+        keywords: ["lapdatameter", "lap data meter", "laporan meter", "bacaan meter", "csv bulanan", "cater_baca_meter"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
         title: "R Nomor",
         href: "/import/r-nomor",
         description: "Input dan pembaruan data rekening pemutusan pelanggan (R Nomor).",

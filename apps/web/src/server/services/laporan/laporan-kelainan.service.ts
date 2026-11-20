@@ -43,7 +43,7 @@ export interface LaporanKelainanResult {
 }
 
 export class LaporanKelainanService {
-  async getLaporanKelainan(thbl: string = '202601'): Promise<LaporanKelainanResult> {
+  async getLaporanKelainan(thbl: string = '202610'): Promise<LaporanKelainanResult> {
     // 1. Ambil seluruh catatan meter di mana ketCatat bukan 'Normal' dan tidak kosong
     const rows = await db
       .select({

@@ -42,9 +42,9 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
   .use(authPlugin)
 
   // 1. Dashboard Overview Stats
-  .get('/stats', async () => {
+  .get('/stats', async ({ query }: { query?: { thbl?: string } }) => {
     try {
-      const stats = await caterKueriService.getStats();
+      const stats = await caterKueriService.getStats(query?.thbl);
       return { success: true, data: stats };
     } catch (err: any) {
       return { success: false, error: err.message };

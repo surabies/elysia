@@ -22,6 +22,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+import { PERIODE_BERJALAN_AKTIF } from "@/config/periode";
+
 interface PbpkRow {
   nolg: string;
   nama: string;
@@ -37,7 +39,7 @@ interface PbpkRow {
 export function ImportPbpkView() {
   const [rows, setRows] = React.useState<PbpkRow[]>([]);
   const [csvRaw, setCsvRaw] = React.useState<string>("");
-  const [targetPeriode, setTargetPeriode] = React.useState("202601");
+  const [targetPeriode, setTargetPeriode] = React.useState(PERIODE_BERJALAN_AKTIF);
   const [isLoadingSample, setIsLoadingSample] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [resultStats, setResultStats] = React.useState<{
@@ -48,11 +50,7 @@ export function ImportPbpkView() {
     gagal: number;
   } | null>(null);
 
-  // Ambil sample dari data/raw/PBPK.csv saat pertama kali dibuka
-  React.useEffect(() => {
-    handleLoadSample();
-  }, []);
-
+  // Sample TIDAK dimuat otomatis saat halaman dibuka. Pengguna dapat mengunggah berkas CSV secara mandiri atau menekan tombol muat sample jika diperlukan.
   const handleLoadSample = async () => {
     setIsLoadingSample(true);
     try {
@@ -62,7 +60,7 @@ export function ImportPbpkView() {
         setRows(json.rows);
         setCsvRaw(json.csvText || "");
         toast.success(
-          `Berhasil memuat ${json.rows.length} data sample resmi dari PBPK.csv!`,
+          `Berhasil memuat ${json.rows.length} data contoh dari template PBPK.csv!`,
         );
       }
     } catch {
@@ -298,43 +296,59 @@ export function ImportPbpkView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
-                {rows.slice(0, 30).map((row, idx) => (
-                  <tr key={`${row.nolg}-${idx}`} className="hover:bg-muted/20">
-                    <td className="px-3 py-2">
-                      <Badge
-                        variant="outline"
-                        className={
-                          row.mutasian === "PB"
-                            ? "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold text-[10px]"
-                            : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]"
-                        }
-                      >
-                        {row.mutasian === "PB"
-                          ? "Pasang Baru (PB)"
-                          : "Pasang Kembali (PK)"}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2 font-mono font-medium text-foreground">
-                      {row.nolg}
-                    </td>
-                    <td className="px-3 py-2 font-medium">{row.nama}</td>
+                {rows.length === 0 ? (
+                  <tr>
                     <td
-                      className="max-w-70 truncate px-3 py-2 text-muted-foreground"
-                      title={row.alamat}
+                      colSpan={7}
+                      className="px-3 py-12 text-center text-muted-foreground"
                     >
-                      {row.alamat}
-                    </td>
-                    <td className="px-3 py-2 font-mono">
-                      {row.kd_goltarif || "2A2"}
-                    </td>
-                    <td className="px-3 py-2 font-mono">
-                      {row.kd_rute || "99999"}
-                    </td>
-                    <td className="px-3 py-2 font-mono text-muted-foreground">
-                      {row.nometer || "-"}
+                      Belum ada data mutasi PBPK yang dimuat. Silakan unggah
+                      berkas CSV mutasi PBPK Anda atau gunakan tombol &quot;Muat PBPK.csv&quot;
+                      untuk melihat contoh format template.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  rows.slice(0, 30).map((row, idx) => (
+                    <tr
+                      key={`${row.nolg}-${idx}`}
+                      className="hover:bg-muted/20"
+                    >
+                      <td className="px-3 py-2">
+                        <Badge
+                          variant="outline"
+                          className={
+                            row.mutasian === "PB"
+                              ? "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold text-[10px]"
+                              : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]"
+                          }
+                        >
+                          {row.mutasian === "PB"
+                            ? "Pasang Baru (PB)"
+                            : "Pasang Kembali (PK)"}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 font-mono font-medium text-foreground">
+                        {row.nolg}
+                      </td>
+                      <td className="px-3 py-2 font-medium">{row.nama}</td>
+                      <td
+                        className="max-w-70 truncate px-3 py-2 text-muted-foreground"
+                        title={row.alamat}
+                      >
+                        {row.alamat}
+                      </td>
+                      <td className="px-3 py-2 font-mono">
+                        {row.kd_goltarif || "2A2"}
+                      </td>
+                      <td className="px-3 py-2 font-mono">
+                        {row.kd_rute || "99999"}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-muted-foreground">
+                        {row.nometer || "-"}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

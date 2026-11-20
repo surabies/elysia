@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_BERJALAN_AKTIF } from '@/config/periode';
 import { ManualAddSatuanForm } from './ManualAddSatuanForm';
 import { ManualAddMasalTaksasi } from './ManualAddMasalTaksasi';
 import { ManualAddRiwayatTable, type RiwayatResponse } from './ManualAddRiwayatTable';
@@ -25,7 +26,7 @@ import { ManualAddRiwayatTable, type RiwayatResponse } from './ManualAddRiwayatT
 const numberFormat = new Intl.NumberFormat('id-ID');
 
 export function ManualAddPage() {
-  const [periode, setPeriode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_BERJALAN_AKTIF);
   const [activeTab, setActiveTab] = React.useState('masal');
   const [refreshTrigger, setRefreshTrigger] = React.useState(0);
 
@@ -118,10 +119,11 @@ export function ManualAddPage() {
                 <SelectValue placeholder="Pilih Periode" />
               </SelectTrigger>
               <SelectContent position="popper">
-                <SelectItem value="202602">202602 (Feb 2026)</SelectItem>
-                <SelectItem value="202601">202601 (Jan 2026)</SelectItem>
-                <SelectItem value="202512">202512 (Des 2025)</SelectItem>
-                <SelectItem value="202511">202511 (Nov 2025)</SelectItem>
+                {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.value} ({opt.label.split('(')[0].trim()})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 

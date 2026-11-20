@@ -186,6 +186,7 @@ export async function seedAccounts(defaultPassword?: string) {
     const hashedPassword = await getHashedPassword(rawPassword);
 
     // 1. Upsert User
+    const primaryRole = acc.roles[0]?.toLowerCase() || 'petugas';
     await db
       .insert(user)
       .values({
@@ -193,6 +194,7 @@ export async function seedAccounts(defaultPassword?: string) {
         name: acc.name,
         email: acc.email,
         emailVerified: true,
+        role: primaryRole,
       })
       .onConflictDoUpdate({
         target: user.id,
@@ -200,6 +202,7 @@ export async function seedAccounts(defaultPassword?: string) {
           name: acc.name,
           email: acc.email,
           emailVerified: true,
+          role: primaryRole,
           updatedAt: new Date(),
         },
       });

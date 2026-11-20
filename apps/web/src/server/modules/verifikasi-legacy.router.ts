@@ -496,7 +496,7 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
     "/manual-add/riwayat",
     async ({ query, set }) => {
       try {
-        const thbl = String(query.periode ?? "202601");
+        const thbl = String(query.periode ?? "202611");
         const search = query.q ? `%${query.q.trim()}%` : undefined;
 
         const baseWhere = and(
@@ -602,7 +602,7 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
     "/manual-add/masal/preview",
     async ({ query, set }) => {
       try {
-        const thbl = String(query.periode ?? "202601");
+        const thbl = String(query.periode ?? "202611");
         const petugasId = query.petugasId
           ? String(query.petugasId)
           : query.pencatatId

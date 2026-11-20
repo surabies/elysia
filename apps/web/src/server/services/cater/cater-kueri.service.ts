@@ -7,13 +7,28 @@ import {
   ruteCater,
   petugasCater,
   caterVerifikasiLog,
+  periodePenagihan,
 } from '@cater/db';
 
 export class CaterKueriService {
   /**
    * Menghitung ringkasan statistik pembacaan meter dan penagihan
    */
-  async getStats() {
+  async getStats(thbl?: string) {
+    const targetThbl = thbl || (
+      await db
+        .select({ maxThbl: sql<string>`MAX(${caterBacaMeter.thbl})` })
+        .from(caterBacaMeter)
+    )[0]?.maxThbl || '202611';
+
+    const [periodeRow] = await db
+      .select({ status: periodePenagihan.status, jumlahSl: periodePenagihan.jumlahSl })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, targetThbl));
+
+    const isLocked = periodeRow?.status === 'TERKUNCI';
+    const snapshotSl = periodeRow?.jumlahSl != null ? Number(periodeRow.jumlahSl) : null;
+
     const [pelangganCount] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(pelanggan);
@@ -30,16 +45,17 @@ export class CaterKueriService {
       .select({
         totalTercatat: sql<number>`count(*)::int`,
         totalPakaiM3: sql<number>`COALESCE(SUM(pakai_m3), 0)::float`,
-        periodeTerakhir: sql<string | null>`MAX(${caterBacaMeter.thbl})`,
       })
-      .from(caterBacaMeter);
+      .from(caterBacaMeter)
+      .where(eq(caterBacaMeter.thbl, targetThbl));
 
     const [drdStats] = await db
       .select({
         totalTagihan: sql<number>`COALESCE(SUM(total_tagihan), 0)::float`,
         totalTunggakan: sql<number>`COALESCE(SUM(tag_nunggak), 0)::float`,
       })
-      .from(rekeningDrd);
+      .from(rekeningDrd)
+      .where(eq(rekeningDrd.thbl, targetThbl));
 
     const kondisiBreakdown = await db
       .select({
@@ -47,15 +63,22 @@ export class CaterKueriService {
         count: sql<number>`count(*)::int`,
       })
       .from(caterBacaMeter)
+      .where(eq(caterBacaMeter.thbl, targetThbl))
       .groupBy(caterBacaMeter.ketCatat);
 
+    const totalTercatat = caterStats?.totalTercatat ?? 0;
+    const rawTotalPelanggan = pelangganCount?.count ?? 0;
+    const totalPelanggan = isLocked
+      ? (snapshotSl ?? totalTercatat)
+      : Math.max(rawTotalPelanggan, snapshotSl ?? 0);
+
     return {
-      totalPelanggan: pelangganCount?.count ?? 0,
+      totalPelanggan,
       totalRute: ruteCount?.count ?? 0,
       totalPetugas: petugasCount?.count ?? 0,
-      totalTercatat: caterStats?.totalTercatat ?? 0,
+      totalTercatat,
       totalPakaiM3: caterStats?.totalPakaiM3 ?? 0,
-      periodeTerakhir: caterStats?.periodeTerakhir ?? null,
+      periodeTerakhir: targetThbl,
       totalTagihan: drdStats?.totalTagihan ?? 0,
       totalTunggakan: drdStats?.totalTunggakan ?? 0,
       kondisiBreakdown,
@@ -87,7 +110,7 @@ export class CaterKueriService {
   async getRoutePelanggan(
     ruteKode: string,
     limit: number = 500,
-    thbl: string = '202601'
+    thbl: string = '202611'
   ) {
     const list = await db
       .select({

@@ -14,13 +14,16 @@
 
 import fs from 'fs';
 import path from 'path';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and, inArray } from 'drizzle-orm';
 import {
   db,
   pelanggan,
   caterBacaMeter,
   waterMeter,
   daftarCatat,
+  petugasCater,
+  ruteCater,
+  golonganTarif,
 } from '@cater/db';
 import {
   isCloudinaryConfigured,
@@ -56,6 +59,80 @@ export interface DataPencatatanItem {
   latitude?: number;
   longitude?: number;
   catatan?: string;
+}
+
+export interface LapDataMeterItem {
+  thbl: string;
+  nolg: string;
+  nama?: string;
+  alamat?: string;
+  stml: number;
+  stma: number;
+  stmaCatat?: number;
+  pakaiM3?: number;
+  pakaiLalu?: number;
+  persentase?: number;
+  trf?: string;
+  tmss?: string;
+  ketCatat?: string;
+  petugasId?: string;
+  namaPetugas?: string;
+  kdWm?: string;
+  wil?: string;
+  ruteKode?: string;
+  zonaWil?: string;
+  kdZonasi?: string;
+  namaZonasi?: string;
+  kecamatan?: string;
+  kelurahan?: string;
+  tglCatat?: string;
+  tglUpload?: string;
+  catatan?: string;
+}
+
+export function parseCsvRows(text: string): string[][] {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (char === '"') {
+      if (insideQuotes && nextChar === '"') {
+        currentField += '"';
+        i++;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if (!insideQuotes && (char === ',' || char === ';')) {
+      currentRow.push(currentField.trim());
+      currentField = '';
+    } else if (!insideQuotes && (char === '\r' || char === '\n')) {
+      if (char === '\r' && nextChar === '\n') {
+        i++;
+      }
+      currentRow.push(currentField.trim());
+      if (currentRow.some((field) => field.length > 0)) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentField = '';
+    } else {
+      currentField += char;
+    }
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField.trim());
+    if (currentRow.some((field) => field.length > 0)) {
+      rows.push(currentRow);
+    }
+  }
+
+  return rows;
 }
 
 export interface RNomorItem {
@@ -332,23 +409,22 @@ export class ImportDataService {
    * 1. Baku Mobile: thbl;nolg;stml;stma;pakai_m3;tgl_catat;petugas_id;rute_kode;kondisi;latitude;longitude;catatan
    * 2. Laporan Data Meter PDAM (lapdatameter): "No Pel";Nama;Alamat;Periode;"St AWAL";"St Akhir";"St Akhir Catat";Pakai;...
    */
+  /**
+   * Helper: Parser Format Baku CSV Data Pencatatan Mobile & LapDataMeter PDAM
+   * Mendukung 2 format:
+   * 1. Baku Mobile: thbl;nolg;stml;stma;pakai_m3;tgl_catat;petugas_id;rute_kode;kondisi;latitude;longitude;catatan
+   * 2. Laporan Data Meter PDAM (lapdatameter): "No Pel";Nama;Alamat;Periode;"St AWAL";"St Akhir";"St Akhir Catat";Pakai;...
+   */
   parsePencatatanCsv(csvText: string): DataPencatatanItem[] {
-    const lines = csvText
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+    const rows = parseCsvRows(csvText);
+    if (rows.length < 2) return [];
 
-    if (lines.length < 2) return [];
-
-    const delimiter = lines[0].includes(';') ? ';' : ',';
-    const header = lines[0]
-      .split(delimiter)
-      .map((h) => h.replace(/^["']|["']$/g, '').trim().toLowerCase());
+    const header = rows[0].map((h) => h.replace(/^["']|["']$/g, '').trim().toLowerCase());
 
     const items: DataPencatatanItem[] = [];
 
-    for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(delimiter).map((p) => p.replace(/^["']|["']$/g, '').trim());
+    for (let i = 1; i < rows.length; i++) {
+      const parts = rows[i];
       if (parts.length < 3) continue;
 
       const obj: any = {};
@@ -357,8 +433,8 @@ export class ImportDataService {
       });
 
       // Deteksi nomor pelanggan dan periode (mendukung format mobile & format resmi lapdatameter)
-      const rawNolg = (obj['no pel'] || obj['nolg'] || obj['nomor_pelanggan'])?.replace(/\s+/g, '');
-      const rawThbl = (obj['periode'] || obj['thbl'])?.replace(/\s+/g, '');
+      const rawNolg = (obj['no pel'] || obj['nolg'] || obj['nomor_pelanggan'])?.replace(/[^\w-]/g, '').trim();
+      const rawThbl = (obj['periode'] || obj['thbl'])?.replace(/[^\w]/g, '').trim();
 
       if (rawNolg && rawThbl) {
         const stml = parseFloat(obj['st awal'] ?? obj['stml'] ?? '0') || 0;
@@ -394,6 +470,311 @@ export class ImportDataService {
     }
 
     return items;
+  }
+
+  /**
+   * Helper: Parser Format Resmi PDAM LapDataMeter CSV
+   * Kolom: "No Pel",Nama,Alamat,Periode,"St AWAL","St Akhir","St Akhir Catat",Pakai,"Pakai Lau",persentase,Trf,Kd_kel,Nm_Kel,kd_petugas,kd_wm,Wil,Rute,"Zona Wil","Kd Zonasi","Nama Zonasi",Kecamatan,Kelurahan,tgl_catat,tgl_upload,"Nama Petugas"
+   */
+  parseLapDataMeterCsv(csvText: string): LapDataMeterItem[] {
+    const rows = parseCsvRows(csvText);
+    if (rows.length < 2) return [];
+
+    const header = rows[0].map((h) => h.replace(/^["']|["']$/g, '').trim().toLowerCase());
+
+    const findIdx = (aliases: string[]) =>
+      header.findIndex((h) => aliases.some((a) => h === a || h.includes(a)));
+
+    const nolgIdx = findIdx(['no pel', 'nolg', 'nomor pelanggan', 'nopel']);
+    const namaIdx = findIdx(['nama', 'nama pelanggan']);
+    const alamatIdx = findIdx(['alamat']);
+    const thblIdx = findIdx(['periode', 'thbl']);
+    const stmlIdx = findIdx(['st awal', 'stml', 'stand awal']);
+    const stmaIdx = findIdx(['st akhir', 'stma', 'stand akhir']);
+    const stmaCatatIdx = findIdx(['st akhir catat']);
+    const pakaiIdx = findIdx(['pakai', 'pakai_m3', 'kubikasi']);
+    const pakaiLaluIdx = findIdx(['pakai lau', 'pakai lalu', 'pakai_lalu']);
+    const persenIdx = findIdx(['persentase', 'persen']);
+    const trfIdx = findIdx(['trf', 'tarif', 'kd_goltarif', 'golongan']);
+    const tmssIdx = findIdx(['kd_kel', 'tmss', 'kode_kondisi']);
+    const ketCatatIdx = findIdx(['nm_kel', 'kondisi', 'ket_catat', 'keterangan']);
+    const petugasIdx = findIdx(['kd_petugas', 'petugas_id']);
+    const namaPetugasIdx = findIdx(['nama petugas']);
+    const kdWmIdx = findIdx(['kd_wm', 'nometer', 'no_meter']);
+    const wilIdx = findIdx(['wil', 'wilayah']);
+    const ruteIdx = findIdx(['rute', 'rute_kode', 'kd_rute']);
+    const zonaWilIdx = findIdx(['zona wil', 'zona']);
+    const kdZonasiIdx = findIdx(['kd zonasi', 'kode zonasi']);
+    const namaZonasiIdx = findIdx(['nama zonasi']);
+    const kecIdx = findIdx(['kecamatan']);
+    const kelIdx = findIdx(['kelurahan']);
+    const tglCatatIdx = findIdx(['tgl_catat', 'tanggal catat']);
+    const tglUploadIdx = findIdx(['tgl_upload']);
+
+    const items: LapDataMeterItem[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const parts = rows[i];
+      if (parts.length < 3) continue;
+
+      const rawNolg = (nolgIdx >= 0 ? parts[nolgIdx] : '')?.replace(/[^\w-]/g, '').trim();
+      const rawThbl = (thblIdx >= 0 ? parts[thblIdx] : '')?.replace(/[^\w]/g, '').trim();
+
+      if (!rawNolg || !rawThbl) continue;
+
+      const stml = stmlIdx >= 0 && parts[stmlIdx] ? parseFloat(parts[stmlIdx].replace(',', '.')) || 0 : 0;
+      const stma = stmaIdx >= 0 && parts[stmaIdx] ? parseFloat(parts[stmaIdx].replace(',', '.')) || 0 : 0;
+      const stmaCatat = stmaCatatIdx >= 0 && parts[stmaCatatIdx] ? parseFloat(parts[stmaCatatIdx].replace(',', '.')) : undefined;
+      const pakaiM3 =
+        pakaiIdx >= 0 && parts[pakaiIdx] !== '' && parts[pakaiIdx] !== undefined
+          ? parseFloat(parts[pakaiIdx].replace(',', '.')) || 0
+          : Math.max(0, stma - stml);
+      const pakaiLalu =
+        pakaiLaluIdx >= 0 && parts[pakaiLaluIdx] !== '' && parts[pakaiLaluIdx] !== undefined
+          ? parseFloat(parts[pakaiLaluIdx].replace(',', '.')) || 0
+          : undefined;
+      const persentase =
+        persenIdx >= 0 && parts[persenIdx] !== '' && parts[persenIdx] !== undefined
+          ? parseFloat(parts[persenIdx].replace(',', '.'))
+          : undefined;
+
+      const nama = namaIdx >= 0 ? parts[namaIdx]?.trim() : undefined;
+      const alamat = alamatIdx >= 0 ? parts[alamatIdx]?.trim() : undefined;
+      const trf = trfIdx >= 0 ? parts[trfIdx]?.trim() : undefined;
+      const tmssRaw = tmssIdx >= 0 ? parts[tmssIdx]?.trim() : '-';
+      const tmss = tmssRaw === '' ? '-' : tmssRaw;
+      const ketCatat = ketCatatIdx >= 0 && parts[ketCatatIdx]?.trim() ? parts[ketCatatIdx].trim() : 'Normal';
+      const petugasId =
+        (petugasIdx >= 0 && parts[petugasIdx]?.trim()) ||
+        (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) ||
+        undefined;
+      const namaPetugas = (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) || petugasId;
+      const kdWm = kdWmIdx >= 0 ? parts[kdWmIdx]?.trim() : undefined;
+      const wil = wilIdx >= 0 ? parts[wilIdx]?.trim() : undefined;
+      const ruteKode = ruteIdx >= 0 ? parts[ruteIdx]?.trim() : undefined;
+      const zonaWil = zonaWilIdx >= 0 ? parts[zonaWilIdx]?.trim() : undefined;
+      const kdZonasi = kdZonasiIdx >= 0 ? parts[kdZonasiIdx]?.trim() : undefined;
+      const namaZonasi = namaZonasiIdx >= 0 ? parts[namaZonasiIdx]?.trim() : undefined;
+      const kecamatan = kecIdx >= 0 ? parts[kecIdx]?.trim() : undefined;
+      const kelurahan = kelIdx >= 0 ? parts[kelIdx]?.trim() : undefined;
+      const tglCatat =
+        tglCatatIdx >= 0 && parts[tglCatatIdx]?.trim()
+          ? parts[tglCatatIdx].trim()
+          : new Date().toISOString();
+      const tglUpload = tglUploadIdx >= 0 && parts[tglUploadIdx]?.trim() ? parts[tglUploadIdx].trim() : undefined;
+
+      items.push({
+        thbl: rawThbl,
+        nolg: rawNolg,
+        nama,
+        alamat,
+        stml,
+        stma,
+        stmaCatat,
+        pakaiM3,
+        pakaiLalu,
+        persentase,
+        trf,
+        tmss,
+        ketCatat,
+        petugasId,
+        namaPetugas,
+        kdWm,
+        wil,
+        ruteKode,
+        zonaWil,
+        kdZonasi,
+        namaZonasi,
+        kecamatan,
+        kelurahan,
+        tglCatat,
+        tglUpload,
+        catatan: namaZonasi ? `Zonasi: ${namaZonasi} (Rute ${ruteKode || '-'})` : 'Import Laporan Data Meter',
+      });
+    }
+
+    return items;
+  }
+
+  /**
+   * Import Laporan Data Meter PDAM (lapdatameter) ke tabel cater_baca_meter
+   * Mendukung pemrosesan batching performa tinggi dengan integritas relasi:
+   * 1. Upsert rute_cater & petugas_cater jika belum ada
+   * 2. Upsert master pelanggan & golongan tarif jika belum ada
+   * 3. Upsert data pembacaan meter ke tabel cater_baca_meter (kolom stml, stma, pakai_m3, pakai_lalu, tmss, ket_catat, dll.)
+   */
+  async importLapDataMeter(items: LapDataMeterItem[]) {
+    if (!items || items.length === 0) {
+      throw new Error('Tidak ada baris data LapDataMeter untuk diproses.');
+    }
+
+    const results = {
+      total: items.length,
+      sukses: 0,
+      gagal: 0,
+      created: 0,
+      updated: 0,
+      detail: [] as { nolg: string; status: 'SUCCESS' | 'FAILED'; error?: string }[],
+    };
+
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+      const batch = items.slice(i, i + BATCH_SIZE);
+      const batchNolgs = batch.map((b) => b.nolg);
+      const batchThbl = batch[0].thbl;
+
+      try {
+        // 1. Pastikan rute_cater terdaftar untuk mencegah FK violation
+        const uniqueRoutes = Array.from(new Set(batch.map((b) => b.ruteKode).filter(Boolean))) as string[];
+        if (uniqueRoutes.length > 0) {
+          const routeRecords = uniqueRoutes.map((kode) => {
+            const itemMatch = batch.find((b) => b.ruteKode === kode);
+            return {
+              kode,
+              seksiKode: itemMatch?.zonaWil || null,
+              seksiNama: itemMatch?.namaZonasi || null,
+            };
+          });
+          await db.insert(ruteCater).values(routeRecords).onConflictDoNothing();
+        }
+
+        // 2. Pastikan petugas_cater terdaftar untuk mencegah FK violation
+        const uniquePetugas = Array.from(new Set(batch.map((b) => b.petugasId).filter(Boolean))) as string[];
+        if (uniquePetugas.length > 0) {
+          const petugasRecords = uniquePetugas.map((id) => {
+            const itemMatch = batch.find((b) => b.petugasId === id);
+            return {
+              id,
+              nama: itemMatch?.namaPetugas || id,
+              aktif: true,
+            };
+          });
+          await db.insert(petugasCater).values(petugasRecords).onConflictDoNothing();
+        }
+
+        // 3. Pastikan golongan_tarif terdaftar jika ada
+        const uniqueTarif = Array.from(new Set(batch.map((b) => b.trf).filter(Boolean))) as string[];
+        if (uniqueTarif.length > 0) {
+          const tarifRecords = uniqueTarif.map((kode) => ({
+            kode,
+            nama: `Tarif Golongan ${kode}`,
+          }));
+          await db.insert(golonganTarif).values(tarifRecords).onConflictDoNothing();
+        }
+
+        // 4. Pastikan pelanggan terdaftar di master database
+        const existingCusts = await db
+          .select({ nolg: pelanggan.nolg, ruteKode: pelanggan.ruteKode })
+          .from(pelanggan)
+          .where(inArray(pelanggan.nolg, batchNolgs));
+
+        const existingCustMap = new Map(existingCusts.map((c) => [c.nolg, c]));
+        const missingCusts: (typeof pelanggan.$inferInsert)[] = [];
+
+        for (const item of batch) {
+          if (!existingCustMap.has(item.nolg)) {
+            missingCusts.push({
+              nolg: item.nolg,
+              nama: item.nama || `Pelanggan ${item.nolg}`,
+              alamat: item.alamat || 'Alamat Terdata LapDataMeter',
+              ruteKode: item.ruteKode || null,
+              tarifKode: item.trf || null,
+              status: 'PELANGGAN AKTIF',
+            });
+            existingCustMap.set(item.nolg, { nolg: item.nolg, ruteKode: item.ruteKode || null });
+          }
+        }
+
+        if (missingCusts.length > 0) {
+          await db.insert(pelanggan).values(missingCusts).onConflictDoNothing();
+        }
+
+        // 5. Cek existing cater_baca_meter berdasarkan (thbl, nolg)
+        const existingCaterRows = await db
+          .select({
+            id: caterBacaMeter.id,
+            nolg: caterBacaMeter.nolg,
+            thbl: caterBacaMeter.thbl,
+          })
+          .from(caterBacaMeter)
+          .where(
+            and(
+              eq(caterBacaMeter.thbl, batchThbl),
+              inArray(caterBacaMeter.nolg, batchNolgs)
+            )
+          );
+
+        const existingCaterMap = new Map(existingCaterRows.map((r) => [r.nolg, r.id]));
+
+        for (const item of batch) {
+          const existingId = existingCaterMap.get(item.nolg);
+          const tglCatat = item.tglCatat ? new Date(item.tglCatat) : new Date();
+          const pakaiM3 = item.pakaiM3 ?? Math.max(0, item.stma - item.stml);
+          const tmss = item.tmss || '-';
+
+          if (existingId) {
+            // Update pembacaan meter tanpa menghilangkan data foto jika ada
+            await db
+              .update(caterBacaMeter)
+              .set({
+                stml: String(item.stml),
+                stma: String(item.stma),
+                pakaiM3: String(pakaiM3),
+                pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
+                tmss,
+                ketCatat: item.ketCatat || 'Normal',
+                ruteKode: item.ruteKode || null,
+                petugasId: item.petugasId || null,
+                sumberCatat: 'LAPDATAMETER',
+                statusVerifikasi: 'SUBMITTED',
+                tglCatat,
+                catatan: item.catatan || `Import LapDataMeter ${item.thbl}`,
+                updatedAt: new Date(),
+              })
+              .where(eq(caterBacaMeter.id, existingId));
+
+            results.updated++;
+          } else {
+            // Insert transaksi baru ke cater_baca_meter
+            await db.insert(caterBacaMeter).values({
+              thbl: item.thbl,
+              nolg: item.nolg,
+              ruteKode: item.ruteKode || null,
+              petugasId: item.petugasId || null,
+              stml: String(item.stml),
+              stma: String(item.stma),
+              pakaiM3: String(pakaiM3),
+              pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
+              tmss,
+              ketCatat: item.ketCatat || 'Normal',
+              metodeCatat: 'ONSITE',
+              sumberCatat: 'LAPDATAMETER',
+              statusVerifikasi: 'SUBMITTED',
+              tglCatat,
+              catatan: item.catatan || `Import LapDataMeter ${item.thbl}`,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+
+            results.created++;
+          }
+
+          results.sukses++;
+          results.detail.push({ nolg: item.nolg, status: 'SUCCESS' });
+        }
+      } catch (err: any) {
+        for (const item of batch) {
+          results.gagal++;
+          results.detail.push({
+            nolg: item.nolg,
+            status: 'FAILED',
+            error: err.message,
+          });
+        }
+      }
+    }
+
+    return results;
   }
 
   /**
@@ -588,7 +969,7 @@ export class ImportDataService {
   /**
    * Eksekusi Import PBPK ke Database (Master Pelanggan, Water Meter & DPM)
    */
-  async importPbpk(rows: PbpkCsvRow[], targetPeriode = '202601') {
+  async importPbpk(rows: PbpkCsvRow[], targetPeriode = '202611') {
     if (!rows || rows.length === 0) {
       throw new Error('Data PBPK kosong.');
     }

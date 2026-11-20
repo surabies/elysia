@@ -156,7 +156,7 @@ export class PbpkService {
       });
 
       // 4. Jika ada periode berjalan aktif, daftarkan otomatis ke daftarCatat (DPM) dengan sumber 'PBPK'
-      const targetPeriode = periode || '202601';
+      const targetPeriode = periode || '202611';
       const [periodeRow] = await tx
         .select({ status: periodePenagihan.status })
         .from(periodePenagihan)

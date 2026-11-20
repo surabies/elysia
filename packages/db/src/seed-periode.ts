@@ -3,21 +3,44 @@ import { eq } from 'drizzle-orm';
 
 async function seedPeriode() {
   console.log('Seeding periode_penagihan...');
-  await db
-    .insert(periodePenagihan)
-    .values([
-      {
-        periode: '202610',
-        status: 'TERKUNCI',
-        jumlahSl: 22524,
-      },
-      {
-        periode: '202611',
-        status: 'BERJALAN',
-        jumlahSl: 22524,
-      },
-    ])
-    .onConflictDoNothing();
+
+  const periodes = [
+    {
+      periode: '202610',
+      status: 'TERKUNCI',
+      jumlahSl: 22524,
+      totalM3: '450890.00',
+      totalTagihan: '1849100000.00',
+      tanggalJatuhTempo: new Date('2026-10-20T00:00:00.000Z'),
+      ditutupAt: new Date('2026-10-25T17:00:00.000Z'),
+    },
+    {
+      periode: '202611',
+      status: 'BERJALAN',
+      jumlahSl: 22524,
+      totalM3: '452100.00',
+      totalTagihan: '1855000000.00',
+      tanggalJatuhTempo: new Date('2026-11-20T00:00:00.000Z'),
+    },
+  ];
+
+  for (const item of periodes) {
+    await db
+      .insert(periodePenagihan)
+      .values(item)
+      .onConflictDoUpdate({
+        target: periodePenagihan.periode,
+        set: {
+          status: item.status,
+          jumlahSl: item.jumlahSl,
+          totalM3: item.totalM3,
+          totalTagihan: item.totalTagihan,
+          tanggalJatuhTempo: item.tanggalJatuhTempo,
+          ditutupAt: item.ditutupAt,
+          updatedAt: new Date(),
+        },
+      });
+  }
 
   console.log('Sinkronisasi data mandiri yang sudah masuk...');
   // Update record mandiri yang sempat masuk dengan pakaiM3 = 2285

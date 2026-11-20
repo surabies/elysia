@@ -35,7 +35,7 @@ export interface LaporanStandAwalAkhirResult {
 
 export class LaporanStandAwalAkhirService {
   async getStandAwalAkhir(
-    thbl: string = '202601',
+    thbl: string = '202610',
     limit: number = 100
   ): Promise<LaporanStandAwalAkhirResult> {
     const rows = await db

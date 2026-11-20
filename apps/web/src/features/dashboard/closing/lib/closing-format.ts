@@ -10,9 +10,9 @@ import type {
   WorkflowStageStatus,
 } from '../types';
 
-export const DEFAULT_CLOSING_PERIODE = '202601';
-export const DEFAULT_NEXT_PERIODE = '202602';
-export const DEFAULT_DUE_DATE = '2026-02-20';
+export const DEFAULT_CLOSING_PERIODE = '202611';
+export const DEFAULT_NEXT_PERIODE = '202612';
+export const DEFAULT_DUE_DATE = '2026-12-20';
 export const CLOSING_ONBOARDING_STORAGE_KEY = 'cater_closing_onboarding_seen_v1';
 export const CLOSING_SESSION_STATE_KEY = 'cater_closing_wizard_session_v1';
 

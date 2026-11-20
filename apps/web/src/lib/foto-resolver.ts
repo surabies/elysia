@@ -26,7 +26,7 @@ export function resolveFotoUrl(opts: ResolveFotoOptions): string {
     nolg = "01020001",
     jenis = "stand",
     stand,
-    periode = "202601",
+    periode = "202611",
     rute,
     petugas,
     nama,

@@ -31,6 +31,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { PageContainer } from '@/components/layout/page/PageContainer';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import { cn } from '@/lib/utils';
 import type {
   LaporanEvaluasiResult,
@@ -42,7 +43,7 @@ const numberFormat = new Intl.NumberFormat('id-ID');
 export function LaporanEvaluasiPetugas() {
   const [data, setData] = React.useState<LaporanEvaluasiResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
   const [search, setSearch] = React.useState('');
 
   const fetchData = React.useCallback(async () => {
@@ -140,9 +141,11 @@ export function LaporanEvaluasiPetugas() {
               size="xs"
               className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
             >
-              <NativeSelectOption value="202601">Januari 2026 (202601)</NativeSelectOption>
-              <NativeSelectOption value="202512">Desember 2025 (202512)</NativeSelectOption>
-              <NativeSelectOption value="202511">November 2025 (202511)</NativeSelectOption>
+              {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                <NativeSelectOption key={opt.value} value={opt.value}>
+                  {opt.label}
+                </NativeSelectOption>
+              ))}
             </NativeSelect>
           </div>
 

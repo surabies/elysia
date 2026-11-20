@@ -14,8 +14,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import Link from 'next/link';
 
 export interface GisPointItem {
@@ -66,7 +68,7 @@ export function PetaMonitoringSpasial() {
     geofenceAlert: 0,
   });
 
-  const [periode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
   const [filterMode, setFilterMode] = React.useState<FilterMode>('semua');
   const [ruteKode, setRuteKode] = React.useState('');
   const [selectedPoint, setSelectedPoint] = React.useState<GisPointItem | null>(
@@ -240,6 +242,23 @@ export function PetaMonitoringSpasial() {
 
         {/* Action & Filter Controls */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Periode Selector */}
+          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
+            <span className="text-muted-foreground mr-1.5 font-medium">Periode:</span>
+            <NativeSelect
+              value={periode}
+              onChange={(e) => setPeriode(e.target.value)}
+              size="xs"
+              className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
+            >
+              {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                <NativeSelectOption key={opt.value} value={opt.value}>
+                  {opt.label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+
           {/* Rute Filter Input */}
           <div className="relative flex items-center">
             <Input

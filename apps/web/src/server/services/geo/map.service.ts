@@ -19,7 +19,7 @@ export class MapService {
    * Mengambil data pemetaan meter spasial lengkap dengan deteksi geofence deviasi jarak
    */
   async getMonitoringSpasial(filter: GisMeterFilter = {}) {
-    const activeThbl = filter.thbl ?? '202601';
+    const activeThbl = filter.thbl ?? '202610';
     const limit = Math.min(filter.limit ?? 500, 2000);
 
     const conditions = [sql`${pelanggan.titikLokasi} is not null`];

@@ -365,9 +365,9 @@ export async function seedKpi() {
     await db
       .insert(kpiRealisasi)
       .values({
-        id: `${ind.id}_202601`,
+        id: `${ind.id}_202611`,
         indikatorId: ind.id,
-        periode: '202601',
+        periode: '202611',
         nilaiAktual: nilaiJan2026,
         sparkline: JSON.stringify(sparkline),
         updatedAt: new Date(),

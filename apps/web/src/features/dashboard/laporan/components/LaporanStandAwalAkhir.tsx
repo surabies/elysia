@@ -27,6 +27,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import type {
   LaporanStandAwalAkhirResult,
   StandAwalAkhirItem,
@@ -37,7 +38,7 @@ const numberFormat = new Intl.NumberFormat('id-ID');
 export function LaporanStandAwalAkhir() {
   const [data, setData] = React.useState<LaporanStandAwalAkhirResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState('202601');
+  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
   const [limit, setLimit] = React.useState('100');
   const [search, setSearch] = React.useState('');
 
@@ -139,9 +140,11 @@ export function LaporanStandAwalAkhir() {
               size="xs"
               className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
             >
-              <NativeSelectOption value="202601">Januari 2026 (202601)</NativeSelectOption>
-              <NativeSelectOption value="202512">Desember 2025 (202512)</NativeSelectOption>
-              <NativeSelectOption value="202511">November 2025 (202511)</NativeSelectOption>
+              {STANDAR_PERIODE_OPTIONS.map((opt) => (
+                <NativeSelectOption key={opt.value} value={opt.value}>
+                  {opt.label}
+                </NativeSelectOption>
+              ))}
             </NativeSelect>
           </div>
 

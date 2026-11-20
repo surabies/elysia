@@ -130,7 +130,7 @@ export class ManualAddMasalService {
     limit?: number;
   }): Promise<PreviewTaksasiResult> {
     const {
-      thbl = '202601',
+      thbl = '202611',
       petugasId,
       ruteKode,
       hanyaBelumBaca = true,
@@ -167,7 +167,7 @@ export class ManualAddMasalService {
     }
 
     // 2. Ambil seluruh pelanggan di rute target
-    const conditions = [];
+    const conditions: any[] = [];
     if (targetRuteList.length > 0) {
       conditions.push(inArray(pelanggan.ruteKode, targetRuteList));
     }

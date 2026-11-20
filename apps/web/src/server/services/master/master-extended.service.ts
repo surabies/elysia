@@ -282,7 +282,7 @@ export class MasterExtendedService {
   async simpanUrutanRute(
     ruteKode: string,
     items: { nolg: string; urutan: number }[],
-    periode: string = '202601'
+    periode: string = '202611'
   ): Promise<{ success: boolean; totalUpdated: number }> {
     for (const item of items) {
       const dpmId = `dpm-${periode}-${item.nolg}`;

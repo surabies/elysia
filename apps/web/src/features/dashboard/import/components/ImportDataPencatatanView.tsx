@@ -50,49 +50,98 @@ export function ImportDataPencatatanView() {
   }, []);
 
   const parseCsv = (text: string) => {
-    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-    if (lines.length < 2) {
+    // Robust CSV tokenizer
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = "";
+    let insideQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+
+      if (char === '"') {
+        if (insideQuotes && nextChar === '"') {
+          currentField += '"';
+          i++;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+      } else if (!insideQuotes && (char === "," || char === ";")) {
+        currentRow.push(currentField.trim());
+        currentField = "";
+      } else if (!insideQuotes && (char === "\r" || char === "\n")) {
+        if (char === "\r" && nextChar === "\n") {
+          i++;
+        }
+        currentRow.push(currentField.trim());
+        if (currentRow.some((f) => f.length > 0)) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        currentField = "";
+      } else {
+        currentField += char;
+      }
+    }
+    if (currentField.length > 0 || currentRow.length > 0) {
+      currentRow.push(currentField.trim());
+      if (currentRow.some((f) => f.length > 0)) {
+        rows.push(currentRow);
+      }
+    }
+
+    if (rows.length < 2) {
       setItems([]);
       return;
     }
 
-    const delimiter = lines[0].includes(";") ? ";" : ",";
-    const header = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
-    const thblIdx = header.indexOf("thbl");
-    const nolgIdx = header.indexOf("nolg");
-    const stmlIdx = header.indexOf("stml");
-    const stmaIdx = header.indexOf("stma");
-    const pakaiIdx = header.indexOf("pakai_m3");
-    const tglIdx = header.indexOf("tgl_catat");
-    const petugasIdx = header.indexOf("petugas_id");
-    const ruteIdx = header.indexOf("rute_kode");
-    const kondisiIdx = header.indexOf("kondisi");
-    const latIdx = header.indexOf("latitude");
-    const lngIdx = header.indexOf("longitude");
-    const catatanIdx = header.indexOf("catatan");
+    const header = rows[0].map((h) => h.replace(/^["']|["']$/g, "").trim().toLowerCase());
+    const findIdx = (aliases: string[]) =>
+      header.findIndex((h) => aliases.some((a) => h === a || h.includes(a)));
+
+    const thblIdx = findIdx(["thbl", "periode"]);
+    const nolgIdx = findIdx(["nolg", "no pel", "nomor pelanggan"]);
+    const stmlIdx = findIdx(["stml", "st awal", "stand awal"]);
+    const stmaIdx = findIdx(["stma", "st akhir", "stand akhir"]);
+    const pakaiIdx = findIdx(["pakai_m3", "pakai", "kubikasi"]);
+    const tglIdx = findIdx(["tgl_catat", "tanggal catat"]);
+    const petugasIdx = findIdx(["petugas_id", "kd_petugas", "nama petugas"]);
+    const ruteIdx = findIdx(["rute_kode", "rute", "kd_rute"]);
+    const kondisiIdx = findIdx(["kondisi", "nm_kel", "ket_catat", "kd_kel"]);
+    const latIdx = findIdx(["latitude", "lat"]);
+    const lngIdx = findIdx(["longitude", "lng", "long"]);
+    const catatanIdx = findIdx(["catatan", "nama zonasi"]);
 
     const parsed: PencatatanRow[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(delimiter).map((p) => p.trim());
-      if (parts.length < 4) continue;
+    for (let i = 1; i < rows.length; i++) {
+      const parts = rows[i];
+      if (parts.length < 3) continue;
 
-      const stml = parseFloat(parts[stmlIdx]) || 0;
-      const stma = parseFloat(parts[stmaIdx]) || 0;
-      const pakaiM3 = parts[pakaiIdx] ? parseFloat(parts[pakaiIdx]) : Math.max(0, stma - stml);
+      const rawNolg = (nolgIdx >= 0 ? parts[nolgIdx] : "")?.replace(/[^\w-]/g, "").trim();
+      const rawThbl = (thblIdx >= 0 ? parts[thblIdx] : "")?.replace(/[^\w]/g, "").trim();
+      if (!rawNolg) continue;
+
+      const stml = stmlIdx >= 0 && parts[stmlIdx] ? parseFloat(parts[stmlIdx].replace(",", ".")) || 0 : 0;
+      const stma = stmaIdx >= 0 && parts[stmaIdx] ? parseFloat(parts[stmaIdx].replace(",", ".")) || 0 : 0;
+      const pakaiM3 =
+        pakaiIdx >= 0 && parts[pakaiIdx] !== "" && parts[pakaiIdx] !== undefined
+          ? parseFloat(parts[pakaiIdx].replace(",", ".")) || 0
+          : Math.max(0, stma - stml);
 
       parsed.push({
-        thbl: parts[thblIdx] || "202601",
-        nolg: parts[nolgIdx] || `CUST-${i}`,
+        thbl: rawThbl || "202601",
+        nolg: rawNolg,
         stml,
         stma,
         pakaiM3,
-        tglCatat: parts[tglIdx] || "2026-01-19 07:00:00",
-        petugasId: parts[petugasIdx] || "PETUGAS-01",
-        ruteKode: parts[ruteIdx] || "99999",
-        ketCatat: parts[kondisiIdx] || "Normal",
-        latitude: parts[latIdx] ? parseFloat(parts[latIdx]) : undefined,
-        longitude: parts[lngIdx] ? parseFloat(parts[lngIdx]) : undefined,
-        catatan: parts[catatanIdx] || "Import Backup Mobile",
+        tglCatat: (tglIdx >= 0 && parts[tglIdx]?.trim()) || new Date().toISOString(),
+        petugasId: (petugasIdx >= 0 && parts[petugasIdx]?.trim()) || "PETUGAS_LAPANGAN",
+        ruteKode: (ruteIdx >= 0 && parts[ruteIdx]?.trim()) || "-",
+        ketCatat: (kondisiIdx >= 0 && parts[kondisiIdx]?.trim()) || "Normal",
+        latitude: latIdx >= 0 && parts[latIdx] ? parseFloat(parts[latIdx]) : undefined,
+        longitude: lngIdx >= 0 && parts[lngIdx] ? parseFloat(parts[lngIdx]) : undefined,
+        catatan: (catatanIdx >= 0 && parts[catatanIdx]?.trim()) || "Import Stand Meter",
       });
     }
 

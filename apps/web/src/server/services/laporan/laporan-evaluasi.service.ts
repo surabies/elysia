@@ -4,7 +4,7 @@
  */
 
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { db, petugasCater, ruteCater, pelanggan, caterBacaMeter } from '@cater/db';
+import { db, petugasCater, ruteCater, pelanggan, caterBacaMeter, periodePenagihan } from '@cater/db';
 
 export interface EvaluasiPetugasItem {
   petugasId: string;
@@ -34,7 +34,15 @@ export interface LaporanEvaluasiResult {
 }
 
 export class LaporanEvaluasiService {
-  async getEvaluasiPetugas(thbl: string = '202601'): Promise<LaporanEvaluasiResult> {
+  async getEvaluasiPetugas(thbl: string = '202610'): Promise<LaporanEvaluasiResult> {
+    // 0. Cek status siklus penagihan
+    const [periodeInfo] = await db
+      .select({ status: periodePenagihan.status })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, thbl));
+
+    const isLocked = periodeInfo?.status === 'TERKUNCI';
+
     // 1. Ambil seluruh petugas
     const listPetugas = await db
       .select()
@@ -77,13 +85,14 @@ export class LaporanEvaluasiService {
 
     const rawEvaluasi: Omit<EvaluasiPetugasItem, 'peringkat'>[] = listPetugas.map((p) => {
       const assignedRoutes = routes.filter((r) => r.pencatatDefault === p.id);
-      const targetSL = assignedRoutes.reduce(
-        (acc, r) => acc + (targetMap.get(r.kode) ?? 0),
-        0
-      );
-
       const reading = readingMap.get(p.id);
       const realisasiSL = reading?.totalTerbaca ?? 0;
+      const targetSL = isLocked
+        ? realisasiSL
+        : assignedRoutes.reduce(
+            (acc, r) => acc + (targetMap.get(r.kode) ?? 0),
+            0
+          );
       const totalM3 = reading?.totalM3 ?? 0;
       const sisaSL = Math.max(0, targetSL - realisasiSL);
       const persenSelesai = targetSL > 0 ? Math.round((realisasiSL / targetSL) * 100) : 100;

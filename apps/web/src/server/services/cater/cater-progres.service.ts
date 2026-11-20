@@ -4,7 +4,7 @@
  */
 
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { db, caterBacaMeter, petugasCater, pelanggan } from '@cater/db';
+import { db, caterBacaMeter, petugasCater, pelanggan, periodePenagihan } from '@cater/db';
 
 export interface PetugasProgresItem {
   petugasId: string;
@@ -48,9 +48,25 @@ export interface MonitoringProgresResult {
   petugas: PetugasProgresItem[];
 }
 
+function getPreviousThbl(thbl: string): string {
+  const y = parseInt(thbl.slice(0, 4), 10);
+  const m = parseInt(thbl.slice(4, 6), 10);
+  if (m === 1) return `${y - 1}12`;
+  return `${y}${String(m - 1).padStart(2, '0')}`;
+}
+
 export class CaterProgresService {
-  async getMonitoringProgres(thbl: string = '202601'): Promise<MonitoringProgresResult> {
-    // 1. Ambil agregasi komprehensif riil pembacaan dari caterBacaMeter per petugas
+  async getMonitoringProgres(thbl: string = '202610'): Promise<MonitoringProgresResult> {
+    // 0. Cek status siklus penagihan & tentukan periode bulan sebelumnya sebagai baseline target
+    const [periodeInfo] = await db
+      .select({ status: periodePenagihan.status })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, thbl));
+
+    const isLocked = periodeInfo?.status === 'TERKUNCI';
+    const prevThbl = getPreviousThbl(thbl);
+
+    // 1. Ambil agregasi komprehensif riil pembacaan dari caterBacaMeter per petugas pada periode berjalan
     const readingStats = await db
       .select({
         petugasId: caterBacaMeter.petugasId,
@@ -74,34 +90,40 @@ export class CaterProgresService {
       .where(eq(caterBacaMeter.thbl, thbl))
       .groupBy(caterBacaMeter.petugasId);
 
+    const readingMap = new Map(
+      readingStats.map((r) => [r.petugasId?.toUpperCase() ?? 'UNKNOWN', r])
+    );
+
     // 2. Ambil master data petugas
     const masterPetugas = await db.select().from(petugasCater);
-    const petugasMap = new Map(masterPetugas.map((p) => [p.id, p]));
+    const petugasMap = new Map(masterPetugas.map((p) => [p.id.toUpperCase(), p]));
 
-    // 3. Hitung target riil per petugas dari jumlah pelanggan di rute binaan
-    const rutePetugasRows = await db
-      .selectDistinct({
-        ruteKode: caterBacaMeter.ruteKode,
+    // 3. TARGET CATAT: Mengambil jumlah pencatatan riil pada periode bulan sebelumnya (baseline SSOT pembanding)
+    const prevStats = await db
+      .select({
         petugasId: caterBacaMeter.petugasId,
+        total: sql<number>`count(*)::int`,
+        totalRute: sql<number>`count(distinct ${caterBacaMeter.ruteKode})::int`,
+        ruteCodes: sql<string>`string_agg(distinct ${caterBacaMeter.ruteKode}, ', ')`,
       })
       .from(caterBacaMeter)
-      .where(eq(caterBacaMeter.thbl, thbl));
+      .where(eq(caterBacaMeter.thbl, prevThbl))
+      .groupBy(caterBacaMeter.petugasId);
 
-    const pelangganPerRute = await db
-      .select({
-        ruteKode: pelanggan.ruteKode,
-        total: sql<number>`count(*)::int`,
-      })
-      .from(pelanggan)
-      .groupBy(pelanggan.ruteKode);
-
-    const pelRuteMap = new Map(pelangganPerRute.map((r) => [r.ruteKode, r.total]));
-
-    const targetMap = new Map<string, number>();
-    for (const rp of rutePetugasRows) {
-      if (!rp.petugasId || !rp.ruteKode) continue;
-      const count = pelRuteMap.get(rp.ruteKode) ?? 0;
-      targetMap.set(rp.petugasId, (targetMap.get(rp.petugasId) ?? 0) + count);
+    const prevTargetMap = new Map<
+      string,
+      { total: number; totalRute: number; rutes: string[] }
+    >();
+    for (const p of prevStats) {
+      if (p.petugasId) {
+        prevTargetMap.set(p.petugasId.toUpperCase(), {
+          total: p.total,
+          totalRute: p.totalRute,
+          rutes: p.ruteCodes
+            ? p.ruteCodes.split(', ').map((r) => r.trim()).filter(Boolean)
+            : [],
+        });
+      }
     }
 
     let globalTarget = 0;
@@ -112,56 +134,71 @@ export class CaterProgresService {
     let globalTurun = 0;
     let globalRuteCount = 0;
 
-    const list: PetugasProgresItem[] = readingStats.map((stat) => {
-      const pid = stat.petugasId ?? 'UNKNOWN';
-      const prof = petugasMap.get(pid);
-      const nama = prof?.nama ?? pid;
+    // Iterasikan seluruh petugas aktif agar seluruh petugas terpantau meskipun baru mulai mencatat
+    const list: PetugasProgresItem[] = masterPetugas.map((prof) => {
+      const pid = prof.id.toUpperCase();
+      const stat = readingMap.get(pid);
+      const prev = prevTargetMap.get(pid);
 
-      const target = Math.max(stat.terbaca, targetMap.get(pid) ?? stat.terbaca);
-      const sisa = Math.max(0, target - stat.terbaca);
-      const persentase = target > 0 ? Number(((stat.terbaca / target) * 100).toFixed(1)) : 100;
-      const anomaliPetugas = stat.totalEkstrim + stat.totalNol + stat.totalTurun;
+      const terbaca = stat?.terbaca ?? 0;
+
+      // Logika Penentuan Target Catat:
+      // - Jika periode sudah TERKUNCI (closing selesai), target = terbaca (100% selesai, historis beku).
+      // - Jika periode BERJALAN, target adalah jumlah pencatatan di periode bulan sebelumnya (pembanding progres riil).
+      // - Jika data bulan sebelumnya belum ada, fallback ke total rute binaan atau terbaca saat ini.
+      const target = isLocked
+        ? terbaca
+        : (prev?.total ?? (terbaca > 0 ? terbaca : 2500));
+
+      const sisa = Math.max(0, target - terbaca);
+      const persentase = target > 0 ? Number(((terbaca / target) * 100).toFixed(1)) : (isLocked ? 100 : 0);
+      const anomaliPetugas = (stat?.totalEkstrim ?? 0) + (stat?.totalNol ?? 0) + (stat?.totalTurun ?? 0);
 
       let statusKerja: PetugasProgresItem['statusKerja'] = 'AKTIF_LAPANGAN';
-      if (persentase >= 100) {
+      if (isLocked || persentase >= 100) {
         statusKerja = 'SELESAI';
-      } else if (stat.terbaca === 0) {
+      } else if (terbaca === 0) {
         statusKerja = 'BELUM_MULAI';
       } else {
         statusKerja = 'AKTIF_LAPANGAN';
       }
 
       globalTarget += target;
-      globalTerbaca += stat.terbaca;
-      globalM3 += stat.totalM3;
-      globalNol += stat.totalNol;
-      globalEkstrim += stat.totalEkstrim;
-      globalTurun += stat.totalTurun;
-      globalRuteCount += stat.totalRute;
+      globalTerbaca += terbaca;
+      globalM3 += stat?.totalM3 ?? 0;
+      globalNol += stat?.totalNol ?? 0;
+      globalEkstrim += stat?.totalEkstrim ?? 0;
+      globalTurun += stat?.totalTurun ?? 0;
 
-      const rutes = stat.ruteCodes
+      // Gabungkan rute unik dari bulan sebelumnya dan bulan berjalan
+      const curRutes = stat?.ruteCodes
         ? stat.ruteCodes.split(', ').map((r) => r.trim()).filter(Boolean)
         : [];
+      const prevRutes = prev?.rutes ?? [];
+      const allRutes = Array.from(new Set([...curRutes, ...prevRutes]));
+      const totalRute = allRutes.length || prev?.totalRute || stat?.totalRute || 14;
+
+      globalRuteCount += totalRute;
 
       return {
         petugasId: pid,
-        nama,
+        nama: prof.nama ?? pid,
         wilayahKode: (prof as any)?.wilayahKode ?? 'WIL-KOTA',
-        ruteList: rutes,
-        totalRute: stat.totalRute,
+        ruteList: allRutes,
+        totalRute,
         target,
-        terbaca: stat.terbaca,
+        terbaca,
         sisa,
         persentase,
-        totalM3: stat.totalM3,
+        totalM3: stat?.totalM3 ?? 0,
         anomali: anomaliPetugas,
-        totalNol: stat.totalNol,
-        totalEkstrim: stat.totalEkstrim,
-        totalTurun: stat.totalTurun,
-        mulaiCatat: stat.tglAwal,
-        selesaiCatat: stat.tglAkhir,
-        terakhirCatat: stat.tglAkhir,
-        durasiRataRataDetik: stat.durasiRataRata,
+        totalNol: stat?.totalNol ?? 0,
+        totalEkstrim: stat?.totalEkstrim ?? 0,
+        totalTurun: stat?.totalTurun ?? 0,
+        mulaiCatat: stat?.tglAwal ?? null,
+        selesaiCatat: stat?.tglAkhir ?? null,
+        terakhirCatat: stat?.tglAkhir ?? null,
+        durasiRataRataDetik: stat?.durasiRataRata ?? 45,
         statusKerja,
       };
     });

@@ -71,6 +71,28 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
     expect(parsed[0].ruteKode).toBe("KC304");
   });
 
+  test("2c. Parse official lapdatameter via parseLapDataMeterCsv extracts all fields and cleans NOLG", () => {
+    const rawLine = `"No Pel",Nama,Alamat,Periode,"St AWAL","St Akhir","St Akhir Catat",Pakai,"Pakai Lau",persentase,Trf,Kd_kel,Nm_Kel,kd_petugas,kd_wm,Wil,Rute,"Zona Wil","Kd Zonasi","Nama Zonasi",Kecamatan,Kelurahan,tgl_catat,tgl_upload,"Nama Petugas"
+"	00901000440","SYARIPUDIN AMIN","NYENGSERET B/122-145/198",202611,524,532,0,8,7,14,2A3,-,Normal,EDI,A19S-072378,S,TC101,C5,B05,"BSP06 BARAT 1","BOJONGLOA KIDUL",SITUSAEUR,2026-11-01,2026-11-04,EDI`;
+
+    const parsed = importDataService.parseLapDataMeterCsv(rawLine);
+    expect(parsed.length).toBe(1);
+    expect(parsed[0].nolg).toBe("00901000440");
+    expect(parsed[0].nama).toBe("SYARIPUDIN AMIN");
+    expect(parsed[0].thbl).toBe("202611");
+    expect(parsed[0].stml).toBe(524);
+    expect(parsed[0].stma).toBe(532);
+    expect(parsed[0].pakaiM3).toBe(8);
+    expect(parsed[0].pakaiLalu).toBe(7);
+    expect(parsed[0].trf).toBe("2A3");
+    expect(parsed[0].tmss).toBe("-");
+    expect(parsed[0].ketCatat).toBe("Normal");
+    expect(parsed[0].petugasId).toBe("EDI");
+    expect(parsed[0].ruteKode).toBe("TC101");
+    expect(parsed[0].zonaWil).toBe("C5");
+    expect(parsed[0].kdZonasi).toBe("B05");
+  });
+
   test("3. Parse PBPK.csv accurately extracts all 26 official PDAM PB and PK rows", () => {
     expect(fs.existsSync(pbpkCsvPath)).toBe(true);
     const csvContent = fs.readFileSync(pbpkCsvPath, "utf-8");
@@ -112,6 +134,24 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
     expect(json.rows[0].nolg).toBe("101900821");
   });
 
+  test("4b. GET /api/import/sample/lapdatameter returns parsed rows from lapdatametertes.csv", async () => {
+    const res = await app.handle(
+      new Request("http://localhost/api/import/sample/lapdatameter")
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.total).toBeGreaterThan(0);
+    expect(json.rows.length).toBeGreaterThan(0);
+    expect(json.rows[0].nolg).toBe("00901000440");
+    expect(json.rows[0].thbl).toBe("202611");
+    expect(json.rows[0].stml).toBe(524);
+    expect(json.rows[0].stma).toBe(532);
+    expect(json.rows[0].pakaiM3).toBe(8);
+    expect(json.rows[0].petugasId).toBe("EDI");
+  });
+
   test("5. GET /api/import/spec returns specification contract for mobile developers", async () => {
     const res = await app.handle(
       new Request("http://localhost/api/import/spec")
@@ -126,18 +166,19 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
     expect(json.specification.photoNaming.examples).toContain("202601_rumah_00703600750.jpg");
   });
 
-  test("6. Sidebar navGroups includes 'import-data' section with 4 functional modules", () => {
+  test("6. Sidebar navGroups includes 'import-data' section with 5 functional modules", () => {
     const importGroup = navGroups.find((g) => g.id === "import-data");
     expect(importGroup).toBeDefined();
     expect(importGroup?.title).toBe("Import Data");
 
     const items = importGroup?.items || [];
-    expect(items.length).toBe(4);
+    expect(items.length).toBe(5);
 
     const hrefs = items.map((i) => ("href" in i ? i.href : ""));
     expect(hrefs).toEqual([
       "/import/foto-backup",
       "/import/data",
+      "/import/lapdatameter",
       "/import/r-nomor",
       "/import/pbpk",
     ]);
@@ -146,6 +187,7 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
     expect(titles).toEqual([
       "Foto Backup",
       "Import Data",
+      "Lap Data Meter",
       "R Nomor",
       "Import PBPK",
     ]);
@@ -309,5 +351,61 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
       expect(typeof baca202601.fotoSegelUrl).toBe("string");
       expect(baca202601.fotoSegelUrl).toContain("segel");
     }
+  });
+
+  test("13. importLapDataMeter successfully maps and saves reading data into cater_baca_meter table", async () => {
+    const sampleItems = [
+      {
+        thbl: "202611",
+        nolg: "00901000440",
+        nama: "SYARIPUDIN AMIN",
+        alamat: "NYENGSERET B/122-145/198",
+        stml: 524,
+        stma: 532,
+        pakaiM3: 8,
+        pakaiLalu: 7,
+        trf: "2A3",
+        tmss: "-",
+        ketCatat: "Normal",
+        petugasId: "EDI",
+        ruteKode: "TC101",
+        tglCatat: "2026-11-01",
+      },
+    ];
+
+    const result = await importDataService.importLapDataMeter(sampleItems);
+    expect(result.sukses).toBe(1);
+    expect(result.gagal).toBe(0);
+
+    // Verify row in database cater_baca_meter
+    const { db, caterBacaMeter } = await import("@cater/db");
+    const { eq, and } = await import("drizzle-orm");
+    const [row] = await db
+      .select()
+      .from(caterBacaMeter)
+      .where(
+        and(
+          eq(caterBacaMeter.thbl, "202611"),
+          eq(caterBacaMeter.nolg, "00901000440")
+        )
+      );
+
+    expect(row).toBeDefined();
+    expect(row.thbl).toBe("202611");
+    expect(row.nolg).toBe("00901000440");
+    expect(parseFloat(row.stml)).toBe(524);
+    expect(parseFloat(row.stma)).toBe(532);
+    expect(parseFloat(row.pakaiM3)).toBe(8);
+    expect(row.sumberCatat).toBe("LAPDATAMETER");
+
+    // Clean up test record so database stays clean
+    await db
+      .delete(caterBacaMeter)
+      .where(
+        and(
+          eq(caterBacaMeter.thbl, "202611"),
+          eq(caterBacaMeter.nolg, "00901000440")
+        )
+      );
   });
 });

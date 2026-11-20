@@ -1,4 +1,5 @@
 import { pgTable, text, varchar, timestamp, boolean, index } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 import { pelanggan } from './pelanggan';
 
 export const user = pgTable(
@@ -9,6 +10,10 @@ export const user = pgTable(
     email: text('email').notNull().unique(),
     emailVerified: boolean('email_verified').notNull().default(false),
     image: text('image'),
+    role: text('role').notNull().default('petugas'),
+    banned: boolean('banned').default(false),
+    banReason: text('ban_reason'),
+    banExpires: timestamp('ban_expires'),
     nolg: varchar('nolg', { length: 20 })
       .unique()
       .references(() => pelanggan.nolg, { onDelete: 'set null' }),
@@ -57,6 +62,25 @@ export const verification = pgTable('verification', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));
 
 export type User = typeof user.$inferSelect;
 export type Session = typeof session.$inferSelect;

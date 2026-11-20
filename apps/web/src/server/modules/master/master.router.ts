@@ -147,7 +147,7 @@ export const masterRouter = new Elysia({ prefix: '/master' })
         const result = await masterExtendedService.simpanUrutanRute(
           body.ruteKode,
           body.items,
-          body.periode ?? '202601'
+          body.periode ?? '202611'
         );
         return { success: true, data: result };
       } catch (err: any) {

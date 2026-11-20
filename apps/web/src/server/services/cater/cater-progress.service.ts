@@ -13,6 +13,7 @@ import {
   kelurahan,
   kecamatan,
   daftarCatat,
+  periodePenagihan,
 } from '@cater/db';
 
 export interface WilayahProgresItem {
@@ -119,7 +120,15 @@ export class CaterProgressService {
   /**
    * Monitoring Progress Pembacaan Meter Per Wilayah / Kelurahan
    */
-  async getProgressPerWilayah(thbl: string = '202601'): Promise<WilayahProgresResult> {
+  async getProgressPerWilayah(thbl: string = '202610'): Promise<WilayahProgresResult> {
+    // 0. Cek status siklus penagihan
+    const [periodeInfo] = await db
+      .select({ status: periodePenagihan.status })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, thbl));
+
+    const isLocked = periodeInfo?.status === 'TERKUNCI';
+
     // 1. Ambil target per kelurahan dari tabel master pelanggan
     const targetRows = await db
       .select({
@@ -188,9 +197,9 @@ export class CaterProgressService {
     for (const [code, info] of targetMap.entries()) {
       const agg = aggMap.get(code);
       const terbaca = agg?.terbaca ?? 0;
-      const target = Math.max(info.target, terbaca); // Safety guard
+      const target = isLocked ? terbaca : Math.max(info.target, terbaca); // Safety guard
       const sisa = Math.max(0, target - terbaca);
-      const persenSelesai = target > 0 ? Number(((terbaca / target) * 100).toFixed(1)) : 0;
+      const persenSelesai = target > 0 ? Number(((terbaca / target) * 100).toFixed(1)) : 100;
       const totalM3 = Math.round(agg?.totalM3 ?? 0);
       const totalAnomali = agg?.anomali ?? 0;
 
@@ -241,7 +250,7 @@ export class CaterProgressService {
    * Logika sinkron 100% dengan aturan Tabel Verifikasi dan dinamis berbasis riwayat Pakai vs Lalu
    */
   async getAnomaliKubikasi(
-    thbl: string = '202601',
+    thbl: string = '202610',
     jenis?: 'all' | 'ekstrim' | 'nol' | 'turun' | 'kendala',
     limit: number = 100,
     search?: string
@@ -398,7 +407,7 @@ export class CaterProgressService {
    * Monitoring & Galeri Cek Foto Petugas Lapangan
    */
   async getCekFotoList(
-    thbl: string = '202601',
+    thbl: string = '202610',
     filterKondisi?: string,
     ruteKode?: string,
     limit: number = 30,

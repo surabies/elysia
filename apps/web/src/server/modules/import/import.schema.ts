@@ -75,3 +75,37 @@ export const importPbpkBodySchema = t.Object({
     )
   ),
 });
+
+export const lapDataMeterItemSchema = t.Object({
+  thbl: t.String(),
+  nolg: t.String({ minLength: 1 }),
+  nama: t.Optional(t.String()),
+  alamat: t.Optional(t.String()),
+  stml: t.Number(),
+  stma: t.Number(),
+  stmaCatat: t.Optional(t.Number()),
+  pakaiM3: t.Optional(t.Number()),
+  pakaiLalu: t.Optional(t.Number()),
+  persentase: t.Optional(t.Number()),
+  trf: t.Optional(t.String()),
+  tmss: t.Optional(t.String()),
+  ketCatat: t.Optional(t.String()),
+  petugasId: t.Optional(t.String()),
+  namaPetugas: t.Optional(t.String()),
+  kdWm: t.Optional(t.String()),
+  wil: t.Optional(t.String()),
+  ruteKode: t.Optional(t.String()),
+  zonaWil: t.Optional(t.String()),
+  kdZonasi: t.Optional(t.String()),
+  namaZonasi: t.Optional(t.String()),
+  kecamatan: t.Optional(t.String()),
+  kelurahan: t.Optional(t.String()),
+  tglCatat: t.Optional(t.String()),
+  tglUpload: t.Optional(t.String()),
+  catatan: t.Optional(t.String()),
+});
+
+export const importLapDataMeterBodySchema = t.Object({
+  csvText: t.Optional(t.String()),
+  items: t.Optional(t.Array(lapDataMeterItemSchema)),
+});

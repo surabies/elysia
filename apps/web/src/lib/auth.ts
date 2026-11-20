@@ -62,7 +62,11 @@ export const auth = betterAuth({
       session: schema.session,
       account: schema.account,
       verification: schema.verification,
+      userRelations: schema.userRelations,
+      sessionRelations: schema.sessionRelations,
+      accountRelations: schema.accountRelations,
     },
+    usePlural: false,
   }),
   user: {
     additionalFields: {

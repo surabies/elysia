@@ -5,6 +5,10 @@ import { seedMasterKondisi } from './seed-kondisi';
 import { seedMasterTarif } from './seed-tarif';
 import { importProgresCater } from './etl/import-progres-cater';
 import { syncAreaLayanan21Kelurahan, seedDataVerifikasi } from './seed-data-verifikasi';
+import { seedPeriode } from './seeds/modules/06-periode';
+import { seedBroadcast } from './seeds/modules/07-broadcast';
+import { seedPengaturan } from './seeds/modules/08-pengaturan';
+import { seedKpi } from './seeds/modules/09-kpi';
 import { count } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import path from 'path';
@@ -79,6 +83,22 @@ async function seed() {
     // 6. Update Koordinat Pelanggan dari Data Verifikasi Survei Lapangan mWater
     console.log('6. Seeding Data Verifikasi Spasial mWater...');
     await seedDataVerifikasi();
+
+    // 7. Seed Periode Penagihan (202611 Berjalan & 202610 Terkunci)
+    console.log('7. Seeding Periode Penagihan...');
+    await seedPeriode();
+
+    // 8. Seed Broadcast Banners & Informasi Publik
+    console.log('8. Seeding Broadcast Banners...');
+    await seedBroadcast();
+
+    // 9. Seed Pengaturan Toleransi & Running Text
+    console.log('9. Seeding Pengaturan Sistem...');
+    await seedPengaturan();
+
+    // 10. Seed Balanced Scorecard KPI
+    console.log('10. Seeding KPI Balanced Scorecard...');
+    await seedKpi();
 
     console.log('=== SEEDING COMPLETED SUCCESSFULLY! ===');
     process.exit(0);

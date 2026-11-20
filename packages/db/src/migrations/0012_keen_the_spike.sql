@@ -1,1 +1,1 @@
-ALTER TABLE "cater_baca_meter" ADD COLUMN "foto_segel_url" text;
+ALTER TABLE "cater_baca_meter" ADD COLUMN IF NOT EXISTS "foto_segel_url" text;

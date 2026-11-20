@@ -8,6 +8,7 @@ import { importDataService } from '../../services/import/import-data.service';
 import {
   importFotoBackupBodySchema,
   importDataBodySchema,
+  importLapDataMeterBodySchema,
   importRNomorBodySchema,
   importPbpkBodySchema,
 } from './import.schema';
@@ -20,140 +21,174 @@ const IMPORT_ROLES: AppRole[] = [
 
 export const importRouter = new Elysia({ prefix: '/import' })
   .use(authPlugin)
-  .guard({
-    requireRole: IMPORT_ROLES,
-  })
+  
+  // Rute mutasi yang membutuhkan autentikasi & hak akses IMPORT_ROLES
+  .group('', (app) =>
+    app
+      .guard({
+        requireRole: IMPORT_ROLES,
+      })
 
-  // 1. Import Paket Foto Backup (Format: {THBL}_{JENIS}_{NOLG}.jpg)
-  // Contoh: 202601_stand_00703600750.jpg, 202601_segel_00703600750.jpg, 202601_rumah_00703600750.jpg
-  .post(
-    '/foto-backup',
-    async ({ body, set }) => {
-      try {
-        if (body.files && body.files.length > 0) {
-          const result = await importDataService.importFotoBackupFiles(body.files);
-          return { success: true, ...result, data: result };
-        }
-
-        if (body.items && body.items.length > 0) {
-          // Konversi format structured
-          const files = body.items.flatMap((item) => {
-            const list: { fileName: string; fileData: string }[] = [];
-            if (item.fotoMeterUrl) {
-              list.push({
-                fileName: `${item.thbl}_stand_${item.nolg}.jpg`,
-                fileData: item.fotoMeterUrl,
-              });
+      // 1. Import Paket Foto Backup (Format: {THBL}_{JENIS}_{NOLG}.jpg)
+      .post(
+        '/foto-backup',
+        async ({ body, set }) => {
+          try {
+            if (body.files && body.files.length > 0) {
+              const result = await importDataService.importFotoBackupFiles(body.files);
+              return { success: true, ...result, data: result };
             }
-            if (item.fotoSegelUrl) {
-              list.push({
-                fileName: `${item.thbl}_segel_${item.nolg}.jpg`,
-                fileData: item.fotoSegelUrl,
+
+            if (body.items && body.items.length > 0) {
+              const files = body.items.flatMap((item) => {
+                const list: { fileName: string; fileData: string }[] = [];
+                if (item.fotoMeterUrl) {
+                  list.push({
+                    fileName: `${item.thbl}_stand_${item.nolg}.jpg`,
+                    fileData: item.fotoMeterUrl,
+                  });
+                }
+                if (item.fotoSegelUrl) {
+                  list.push({
+                    fileName: `${item.thbl}_segel_${item.nolg}.jpg`,
+                    fileData: item.fotoSegelUrl,
+                  });
+                }
+                if (item.fotoRumahUrl) {
+                  list.push({
+                    fileName: `${item.thbl}_rumah_${item.nolg}.jpg`,
+                    fileData: item.fotoRumahUrl,
+                  });
+                }
+                return list;
               });
+
+              const result = await importDataService.importFotoBackupFiles(files);
+              return { success: true, ...result, data: result };
             }
-            if (item.fotoRumahUrl) {
-              list.push({
-                fileName: `${item.thbl}_rumah_${item.nolg}.jpg`,
-                fileData: item.fotoRumahUrl,
-              });
+
+            set.status = 400;
+            return { success: false, error: 'Tidak ada berkas foto yang dikirim.' };
+          } catch (err: any) {
+            set.status = 500;
+            return { success: false, error: err.message };
+          }
+        },
+        {
+          body: importFotoBackupBodySchema,
+          requireAuth: true,
+        }
+      )
+
+      // 2. Import Data Pencatatan (Stand meter offline / recovery via CSV / JSON)
+      .post(
+        '/data',
+        async ({ body, set }) => {
+          try {
+            let items = body.items as any;
+            if (body.csvText) {
+              items = importDataService.parsePencatatanCsv(body.csvText);
             }
-            return list;
-          });
 
-          const result = await importDataService.importFotoBackupFiles(files);
-          return { success: true, ...result, data: result };
+            if (!items || items.length === 0) {
+              set.status = 400;
+              return { success: false, error: 'Tidak ada baris data pencatatan yang valid untuk diproses.' };
+            }
+
+            const result = await importDataService.importDataPencatatan(items);
+            return { success: true, ...result, data: result };
+          } catch (err: any) {
+            set.status = 500;
+            return { success: false, error: err.message };
+          }
+        },
+        {
+          body: importDataBodySchema,
+          requireAuth: true,
         }
+      )
 
-        set.status = 400;
-        return { success: false, error: 'Tidak ada berkas foto yang dikirim.' };
-      } catch (err: any) {
-        set.status = 500;
-        return { success: false, error: err.message };
-      }
-    },
-    {
-      body: importFotoBackupBodySchema,
-      requireAuth: true,
-    }
-  )
+      // 2b. Import Laporan Data Meter PDAM (lapdatameter) ke cater_baca_meter
+      .post(
+        '/lapdatameter',
+        async ({ body, set }) => {
+          try {
+            let items = body.items as any;
+            if (body.csvText) {
+              items = importDataService.parseLapDataMeterCsv(body.csvText);
+            }
 
-  // 2. Import Data Pencatatan (Stand meter offline / recovery via CSV / JSON)
-  .post(
-    '/data',
-    async ({ body, set }) => {
-      try {
-        let items = body.items as any;
-        if (body.csvText) {
-          items = importDataService.parsePencatatanCsv(body.csvText);
+            if (!items || items.length === 0) {
+              set.status = 400;
+              return {
+                success: false,
+                error: 'Tidak ada baris data LapDataMeter yang valid untuk diproses.',
+              };
+            }
+
+            const result = await importDataService.importLapDataMeter(items);
+            return { success: true, ...result, data: result };
+          } catch (err: any) {
+            set.status = 500;
+            return { success: false, error: err.message };
+          }
+        },
+        {
+          body: importLapDataMeterBodySchema,
+          requireAuth: true,
         }
+      )
 
-        if (!items || items.length === 0) {
-          set.status = 400;
-          return { success: false, error: 'Tidak ada baris data pencatatan yang valid untuk diproses.' };
+      // 3. Import R Nomor (Pemutusan Langganan)
+      .post(
+        '/r-nomor',
+        async ({ body, set }) => {
+          try {
+            if (!body.items || body.items.length === 0) {
+              set.status = 400;
+              return { success: false, error: 'Tidak ada data pemutusan R-Nomor yang dikirim.' };
+            }
+
+            const result = await importDataService.importRNomor(body.items);
+            return { success: true, ...result, data: result };
+          } catch (err: any) {
+            set.status = 500;
+            return { success: false, error: err.message };
+          }
+        },
+        {
+          body: importRNomorBodySchema,
+          requireAuth: true,
         }
+      )
 
-        const result = await importDataService.importDataPencatatan(items);
-        return { success: true, ...result, data: result };
-      } catch (err: any) {
-        set.status = 500;
-        return { success: false, error: err.message };
-      }
-    },
-    {
-      body: importDataBodySchema,
-      requireAuth: true,
-    }
-  )
+      // 4. Import PBPK (Pasang Baru & Pemasangan Kembali CSV)
+      .post(
+        '/pbpk',
+        async ({ body, set }) => {
+          try {
+            let rows = body.rows;
+            if (body.csvText) {
+              rows = importDataService.parsePbpkCsv(body.csvText);
+            }
 
-  // 3. Import R Nomor (Pemutusan Langganan)
-  .post(
-    '/r-nomor',
-    async ({ body, set }) => {
-      try {
-        if (!body.items || body.items.length === 0) {
-          set.status = 400;
-          return { success: false, error: 'Tidak ada data pemutusan R-Nomor yang dikirim.' };
+            if (!rows || rows.length === 0) {
+              set.status = 400;
+              return { success: false, error: 'Tidak ada baris data PBPK yang valid untuk diproses.' };
+            }
+
+            const result = await importDataService.importPbpk(rows as any, body.periode || '202611');
+            return { success: true, ...result, data: result };
+          } catch (err: any) {
+            set.status = 500;
+            return { success: false, error: err.message };
+          }
+        },
+        {
+          body: importPbpkBodySchema,
+          requireAuth: true,
         }
-
-        const result = await importDataService.importRNomor(body.items);
-        return { success: true, ...result, data: result };
-      } catch (err: any) {
-        set.status = 500;
-        return { success: false, error: err.message };
-      }
-    },
-    {
-      body: importRNomorBodySchema,
-      requireAuth: true,
-    }
-  )
-
-  // 4. Import PBPK (Pasang Baru & Pemasangan Kembali CSV)
-  .post(
-    '/pbpk',
-    async ({ body, set }) => {
-      try {
-        let rows = body.rows;
-        if (body.csvText) {
-          rows = importDataService.parsePbpkCsv(body.csvText);
-        }
-
-        if (!rows || rows.length === 0) {
-          set.status = 400;
-          return { success: false, error: 'Tidak ada baris data PBPK yang valid untuk diproses.' };
-        }
-
-        const result = await importDataService.importPbpk(rows as any, body.periode || '202601');
-        return { success: true, ...result, data: result };
-      } catch (err: any) {
-        set.status = 500;
-        return { success: false, error: err.message };
-      }
-    },
-    {
-      body: importPbpkBodySchema,
-      requireAuth: true,
-    }
+      )
   )
 
   // 5. Sample Data PBPK dari file packages/db/data/raw/PBPK.csv
@@ -192,6 +227,50 @@ export const importRouter = new Elysia({ prefix: '/import' })
         total: rows.length,
         rows: rows.slice(0, 50),
         csvText: csvContent,
+      };
+    } catch (err: any) {
+      set.status = 500;
+      return { success: false, error: err.message };
+    }
+  })
+
+  // 5b. Sample Data LapDataMeter dari file packages/db/data/raw/lapdatametertes.csv
+  .get('/sample/lapdatameter', async ({ set }) => {
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), 'packages/db/data/raw/lapdatametertes.csv'),
+        path.resolve(process.cwd(), 'packages/db/data/raw/lapdatameter.csv'),
+        path.resolve(process.cwd(), '../../packages/db/data/raw/lapdatametertes.csv'),
+        path.resolve(process.cwd(), '../../packages/db/data/raw/lapdatameter.csv'),
+        path.resolve(__dirname, '../../../../../../packages/db/data/raw/lapdatametertes.csv'),
+        path.resolve(__dirname, '../../../../../../packages/db/data/raw/lapdatameter.csv'),
+      ];
+
+      let csvContent = '';
+      for (const p of candidates) {
+        if (fs.existsSync(/* turbopackIgnore: true */ p)) {
+          csvContent = fs.readFileSync(/* turbopackIgnore: true */ p, 'utf-8');
+          break;
+        }
+      }
+
+      if (!csvContent) {
+        return {
+          success: true,
+          total: 0,
+          rows: [],
+          csvText: '',
+          message: 'Berkas sample lapdatametertes.csv tidak ditemukan di direktori default.',
+        };
+      }
+
+      const rows = importDataService.parseLapDataMeterCsv(csvContent);
+      // Ambil 50 baris pertama untuk preview cepat
+      return {
+        success: true,
+        total: rows.length,
+        rows: rows.slice(0, 50),
+        csvText: csvContent.split(/\r?\n/).slice(0, 51).join('\n'),
       };
     } catch (err: any) {
       set.status = 500;

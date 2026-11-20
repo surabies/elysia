@@ -41,7 +41,7 @@ export interface LaporanKoreksiResult {
 }
 
 export class LaporanKoreksiService {
-  async getLaporanKoreksi(thbl: string = '202601'): Promise<LaporanKoreksiResult> {
+  async getLaporanKoreksi(thbl: string = '202610'): Promise<LaporanKoreksiResult> {
     const rows = await db
       .select({
         id: caterBacaMeter.id,
