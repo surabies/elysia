@@ -4,7 +4,7 @@ import path from 'path';
 import { db, pelanggan, type AppRole } from '@cater/db';
 import { inArray } from 'drizzle-orm';
 import { authPlugin } from '../../plugins/auth';
-import { importDataService } from '../../services/import/import-data.service';
+import { importDataService, type FotoUploadFileItem } from '../../services/import/import-data.service';
 import {
   importFotoBackupBodySchema,
   importDataBodySchema,
@@ -37,7 +37,7 @@ export const importRouter = new Elysia({ prefix: '/import' })
         '/foto-backup',
         async ({ body, set }) => {
           try {
-            const files = body.files ?? [];
+            const files = (body.files ?? []) as FotoUploadFileItem[];
 
             if (!Array.isArray(files) || files.length === 0) {
               set.status = 400;
@@ -71,7 +71,7 @@ export const importRouter = new Elysia({ prefix: '/import' })
               }
             }
 
-            const result = await importDataService.importFotoBackupFiles(body.files);
+            const result = await importDataService.importFotoBackupFiles(files);
             return { success: true, ...result, data: result };
           } catch (err: any) {
             set.status = 500;

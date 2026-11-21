@@ -365,7 +365,7 @@ export class ImportDataService {
           url: photoUrl,
           status: 'SUCCESS',
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         results.gagal++;
         results.detail.push({
           fileName: file.fileName,
@@ -373,7 +373,7 @@ export class ImportDataService {
           thbl: parsed.thbl,
           jenis: parsed.jenis,
           status: 'FAILED',
-          error: err.message,
+          error: err instanceof Error ? err.message : String(err),
         });
       }
     }
@@ -433,14 +433,14 @@ export class ImportDataService {
             }
 
             results.sukses++;
-          } catch (err) {
+          } catch (err: unknown) {
             results.gagal++;
             // Tandai semua berkas dalam grup ini sebagai FAILED karena DB gagal
             for (const srcFile of entry.sourceFiles) {
               const existingDetail = results.detail.find((d) => d.fileName === srcFile);
               if (existingDetail && existingDetail.status === 'SUCCESS') {
                 existingDetail.status = 'FAILED';
-                existingDetail.error = err.message;
+                existingDetail.error = err instanceof Error ? err.message : String(err);
                 results.sukses--;
               }
             }
@@ -448,12 +448,12 @@ export class ImportDataService {
           }
         }
       });
-    } catch (txErr: any) {
+    } catch (txErr: unknown) {
       // Transaksi gagal total
       for (const detail of results.detail) {
         if (detail.status === 'SUCCESS') {
           detail.status = 'FAILED';
-          detail.error = txErr.message;
+          detail.error = txErr instanceof Error ? txErr.message : String(txErr);
           results.sukses--;
           results.gagal++;
         }
@@ -898,7 +898,7 @@ export class ImportDataService {
             results.detail.push({ nolg: item.nolg, thbl: item.thbl, status: 'SUCCESS' });
           }
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Jika transaksi gagal sepenuhnya, tandai semua baris unik dalam batch ini sebagai gagal
         for (const item of uniqueBatch) {
           const alreadyRecorded = results.detail.some(
@@ -910,7 +910,7 @@ export class ImportDataService {
               nolg: item.nolg,
               thbl: item.thbl,
               status: 'FAILED',
-              error: err.message || 'Terjadi kesalahan saat memproses transaksi impor',
+              error: err instanceof Error ? err.message : String(err),
             });
           }
         }
