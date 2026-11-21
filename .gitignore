@@ -55,3 +55,4 @@ packages/db/backups/
 packages/db/data/exports/
 packages/db/data/raw/*.csv
 packages/db/data/jan/*.csv
+.aider*

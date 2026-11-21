@@ -64,7 +64,7 @@ export function resolveKondisiCatatWithPriority(
       return {
         kodeTmss: fromKode.kodeTmss,
         ketCatat: fromKode.nama,
-        modeHitung: fromKode.modeHitung as ModeHitungKondisi,
+        modeHitting: fromKode.modeHitung as ModeHitungKondisi,
         isMismatch: false,
         auditNote: null,
       };
@@ -268,7 +268,7 @@ export async function carryForwardPeriode(
   }
 
   // 3. Muat data master pelanggan, rute, kondisi catat, DPM periodeLalu, dan bacaan meter periodeLalu
-  const [masterRows, kondisiRows, dpmLaluRows, caterLaluRows, priorCaterCountRes, infolangPhysRows] = await Promise.all([
+  const [masterRows, kondisiRows, dpmLaluRows, caterLaluRows, priorCaterCountRes, historicalUsageRows] = await Promise.all([
     database
       .select({
         nolg: pelanggan.nolg,
@@ -331,7 +331,8 @@ export async function carryForwardPeriode(
   ]);
 
   const hasPriorCaterPeriod = (priorCaterCountRes[0]?.count ?? 0) > 0;
-  const verifiedInfolangNolgs = new Set(infolangPhysRows.map((r) => r.nolg));
+  // Verifikasi menggunakan riwayat pemakaian historis generik (bukan impor dari infolang).
+  const verifiedHistoricalNolgs = new Set(historicalUsageRows.map((r) => r.nolg));
 
   const dpmLaluMap = new Map(dpmLaluRows.map((d) => [d.nolg, d]));
   const caterLaluMap = new Map(caterLaluRows.map((c) => [c.nolg, c]));
@@ -446,11 +447,11 @@ export async function carryForwardPeriode(
     // Penentuan akumulasi_perlu_verifikasi:
     // Jika akumulasiTaksasiBaru > 0, tandai perlu verifikasi apabila:
     // - periodeLalu sudah membawa flag akumulasiPerluVerifikasi = true, ATAU
-    // - periodeLalu adalah periode awal (tidak ada periode cater sebelumnya) dan belum ada pembacaan fisik terverifikasi di infolang
+    // - periodeLalu adalah periode awal (tidak ada periode cater sebelumnya) dan belum ada pembacaan fisik terverifikasi di riwayat historis generik
     if (Number(akumulasiTaksasiBaru) > 0) {
       if (prevPerluVerifikasi) {
         akumulasiPerluVerifikasiBaru = true;
-      } else if (!hasPriorCaterPeriod && !verifiedInfolangNolgs.has(m.nolg)) {
+      } else if (!hasPriorCaterPeriod && !verifiedHistoricalNolgs.has(m.nolg)) {
         akumulasiPerluVerifikasiBaru = true;
       }
     }
