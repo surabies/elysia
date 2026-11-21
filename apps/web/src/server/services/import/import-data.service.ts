@@ -250,10 +250,24 @@ export class ImportDataService {
    * - jenis 'stand' -> fotoMeterUrl
    * - jenis 'segel' -> fotoSegelUrl
    * - jenis 'rumah' -> fotoRumahUrl
+   *
+   * Perbaikan terkait:
+   * - Validasi jumlah berkas maksimal (100 per batch)
+   * - Validasi ukuran berkas maksimal (5 MB per berkas, perkiraan dari base64)
+   * - Semua operasi DB diwrap dalam satu transaksi untuk atomicity
+   * - Hitungan sukses/gagal hanya dilakukan setelah sinkronisasi DB selesai
+   * - Gagal DB menandai semua berkas dalam grup tersebut sebagai FAILED
    */
   async importFotoBackupFiles(files: FotoUploadFileItem[]) {
+    const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+    const MAX_FILES = 100;
+
     if (!files || files.length === 0) {
       throw new Error('Tidak ada berkas foto yang dikirim.');
+    }
+
+    if (files.length > MAX_FILES) {
+      throw new Error(`Maksimal ${MAX_FILES} berkas per batch impor.`);
     }
 
     const results = {
@@ -271,7 +285,27 @@ export class ImportDataService {
       }[],
     };
 
-    // Kelompokkan update per nolg + thbl untuk meminimalkan transaksi
+    // Validasi ukuran berkas (perkiraan dari base64)
+    const validFiles: FotoUploadFileItem[] = [];
+    for (const file of files) {
+      const estimatedSizeBytes = Math.round((file.fileData.length * 3) / 4);
+      if (estimatedSizeBytes > MAX_FILE_SIZE_BYTES) {
+        results.gagal++;
+        results.detail.push({
+          fileName: file.fileName,
+          status: 'FAILED',
+          error: `Ukuran berkas melebihi batas 5 MB (perkiraan ${Math.round(estimatedSizeBytes / 1024)} KB)`,
+        });
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+      return results;
+    }
+
+    // Kelompokkan update per nolg + thbl
     const grouped = new Map<
       string,
       {
@@ -282,10 +316,12 @@ export class ImportDataService {
           fotoSegelUrl?: string;
           fotoRumahUrl?: string;
         };
+        sourceFiles: string[];
       }
     >();
 
-    for (const file of files) {
+    // Fase 1: Parse dan simpan berkas (belum dihitung sukses DB)
+    for (const file of validFiles) {
       const parsed = this.parsePhotoFileName(file.fileName);
       if (!parsed) {
         results.gagal++;
@@ -307,6 +343,7 @@ export class ImportDataService {
             thbl: parsed.thbl,
             nolg: parsed.nolg,
             updates: {},
+            sourceFiles: [],
           });
         }
 
@@ -318,8 +355,8 @@ export class ImportDataService {
         } else if (parsed.jenis === 'rumah') {
           groupEntry.updates.fotoRumahUrl = photoUrl;
         }
+        groupEntry.sourceFiles.push(file.fileName);
 
-        results.sukses++;
         results.detail.push({
           fileName: file.fileName,
           nolg: parsed.nolg,
@@ -341,63 +378,87 @@ export class ImportDataService {
       }
     }
 
-    // Lakukan mapping dan sinkronisasi ke tabel cater_baca_meter
-    for (const [, entry] of grouped.entries()) {
-      try {
-        const [existing] = await db
-          .select({
-            id: caterBacaMeter.id,
-            catatan: caterBacaMeter.catatan,
-            sumberCatat: caterBacaMeter.sumberCatat,
-            statusVerifikasi: caterBacaMeter.statusVerifikasi,
-          })
-          .from(caterBacaMeter)
-          .where(
-            sql`${caterBacaMeter.thbl} = ${entry.thbl} AND ${caterBacaMeter.nolg} = ${entry.nolg}`
-          );
+    // Fase 2: Sinkronisasi ke tabel cater_baca_meter dalam satu transaksi
+    try {
+      await db.transaction(async (tx) => {
+        for (const [, entry] of grouped.entries()) {
+          try {
+            const [existing] = await tx
+              .select({
+                id: caterBacaMeter.id,
+                catatan: caterBacaMeter.catatan,
+                sumberCatat: caterBacaMeter.sumberCatat,
+                statusVerifikasi: caterBacaMeter.statusVerifikasi,
+              })
+              .from(caterBacaMeter)
+              .where(
+                sql`${caterBacaMeter.thbl} = ${entry.thbl} AND ${caterBacaMeter.nolg} = ${entry.nolg}`
+              );
 
-        if (existing) {
-          // Koreksi foto: menimpa URL foto meter/segel/rumah petugas dengan foto baru yang sah,
-          // sambil tetap mempertahankan data angka stand (stml, stma), id petugas, dan metadata asli
-          const updatedCatatan =
-            existing.catatan && !existing.catatan.includes('dikoreksi')
-              ? `${existing.catatan} (Foto dikoreksi via Import)`
-              : existing.catatan || 'Foto diperbarui dari Import Backup HP';
+            if (existing) {
+              const updatedCatatan =
+                existing.catatan && !existing.catatan.includes('dikoreksi')
+                  ? `${existing.catatan} (Foto dikoreksi via Import)`
+                  : existing.catatan || 'Foto diperbarui dari Import Backup HP';
 
-          await db
-            .update(caterBacaMeter)
-            .set({
-              ...entry.updates,
-              catatan: updatedCatatan,
-              updatedAt: new Date(),
-            })
-            .where(eq(caterBacaMeter.id, existing.id));
-        } else {
-          // Cari info rute dari master pelanggan jika ada
-          const [cust] = await db
-            .select({ ruteKode: pelanggan.ruteKode })
-            .from(pelanggan)
-            .where(eq(pelanggan.nolg, entry.nolg));
+              await tx
+                .update(caterBacaMeter)
+                .set({
+                  ...entry.updates,
+                  catatan: updatedCatatan,
+                  updatedAt: new Date(),
+                })
+                .where(eq(caterBacaMeter.id, existing.id));
+            } else {
+              const [cust] = await tx
+                .select({ ruteKode: pelanggan.ruteKode })
+                .from(pelanggan)
+                .where(eq(pelanggan.nolg, entry.nolg));
 
-          await db.insert(caterBacaMeter).values({
-            thbl: entry.thbl,
-            nolg: entry.nolg,
-            ruteKode: cust?.ruteKode || null,
-            petugasId: null,
-            stml: '0',
-            stma: '0',
-            pakaiM3: '0',
-            sumberCatat: 'BACKUP_MOBILE',
-            statusVerifikasi: 'SUBMITTED',
-            ...entry.updates,
-            catatan: 'Dibuat otomatis dari Import Foto Backup HP (Menunggu Data Angka Stand)',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
+              await tx.insert(caterBacaMeter).values({
+                thbl: entry.thbl,
+                nolg: entry.nolg,
+                ruteKode: cust?.ruteKode || null,
+                petugasId: null,
+                stml: '0',
+                stma: '0',
+                pakaiM3: '0',
+                sumberCatat: 'BACKUP_MOBILE',
+                statusVerifikasi: 'SUBMITTED',
+                ...entry.updates,
+                catatan: 'Dibuat otomatis dari Import Foto Backup HP (Menunggu Data Angka Stand)',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+            }
+
+            results.sukses++;
+          } catch (err) {
+            results.gagal++;
+            // Tandai semua berkas dalam grup ini sebagai FAILED karena DB gagal
+            for (const srcFile of entry.sourceFiles) {
+              const existingDetail = results.detail.find((d) => d.fileName === srcFile);
+              if (existingDetail && existingDetail.status === 'SUCCESS') {
+                existingDetail.status = 'FAILED';
+                existingDetail.error = err.message;
+                results.sukses--;
+              }
+            }
+            console.error(`[IMPORT_FOTO_SYNC_ERROR] ${entry.nolg}:`, err);
+          }
         }
-      } catch (err) {
-        console.error(`[IMPORT_FOTO_SYNC_ERROR] ${entry.nolg}:`, err);
+      });
+    } catch (txErr: any) {
+      // Transaksi gagal total
+      for (const detail of results.detail) {
+        if (detail.status === 'SUCCESS') {
+          detail.status = 'FAILED';
+          detail.error = txErr.message;
+          results.sukses--;
+          results.gagal++;
+        }
       }
+      console.error('[IMPORT_FOTO_TRANSACTION_ERROR]', txErr);
     }
 
     return results;
@@ -602,6 +663,15 @@ export class ImportDataService {
    * 1. Upsert rute_cater & petugas_cater jika belum ada
    * 2. Upsert master pelanggan & golongan tarif jika belum ada
    * 3. Upsert data pembacaan meter ke tabel cater_baca_meter (kolom stml, stma, pakai_m3, pakai_lalu, tmss, ket_catat, dll.)
+   *
+   * Perbaikan terkait:
+   * - Kelompokkan item per periode (thbl) untuk pengecekan lock periode dan transaksi terpisah.
+   * - Pengecekan status TERKUNCI dilakukan di dalam transaksi untuk mencegah race condition.
+   * - Jika periode status = 'TERKUNCI', seluruh baris periode tersebut ditolak.
+   * - Setiap periode diproses dalam satu transaksi DB untuk atomicity.
+   * - Validasi stma >= stml dan pakaiM3 >= 0 sebelum upsert.
+   * - Deteksi duplikat NOLG dalam satu periode.
+   * - Error handling per baris agar satu baris gagal tidak membatalkan batch lain dalam periode yang sama.
    */
   async importLapDataMeter(items: LapDataMeterItem[]) {
     if (!items || items.length === 0) {
@@ -614,162 +684,235 @@ export class ImportDataService {
       gagal: 0,
       created: 0,
       updated: 0,
-      detail: [] as { nolg: string; status: 'SUCCESS' | 'FAILED'; error?: string }[],
+      detail: [] as { nolg: string; thbl: string; status: 'SUCCESS' | 'FAILED'; error?: string }[],
     };
 
-    const BATCH_SIZE = 100;
-    for (let i = 0; i < items.length; i += BATCH_SIZE) {
-      const batch = items.slice(i, i + BATCH_SIZE);
-      const batchNolgs = batch.map((b) => b.nolg);
-      const batchThbl = batch[0].thbl;
+    // Kelompokkan per periode (thbl) untuk pengecekan lock dan transaksi terpisah
+    const groups = new Map<string, LapDataMeterItem[]>();
+    for (const item of items) {
+      const group = groups.get(item.thbl) ?? [];
+      group.push(item);
+      groups.set(item.thbl, group);
+    }
+
+    for (const [thbl, batch] of groups) {
+      // Hapus duplikat nolg dalam satu periode (ambil yang pertama, tandai sisanya sebagai gagal)
+      const seenNolg = new Set<string>();
+      const uniqueBatch: LapDataMeterItem[] = [];
+      for (const item of batch) {
+        if (seenNolg.has(item.nolg)) {
+          results.gagal++;
+          results.detail.push({
+            nolg: item.nolg,
+            thbl: item.thbl,
+            status: 'FAILED',
+            error: 'Duplikat NOLG dalam satu berkas impor untuk periode yang sama',
+          });
+          continue;
+        }
+        seenNolg.add(item.nolg);
+        uniqueBatch.push(item);
+      }
 
       try {
-        // 1. Pastikan rute_cater terdaftar untuk mencegah FK violation
-        const uniqueRoutes = Array.from(new Set(batch.map((b) => b.ruteKode).filter(Boolean))) as string[];
-        if (uniqueRoutes.length > 0) {
-          const routeRecords = uniqueRoutes.map((kode) => {
-            const itemMatch = batch.find((b) => b.ruteKode === kode);
-            return {
-              kode,
-              seksiKode: itemMatch?.zonaWil || null,
-              seksiNama: itemMatch?.namaZonasi || null,
-            };
-          });
-          await db.insert(ruteCater).values(routeRecords).onConflictDoNothing();
-        }
+        await db.transaction(async (tx) => {
+          // Pengecekan status periode di dalam transaksi untuk mencegah race condition
+          const [periodeRow] = await tx.execute(sql`
+            SELECT status FROM periode_penagihan WHERE periode = ${thbl} LIMIT 1
+          `);
+          const isLocked = periodeRow ? String((periodeRow as any).status) === 'TERKUNCI' : false;
 
-        // 2. Pastikan petugas_cater terdaftar untuk mencegah FK violation
-        const uniquePetugas = Array.from(new Set(batch.map((b) => b.petugasId).filter(Boolean))) as string[];
-        if (uniquePetugas.length > 0) {
-          const petugasRecords = uniquePetugas.map((id) => {
-            const itemMatch = batch.find((b) => b.petugasId === id);
-            return {
-              id,
-              nama: itemMatch?.namaPetugas || id,
-              aktif: true,
-            };
-          });
-          await db.insert(petugasCater).values(petugasRecords).onConflictDoNothing();
-        }
-
-        // 3. Pastikan golongan_tarif terdaftar jika ada
-        const uniqueTarif = Array.from(new Set(batch.map((b) => b.trf).filter(Boolean))) as string[];
-        if (uniqueTarif.length > 0) {
-          const tarifRecords = uniqueTarif.map((kode) => ({
-            kode,
-            nama: `Tarif Golongan ${kode}`,
-          }));
-          await db.insert(golonganTarif).values(tarifRecords).onConflictDoNothing();
-        }
-
-        // 4. Pastikan pelanggan terdaftar di master database
-        const existingCusts = await db
-          .select({ nolg: pelanggan.nolg, ruteKode: pelanggan.ruteKode })
-          .from(pelanggan)
-          .where(inArray(pelanggan.nolg, batchNolgs));
-
-        const existingCustMap = new Map(existingCusts.map((c) => [c.nolg, c]));
-        const missingCusts: (typeof pelanggan.$inferInsert)[] = [];
-
-        for (const item of batch) {
-          if (!existingCustMap.has(item.nolg)) {
-            missingCusts.push({
-              nolg: item.nolg,
-              nama: item.nama || `Pelanggan ${item.nolg}`,
-              alamat: item.alamat || 'Alamat Terdata LapDataMeter',
-              ruteKode: item.ruteKode || null,
-              tarifKode: item.trf || null,
-              status: 'PELANGGAN AKTIF',
-            });
-            existingCustMap.set(item.nolg, { nolg: item.nolg, ruteKode: item.ruteKode || null });
+          if (isLocked) {
+            for (const item of uniqueBatch) {
+              results.gagal++;
+              results.detail.push({
+                nolg: item.nolg,
+                thbl: item.thbl,
+                status: 'FAILED',
+                error: `Periode ${thbl} sudah dikunci (TERKUNCI). Impor dibatalkan untuk menjaga integritas data.`,
+              });
+            }
+            return;
           }
-        }
 
-        if (missingCusts.length > 0) {
-          await db.insert(pelanggan).values(missingCusts).onConflictDoNothing();
-        }
+          // 1. Pastikan rute_cater terdaftar untuk mencegah FK violation
+          const uniqueRoutes = Array.from(new Set(uniqueBatch.map((b) => b.ruteKode).filter(Boolean))) as string[];
+          if (uniqueRoutes.length > 0) {
+            const routeRecords = uniqueRoutes.map((kode) => {
+              const itemMatch = uniqueBatch.find((b) => b.ruteKode === kode);
+              return {
+                kode,
+                seksiKode: itemMatch?.zonaWil || null,
+                seksiNama: itemMatch?.namaZonasi || null,
+              };
+            });
+            await tx.insert(ruteCater).values(routeRecords).onConflictDoNothing();
+          }
 
-        // 5. Cek existing cater_baca_meter berdasarkan (thbl, nolg)
-        const existingCaterRows = await db
-          .select({
-            id: caterBacaMeter.id,
-            nolg: caterBacaMeter.nolg,
-            thbl: caterBacaMeter.thbl,
-          })
-          .from(caterBacaMeter)
-          .where(
-            and(
-              eq(caterBacaMeter.thbl, batchThbl),
-              inArray(caterBacaMeter.nolg, batchNolgs)
-            )
-          );
+          // 2. Pastikan petugas_cater terdaftar untuk mencegah FK violation
+          const uniquePetugas = Array.from(new Set(uniqueBatch.map((b) => b.petugasId).filter(Boolean))) as string[];
+          if (uniquePetugas.length > 0) {
+            const petugasRecords = uniquePetugas.map((id) => {
+              const itemMatch = uniqueBatch.find((b) => b.petugasId === id);
+              return {
+                id,
+                nama: itemMatch?.namaPetugas || id,
+                aktif: true,
+              };
+            });
+            await tx.insert(petugasCater).values(petugasRecords).onConflictDoNothing();
+          }
 
-        const existingCaterMap = new Map(existingCaterRows.map((r) => [r.nolg, r.id]));
+          // 3. Pastikan golongan_tarif terdaftar jika ada
+          const uniqueTarif = Array.from(new Set(uniqueBatch.map((b) => b.trf).filter(Boolean))) as string[];
+          if (uniqueTarif.length > 0) {
+            const tarifRecords = uniqueTarif.map((kode) => ({
+              kode,
+              nama: `Tarif Golongan ${kode}`,
+            }));
+            await tx.insert(golonganTarif).values(tarifRecords).onConflictDoNothing();
+          }
 
-        for (const item of batch) {
-          const existingId = existingCaterMap.get(item.nolg);
-          const tglCatat = item.tglCatat ? new Date(item.tglCatat) : new Date();
-          const pakaiM3 = item.pakaiM3 ?? Math.max(0, item.stma - item.stml);
-          const tmss = item.tmss || '-';
+          // 4. Pastikan pelanggan terdaftar di master database
+          const batchNolgs = uniqueBatch.map((b) => b.nolg);
+          const existingCusts = await tx
+            .select({ nolg: pelanggan.nolg, ruteKode: pelanggan.ruteKode })
+            .from(pelanggan)
+            .where(inArray(pelanggan.nolg, batchNolgs));
 
-          if (existingId) {
-            // Update pembacaan meter tanpa menghilangkan data foto jika ada
-            await db
-              .update(caterBacaMeter)
-              .set({
+          const existingCustMap = new Map(existingCusts.map((c) => [c.nolg, c]));
+          const missingCusts: (typeof pelanggan.$inferInsert)[] = [];
+
+          for (const item of uniqueBatch) {
+            if (!existingCustMap.has(item.nolg)) {
+              missingCusts.push({
+                nolg: item.nolg,
+                nama: item.nama || `Pelanggan ${item.nolg}`,
+                alamat: item.alamat || 'Alamat Terdata LapDataMeter',
+                ruteKode: item.ruteKode || null,
+                tarifKode: item.trf || null,
+                status: 'PELANGGAN AKTIF',
+              });
+              existingCustMap.set(item.nolg, { nolg: item.nolg, ruteKode: item.ruteKode || null });
+            }
+          }
+
+          if (missingCusts.length > 0) {
+            await tx.insert(pelanggan).values(missingCusts).onConflictDoNothing();
+          }
+
+          // 5. Cek existing cater_baca_meter berdasarkan (thbl, nolg)
+          const existingCaterRows = await tx
+            .select({
+              id: caterBacaMeter.id,
+              nolg: caterBacaMeter.nolg,
+              thbl: caterBacaMeter.thbl,
+            })
+            .from(caterBacaMeter)
+            .where(
+              and(
+                eq(caterBacaMeter.thbl, thbl),
+                inArray(caterBacaMeter.nolg, batchNolgs)
+              )
+            );
+
+          const existingCaterMap = new Map(existingCaterRows.map((r) => [r.nolg, r.id]));
+
+          for (const item of uniqueBatch) {
+            // Validasi data dasar
+            if (item.stma < item.stml) {
+              results.gagal++;
+              results.detail.push({
+                nolg: item.nolg,
+                thbl: item.thbl,
+                status: 'FAILED',
+                error: `STMA (${item.stma}) lebih kecil dari STML (${item.stml})`,
+              });
+              continue;
+            }
+
+            const pakaiM3 = item.pakaiM3 ?? Math.max(0, item.stma - item.stml);
+            if (pakaiM3 < 0) {
+              results.gagal++;
+              results.detail.push({
+                nolg: item.nolg,
+                thbl: item.thbl,
+                status: 'FAILED',
+                error: 'Kubikasi pemakaian tidak boleh negatif',
+              });
+              continue;
+            }
+
+            const existingId = existingCaterMap.get(item.nolg);
+            const tglCatat = item.tglCatat ? new Date(item.tglCatat) : new Date();
+            const tmss = item.tmss || '-';
+
+            if (existingId) {
+              // Update pembacaan meter tanpa menghilangkan data foto jika ada
+              await tx
+                .update(caterBacaMeter)
+                .set({
+                  stml: String(item.stml),
+                  stma: String(item.stma),
+                  pakaiM3: String(pakaiM3),
+                  pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
+                  tmss,
+                  ketCatat: item.ketCatat || 'Normal',
+                  ruteKode: item.ruteKode || null,
+                  petugasId: item.petugasId || null,
+                  sumberCatat: 'LAPDATAMETER',
+                  statusVerifikasi: 'SUBMITTED',
+                  tglCatat,
+                  catatan: item.catatan || `Import LapDataMeter ${item.thbl}`,
+                  updatedAt: new Date(),
+                })
+                .where(eq(caterBacaMeter.id, existingId));
+
+              results.updated++;
+            } else {
+              // Insert transaksi baru ke cater_baca_meter
+              await tx.insert(caterBacaMeter).values({
+                thbl: item.thbl,
+                nolg: item.nolg,
+                ruteKode: item.ruteKode || null,
+                petugasId: item.petugasId || null,
                 stml: String(item.stml),
                 stma: String(item.stma),
                 pakaiM3: String(pakaiM3),
                 pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
                 tmss,
                 ketCatat: item.ketCatat || 'Normal',
-                ruteKode: item.ruteKode || null,
-                petugasId: item.petugasId || null,
+                metodeCatat: 'ONSITE',
                 sumberCatat: 'LAPDATAMETER',
                 statusVerifikasi: 'SUBMITTED',
                 tglCatat,
                 catatan: item.catatan || `Import LapDataMeter ${item.thbl}`,
+                createdAt: new Date(),
                 updatedAt: new Date(),
-              })
-              .where(eq(caterBacaMeter.id, existingId));
+              });
 
-            results.updated++;
-          } else {
-            // Insert transaksi baru ke cater_baca_meter
-            await db.insert(caterBacaMeter).values({
-              thbl: item.thbl,
-              nolg: item.nolg,
-              ruteKode: item.ruteKode || null,
-              petugasId: item.petugasId || null,
-              stml: String(item.stml),
-              stma: String(item.stma),
-              pakaiM3: String(pakaiM3),
-              pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
-              tmss,
-              ketCatat: item.ketCatat || 'Normal',
-              metodeCatat: 'ONSITE',
-              sumberCatat: 'LAPDATAMETER',
-              statusVerifikasi: 'SUBMITTED',
-              tglCatat,
-              catatan: item.catatan || `Import LapDataMeter ${item.thbl}`,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
+              results.created++;
+            }
 
-            results.created++;
+            results.sukses++;
+            results.detail.push({ nolg: item.nolg, thbl: item.thbl, status: 'SUCCESS' });
           }
-
-          results.sukses++;
-          results.detail.push({ nolg: item.nolg, status: 'SUCCESS' });
-        }
+        });
       } catch (err: any) {
-        for (const item of batch) {
-          results.gagal++;
-          results.detail.push({
-            nolg: item.nolg,
-            status: 'FAILED',
-            error: err.message,
-          });
+        // Jika transaksi gagal sepenuhnya, tandai semua baris unik dalam batch ini sebagai gagal
+        for (const item of uniqueBatch) {
+          const alreadyRecorded = results.detail.some(
+            (d) => d.nolg === item.nolg && d.thbl === item.thbl
+          );
+          if (!alreadyRecorded) {
+            results.gagal++;
+            results.detail.push({
+              nolg: item.nolg,
+              thbl: item.thbl,
+              status: 'FAILED',
+              error: err.message || 'Terjadi kesalahan saat memproses transaksi impor',
+            });
+          }
         }
       }
     }

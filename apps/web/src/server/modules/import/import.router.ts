@@ -19,6 +19,9 @@ const IMPORT_ROLES: AppRole[] = [
   'VERIFIKATOR_3',
 ];
 
+const MAX_FILES_PER_BATCH = 100;
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
 export const importRouter = new Elysia({ prefix: '/import' })
   .use(authPlugin)
   
@@ -34,41 +37,42 @@ export const importRouter = new Elysia({ prefix: '/import' })
         '/foto-backup',
         async ({ body, set }) => {
           try {
-            if (body.files && body.files.length > 0) {
-              const result = await importDataService.importFotoBackupFiles(body.files);
-              return { success: true, ...result, data: result };
+            const files = body.files ?? [];
+
+            if (!Array.isArray(files) || files.length === 0) {
+              set.status = 400;
+              return { success: false, error: 'Tidak ada berkas foto yang dikirim.' };
             }
 
-            if (body.items && body.items.length > 0) {
-              const files = body.items.flatMap((item) => {
-                const list: { fileName: string; fileData: string }[] = [];
-                if (item.fotoMeterUrl) {
-                  list.push({
-                    fileName: `${item.thbl}_stand_${item.nolg}.jpg`,
-                    fileData: item.fotoMeterUrl,
-                  });
-                }
-                if (item.fotoSegelUrl) {
-                  list.push({
-                    fileName: `${item.thbl}_segel_${item.nolg}.jpg`,
-                    fileData: item.fotoSegelUrl,
-                  });
-                }
-                if (item.fotoRumahUrl) {
-                  list.push({
-                    fileName: `${item.thbl}_rumah_${item.nolg}.jpg`,
-                    fileData: item.fotoRumahUrl,
-                  });
-                }
-                return list;
-              });
-
-              const result = await importDataService.importFotoBackupFiles(files);
-              return { success: true, ...result, data: result };
+            if (files.length > MAX_FILES_PER_BATCH) {
+              set.status = 400;
+              return {
+                success: false,
+                error: `Maksimal ${MAX_FILES_PER_BATCH} berkas per batch impor.`,
+              };
             }
 
-            set.status = 400;
-            return { success: false, error: 'Tidak ada berkas foto yang dikirim.' };
+            // Validasi ukuran berkas (perkiraan dari base64 string length)
+            for (const file of files) {
+              if (typeof file.fileData !== 'string') {
+                set.status = 400;
+                return {
+                  success: false,
+                  error: `Berkas ${file.fileName} tidak memiliki data yang valid.`,
+                };
+              }
+              const estimatedSizeBytes = Math.round((file.fileData.length * 3) / 4);
+              if (estimatedSizeBytes > MAX_FILE_SIZE_BYTES) {
+                set.status = 400;
+                return {
+                  success: false,
+                  error: `Berkas ${file.fileName} melebihi batas 5 MB (perkiraan ${Math.round(estimatedSizeBytes / 1024)} KB).`,
+                };
+              }
+            }
+
+            const result = await importDataService.importFotoBackupFiles(body.files);
+            return { success: true, ...result, data: result };
           } catch (err: any) {
             set.status = 500;
             return { success: false, error: err.message };
@@ -126,9 +130,21 @@ export const importRouter = new Elysia({ prefix: '/import' })
               };
             }
 
+            // Validasi struktur minimum setiap item sebelum diproses
+            for (const item of items) {
+              if (!item.nolg || !item.thbl || item.stml === undefined || item.stma === undefined) {
+                set.status = 400;
+                return {
+                  success: false,
+                  error: `Baris data tidak valid: nolg, thbl, stml, dan stma wajib diisi. Ditemukan nolg=${item.nolg}, thbl=${item.thbl}`,
+                };
+              }
+            }
+
             const result = await importDataService.importLapDataMeter(items);
             return { success: true, ...result, data: result };
           } catch (err: any) {
+            console.error('[IMPORT_LAPDATA_METER_ERROR]', err);
             set.status = 500;
             return { success: false, error: err.message };
           }
