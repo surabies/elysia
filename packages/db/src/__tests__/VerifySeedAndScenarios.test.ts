@@ -52,6 +52,7 @@ const KEY_TABLES = [
 ];
 
 let rowCountSnapshot: Record<string, number> = {};
+let snapshotCaptured = false;
 
 beforeAll(() => {
   const dbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '';
@@ -69,9 +70,13 @@ beforeAll(async () => {
     const [row] = await db.execute(sql`SELECT count(*)::int AS c FROM ${sql.identifier(table)}`);
     rowCountSnapshot[table] = (row as any).c;
   }
+  snapshotCaptured = true;
 });
 
 afterAll(async () => {
+  if (!snapshotCaptured) {
+    return;
+  }
   for (const table of KEY_TABLES) {
     const [row] = await db.execute(sql`SELECT count(*)::int AS c FROM ${sql.identifier(table)}`);
     const after = (row as any).c;
