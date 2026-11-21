@@ -16,6 +16,7 @@ import {
   Upload,
   Info,
   Code2,
+  AlertCircle,
 } from "lucide-react";
 
 interface PencatatanRow {
@@ -206,8 +207,20 @@ export function ImportDataPencatatanView() {
     toast.info("Format contoh data pencatatan mobile dimuat ulang.");
   };
 
+  // Statistik
+  const totalKubikasi = React.useMemo(() => {
+    return items.reduce((sum, item) => sum + (item.pakaiM3 || 0), 0);
+  }, [items]);
+
+  const normalCount = React.useMemo(() => {
+    return items.filter((i) => i.ketCatat.toLowerCase().includes("normal")).length;
+  }, [items]);
+
+  const kendalaCount = items.length - normalCount;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* 1. Header */}
       <ImportHeader
         title="Import Data Pencatatan (Stand Recovery)"
         badge="Batch Ingestion"
@@ -236,7 +249,82 @@ export function ImportDataPencatatanView() {
         }
       />
 
-      {/* Kontrak Format Data Mobile */}
+      {/* 2. Kartu Ringkasan Eksekutif */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Total Baris Data</CardTitle>
+            <FileSpreadsheet className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono">{items.length.toLocaleString("id-ID")}</div>
+            <p className="text-[11px] text-muted-foreground">Baris transaksi siap diproses</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Total Pemakaian</CardTitle>
+            <Info className="size-4 text-sky-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono text-sky-600 dark:text-sky-400">
+              {totalKubikasi.toLocaleString("id-ID")} <span className="text-xs font-normal text-muted-foreground">m³</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Akumulasi volume air terbaca</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Kondisi Normal</CardTitle>
+            <CheckCircle2 className="size-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+              {normalCount.toLocaleString("id-ID")}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Bacaan standar &bull; <span className="text-amber-500 font-medium">{kendalaCount} kendala</span>
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Periode Aktif</CardTitle>
+            <AlertCircle className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono text-foreground">
+              {items[0]?.thbl || "-"}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Format baku YYYYMM (THBL)</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 3. Notifikasi Hasil Import */}
+      {resultStats && (
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="size-5 text-emerald-500" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                  Import Data Pencatatan Sukses
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Total {resultStats.total} baris: {resultStats.sukses} terserap ke database cater_baca_meter, {resultStats.gagal} gagal.
+                </p>
+              </div>
+            </div>
+            <Badge className="bg-emerald-600 text-white">Status: Terverifikasi</Badge>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 4. Kontrak Format Data Mobile */}
       <Card className="border-sky-500/20 bg-sky-500/5">
         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -261,25 +349,7 @@ export function ImportDataPencatatanView() {
         </CardContent>
       </Card>
 
-      {resultStats && (
-        <Card className="border-emerald-500/30 bg-emerald-500/5">
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="size-5 text-emerald-500" />
-              <div>
-                <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                  Import Data Pencatatan Sukses
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Total {resultStats.total} baris: {resultStats.sukses} terserap ke database cater_baca_meter, {resultStats.gagal} gagal.
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-emerald-600 text-white">Status: Terverifikasi</Badge>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* 5. Tabel Pratinjau Data */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -313,26 +383,40 @@ export function ImportDataPencatatanView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
-                {items.map((row, idx) => (
-                  <tr key={`${row.nolg}-${idx}`} className="hover:bg-muted/20">
-                    <td className="px-3 py-2 font-mono font-medium text-foreground">{row.nolg}</td>
-                    <td className="px-3 py-2 font-mono">{row.thbl}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{row.stml} m³</td>
-                    <td className="px-3 py-2 font-semibold text-foreground">{row.stma} m³</td>
-                    <td className="px-3 py-2 font-semibold text-primary">{row.pakaiM3} m³</td>
-                    <td className="px-3 py-2 text-muted-foreground">{row.tglCatat}</td>
-                    <td className="px-3 py-2 font-mono">{row.petugasId}</td>
-                    <td className="px-3 py-2 font-mono">{row.ruteKode}</td>
-                    <td className="px-3 py-2">
-                      <Badge variant="outline" className="text-[10px]">
-                        {row.ketCatat}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
-                      {row.latitude && row.longitude ? `${row.latitude}, ${row.longitude}` : "-"}
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-3 py-12 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <FileSpreadsheet className="size-8 text-muted-foreground/40" />
+                        <p className="font-medium text-foreground">Belum ada data pencatatan yang dimuat</p>
+                        <p className="text-xs">
+                          Klik <strong>&ldquo;Reset Contoh&rdquo;</strong> atau unggah berkas CSV Anda.
+                        </p>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  items.map((row, idx) => (
+                    <tr key={`${row.nolg}-${idx}`} className="hover:bg-muted/20">
+                      <td className="px-3 py-2 font-mono font-medium text-foreground">{row.nolg}</td>
+                      <td className="px-3 py-2 font-mono">{row.thbl}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{row.stml} m³</td>
+                      <td className="px-3 py-2 font-semibold text-foreground">{row.stma} m³</td>
+                      <td className="px-3 py-2 font-semibold text-primary">{row.pakaiM3} m³</td>
+                      <td className="px-3 py-2 text-muted-foreground">{row.tglCatat}</td>
+                      <td className="px-3 py-2 font-mono">{row.petugasId}</td>
+                      <td className="px-3 py-2 font-mono">{row.ruteKode}</td>
+                      <td className="px-3 py-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          {row.ketCatat}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                        {row.latitude && row.longitude ? `${row.latitude}, ${row.longitude}` : "-"}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

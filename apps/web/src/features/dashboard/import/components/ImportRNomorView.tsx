@@ -19,6 +19,8 @@ import {
   RefreshCw,
   AlertTriangle,
   ShieldAlert,
+  FileText,
+  Upload,
 } from "lucide-react";
 
 interface RNomorRow {
@@ -117,7 +119,8 @@ export function ImportRNomorView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* 1. Header */}
       <ImportHeader
         title="Import R Nomor (Pemutusan Sambungan)"
         badge="Administrasi Rekening Non-aktif"
@@ -147,6 +150,7 @@ export function ImportRNomorView() {
         }
       />
 
+      {/* 2. Notifikasi Hasil Pemrosesan */}
       {resultStats && (
         <Card className="border-rose-500/30 bg-rose-500/5">
           <CardContent className="flex items-center justify-between p-4">
@@ -168,6 +172,60 @@ export function ImportRNomorView() {
         </Card>
       )}
 
+      {/* 3. Kartu Ringkasan */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Total Rekening</CardTitle>
+            <FileText className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono">{items.length.toLocaleString("id-ID")}</div>
+            <p className="text-[11px] text-muted-foreground">Rekening siap diproses</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Status Aktif</CardTitle>
+            <UserMinus className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono text-foreground">
+              {items.length.toLocaleString("id-ID")}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Diajukan pemutusan</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Tanggal Awal</CardTitle>
+            <AlertTriangle className="size-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
+              {items[0]?.tglPutus || "-"}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Pemutusan terdekat</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Stand Cabut</CardTitle>
+            <ShieldAlert className="size-4 text-rose-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono text-rose-600 dark:text-rose-400">
+              {items.reduce((sum, i) => sum + i.standCabut, 0).toLocaleString("id-ID")} m³
+            </div>
+            <p className="text-[11px] text-muted-foreground">Total stand akhir pengangkatan</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 4. Tabel Daftar Rekening */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">

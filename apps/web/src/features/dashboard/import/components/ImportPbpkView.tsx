@@ -162,7 +162,8 @@ export function ImportPbpkView() {
   const pkCount = rows.filter((r) => r.mutasian === "PK").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* 1. Header */}
       <ImportHeader
         title="Import PBPK (Pasang Baru & Pemasangan Kembali)"
         badge="DPM Integration"
@@ -205,6 +206,7 @@ export function ImportPbpkView() {
         }
       />
 
+      {/* 2. Notifikasi Hasil Import */}
       {resultStats && (
         <Card className="border-emerald-500/30 bg-emerald-500/5">
           <CardContent className="flex items-center justify-between p-4">
@@ -228,7 +230,7 @@ export function ImportPbpkView() {
         </Card>
       )}
 
-      {/* Statistik Ringkas PBPK */}
+      {/* 3. Statistik Ringkas PBPK */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="p-4">
           <div className="text-xs text-muted-foreground">
@@ -263,6 +265,7 @@ export function ImportPbpkView() {
         </Card>
       </div>
 
+      {/* 4. Tabel Pratinjau Data PBPK */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -302,9 +305,17 @@ export function ImportPbpkView() {
                       colSpan={7}
                       className="px-3 py-12 text-center text-muted-foreground"
                     >
-                      Belum ada data mutasi PBPK yang dimuat. Silakan unggah
-                      berkas CSV mutasi PBPK Anda atau gunakan tombol &quot;Muat PBPK.csv&quot;
-                      untuk melihat contoh format template.
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <FileText className="size-8 text-muted-foreground/40" />
+                        <p className="font-medium text-foreground">
+                          Belum ada data mutasi PBPK yang dimuat.
+                        </p>
+                        <p className="text-xs">
+                          Silakan unggah berkas CSV mutasi PBPK Anda atau gunakan
+                          tombol &ldquo;Muat PBPK.csv&rdquo; untuk melihat contoh
+                          format template.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (

@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { ImportHeader } from "./ImportHeader";
 import {
   FileSpreadsheet,
@@ -350,7 +349,8 @@ export function ImportLapDataMeterView() {
   }, [items, searchQuery]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* 1. Header */}
       <ImportHeader
         title="Import LapDataMeter (Laporan Bulanan PDAM)"
         badge="Tabel cater_baca_meter"
@@ -388,31 +388,7 @@ export function ImportLapDataMeterView() {
         }
       />
 
-      {/* Notifikasi Hasil Import */}
-      {resultStats && (
-        <Card className="border-emerald-500/30 bg-emerald-500/5">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="size-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Proses Import Selesai dengan Sukses!
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Total {resultStats.total} baris data diproses &bull; {resultStats.sukses} berhasil &bull;{" "}
-                  {resultStats.created ?? 0} transaksi baru dibuat &bull; {resultStats.updated ?? 0} data stand
-                  diperbarui &bull; {resultStats.gagal} gagal.
-                </p>
-              </div>
-            </div>
-            <Badge variant="outline" className="border-emerald-500 text-emerald-600 font-mono text-xs w-fit">
-              cater_baca_meter: SYNC OK
-            </Badge>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Kartu Ringkasan Metrik */}
+      {/* 2. Kartu Ringkasan Metrik */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -465,7 +441,31 @@ export function ImportLapDataMeterView() {
         </Card>
       </div>
 
-      {/* Tabel Preview Pemetaan */}
+      {/* 3. Notifikasi Hasil Import */}
+      {resultStats && (
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="size-5 text-emerald-500" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                  Proses Import Selesai dengan Sukses!
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Total {resultStats.total} baris data diproses &bull; {resultStats.sukses} berhasil &bull;{" "}
+                  {resultStats.created ?? 0} transaksi baru dibuat &bull; {resultStats.updated ?? 0} data stand
+                  diperbarui &bull; {resultStats.gagal} gagal.
+                </p>
+              </div>
+            </div>
+            <Badge variant="outline" className="border-emerald-500 text-emerald-600 font-mono text-xs w-fit">
+              cater_baca_meter: SYNC OK
+            </Badge>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 4. Tabel Preview Pemetaan */}
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4">
           <div>
