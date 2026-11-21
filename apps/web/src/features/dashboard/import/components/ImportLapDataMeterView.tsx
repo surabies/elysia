@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -351,7 +350,7 @@ export function ImportLapDataMeterView() {
 
   return (
     <div className="space-y-4">
-      {/* 1. Header */}
+      {/* 1. Header Halaman */}
       <ImportHeader
         title="Import LapDataMeter (Laporan Bulanan PDAM)"
         badge="Tabel cater_baca_meter"
@@ -390,7 +389,7 @@ export function ImportLapDataMeterView() {
         }
       />
 
-      {/* 2. Kartu Ringkasan Metrik */}
+      {/* 2. Kartu Statistik / Ringkasan */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
           <CardContent className="p-0">
@@ -499,7 +498,7 @@ export function ImportLapDataMeterView() {
         </div>
       )}
 
-      {/* 4. Tabel Preview Pemetaan */}
+      {/* 4. Area Pratinjau Tabel / Empty State */}
       <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 text-label-12">
           <div className="flex items-center gap-3">

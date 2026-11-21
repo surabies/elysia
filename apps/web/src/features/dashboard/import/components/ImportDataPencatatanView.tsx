@@ -3,7 +3,12 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ImportHeader } from "./ImportHeader";
@@ -15,7 +20,6 @@ import {
   Database,
   Upload,
   Info,
-  Code2,
   AlertCircle,
 } from "lucide-react";
 
@@ -220,7 +224,7 @@ export function ImportDataPencatatanView() {
 
   return (
     <div className="space-y-4">
-      {/* 1. Header */}
+      {/* 1. Header Halaman */}
       <ImportHeader
         title="Import Data Pencatatan (Stand Recovery)"
         badge="Batch Ingestion"
@@ -249,7 +253,7 @@ export function ImportDataPencatatanView() {
         }
       />
 
-      {/* 2. Kartu Ringkasan Eksekutif */}
+      {/* 2. Kartu Statistik / Ringkasan Eksekutif */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
           <CardContent className="p-0">
@@ -354,32 +358,7 @@ export function ImportDataPencatatanView() {
         </div>
       )}
 
-      {/* 4. Kontrak Format Data Mobile */}
-      <Card className="border-sky-500/20 bg-sky-500/5 p-4">
-        <CardContent className="flex flex-col gap-3 p-0 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Code2 className="mt-0.5 size-5 shrink-0 text-sky-600 dark:text-sky-400" />
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">
-                Format Standar CSV Ekspor Mobile App (Aturan Baku Developer Mobile):
-              </p>
-              <div className="overflow-x-auto">
-                <code className="font-mono text-xs text-sky-600 dark:text-sky-400 bg-background/80 px-2 py-1 rounded border border-border/50 block whitespace-nowrap">
-                  thbl;nolg;stml;stma;pakai_m3;tgl_catat;petugas_id;rute_kode;kondisi;latitude;longitude;catatan
-                </code>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Kunci relasi database: <strong className="text-foreground">THBL + NOLG</strong> langsung menyatu dengan foto backup yang tersimpan.
-              </p>
-            </div>
-          </div>
-          <Badge variant="outline" className="border-sky-500/30 text-sky-600 dark:text-sky-400 self-start sm:self-auto text-[10px]">
-            Spesifikasi Baku
-          </Badge>
-        </CardContent>
-      </Card>
-
-      {/* 5. Tabel Pratinjau Data */}
+      {/* 4. Area Pratinjau Tabel / Empty State */}
       <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 text-label-12">
           <div className="flex items-center gap-3">
