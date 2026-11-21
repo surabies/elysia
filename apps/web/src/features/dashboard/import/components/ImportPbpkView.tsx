@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ImportHeader } from "./ImportHeader";
 import {
   FolderSync,
   CheckCircle2,
@@ -162,82 +161,7 @@ export function ImportPbpkView() {
 
   return (
     <div className="space-y-4">
-      {/* 1. Header Halaman */}
-      <ImportHeader
-        title="Import PBPK (Pasang Baru & Pemasangan Kembali)"
-        badge="DPM Integration"
-        description="Pendaftaran massal sambungan baru (PB) dan pengaktifan kembali sambungan langganan (PK) melalui file CSV resmi PDAM (data/raw/PBPK.csv). Data otomatis dibuatkan aset water meter dan didaftarkan ke DPM periode penagihan aktif."
-        icon={FolderSync}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLoadSample}
-              disabled={isLoadingSample || isSubmitting}
-              className="h-8 text-label-12 cursor-pointer"
-            >
-              <Sparkles className="mr-1.5 size-3.5 text-amber-500" />
-              {isLoadingSample ? "Memuat..." : "Muat PBPK.csv"}
-            </Button>
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
-                <span>
-                  <Upload className="mr-1.5 size-3.5" />
-                  Unggah CSV Lain
-                </span>
-              </Button>
-            </label>
-            <Button
-              size="sm"
-              onClick={handleExecuteImport}
-              disabled={isSubmitting || rows.length === 0}
-              className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-            >
-              <FolderSync className="mr-1.5 size-3.5" />
-              {isSubmitting ? "Memproses..." : "Eksekusi Import ke DPM"}
-            </Button>
-          </div>
-        }
-      />
-
-      {/* 2. Notifikasi Hasil Import */}
-      {resultStats && (
-        <div className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-emerald-800 dark:text-emerald-200">
-                  Sinkronisasi PBPK Berhasil
-                </span>
-                <Badge className="bg-emerald-600 text-white font-mono text-[10px]">
-                  Batch Selesai
-                </Badge>
-              </div>
-              <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                Total {resultStats.total} data ({resultStats.pb} Pasang Baru,{" "}
-                {resultStats.pk} Pemasangan Kembali). Seluruhnya siap dicatat
-                pada DPM periode {targetPeriode}.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <Badge className="bg-emerald-600 text-white">
-              Status: Masuk DPM
-            </Badge>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Kartu Statistik / Ringkasan PBPK */}
+      {/* 1. Kartu Statistik / Ringkasan PBPK */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
           <CardContent className="p-0">
@@ -297,6 +221,75 @@ export function ImportPbpkView() {
         </Card>
       </div>
 
+      {/* 2. Bilah Kontrol dan Aksi */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLoadSample}
+            disabled={isLoadingSample || isSubmitting}
+            className="h-8 text-label-12 cursor-pointer"
+          >
+            <Sparkles className="mr-1.5 size-3.5 text-amber-500" />
+            {isLoadingSample ? "Memuat..." : "Muat PBPK.csv"}
+          </Button>
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
+              <span>
+                <Upload className="mr-1.5 size-3.5" />
+                Unggah CSV Lain
+              </span>
+            </Button>
+          </label>
+          <Button
+            size="sm"
+            onClick={handleExecuteImport}
+            disabled={isSubmitting || rows.length === 0}
+            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+          >
+            <FolderSync className="mr-1.5 size-3.5" />
+            {isSubmitting ? "Memproses..." : "Eksekusi Import ke DPM"}
+          </Button>
+        </div>
+      </div>
+
+      {/* 3. Notifikasi Hasil Import */}
+      {resultStats && (
+        <div className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-emerald-800 dark:text-emerald-200">
+                  Sinkronisasi PBPK Berhasil
+                </span>
+                <Badge className="bg-emerald-600 text-white font-mono text-[10px]">
+                  Batch Selesai
+                </Badge>
+              </div>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                Total {resultStats.total} data ({resultStats.pb} Pasang Baru,{" "}
+                {resultStats.pk} Pemasangan Kembali). Seluruhnya siap dicatat
+                pada DPM periode {targetPeriode}.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <Badge className="bg-emerald-600 text-white">
+              Status: Masuk DPM
+            </Badge>
+          </div>
+        </div>
+      )}
+
       {/* 4. Area Pratinjau Tabel / Empty State */}
       <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 text-label-12">
@@ -308,10 +301,6 @@ export function ImportPbpkView() {
             <span className="text-muted-foreground">
               {rows.length} Sambungan
             </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <FileText className="size-4" />
           </div>
         </div>
 

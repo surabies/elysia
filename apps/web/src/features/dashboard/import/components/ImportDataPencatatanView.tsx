@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ImportHeader } from "./ImportHeader";
 import {
   UploadCloud,
   CheckCircle2,
@@ -224,36 +223,7 @@ export function ImportDataPencatatanView() {
 
   return (
     <div className="space-y-4">
-      {/* 1. Header Halaman */}
-      <ImportHeader
-        title="Import Data Pencatatan (Stand Recovery)"
-        badge="Batch Ingestion"
-        description="Spesifikasi baku & modul impor data transaksi angka stand meter pembacaan mobile. Otomatis terintegrasi dengan foto backup (stand, segel, rumah) berdasarkan kombinasi THBL & Nomor Langganan."
-        icon={UploadCloud}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting} className="h-8 text-label-12 cursor-pointer">
-              <RefreshCw className="mr-1.5 size-3.5" />
-              Reset Contoh
-            </Button>
-            <label className="cursor-pointer">
-              <input type="file" accept=".csv,.txt,.json" onChange={handleFileUpload} className="hidden" />
-              <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
-                <span>
-                  <Upload className="mr-1.5 size-3.5 text-primary" />
-                  Unggah CSV Mobile
-                </span>
-              </Button>
-            </label>
-            <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0} className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
-              <Database className="mr-1.5 size-3.5" />
-              {isSubmitting ? "Memproses..." : "Import Data Meter"}
-            </Button>
-          </div>
-        }
-      />
-
-      {/* 2. Kartu Statistik / Ringkasan Eksekutif */}
+      {/* 1. Kartu Statistik / Ringkasan Eksekutif */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
           <CardContent className="p-0">
@@ -332,6 +302,29 @@ export function ImportDataPencatatanView() {
         </Card>
       </div>
 
+      {/* 2. Bilah Kontrol dan Aksi */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting} className="h-8 text-label-12 cursor-pointer">
+            <RefreshCw className="mr-1.5 size-3.5" />
+            Reset Contoh
+          </Button>
+          <label className="cursor-pointer">
+            <input type="file" accept=".csv,.txt,.json" onChange={handleFileUpload} className="hidden" />
+            <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
+              <span>
+                <Upload className="mr-1.5 size-3.5 text-primary" />
+                Unggah CSV Mobile
+              </span>
+            </Button>
+          </label>
+          <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0} className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+            <Database className="mr-1.5 size-3.5" />
+            {isSubmitting ? "Memproses..." : "Import Data Meter"}
+          </Button>
+        </div>
+      </div>
+
       {/* 3. Notifikasi Hasil Import */}
       {resultStats && (
         <div className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
@@ -369,10 +362,6 @@ export function ImportDataPencatatanView() {
             <span className="text-muted-foreground">
               {items.length} Baris Transaksi
             </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <FileSpreadsheet className="size-4" />
           </div>
         </div>
 

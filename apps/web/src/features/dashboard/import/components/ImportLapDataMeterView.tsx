@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ImportHeader } from "./ImportHeader";
 import {
   FileSpreadsheet,
   CheckCircle2,
@@ -350,46 +349,7 @@ export function ImportLapDataMeterView() {
 
   return (
     <div className="space-y-4">
-      {/* 1. Header Halaman */}
-      <ImportHeader
-        title="Import LapDataMeter (Laporan Bulanan PDAM)"
-        badge="Tabel cater_baca_meter"
-        description="Spesifikasi & modul import resmi berkas laporan pembacaan meter bulanan (lapdatameter). Otomatis memetakan angka stand awal (stml), stand akhir (stma), kubikasi pemakaian, kondisi catat (tmss/ket_catat), rute, dan petugas lapangan ke tabel cater_baca_meter."
-        icon={FileSpreadsheet}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLoadSample}
-              disabled={isSubmitting || isLoadingSample}
-              className="h-8 text-label-12 cursor-pointer"
-            >
-              <Sparkles className="mr-1.5 size-3.5 text-amber-500" />
-              {isLoadingSample ? "Memuat..." : "Muat Contoh LapDataMeter"}
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting} className="h-8 text-label-12 cursor-pointer">
-              <RefreshCw className="mr-1.5 size-3.5" />
-              Reset
-            </Button>
-            <label className="cursor-pointer">
-              <input type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
-              <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
-                <span>
-                  <Upload className="mr-1.5 size-3.5 text-primary" />
-                  Unggah CSV LapDataMeter
-                </span>
-              </Button>
-            </label>
-            <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0} className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
-              <Database className="mr-1.5 size-3.5" />
-              {isSubmitting ? "Memproses..." : `Import ${items.length} Data ke cater_baca_meter`}
-            </Button>
-          </div>
-        }
-      />
-
-      {/* 2. Kartu Statistik / Ringkasan */}
+      {/* 1. Kartu Statistik / Ringkasan */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
           <CardContent className="p-0">
@@ -468,6 +428,51 @@ export function ImportLapDataMeterView() {
         </Card>
       </div>
 
+      {/* 2. Bilah Kontrol, Filter, dan Aksi */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLoadSample}
+            disabled={isSubmitting || isLoadingSample}
+            className="h-8 text-label-12 cursor-pointer"
+          >
+            <Sparkles className="mr-1.5 size-3.5 text-amber-500" />
+            {isLoadingSample ? "Memuat..." : "Muat Contoh LapDataMeter"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting} className="h-8 text-label-12 cursor-pointer">
+            <RefreshCw className="mr-1.5 size-3.5" />
+            Reset
+          </Button>
+          <label className="cursor-pointer">
+            <input type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
+            <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
+              <span>
+                <Upload className="mr-1.5 size-3.5 text-primary" />
+                Unggah CSV LapDataMeter
+              </span>
+            </Button>
+          </label>
+          <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0} className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+            <Database className="mr-1.5 size-3.5" />
+            {isSubmitting ? "Memproses..." : `Import ${items.length} Data ke cater_baca_meter`}
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative w-64">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Cari No Pel / Nama / Rute..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 pl-8 text-copy-13"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* 3. Notifikasi Hasil Import */}
       {resultStats && (
         <div className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
@@ -513,18 +518,6 @@ export function ImportLapDataMeterView() {
             <span className="text-muted-foreground">
               Hasil parsing CSV
             </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Cari No Pel / Nama / Rute..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 text-copy-13"
-              />
-            </div>
           </div>
         </div>
 

@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ImportHeader } from "./ImportHeader";
 import {
   UserMinus,
   CheckCircle2,
@@ -118,67 +117,7 @@ export function ImportRNomorView() {
 
   return (
     <div className="space-y-4">
-      {/* 1. Header Halaman */}
-      <ImportHeader
-        title="Import R Nomor (Pemutusan Sambungan)"
-        badge="Administrasi Rekening Non-aktif"
-        description="Pencatatan daftar pelanggan yang telah diputus fisik atau administrasi (R Nomor). Sistem secara otomatis memperbarui status pelanggan menjadi non-aktif, mencatat stand cabut akhir, dan mengeluarkan dari DPM periode mendatang."
-        icon={UserMinus}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              disabled={isSubmitting}
-              className="h-8 text-label-12 cursor-pointer"
-            >
-              <RefreshCw className="mr-1.5 size-3.5" />
-              Reset Contoh
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleImport}
-              disabled={isSubmitting || items.length === 0}
-              className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
-            >
-              <ShieldAlert className="mr-1.5 size-4" />
-              {isSubmitting ? "Memproses..." : "Eksekusi Pemutusan (R)"}
-            </Button>
-          </div>
-        }
-      />
-
-      {/* 2. Notifikasi Hasil Pemrosesan */}
-      {resultStats && (
-        <div className="flex flex-col gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-rose-800 dark:text-rose-200">
-                  Pemutusan R-Nomor Selesai Diproses
-                </span>
-                <Badge className="bg-rose-600 text-white font-mono text-[10px]">
-                  Batch Selesai
-                </Badge>
-              </div>
-              <p className="text-xs text-rose-700 dark:text-rose-300">
-                Total {resultStats.total} pelanggan: {resultStats.sukses}{" "}
-                status diubah menjadi NON AKTIF (R), {resultStats.gagal}{" "}
-                gagal.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <Badge className="bg-rose-600 text-white">Status: Diputus</Badge>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Kartu Statistik / Ringkasan */}
+      {/* 1. Kartu Statistik / Ringkasan */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
           <CardContent className="p-0">
@@ -256,6 +195,60 @@ export function ImportRNomorView() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 2. Bilah Kontrol dan Aksi */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReset}
+            disabled={isSubmitting}
+            className="h-8 text-label-12 cursor-pointer"
+          >
+            <RefreshCw className="mr-1.5 size-3.5" />
+            Reset Contoh
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleImport}
+            disabled={isSubmitting || items.length === 0}
+            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+          >
+            <ShieldAlert className="mr-1.5 size-4" />
+            {isSubmitting ? "Memproses..." : "Eksekusi Pemutusan (R)"}
+          </Button>
+        </div>
+      </div>
+
+      {/* 3. Notifikasi Hasil Pemrosesan */}
+      {resultStats && (
+        <div className="flex flex-col gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="size-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-rose-800 dark:text-rose-200">
+                  Pemutusan R-Nomor Selesai Diproses
+                </span>
+                <Badge className="bg-rose-600 text-white font-mono text-[10px]">
+                  Batch Selesai
+                </Badge>
+              </div>
+              <p className="text-xs text-rose-700 dark:text-rose-300">
+                Total {resultStats.total} pelanggan: {resultStats.sukses}{" "}
+                status diubah menjadi NON AKTIF (R), {resultStats.gagal}{" "}
+                gagal.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <Badge className="bg-rose-600 text-white">Status: Diputus</Badge>
+          </div>
+        </div>
+      )}
 
       {/* 4. Area Tabel Daftar Rekening */}
       <div className="rounded-lg border border-border bg-card overflow-hidden">
