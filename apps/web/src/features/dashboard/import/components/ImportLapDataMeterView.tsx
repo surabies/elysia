@@ -19,7 +19,6 @@ import {
   Database,
   Upload,
   Sparkles,
-  AlertCircle,
   Search,
   Layers,
   Gauge,
@@ -30,28 +29,16 @@ export interface LapDataMeterRow {
   thbl: string;
   nolg: string;
   nama?: string;
-  alamat?: string;
   stml: number;
   stma: number;
-  stmaCatat?: number;
   pakaiM3: number;
   pakaiLalu?: number;
-  persentase?: number;
-  trf?: string;
   tmss?: string;
   ketCatat: string;
   petugasId?: string;
   namaPetugas?: string;
-  kdWm?: string;
-  wil?: string;
   ruteKode?: string;
-  zonaWil?: string;
-  kdZonasi?: string;
-  namaZonasi?: string;
-  kecamatan?: string;
-  kelurahan?: string;
   tglCatat: string;
-  tglUpload?: string;
   catatan?: string;
 }
 
@@ -121,29 +108,17 @@ export function ImportLapDataMeterView() {
 
     const nolgIdx = findIdx(["no pel", "nolg", "nomor pelanggan", "nopel"]);
     const namaIdx = findIdx(["nama", "nama pelanggan"]);
-    const alamatIdx = findIdx(["alamat"]);
     const thblIdx = findIdx(["periode", "thbl"]);
     const stmlIdx = findIdx(["st awal", "stml", "stand awal"]);
     const stmaIdx = findIdx(["st akhir", "stma", "stand akhir"]);
-    const stmaCatatIdx = findIdx(["st akhir catat"]);
     const pakaiIdx = findIdx(["pakai", "pakai_m3", "kubikasi"]);
     const pakaiLaluIdx = findIdx(["pakai lau", "pakai lalu", "pakai_lalu"]);
-    const persenIdx = findIdx(["persentase", "persen"]);
-    const trfIdx = findIdx(["trf", "tarif", "kd_goltarif", "golongan"]);
     const tmssIdx = findIdx(["kd_kel", "tmss", "kode_kondisi"]);
     const ketCatatIdx = findIdx(["nm_kel", "kondisi", "ket_catat", "keterangan"]);
     const petugasIdx = findIdx(["kd_petugas", "petugas_id"]);
     const namaPetugasIdx = findIdx(["nama petugas"]);
-    const kdWmIdx = findIdx(["kd_wm", "nometer", "no_meter"]);
-    const wilIdx = findIdx(["wil", "wilayah"]);
     const ruteIdx = findIdx(["rute", "rute_kode", "kd_rute"]);
-    const zonaWilIdx = findIdx(["zona wil", "zona"]);
-    const kdZonasiIdx = findIdx(["kd zonasi", "kode zonasi"]);
-    const namaZonasiIdx = findIdx(["nama zonasi"]);
-    const kecIdx = findIdx(["kecamatan"]);
-    const kelIdx = findIdx(["kelurahan"]);
     const tglCatatIdx = findIdx(["tgl_catat", "tanggal catat"]);
-    const tglUploadIdx = findIdx(["tgl_upload"]);
 
     const parsed: LapDataMeterRow[] = [];
     for (let i = 1; i < rows.length; i++) {
@@ -156,7 +131,6 @@ export function ImportLapDataMeterView() {
 
       const stml = stmlIdx >= 0 && parts[stmlIdx] ? parseFloat(parts[stmlIdx].replace(",", ".")) || 0 : 0;
       const stma = stmaIdx >= 0 && parts[stmaIdx] ? parseFloat(parts[stmaIdx].replace(",", ".")) || 0 : 0;
-      const stmaCatat = stmaCatatIdx >= 0 && parts[stmaCatatIdx] ? parseFloat(parts[stmaCatatIdx].replace(",", ".")) : undefined;
       const pakaiM3 =
         pakaiIdx >= 0 && parts[pakaiIdx] !== "" && parts[pakaiIdx] !== undefined
           ? parseFloat(parts[pakaiIdx].replace(",", ".")) || 0
@@ -165,14 +139,8 @@ export function ImportLapDataMeterView() {
         pakaiLaluIdx >= 0 && parts[pakaiLaluIdx] !== "" && parts[pakaiLaluIdx] !== undefined
           ? parseFloat(parts[pakaiLaluIdx].replace(",", ".")) || 0
           : undefined;
-      const persentase =
-        persenIdx >= 0 && parts[persenIdx] !== "" && parts[persenIdx] !== undefined
-          ? parseFloat(parts[persenIdx].replace(",", "."))
-          : undefined;
 
       const nama = namaIdx >= 0 ? parts[namaIdx]?.trim() : undefined;
-      const alamat = alamatIdx >= 0 ? parts[alamatIdx]?.trim() : undefined;
-      const trf = trfIdx >= 0 ? parts[trfIdx]?.trim() : undefined;
       const tmssRaw = tmssIdx >= 0 ? parts[tmssIdx]?.trim() : "-";
       const tmss = tmssRaw === "" ? "-" : tmssRaw;
       const ketCatat = ketCatatIdx >= 0 && parts[ketCatatIdx]?.trim() ? parts[ketCatatIdx].trim() : "Normal";
@@ -181,47 +149,27 @@ export function ImportLapDataMeterView() {
         (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) ||
         undefined;
       const namaPetugas = (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) || petugasId;
-      const kdWm = kdWmIdx >= 0 ? parts[kdWmIdx]?.trim() : undefined;
-      const wil = wilIdx >= 0 ? parts[wilIdx]?.trim() : undefined;
       const ruteKode = ruteIdx >= 0 ? parts[ruteIdx]?.trim() : undefined;
-      const zonaWil = zonaWilIdx >= 0 ? parts[zonaWilIdx]?.trim() : undefined;
-      const kdZonasi = kdZonasiIdx >= 0 ? parts[kdZonasiIdx]?.trim() : undefined;
-      const namaZonasi = namaZonasiIdx >= 0 ? parts[namaZonasiIdx]?.trim() : undefined;
-      const kecamatan = kecIdx >= 0 ? parts[kecIdx]?.trim() : undefined;
-      const kelurahan = kelIdx >= 0 ? parts[kelIdx]?.trim() : undefined;
       const tglCatat =
         tglCatatIdx >= 0 && parts[tglCatatIdx]?.trim()
           ? parts[tglCatatIdx].trim()
           : new Date().toISOString();
-      const tglUpload = tglUploadIdx >= 0 && parts[tglUploadIdx]?.trim() ? parts[tglUploadIdx].trim() : undefined;
 
       parsed.push({
         thbl: rawThbl,
         nolg: rawNolg,
         nama,
-        alamat,
         stml,
         stma,
-        stmaCatat,
         pakaiM3,
         pakaiLalu,
-        persentase,
-        trf,
         tmss,
         ketCatat,
         petugasId,
         namaPetugas,
-        kdWm,
-        wil,
         ruteKode,
-        zonaWil,
-        kdZonasi,
-        namaZonasi,
-        kecamatan,
-        kelurahan,
         tglCatat,
-        tglUpload,
-        catatan: namaZonasi ? `Zonasi: ${namaZonasi} (Rute ${ruteKode || "-"})` : "Import Laporan Data Meter",
+        catatan: "Import Laporan Data Meter",
       });
     }
 
@@ -279,13 +227,47 @@ export function ImportLapDataMeterView() {
       return;
     }
 
+    // Pre-validasi duplikat NOLG dalam periode yang sama
+    const seen = new Set<string>();
+    for (const item of items) {
+      const key = `${item.thbl}|${item.nolg}`;
+      if (seen.has(key)) {
+        toast.error(
+          `Duplikat NOLG ${item.nolg} pada periode ${item.thbl}. Hapus baris duplikat sebelum mengimpor.`
+        );
+        return;
+      }
+      seen.add(key);
+
+      if (item.stma < item.stml) {
+        toast.error(
+          `STMA (${item.stma}) lebih kecil dari STML (${item.stml}) pada NOLG ${item.nolg}.`
+        );
+        return;
+      }
+
+      const pakaiM3 = item.pakaiM3 ?? Math.max(0, item.stma - item.stml);
+      if (pakaiM3 < 0) {
+        toast.error(
+          `Kubikasi pemakaian tidak boleh negatif pada NOLG ${item.nolg}.`
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120_000);
+
     try {
       const res = await fetch("/api/import/lapdatameter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const json = await res.json();
       if (!res.ok || !json.success) {
@@ -304,7 +286,12 @@ export function ImportLapDataMeterView() {
         `Sukses! Berhasil memetakan ${json.sukses ?? items.length} baris data meter ke tabel cater_baca_meter.`
       );
     } catch (err: any) {
-      toast.error(err.message || "Terjadi kesalahan saat mengimpor data LapDataMeter.");
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        toast.error("Impor dibatalkan karena melebihi batas waktu 120 detik.");
+      } else {
+        toast.error(err.message || "Terjadi kesalahan saat mengimpor data LapDataMeter.");
+      }
     } finally {
       setIsSubmitting(false);
     }
