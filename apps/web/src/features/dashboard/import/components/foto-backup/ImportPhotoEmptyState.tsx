@@ -11,30 +11,30 @@ interface ImportPhotoEmptyStateProps {
 
 export function ImportPhotoEmptyState({ onFileSelect }: ImportPhotoEmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/60 p-12 text-center">
-      <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-[var(--card)]/60 p-12 text-center">
+      <div className="flex size-14 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)] mb-4">
         <FolderArchive className="size-7" />
       </div>
 
-      <h3 className="text-title-16 font-semibold text-foreground">
+      <h3 className="text-title-16 font-semibold text-[var(--primary-foreground)]">
         Belum Ada Berkas Foto Dipilih
       </h3>
       <p className="text-copy-13 text-muted-foreground mt-1 max-w-lg">
         Pilih berkas foto backup dari penyimpanan HP petugas atau gunakan berkas uji yang tersedia di folder{" "}
-        <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
+        <code className="font-mono text-xs bg-[var(--muted)] px-1.5 py-0.5 rounded text-[var(--primary-foreground)]">
           packages/db/data/mock-photos/
         </code>
       </p>
 
       {/* Standar Penamaan Format */}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground font-mono">
-        <span className="bg-muted px-2 py-1 rounded border border-border/50">
+        <span className="bg-[var(--muted)] px-2 py-1 rounded border border-[var(--border)]/50">
           202601_stand_00703600750.jpg
         </span>
-        <span className="bg-muted px-2 py-1 rounded border border-border/50">
+        <span className="bg-[var(--muted)] px-2 py-1 rounded border border-[var(--border)]/50">
           202601_segel_00703600750.jpg
         </span>
-        <span className="bg-muted px-2 py-1 rounded border border-border/50">
+        <span className="bg-[var(--muted)] px-2 py-1 rounded border border-[var(--border)]/50">
           202601_rumah_00703600750.jpg
         </span>
       </div>

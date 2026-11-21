@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ImportHeader } from "./ImportHeader";
 import {
   UploadCloud,
   CheckCircle2,
@@ -229,73 +230,73 @@ export function ImportDataPencatatanView() {
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Total Baris Data</span>
-              <FileSpreadsheet className="size-4 text-primary" />
+              <FileSpreadsheet className="size-4 text-[var(--primary)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--primary-foreground)] font-mono">
                 {items.length.toLocaleString("id-ID")}
               </span>
               <span className="text-label-11 text-muted-foreground">Baris</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-primary" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)]" />
               <span>Baris transaksi siap diproses</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-sky-500/30">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v2-border)]/30">
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Total Pemakaian</span>
-              <Info className="size-4 text-sky-500" />
+              <Info className="size-4 text-[var(--verif-v2)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400 font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v2-text)] font-mono">
                 {totalKubikasi.toLocaleString("id-ID")}
               </span>
               <span className="text-label-11 text-muted-foreground">m³</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-sky-500" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v2)]" />
               <span>Akumulasi volume air terbaca</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-emerald-500/30">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v3-border)]/30">
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Kondisi Normal</span>
-              <CheckCircle2 className="size-4 text-emerald-500" />
+              <CheckCircle2 className="size-4 text-[var(--verif-v3)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v3-text)] font-mono">
                 {normalCount.toLocaleString("id-ID")}
               </span>
               <span className="text-label-11 text-muted-foreground">Normal</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v3)]" />
               <span>{kendalaCount} kendala</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-indigo-500/30 col-span-2 sm:col-span-1">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v2-border)]/30 col-span-2 sm:col-span-1">
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Periode Aktif</span>
-              <AlertCircle className="size-4 text-indigo-500" />
+              <AlertCircle className="size-4 text-[var(--verif-v2)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400 font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v2-text)] font-mono">
                 {items[0]?.thbl || "-"}
               </span>
               <span className="text-label-11 text-muted-foreground">THBL</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-indigo-500" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v2)]" />
               <span>Format baku YYYYMM</span>
             </div>
           </CardContent>
@@ -313,12 +314,12 @@ export function ImportDataPencatatanView() {
             <input type="file" accept=".csv,.txt,.json" onChange={handleFileUpload} className="hidden" />
             <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
               <span>
-                <Upload className="mr-1.5 size-3.5 text-primary" />
+                <Upload className="mr-1.5 size-3.5 text-[var(--primary)]" />
                 Unggah CSV Mobile
               </span>
             </Button>
           </label>
-          <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0} className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+          <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0} className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90 cursor-pointer">
             <Database className="mr-1.5 size-3.5" />
             {isSubmitting ? "Memproses..." : "Import Data Meter"}
           </Button>
@@ -327,26 +328,26 @@ export function ImportDataPencatatanView() {
 
       {/* 3. Notifikasi Hasil Import */}
       {resultStats && (
-        <div className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-lg border-[var(--verif-v3-border)]/30 bg-[var(--verif-v3-soft)] p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+            <CheckCircle2 className="size-5 shrink-0 text-[var(--verif-v3-text)] mt-0.5" />
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-emerald-800 dark:text-emerald-200">
+                <span className="font-semibold text-[var(--verif-v3-text)]">
                   Import Data Pencatatan Sukses
                 </span>
-                <Badge className="bg-emerald-600 text-white font-mono text-[10px]">
+                <Badge className="bg-[var(--success)] text-[var(--success-foreground)] font-mono text-[10px]">
                   Batch Selesai
                 </Badge>
               </div>
-              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+              <p className="text-xs text-[var(--verif-v3-text)]">
                 Total {resultStats.total} baris: {resultStats.sukses} terserap ke database cater_baca_meter, {resultStats.gagal} gagal.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <Badge className="bg-emerald-600 text-white">Status: Terverifikasi</Badge>
+            <Badge className="bg-[var(--success)] text-[var(--success-foreground)]">Status: Terverifikasi</Badge>
           </div>
         </div>
       )}
@@ -387,7 +388,7 @@ export function ImportDataPencatatanView() {
                   <td colSpan={10} className="py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <FileSpreadsheet className="size-8 text-muted-foreground/40" />
-                      <p className="font-medium text-foreground">Belum ada data pencatatan yang dimuat</p>
+                      <p className="font-medium text-[var(--primary-foreground)]">Belum ada data pencatatan yang dimuat</p>
                       <p className="text-xs">
                         Klik <strong>&ldquo;Reset Contoh&rdquo;</strong> atau unggah berkas CSV Anda.
                       </p>
@@ -396,12 +397,12 @@ export function ImportDataPencatatanView() {
                 </tr>
               ) : (
                 items.map((row, idx) => (
-                  <tr key={`${row.nolg}-${idx}`} className="transition-colors hover:bg-muted/30 font-mono">
-                    <td className="py-2 px-3 font-medium text-foreground">{row.nolg}</td>
+                  <tr key={`${row.nolg}-${idx}`} className="transition-colors hover:bg-[var(--table-hover)] font-mono">
+                    <td className="py-2 px-3 font-medium text-[var(--primary-foreground)]">{row.nolg}</td>
                     <td className="py-2 px-3 font-mono">{row.thbl}</td>
                     <td className="py-2 px-2 text-muted-foreground">{row.stml} m³</td>
-                    <td className="py-2 px-2 font-semibold text-foreground">{row.stma} m³</td>
-                    <td className="py-2 px-2 font-semibold text-primary">{row.pakaiM3} m³</td>
+                    <td className="py-2 px-2 font-semibold text-[var(--primary-foreground)]">{row.stma} m³</td>
+                    <td className="py-2 px-2 font-semibold text-[var(--verif-v2-text)]">{row.pakaiM3} m³</td>
                     <td className="py-2 px-2 text-muted-foreground">{row.tglCatat}</td>
                     <td className="py-2 px-2 font-mono">{row.petugasId}</td>
                     <td className="py-2 px-2 font-mono">{row.ruteKode}</td>

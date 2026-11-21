@@ -123,16 +123,16 @@ export function ImportRNomorView() {
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Total Rekening</span>
-              <FileText className="size-4 text-primary" />
+              <FileText className="size-4 text-[var(--primary)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--primary-foreground)] font-mono">
                 {items.length.toLocaleString("id-ID")}
               </span>
               <span className="text-label-11 text-muted-foreground">Rekening</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-primary" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)]" />
               <span>Rekening siap diproses</span>
             </div>
           </CardContent>
@@ -142,54 +142,54 @@ export function ImportRNomorView() {
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Status Aktif</span>
-              <UserMinus className="size-4 text-primary" />
+              <UserMinus className="size-4 text-[var(--primary)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--primary-foreground)] font-mono">
                 {items.length.toLocaleString("id-ID")}
               </span>
               <span className="text-label-11 text-muted-foreground">Diajukan</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-primary" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)]" />
               <span>Pemutusan</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-amber-500/30">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v1-border)]/30">
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Tanggal Awal</span>
-              <AlertTriangle className="size-4 text-amber-500" />
+              <AlertTriangle className="size-4 text-[var(--verif-v1)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v1-text)] font-mono">
                 {items[0]?.tglPutus || "-"}
               </span>
               <span className="text-label-11 text-muted-foreground">Terdekat</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-amber-500" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v1)]" />
               <span>Pemutusan</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-rose-500/30 col-span-2 sm:col-span-1">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-error-border)]/30 col-span-2 sm:col-span-1">
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Stand Cabut</span>
-              <ShieldAlert className="size-4 text-rose-500" />
+              <ShieldAlert className="size-4 text-[var(--verif-error)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--verif-error-text)] font-mono">
                 {items.reduce((sum, i) => sum + i.standCabut, 0).toLocaleString("id-ID")}
               </span>
               <span className="text-label-11 text-muted-foreground">m³</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-rose-500" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-error)]" />
               <span>Total stand akhir pengangkatan</span>
             </div>
           </CardContent>
@@ -214,7 +214,7 @@ export function ImportRNomorView() {
             size="sm"
             onClick={handleImport}
             disabled={isSubmitting || items.length === 0}
-            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)]/90 cursor-pointer"
           >
             <ShieldAlert className="mr-1.5 size-4" />
             {isSubmitting ? "Memproses..." : "Eksekusi Pemutusan (R)"}
@@ -224,19 +224,19 @@ export function ImportRNomorView() {
 
       {/* 3. Notifikasi Hasil Pemrosesan */}
       {resultStats && (
-        <div className="flex flex-col gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-lg border-[var(--verif-error-border)]/30 bg-[var(--verif-error-soft)] p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+            <CheckCircle2 className="size-5 shrink-0 text-[var(--verif-error-text)] mt-0.5" />
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-rose-800 dark:text-rose-200">
+                <span className="font-semibold text-[var(--verif-error-text)]">
                   Pemutusan R-Nomor Selesai Diproses
                 </span>
-                <Badge className="bg-rose-600 text-white font-mono text-[10px]">
+                <Badge className="bg-[var(--destructive)] text-[var(--destructive-foreground)] font-mono text-[10px]">
                   Batch Selesai
                 </Badge>
               </div>
-              <p className="text-xs text-rose-700 dark:text-rose-300">
+              <p className="text-xs text-[var(--verif-error-text)]">
                 Total {resultStats.total} pelanggan: {resultStats.sukses}{" "}
                 status diubah menjadi NON AKTIF (R), {resultStats.gagal}{" "}
                 gagal.
@@ -245,7 +245,7 @@ export function ImportRNomorView() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <Badge className="bg-rose-600 text-white">Status: Diputus</Badge>
+            <Badge className="bg-[var(--destructive)] text-[var(--destructive-foreground)]">Status: Diputus</Badge>
           </div>
         </div>
       )}
@@ -263,7 +263,7 @@ export function ImportRNomorView() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-rose-500 font-medium">
+          <div className="flex items-center gap-2 text-xs text-[var(--verif-error)] font-medium">
             <AlertTriangle className="size-4" />
           </div>
         </div>
@@ -283,8 +283,8 @@ export function ImportRNomorView() {
             </thead>
             <tbody className="divide-y divide-border/40">
               {items.map((row) => (
-                <tr key={row.nolg} className="transition-colors hover:bg-muted/30 font-mono">
-                  <td className="py-2 px-3 font-medium text-foreground">
+                <tr key={row.nolg} className="transition-colors hover:bg-[var(--table-hover)] font-mono">
+                  <td className="py-2 px-3 font-medium text-[var(--primary-foreground)]">
                     {row.nolg}
                   </td>
                   <td className="py-2 px-3 font-medium">{row.nama}</td>
@@ -295,7 +295,7 @@ export function ImportRNomorView() {
                   <td className="py-2 px-3 font-mono text-xs">
                     {row.nomorBa}
                   </td>
-                  <td className="py-2 px-3 font-semibold text-rose-600 dark:text-rose-400">
+                  <td className="py-2 px-3 font-semibold text-[var(--verif-error-text)]">
                     {row.standCabut} m³
                   </td>
                   <td

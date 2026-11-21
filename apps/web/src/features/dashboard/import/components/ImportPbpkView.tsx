@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ImportHeader } from "./ImportHeader";
 import {
   FolderSync,
   CheckCircle2,
@@ -167,54 +168,54 @@ export function ImportPbpkView() {
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Total Rekening PBPK</span>
-              <FileText className="size-4 text-primary" />
+              <FileText className="size-4 text-[var(--primary)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--primary-foreground)] font-mono">
                 {rows.length}
               </span>
               <span className="text-label-11 text-muted-foreground">Sambungan</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-primary" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)]" />
               <span>Dari berkas PBPK.csv</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-sky-500/30">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v2-border)]/30">
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Pasang Baru (PB)</span>
-              <FolderSync className="size-4 text-sky-500" />
+              <FolderSync className="size-4 text-[var(--verif-v2)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400 font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v2-text)] font-mono">
                 {pbCount}
               </span>
               <span className="text-label-11 text-muted-foreground">Baru</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-sky-500" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v2)]" />
               <span>Pelanggan & Water Meter Baru</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-emerald-500/30">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v3-border)]/30">
           <CardContent className="p-0">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="text-label-11 font-medium tracking-wide uppercase">Pemasangan Kembali (PK)</span>
-              <CheckCircle2 className="size-4 text-emerald-500" />
+              <CheckCircle2 className="size-4 text-[var(--verif-v3)]" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono">
+              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v3-text)] font-mono">
                 {pkCount}
               </span>
               <span className="text-label-11 text-muted-foreground">Aktif</span>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v3)]" />
               <span>Aktivasi Sambungan Eksisting</span>
             </div>
           </CardContent>
@@ -231,7 +232,7 @@ export function ImportPbpkView() {
             disabled={isLoadingSample || isSubmitting}
             className="h-8 text-label-12 cursor-pointer"
           >
-            <Sparkles className="mr-1.5 size-3.5 text-amber-500" />
+            <Sparkles className="mr-1.5 size-3.5 text-[var(--verif-v1)]" />
             {isLoadingSample ? "Memuat..." : "Muat PBPK.csv"}
           </Button>
           <label className="cursor-pointer">
@@ -252,7 +253,7 @@ export function ImportPbpkView() {
             size="sm"
             onClick={handleExecuteImport}
             disabled={isSubmitting || rows.length === 0}
-            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90 cursor-pointer"
           >
             <FolderSync className="mr-1.5 size-3.5" />
             {isSubmitting ? "Memproses..." : "Eksekusi Import ke DPM"}
@@ -262,19 +263,19 @@ export function ImportPbpkView() {
 
       {/* 3. Notifikasi Hasil Import */}
       {resultStats && (
-        <div className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-lg border-[var(--verif-v3-border)]/30 bg-[var(--verif-v3-soft)] p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+            <CheckCircle2 className="size-5 shrink-0 text-[var(--verif-v3-text)] mt-0.5" />
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-emerald-800 dark:text-emerald-200">
+                <span className="font-semibold text-[var(--verif-v3-text)]">
                   Sinkronisasi PBPK Berhasil
                 </span>
-                <Badge className="bg-emerald-600 text-white font-mono text-[10px]">
+                <Badge className="bg-[var(--success)] text-[var(--success-foreground)] font-mono text-[10px]">
                   Batch Selesai
                 </Badge>
               </div>
-              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+              <p className="text-xs text-[var(--verif-v3-text)]">
                 Total {resultStats.total} data ({resultStats.pb} Pasang Baru,{" "}
                 {resultStats.pk} Pemasangan Kembali). Seluruhnya siap dicatat
                 pada DPM periode {targetPeriode}.
@@ -283,7 +284,7 @@ export function ImportPbpkView() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <Badge className="bg-emerald-600 text-white">
+            <Badge className="bg-[var(--success)] text-[var(--success-foreground)]">
               Status: Masuk DPM
             </Badge>
           </div>
@@ -326,7 +327,7 @@ export function ImportPbpkView() {
                   >
                     <div className="flex flex-col items-center justify-center gap-2">
                       <FileText className="size-8 text-muted-foreground/40" />
-                      <p className="font-medium text-foreground">
+                      <p className="font-medium text-[var(--primary-foreground)]">
                         Belum ada data mutasi PBPK yang dimuat.
                       </p>
                       <p className="text-xs">
@@ -341,15 +342,15 @@ export function ImportPbpkView() {
                 rows.slice(0, 30).map((row, idx) => (
                   <tr
                     key={`${row.nolg}-${idx}`}
-                    className="transition-colors hover:bg-muted/30 font-mono"
+                    className="transition-colors hover:bg-[var(--table-hover)] font-mono"
                   >
                     <td className="py-2 px-3">
                       <Badge
                         variant="outline"
                         className={
                           row.mutasian === "PB"
-                            ? "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold text-[10px]"
-                            : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]"
+                            ? "border-[var(--verif-v2-border)]/40 bg-[var(--verif-v2-soft)] text-[var(--verif-v2-text)] font-semibold text-[10px]"
+                            : "border-[var(--verif-v3-border)]/40 bg-[var(--verif-v3-soft)] text-[var(--verif-v3-text)] font-semibold text-[10px]"
                         }
                       >
                         {row.mutasian === "PB"
@@ -357,7 +358,7 @@ export function ImportPbpkView() {
                           : "Pasang Kembali (PK)"}
                       </Badge>
                     </td>
-                    <td className="py-2 px-3 font-medium text-foreground">
+                    <td className="py-2 px-3 font-medium text-[var(--primary-foreground)]">
                       {row.nolg}
                     </td>
                     <td className="py-2 px-3 font-medium">{row.nama}</td>

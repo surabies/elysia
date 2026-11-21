@@ -41,13 +41,13 @@ export function ImportPhotoTable({
   onOpenPreview,
 }: ImportPhotoTableProps) {
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
+    <div className="rounded-lg border border-border bg-[var(--card)] overflow-hidden">
       {/* Status Bar Selection di Atas Tabel */}
-      <div className="flex items-center justify-between border-b border-border bg-(--table-head) px-4 py-2 text-label-12">
+      <div className="flex items-center justify-between border-b border-border bg-[var(--table-head)] px-4 py-2 text-label-12">
         <div className="flex items-center gap-3">
           <span className="text-muted-foreground">
             Terpilih:{" "}
-            <strong className="font-mono text-foreground font-semibold">
+            <strong className="font-mono text-[var(--primary-foreground)] font-semibold">
               {selectedNolgs.size}
             </strong>{" "}
             / {filteredCustomers.length} SL
@@ -55,7 +55,7 @@ export function ImportPhotoTable({
           <span>·</span>
           <span className="text-muted-foreground">
             Total Berkas:{" "}
-            <strong className="font-mono text-primary font-semibold">
+            <strong className="font-mono text-[var(--primary)] font-semibold">
               {activeProcessCount} Foto
             </strong>
           </span>
@@ -70,50 +70,50 @@ export function ImportPhotoTable({
 
       {/* Tabel dengan Scroll Kontainer Mandiri (Pola TanStack) */}
       <Table containerClassName="max-h-[calc(100vh-320px)] overflow-y-auto">
-        <TableHeader className="sticky top-0 z-10 bg-(--table-head) shadow-[0_1px_0_0_var(--border)]">
+        <TableHeader className="sticky top-0 z-10 bg-[var(--table-head)] shadow-[0_1px_0_0_var(--border)]">
           <TableRow>
             {/* Checkbox Select All */}
-            <TableHead className="w-10 text-center bg-(--table-head)">
+            <TableHead className="w-10 text-center bg-[var(--table-head)]">
               <Checkbox
                 checked={isAllSelected ? true : isIndeterminate ? "indeterminate" : false}
                 onCheckedChange={toggleSelectAll}
                 aria-label="Pilih semua baris"
               />
             </TableHead>
-            <TableHead className="w-10 text-center bg-(--table-head)">No</TableHead>
+            <TableHead className="w-10 text-center bg-[var(--table-head)]">No</TableHead>
 
             {/* Kolom Terpisah: No Langganan, Nama, Alamat */}
-            <TableHead className="min-w-[130px] bg-(--table-head)">No. Langganan</TableHead>
-            <TableHead className="min-w-[170px] bg-(--table-head)">Nama Pelanggan</TableHead>
-            <TableHead className="min-w-[200px] bg-(--table-head)">Alamat</TableHead>
-            <TableHead className="w-20 text-center bg-(--table-head)">Rute</TableHead>
+            <TableHead className="min-w-[130px] bg-[var(--table-head)]">No. Langganan</TableHead>
+            <TableHead className="min-w-[170px] bg-[var(--table-head)]">Nama Pelanggan</TableHead>
+            <TableHead className="min-w-[200px] bg-[var(--table-head)]">Alamat</TableHead>
+            <TableHead className="w-20 text-center bg-[var(--table-head)]">Rute</TableHead>
 
             {/* Kolom Dinamis Berdasarkan Mode Filter Pengelompokan */}
             {modeFilter === "all" ? (
               <>
-                <TableHead className="min-w-[150px] bg-(--table-head)">Foto Stand Meter</TableHead>
-                <TableHead className="min-w-[150px] bg-(--table-head)">Foto Segel Meter</TableHead>
-                <TableHead className="min-w-[150px] bg-(--table-head)">Foto Rumah / Fasad</TableHead>
-                <TableHead className="min-w-[110px] text-center bg-(--table-head)">Kelengkapan</TableHead>
+                <TableHead className="min-w-[150px] bg-[var(--table-head)]">Foto Stand Meter</TableHead>
+                <TableHead className="min-w-[150px] bg-[var(--table-head)]">Foto Segel Meter</TableHead>
+                <TableHead className="min-w-[150px] bg-[var(--table-head)]">Foto Rumah / Fasad</TableHead>
+                <TableHead className="min-w-[110px] text-center bg-[var(--table-head)]">Kelengkapan</TableHead>
               </>
             ) : modeFilter === "stand" ? (
               <>
-                <TableHead className="min-w-[220px] bg-(--table-head)">Berkas Foto Stand Meter</TableHead>
-                <TableHead className="min-w-[130px] text-center bg-(--table-head)">Status Validasi</TableHead>
+                <TableHead className="min-w-[220px] bg-[var(--table-head)]">Berkas Foto Stand Meter</TableHead>
+                <TableHead className="min-w-[130px] text-center bg-[var(--table-head)]">Status Validasi</TableHead>
               </>
             ) : modeFilter === "segel" ? (
               <>
-                <TableHead className="min-w-[220px] bg-(--table-head)">Berkas Foto Segel Meter</TableHead>
-                <TableHead className="min-w-[130px] text-center bg-(--table-head)">Status Validasi</TableHead>
+                <TableHead className="min-w-[220px] bg-[var(--table-head)]">Berkas Foto Segel Meter</TableHead>
+                <TableHead className="min-w-[130px] text-center bg-[var(--table-head)]">Status Validasi</TableHead>
               </>
             ) : (
               <>
-                <TableHead className="min-w-[220px] bg-(--table-head)">Berkas Foto Fasad Rumah</TableHead>
-                <TableHead className="min-w-[130px] text-center bg-(--table-head)">Status Validasi</TableHead>
+                <TableHead className="min-w-[220px] bg-[var(--table-head)]">Berkas Foto Fasad Rumah</TableHead>
+                <TableHead className="min-w-[130px] text-center bg-[var(--table-head)]">Status Validasi</TableHead>
               </>
             )}
 
-            <TableHead className="w-16 text-center bg-(--table-head)">Aksi</TableHead>
+            <TableHead className="w-16 text-center bg-[var(--table-head)]">Aksi</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -125,7 +125,7 @@ export function ImportPhotoTable({
                 key={c.nolg}
                 className={cn(
                   "transition-colors",
-                  isSelected && "bg-primary/5 hover:bg-primary/10"
+                  isSelected && "bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10"
                 )}
               >
                 {/* Checkbox */}
@@ -144,14 +144,14 @@ export function ImportPhotoTable({
 
                 {/* 1. Kolom Terpisah: No. Langganan (NOLG) */}
                 <TableCell>
-                  <span className="font-mono font-semibold text-primary text-xs">
+                  <span className="font-mono font-semibold text-[var(--primary)] text-xs">
                     {c.nolg}
                   </span>
                 </TableCell>
 
                 {/* 2. Kolom Terpisah: Nama Pelanggan (Dari Database) */}
                 <TableCell>
-                  <span className="font-medium text-foreground text-xs uppercase">
+                  <span className="font-medium text-[var(--primary-foreground)] text-xs uppercase">
                     {c.nama || <span className="text-muted-foreground font-normal italic">Memuat dari database...</span>}
                   </span>
                 </TableCell>
@@ -184,7 +184,7 @@ export function ImportPhotoTable({
                           <button
                             type="button"
                             onClick={() => onOpenPreview(c, "stand")}
-                            className="group relative size-11 shrink-0 overflow-hidden rounded-md border border-sky-500/30 bg-muted transition-transform hover:scale-105 cursor-pointer"
+                            className="group relative size-11 shrink-0 overflow-hidden rounded-md border border-[var(--verif-v2)]/30 bg-[var(--muted)] transition-transform hover:scale-105 cursor-pointer"
                             title="Klik untuk membuka foto stand"
                           >
                             <img
@@ -193,11 +193,11 @@ export function ImportPhotoTable({
                               className="h-full w-full object-cover"
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                              <Eye className="size-3.5 text-white" />
+                              <Eye className="size-3.5 text-[var(--invert-foreground)]" />
                             </div>
                           </button>
                           <div className="flex flex-col text-[10px]">
-                            <span className="font-mono font-medium text-sky-600 dark:text-sky-400 truncate max-w-[110px]" title={c.fotoStand.fileName}>
+                            <span className="font-mono font-medium text-[var(--verif-v2-text)] truncate max-w-[110px]" title={c.fotoStand.fileName}>
                               {c.fotoStand.fileName.replace(`${c.nolg}.jpg`, "...")}
                             </span>
                             <span className="text-muted-foreground font-mono">{c.fotoStand.size}</span>
@@ -215,7 +215,7 @@ export function ImportPhotoTable({
                           <button
                             type="button"
                             onClick={() => onOpenPreview(c, "segel")}
-                            className="group relative size-11 shrink-0 overflow-hidden rounded-md border border-amber-500/30 bg-muted transition-transform hover:scale-105 cursor-pointer"
+                            className="group relative size-11 shrink-0 overflow-hidden rounded-md border border-[var(--verif-v1)]/30 bg-[var(--muted)] transition-transform hover:scale-105 cursor-pointer"
                             title="Klik untuk membuka foto segel"
                           >
                             <img
@@ -224,11 +224,11 @@ export function ImportPhotoTable({
                               className="h-full w-full object-cover"
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                              <Eye className="size-3.5 text-white" />
+                              <Eye className="size-3.5 text-[var(--invert-foreground)]" />
                             </div>
                           </button>
                           <div className="flex flex-col text-[10px]">
-                            <span className="font-mono font-medium text-amber-600 dark:text-amber-400 truncate max-w-[110px]" title={c.fotoSegel.fileName}>
+                            <span className="font-mono font-medium text-[var(--verif-v1-text)] truncate max-w-[110px]" title={c.fotoSegel.fileName}>
                               {c.fotoSegel.fileName.replace(`${c.nolg}.jpg`, "...")}
                             </span>
                             <span className="text-muted-foreground font-mono">{c.fotoSegel.size}</span>
@@ -246,7 +246,7 @@ export function ImportPhotoTable({
                           <button
                             type="button"
                             onClick={() => onOpenPreview(c, "rumah")}
-                            className="group relative size-11 shrink-0 overflow-hidden rounded-md border border-indigo-500/30 bg-muted transition-transform hover:scale-105 cursor-pointer"
+                            className="group relative size-11 shrink-0 overflow-hidden rounded-md border border-[var(--verif-v2)]/30 bg-[var(--muted)] transition-transform hover:scale-105 cursor-pointer"
                             title="Klik untuk membuka foto rumah"
                           >
                             <img
@@ -255,11 +255,11 @@ export function ImportPhotoTable({
                               className="h-full w-full object-cover"
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                              <Eye className="size-3.5 text-white" />
+                              <Eye className="size-3.5 text-[var(--invert-foreground)]" />
                             </div>
                           </button>
                           <div className="flex flex-col text-[10px]">
-                            <span className="font-mono font-medium text-indigo-600 dark:text-indigo-400 truncate max-w-[110px]" title={c.fotoRumah.fileName}>
+                            <span className="font-mono font-medium text-[var(--verif-v2-text)] truncate max-w-[110px]" title={c.fotoRumah.fileName}>
                               {c.fotoRumah.fileName.replace(`${c.nolg}.jpg`, "...")}
                             </span>
                             <span className="text-muted-foreground font-mono">{c.fotoRumah.size}</span>
@@ -273,12 +273,12 @@ export function ImportPhotoTable({
                     {/* Status Kelengkapan */}
                     <TableCell className="text-center">
                       {c.countLengkap === 3 ? (
-                        <Badge className="bg-emerald-600/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[10px] font-semibold">
-                          <CheckCircle2 className="mr-1 size-3 text-emerald-600 dark:text-emerald-400" />
+                        <Badge className="bg-[var(--verif-v3-soft)] text-[var(--verif-v3-text)] border-[var(--verif-v3-border)]/30 text-[10px] font-semibold">
+                          <CheckCircle2 className="mr-1 size-3 text-[var(--verif-v3)]" />
                           3/3 Lengkap
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[10px] text-amber-600 dark:text-amber-400 border-amber-500/30">
+                        <Badge variant="outline" className="text-[10px] text-[var(--verif-v1-text)] border-[var(--verif-v1-border)]/30">
                           {c.countLengkap}/3 Berkas
                         </Badge>
                       )}
@@ -292,7 +292,7 @@ export function ImportPhotoTable({
                           <button
                             type="button"
                             onClick={() => onOpenPreview(c, "stand")}
-                            className="group relative size-12 shrink-0 overflow-hidden rounded-md border border-sky-500/40 bg-muted transition-transform hover:scale-105 cursor-pointer"
+                            className="group relative size-12 shrink-0 overflow-hidden rounded-md border border-[var(--verif-v2)]/40 bg-[var(--muted)] transition-transform hover:scale-105 cursor-pointer"
                           >
                             <img
                               src={c.fotoStand.url}
@@ -300,11 +300,11 @@ export function ImportPhotoTable({
                               className="h-full w-full object-cover"
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                              <Eye className="size-4 text-white" />
+                              <Eye className="size-4 text-[var(--invert-foreground)]" />
                             </div>
                           </button>
                           <div className="flex flex-col gap-0.5 text-xs">
-                            <span className="font-mono font-medium text-foreground">{c.fotoStand.fileName}</span>
+                            <span className="font-mono font-medium text-[var(--primary-foreground)]">{c.fotoStand.fileName}</span>
                             <span className="text-[11px] text-muted-foreground font-mono">{c.fotoStand.size}</span>
                           </div>
                         </div>
@@ -313,8 +313,8 @@ export function ImportPhotoTable({
                       )}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge className="bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30 text-[10px] font-semibold">
-                        <Check className="mr-1 size-3 text-sky-500" />
+                      <Badge className="bg-[var(--verif-v2-soft)] text-[var(--verif-v2-text)] border-[var(--verif-v2-border)]/30 text-[10px] font-semibold">
+                        <Check className="mr-1 size-3 text-[var(--verif-v2)]" />
                         Stand Valid
                       </Badge>
                     </TableCell>
@@ -327,7 +327,7 @@ export function ImportPhotoTable({
                           <button
                             type="button"
                             onClick={() => onOpenPreview(c, "segel")}
-                            className="group relative size-12 shrink-0 overflow-hidden rounded-md border border-amber-500/40 bg-muted transition-transform hover:scale-105 cursor-pointer"
+                            className="group relative size-12 shrink-0 overflow-hidden rounded-md border border-[var(--verif-v1)]/40 bg-[var(--muted)] transition-transform hover:scale-105 cursor-pointer"
                           >
                             <img
                               src={c.fotoSegel.url}
@@ -335,11 +335,11 @@ export function ImportPhotoTable({
                               className="h-full w-full object-cover"
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                              <Eye className="size-4 text-white" />
+                              <Eye className="size-4 text-[var(--invert-foreground)]" />
                             </div>
                           </button>
                           <div className="flex flex-col gap-0.5 text-xs">
-                            <span className="font-mono font-medium text-foreground">{c.fotoSegel.fileName}</span>
+                            <span className="font-mono font-medium text-[var(--primary-foreground)]">{c.fotoSegel.fileName}</span>
                             <span className="text-[11px] text-muted-foreground font-mono">{c.fotoSegel.size}</span>
                           </div>
                         </div>
@@ -348,8 +348,8 @@ export function ImportPhotoTable({
                       )}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] font-semibold">
-                        <Check className="mr-1 size-3 text-amber-500" />
+                      <Badge className="bg-[var(--verif-v1-soft)] text-[var(--verif-v1-text)] border-[var(--verif-v1-border)]/30 text-[10px] font-semibold">
+                        <Check className="mr-1 size-3 text-[var(--verif-v1)]" />
                         Segel Valid
                       </Badge>
                     </TableCell>
@@ -362,7 +362,7 @@ export function ImportPhotoTable({
                           <button
                             type="button"
                             onClick={() => onOpenPreview(c, "rumah")}
-                            className="group relative size-12 shrink-0 overflow-hidden rounded-md border border-indigo-500/40 bg-muted transition-transform hover:scale-105 cursor-pointer"
+                            className="group relative size-12 shrink-0 overflow-hidden rounded-md border border-[var(--verif-v2)]/40 bg-[var(--muted)] transition-transform hover:scale-105 cursor-pointer"
                           >
                             <img
                               src={c.fotoRumah.url}
@@ -370,11 +370,11 @@ export function ImportPhotoTable({
                               className="h-full w-full object-cover"
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                              <Eye className="size-4 text-white" />
+                              <Eye className="size-4 text-[var(--invert-foreground)]" />
                             </div>
                           </button>
                           <div className="flex flex-col gap-0.5 text-xs">
-                            <span className="font-mono font-medium text-foreground">{c.fotoRumah.fileName}</span>
+                            <span className="font-mono font-medium text-[var(--primary-foreground)]">{c.fotoRumah.fileName}</span>
                             <span className="text-[11px] text-muted-foreground font-mono">{c.fotoRumah.size}</span>
                           </div>
                         </div>
@@ -383,8 +383,8 @@ export function ImportPhotoTable({
                       )}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge className="bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 text-[10px] font-semibold">
-                        <Check className="mr-1 size-3 text-indigo-500" />
+                      <Badge className="bg-[var(--verif-v2-soft)] text-[var(--verif-v2-text)] border-[var(--verif-v2-border)]/30 text-[10px] font-semibold">
+                        <Check className="mr-1 size-3 text-[var(--verif-v2)]" />
                         Rumah Valid
                       </Badge>
                     </TableCell>
@@ -409,7 +409,7 @@ export function ImportPhotoTable({
                           : modeFilter
                       )
                     }
-                    className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-[var(--primary-foreground)] cursor-pointer"
                     title="Buka Pratinjau Foto"
                   >
                     <Eye className="size-4" />

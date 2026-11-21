@@ -59,10 +59,10 @@ export function ImportPhotoFilterBar({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <h2 className="text-title-16 font-semibold tracking-tight text-foreground">
+            <h2 className="text-title-16 font-semibold tracking-tight text-[var(--primary-foreground)]">
               Import Foto Backup (Mobile Recovery)
             </h2>
-            <Badge variant="outline" className="border-primary/30 text-primary text-[10px] font-mono">
+            <Badge variant="outline" className="border-[var(--primary)]/30 text-[var(--primary)] text-[10px] font-mono">
               Pola: {"{THBL}_{JENIS}_{NOLG}.jpg"}
             </Badge>
           </div>
@@ -97,7 +97,7 @@ export function ImportPhotoFilterBar({
             />
             <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
               <span>
-                <FolderArchive className="mr-1.5 size-3.5 text-primary" />
+                <FolderArchive className="mr-1.5 size-3.5 text-[var(--primary)]" />
                 Pilih Berkas dari HP
               </span>
             </Button>
@@ -107,7 +107,7 @@ export function ImportPhotoFilterBar({
             size="sm"
             onClick={onExecuteImport}
             disabled={isSubmitting || selectedNolgsCount === 0 || activeProcessCount === 0}
-            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90 cursor-pointer"
           >
             <UploadCloud className="size-3.5" />
             {isSubmitting
@@ -127,7 +127,7 @@ export function ImportPhotoFilterBar({
       {hasData && (
         <div className="flex flex-col gap-3 pt-2 border-t border-border sm:flex-row sm:items-center sm:justify-between">
           {/* Segmented Control Pengelompokan Foto Aktif */}
-          <div className="flex flex-wrap items-center gap-1 rounded-md bg-muted/60 p-1 border border-border/50 select-none">
+          <div className="flex flex-wrap items-center gap-1 rounded-md bg-[var(--muted)]/60 p-1 border border-[var(--border)]/50 select-none">
             {/* Opsi 1: Semua Foto (Sekaligus) */}
             <button
               type="button"
@@ -135,11 +135,11 @@ export function ImportPhotoFilterBar({
               className={cn(
                 "flex items-center gap-1.5 rounded px-2.5 py-1 text-label-12 font-medium transition-all cursor-pointer",
                 modeFilter === "all"
-                  ? "bg-background text-foreground shadow-xs border border-border/70 font-semibold text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  ? "bg-background text-[var(--primary-foreground)] shadow-xs border border-[var(--border)]/70 font-semibold text-[var(--primary)]"
+                  : "text-muted-foreground hover:text-[var(--primary-foreground)] hover:bg-background/50"
               )}
             >
-              <Layers className="size-3.5 text-primary" />
+              <Layers className="size-3.5 text-[var(--primary)]" />
               <span>Semua Foto (Sekaligus)</span>
               <span className="font-mono text-[10px] text-muted-foreground">({totalBerkas})</span>
             </button>
@@ -151,13 +151,13 @@ export function ImportPhotoFilterBar({
               className={cn(
                 "flex items-center gap-1.5 rounded px-2.5 py-1 text-label-12 font-medium transition-all cursor-pointer",
                 modeFilter === "stand"
-                  ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 shadow-xs border border-sky-500/50 font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  ? "bg-[var(--verif-v2-soft)] text-[var(--verif-v2-text)] shadow-xs border border-[var(--verif-v2-border)]/50 font-semibold"
+                  : "text-muted-foreground hover:text-[var(--primary-foreground)] hover:bg-background/50"
               )}
             >
-              <Gauge className="size-3.5 text-sky-500" />
+              <Gauge className="size-3.5 text-[var(--verif-v2)]" />
               <span>Stand Meter</span>
-              <span className="font-mono text-[10px] text-sky-600 dark:text-sky-400 font-semibold">({countStand})</span>
+              <span className="font-mono text-[10px] text-[var(--verif-v2-text)] dark:text-[var(--verif-v2-text)] font-semibold">({countStand})</span>
             </button>
 
             {/* Opsi 3: Segel Meter Saja */}
@@ -167,13 +167,13 @@ export function ImportPhotoFilterBar({
               className={cn(
                 "flex items-center gap-1.5 rounded px-2.5 py-1 text-label-12 font-medium transition-all cursor-pointer",
                 modeFilter === "segel"
-                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs border border-amber-500/50 font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  ? "bg-[var(--verif-v1-soft)] text-[var(--verif-v1-text)] shadow-xs border border-[var(--verif-v1-border)]/50 font-semibold"
+                  : "text-muted-foreground hover:text-[var(--primary-foreground)] hover:bg-background/50"
               )}
             >
-              <ShieldCheck className="size-3.5 text-amber-500" />
+              <ShieldCheck className="size-3.5 text-[var(--verif-v1)]" />
               <span>Segel Meter</span>
-              <span className="font-mono text-[10px] text-amber-600 dark:text-amber-400 font-semibold">({countSegel})</span>
+              <span className="font-mono text-[10px] text-[var(--verif-v1-text)] dark:text-[var(--verif-v1-text)] font-semibold">({countSegel})</span>
             </button>
 
             {/* Opsi 4: Fasad Rumah Saja */}
@@ -183,13 +183,13 @@ export function ImportPhotoFilterBar({
               className={cn(
                 "flex items-center gap-1.5 rounded px-2.5 py-1 text-label-12 font-medium transition-all cursor-pointer",
                 modeFilter === "rumah"
-                  ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 shadow-xs border border-indigo-500/50 font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  ? "bg-[var(--verif-v2-soft)] text-[var(--verif-v2-text)] shadow-xs border border-[var(--verif-v2-border)]/50 font-semibold"
+                  : "text-muted-foreground hover:text-[var(--primary-foreground)] hover:bg-background/50"
               )}
             >
-              <Home className="size-3.5 text-indigo-500" />
+              <Home className="size-3.5 text-[var(--verif-v2)]" />
               <span>Fasad Rumah</span>
-              <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">({countRumah})</span>
+              <span className="font-mono text-[10px] text-[var(--verif-v2-text)] dark:text-[var(--verif-v2-text)] font-semibold">({countRumah})</span>
             </button>
           </div>
 
@@ -206,7 +206,7 @@ export function ImportPhotoFilterBar({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-[var(--primary-foreground)] text-xs cursor-pointer"
               >
                 ×
               </button>

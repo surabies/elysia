@@ -23,99 +23,99 @@ export function ImportSummaryCards({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {/* Total Berkas */}
-      <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
+      <Card className="border-border bg-[var(--card)] p-3.5 transition-colors hover:border-border/80">
         <CardContent className="p-0">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-label-11 font-medium tracking-wide uppercase">Total Berkas</span>
-            <Images className="size-4 text-primary" />
+            <Images className="size-4 text-[var(--primary)]" />
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+            <span className="text-2xl font-bold tracking-tight text-[var(--primary-foreground)] font-mono">
               {totalBerkas}
             </span>
             <span className="text-label-11 text-muted-foreground">Foto</span>
           </div>
           <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-            <span className="inline-block size-1.5 rounded-full bg-primary" />
+            <span className="inline-block size-1.5 rounded-full bg-[var(--primary)]" />
             <span>Terunggah dari HP</span>
           </div>
         </CardContent>
       </Card>
 
       {/* Foto Stand */}
-      <Card className="border-border bg-card p-3.5 transition-colors hover:border-sky-500/30">
+      <Card className="border-border bg-[var(--card)] p-3.5 transition-colors hover:border-[var(--verif-v2-border)]/30">
         <CardContent className="p-0">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-label-11 font-medium tracking-wide uppercase">Foto Stand</span>
-            <Gauge className="size-4 text-sky-500" />
+            <Gauge className="size-4 text-[var(--verif-v2)]" />
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400 font-mono">
+            <span className="text-2xl font-bold tracking-tight text-[var(--verif-v2-text)] font-mono">
               {countStand}
             </span>
             <span className="text-label-11 text-muted-foreground">Berkas</span>
           </div>
           <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-            <span className="inline-block size-1.5 rounded-full bg-sky-500" />
+            <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v2)]" />
             <span>Angka meter stand</span>
           </div>
         </CardContent>
       </Card>
 
       {/* Foto Segel */}
-      <Card className="border-border bg-card p-3.5 transition-colors hover:border-amber-500/30">
+      <Card className="border-border bg-[var(--card)] p-3.5 transition-colors hover:border-[var(--verif-v1-border)]/30">
         <CardContent className="p-0">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-label-11 font-medium tracking-wide uppercase">Foto Segel</span>
-            <ShieldCheck className="size-4 text-amber-500" />
+            <ShieldCheck className="size-4 text-[var(--verif-v1)]" />
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono">
+            <span className="text-2xl font-bold tracking-tight text-[var(--verif-v1-text)] font-mono">
               {countSegel}
             </span>
             <span className="text-label-11 text-muted-foreground">Berkas</span>
           </div>
           <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-            <span className="inline-block size-1.5 rounded-full bg-amber-500" />
+            <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v1)]" />
             <span>Integritas fisik segel</span>
           </div>
         </CardContent>
       </Card>
 
       {/* Foto Rumah */}
-      <Card className="border-border bg-card p-3.5 transition-colors hover:border-indigo-500/30">
+      <Card className="border-border bg-[var(--card)] p-3.5 transition-colors hover:border-[var(--verif-v2-border)]/30">
         <CardContent className="p-0">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-label-11 font-medium tracking-wide uppercase">Foto Rumah</span>
-            <Home className="size-4 text-indigo-500" />
+            <Home className="size-4 text-[var(--verif-v2)]" />
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400 font-mono">
+            <span className="text-2xl font-bold tracking-tight text-[var(--verif-v2-text)] font-mono">
               {countRumah}
             </span>
             <span className="text-label-11 text-muted-foreground">Berkas</span>
           </div>
           <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-            <span className="inline-block size-1.5 rounded-full bg-indigo-500" />
+            <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v2)]" />
             <span>Fasad & koordinat persil</span>
           </div>
         </CardContent>
       </Card>
 
       {/* Cakupan SL */}
-      <Card className="border-border bg-card p-3.5 transition-colors hover:border-emerald-500/30 col-span-2 sm:col-span-1">
+      <Card className="border-border bg-[var(--card)] p-3.5 transition-colors hover:border-[var(--verif-v3-border)]/30 col-span-2 sm:col-span-1">
         <CardContent className="p-0">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-label-11 font-medium tracking-wide uppercase">Cakupan SL</span>
-            <Users className="size-4 text-emerald-500" />
+            <Users className="size-4 text-[var(--verif-v3)]" />
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono">
+            <span className="text-2xl font-bold tracking-tight text-[var(--verif-v3-text)] font-mono">
               {totalSL}
             </span>
             <span className="text-label-11 text-muted-foreground">Pelanggan</span>
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-label-11 text-emerald-600 dark:text-emerald-400 font-medium">
+          <div className="mt-1 flex items-center gap-1.5 text-label-11 text-[var(--verif-v3-text)] font-medium">
             <CheckCircle2 className="size-3.5" />
             <span>Teridentifikasi</span>
           </div>
