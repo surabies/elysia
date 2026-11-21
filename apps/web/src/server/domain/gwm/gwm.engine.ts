@@ -114,3 +114,56 @@ export function hitungNeracaAir(input: NeracaAirInput): HasilNeracaAir {
     rekomendasi,
   };
 }
+
+export interface HitungKoreksiMbSusulanInput {
+  standLalu: number;            // stml bulan kejadian
+  standAngkat: number;          // baru diketahui setelah periode closed
+  standPasang: number;
+  standBacaBaru: number;        // stma meter baru bulan kejadian
+  pemakaianMinimumM3: number;
+  pakaiTagihTerbit: number;     // yang sudah terbit di DRD bulan kejadian
+}
+
+export interface HasilKoreksiMbSusulan {
+  pemakaianGabunganM3: number;
+  pakaiTagihSeharusnya: number;
+  pakaiTagihTerbit: number;
+  selisihM3: number;            // >0 tagihan susulan, <0 kelebihan tagih (kredit), 0 tidak ada koreksi
+  isValid: boolean;
+  pesanError?: string;
+}
+
+/**
+ * Koreksi MB yang datanya (stand angkat) baru diketahui SETELAH periode closed.
+ * Dihitung atas BULAN KEJADIAN: seharusnya (pemakaian gabungan, dengan minimum) - yang sudah terbit.
+ * TIDAK PERNAH ditambahkan ke pemakaian bulan berikutnya.
+ */
+export function hitungKoreksiMbSusulan(input: HitungKoreksiMbSusulanInput): HasilKoreksiMbSusulan {
+  const gabungan = hitungKubikasiGantiMeter({
+    standLalu: input.standLalu,
+    standAngkat: input.standAngkat,
+    standPasang: input.standPasang,
+    standBacaBaru: input.standBacaBaru,
+  });
+  if (!gabungan.isValid) {
+    return {
+      pemakaianGabunganM3: 0,
+      pakaiTagihSeharusnya: 0,
+      pakaiTagihTerbit: input.pakaiTagihTerbit,
+      selisihM3: 0,
+      isValid: false,
+      pesanError: gabungan.pesanError,
+    };
+  }
+  const seharusnya =
+    input.pemakaianMinimumM3 > 0 && gabungan.totalPemakaianM3 < input.pemakaianMinimumM3
+      ? input.pemakaianMinimumM3
+      : gabungan.totalPemakaianM3;
+  return {
+    pemakaianGabunganM3: gabungan.totalPemakaianM3,
+    pakaiTagihSeharusnya: seharusnya,
+    pakaiTagihTerbit: input.pakaiTagihTerbit,
+    selisihM3: seharusnya - input.pakaiTagihTerbit,
+    isValid: true,
+  };
+}

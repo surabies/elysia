@@ -23,3 +23,14 @@ Biarkan MINIMUM sementara. Dokumentasikan sebagai keputusan yang menunggu Penagi
 ## 4. Jangan tambah fitur di luar daftar ini
 
 Setelah poin 1–3 selesai, laporkan ringkas dan berhenti. Tidak ada aturan baru yang ditambahkan sebelum ada data nyata (ekspor infolang dan progrescater November hasil closing).
+
+Perbaiki dua tes yang gagal dan perjelas status infolang. Tidak ada fitur baru.
+
+1. **Infolang bukan sumber impor.** Infolang adalah halaman terpisah untuk melihat riwayat pemakaian pelanggan (dipakai verifikator memeriksa pemakaian tidak wajar). Tidak ada ekspor atau integrasi. Ubah komentar, dokumen (termasuk docs/SEED-DAN-GO-LIVE.md), dan teks UI yang menyiratkan impor dari infolang. Jelaskan bahwa ETL riwayat bersifat generik untuk file riwayat apa pun (mis. progrescater bulan-bulan sebelumnya). Jangan hapus atau ganti nama file/tabel sekarang.
+2. **Alur flag akumulasi_perlu_verifikasi.** Pastikan verifikator dapat melihat kredit taksasi pelanggan dan mengoreksinya dengan alasan wajib, tercatat di log audit, dari antrean verifikasi terpisah. Laporkan apakah sudah ada atau belum. Jangan menambahkan integrasi ke infolang.
+3. **Tes 8 dan 9 gagal karena timeout 5000ms.** Set timeout eksplisit (mis. 120_000 ms) pada keduanya dan ukur durasi tiap tahap (seed, import, carryForward) pada tes 8.
+4. **Bukti rollback.** Jelaskan apakah importProgresCater dan ETL riwayat di tes 8 dan 9 memakai koneksi transaksi tes atau koneksi global. Jika global, tes ini menulis ke database sungguhan: ubah agar memakai transaksi tes atau database tes terpisah. Log menunjukkan periode 202611 dikunci dengan snapshot 2 SL dan 202612 dibuka.
+5. **Penjaga kebersihan.** Snapshot jumlah baris tabel kunci (pelanggan, water_meter, periode_penagihan, daftar_catat, cater_baca_meter, rekening_drd, riwayat_pemakaian_historis) sebelum dan sesudah suite. Beda = tes gagal.
+6. Hapus .tmp-test-progrescater-202611.csv di blok finally.
+7. Tes hanya boleh berjalan di database yang ada di allowlist tes (mis. env TEST_DATABASE_URL).
+8. Jalankan ulang suite di database tes terpisah dan tampilkan output lengkap: 10 tes harus hijau. Laporkan jumlah expect() akhir dan hasil snapshot jumlah baris. Jangan menyebut selesai sebelum semua hijau.

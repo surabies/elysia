@@ -1,8 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-import readline from 'readline';
-import { sql, eq } from 'drizzle-orm';
-import { db } from '../client';
+import fs from "fs";
+import path from "path";
+import readline from "readline";
+import { sql, eq } from "drizzle-orm";
+import { db } from "../client";
 import {
   wilayahAdministrasi,
   kecamatan,
@@ -18,8 +18,12 @@ import {
   rekeningDrd,
   periodePenagihan,
   masterKondisiCatat,
-} from '../schema';
-import { carryForwardPeriode, nextPeriode, resolveKondisiCatatWithPriority } from '../carry-forward';
+} from "../schema";
+import {
+  carryForwardPeriode,
+  nextPeriode,
+  resolveKondisiCatatWithPriority,
+} from "../carry-forward";
 
 interface ParsedCsvRow {
   rowNum: number;
@@ -81,7 +85,14 @@ interface ParsedCsvRow {
   tglCatat: Date;
 }
 
-const PLACEHOLDER_METERS = new Set(['', '-', '0', '00000000', '2018MBR', '2017MBR']);
+const PLACEHOLDER_METERS = new Set([
+  "",
+  "-",
+  "0",
+  "00000000",
+  "2018MBR",
+  "2017MBR",
+]);
 
 /**
  * ETL Importer: STI ProgresCater to Modular Drizzle Schema
@@ -96,12 +107,21 @@ export async function importProgresCater(
     masterOnly?: boolean;
     exportAuditCsv?: boolean;
   } = {},
-  database: typeof db = db
+  database: typeof db = db,
 ) {
-  const rootDir = path.resolve(__dirname, '../../../');
-  const defaultCsv = path.resolve(__dirname, '../../data/raw/ProgresCater-PW5.csv');
-  const fallbackCsv = path.resolve(rootDir, 'packages/db/data/raw/ProgresCater-PW5.csv');
-  const legacyCsv = path.resolve(__dirname, '../../data/jan/ProgresCater-PW5.csv');
+  const rootDir = path.resolve(__dirname, "../../../");
+  const defaultCsv = path.resolve(
+    __dirname,
+    "../../data/raw/ProgresCater-PW5.csv",
+  );
+  const fallbackCsv = path.resolve(
+    rootDir,
+    "packages/db/data/raw/ProgresCater-PW5.csv",
+  );
+  const legacyCsv = path.resolve(
+    __dirname,
+    "../../data/jan/ProgresCater-PW5.csv",
+  );
   const csvFile =
     options.csvPath ||
     (fs.existsSync(defaultCsv)
@@ -110,14 +130,17 @@ export async function importProgresCater(
         ? fallbackCsv
         : legacyCsv);
 
-  console.log('=== STARTING IDEMPOTENT CATER ETL IMPORT ===');
-  console.log('Source CSV:', csvFile);
+  console.log("=== STARTING IDEMPOTENT CATER ETL IMPORT ===");
+  console.log("Source CSV:", csvFile);
   if (!fs.existsSync(csvFile)) {
     throw new Error(`CSV file not found at: ${csvFile}`);
   }
 
   const fileStream = fs.createReadStream(csvFile);
-  const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+  const rl = readline.createInterface({
+    input: fileStream,
+    crlfDelay: Infinity,
+  });
 
   let isHeader = true;
   let rowCount = 0;
@@ -125,20 +148,44 @@ export async function importProgresCater(
 
   const parsedRows: ParsedCsvRow[] = [];
   const wiladmMap = new Map<string, { kode: string; nama: string }>();
-  const kecMap = new Map<string, { kode: string; nama: string; wiladmKode: string }>();
-  const kelMap = new Map<string, { kode: string; nama: string; kecamatanKode: string }>();
+  const kecMap = new Map<
+    string,
+    { kode: string; nama: string; wiladmKode: string }
+  >();
+  const kelMap = new Map<
+    string,
+    { kode: string; nama: string; kecamatanKode: string }
+  >();
   const zonaMap = new Map<
     string,
-    { kode: string; nama: string; wildistKode: string | null; wildistNama: string | null; dmaKode: string | null }
+    {
+      kode: string;
+      nama: string;
+      wildistKode: string | null;
+      wildistNama: string | null;
+      dmaKode: string | null;
+    }
   >();
   const petugasMap = new Map<string, { id: string; nama: string }>();
   const ruteMap = new Map<
     string,
-    { kode: string; seksiKode?: string; seksiNama?: string; pencatatDefault?: string }
+    {
+      kode: string;
+      seksiKode?: string;
+      seksiNama?: string;
+      pencatatDefault?: string;
+    }
   >();
   const tarifMap = new Map<
     string,
-    { kode: string; nama: string; beaBeban: string; beaAdmin: string; airKotor: string; lainLain: string }
+    {
+      kode: string;
+      nama: string;
+      beaBeban: string;
+      beaAdmin: string;
+      airKotor: string;
+      lainLain: string;
+    }
   >();
 
   // Pass 1: Baca seluruh baris CSV untuk mendeteksi frekuensi nomor meter & urutan rute
@@ -151,84 +198,90 @@ export async function importProgresCater(
     }
     if (rowCount >= maxRows) break;
 
-    const cols = line.split(';');
+    const cols = line.split(";");
     if (cols.length < 50) continue;
 
     rowCount++;
 
     const thbl = cols[0]?.trim();
     if (!thbl || thbl.length !== 6) {
-      throw new Error(`Baris ${rowCount}: Kolom thbl tidak valid ('${cols[0]}').`);
+      throw new Error(
+        `Baris ${rowCount}: Kolom thbl tidak valid ('${cols[0]}').`,
+      );
     }
     const nolg = cols[1]?.trim();
     if (!nolg) continue;
 
     const nprs = cols[2]?.trim() || null;
-    const nama = cols[3]?.trim() || 'PELANGGAN';
-    const almt = cols[4]?.trim() || '-';
-    const trp = cols[5]?.trim() || '2A1';
-    const namatrp = cols[6]?.trim() || 'TARIF ' + trp;
-    const tmssRaw = cols[8]?.trim() || '';
-    const tmss = tmssRaw.length > 0 ? tmssRaw : ' ';
-    const ketcatat = cols[9]?.trim() || 'Normal';
-    const stml = parseFloat(cols[10]?.trim() || '0') || 0;
-    const stma = parseFloat(cols[11]?.trim() || '0') || 0;
-    const pakaiDrd = parseFloat(cols[12]?.trim() || '0') || 0;
-    const blokM3 = parseInt(cols[13]?.trim() || '1', 10) || 1;
-    const jmlhargaair = cols[14]?.trim() || '0';
-    const beabeban = cols[15]?.trim() || '0';
-    const beaadmin = cols[16]?.trim() || '0';
-    const airkotor = cols[17]?.trim() || '0';
-    const lainlain = cols[18]?.trim() || '0';
-    const tjtg = cols[19]?.trim() || '0';
-    const pakailalu = parseFloat(cols[20]?.trim() || '0') || 0;
+    const nama = cols[3]?.trim() || "PELANGGAN";
+    const almt = cols[4]?.trim() || "-";
+    const trp = cols[5]?.trim() || "2A1";
+    const namatrp = cols[6]?.trim() || "TARIF " + trp;
+    const tmssRaw = cols[8]?.trim() || "";
+    const tmss = tmssRaw.length > 0 ? tmssRaw : " ";
+    const ketcatat = cols[9]?.trim() || "Normal";
+    const stml = parseFloat(cols[10]?.trim() || "0") || 0;
+    const stma = parseFloat(cols[11]?.trim() || "0") || 0;
+    const pakaiDrd = parseFloat(cols[12]?.trim() || "0") || 0;
+    const blokM3 = parseInt(cols[13]?.trim() || "1", 10) || 1;
+    const jmlhargaair = cols[14]?.trim() || "0";
+    const beabeban = cols[15]?.trim() || "0";
+    const beaadmin = cols[16]?.trim() || "0";
+    const airkotor = cols[17]?.trim() || "0";
+    const lainlain = cols[18]?.trim() || "0";
+    const tjtg = cols[19]?.trim() || "0";
+    const pakailalu = parseFloat(cols[20]?.trim() || "0") || 0;
 
-    const wiladmkode = cols[22]?.trim() || '';
-    const wiladmnama = cols[23]?.trim() || '';
-    const kdkec = cols[24]?.trim() || '';
-    const namakec = cols[25]?.trim() || '';
-    const kdkel = cols[26]?.trim() || '';
-    const namakel = cols[27]?.trim() || '';
+    const wiladmkode = cols[22]?.trim() || "";
+    const wiladmnama = cols[23]?.trim() || "";
+    const kdkec = cols[24]?.trim() || "";
+    const namakec = cols[25]?.trim() || "";
+    const kdkel = cols[26]?.trim() || "";
+    const namakel = cols[27]?.trim() || "";
     const rw = cols[28]?.trim() || null;
     const rt = cols[29]?.trim() || null;
     const caterseksikode = cols[30]?.trim() || null;
     const caterseksinama = cols[31]?.trim() || null;
-    let ruteKode = cols[32]?.trim() || '';
-    const pencatatRaw = cols[33]?.trim() || '';
-    const pencatat = pencatatRaw && pencatatRaw !== '-' ? pencatatRaw : null;
+    const ruteKode = cols[32]?.trim() || "";
+    const pencatatRaw = cols[33]?.trim() || "";
+    const pencatat = pencatatRaw && pencatatRaw !== "-" ? pencatatRaw : null;
 
-    const wildistkodeRaw = cols[34]?.trim() || '';
-    const wildistkode = wildistkodeRaw && wildistkodeRaw !== '-' ? wildistkodeRaw : null;
+    const wildistkodeRaw = cols[34]?.trim() || "";
+    const wildistkode =
+      wildistkodeRaw && wildistkodeRaw !== "-" ? wildistkodeRaw : null;
     const wildistnama = cols[35]?.trim() || null;
     const zonakode = cols[38]?.trim() || null;
     const zonanama = cols[39]?.trim() || null;
-    const dmakodeRaw = cols[79]?.trim() || '';
-    const dmakode = dmakodeRaw && dmakodeRaw !== '-' ? dmakodeRaw : null;
+    const dmakodeRaw = cols[79]?.trim() || "";
+    const dmakode = dmakodeRaw && dmakodeRaw !== "-" ? dmakodeRaw : null;
 
-    const ismbr = cols[47]?.trim()?.toLowerCase() === 't';
+    const ismbr = cols[47]?.trim()?.toLowerCase() === "t";
     const kdMerkMeter = cols[48]?.trim() ? cols[48].trim().toUpperCase() : null;
-    const ukMeter = cols[49]?.trim() || '1/2';
-    const noMeterRaw = cols[50]?.trim() || '';
-    const noSegelRaw = cols[51]?.trim() || '';
-    const noSegel = noSegelRaw && noSegelRaw !== '-' ? noSegelRaw : null;
-    const tglPasangStr = cols[52]?.trim() || '';
+    const ukMeter = cols[49]?.trim() || "1/2";
+    const noMeterRaw = cols[50]?.trim() || "";
+    const noSegelRaw = cols[51]?.trim() || "";
+    const noSegel = noSegelRaw && noSegelRaw !== "-" ? noSegelRaw : null;
+    const tglPasangStr = cols[52]?.trim() || "";
     const tglPasang =
-      tglPasangStr && !tglPasangStr.startsWith('0000') ? new Date(tglPasangStr) : null;
-    const umurThn = parseInt(cols[53]?.trim() || '0', 10) || 0;
-    const umurBln = parseInt(cols[54]?.trim() || '0', 10) || 0;
-    const noTelpRaw = cols[58]?.trim() || '';
-    const noTelp = noTelpRaw && noTelpRaw !== '-' ? noTelpRaw : null;
+      tglPasangStr && !tglPasangStr.startsWith("0000")
+        ? new Date(tglPasangStr)
+        : null;
+    const umurThn = parseInt(cols[53]?.trim() || "0", 10) || 0;
+    const umurBln = parseInt(cols[54]?.trim() || "0", 10) || 0;
+    const noTelpRaw = cols[58]?.trim() || "";
+    const noTelp = noTelpRaw && noTelpRaw !== "-" ? noTelpRaw : null;
 
-    const jmlreknunggak = parseInt(cols[67]?.trim() || '0', 10) || 0;
-    const tagnunggak = cols[68]?.trim() || '0';
+    const jmlreknunggak = parseInt(cols[67]?.trim() || "0", 10) || 0;
+    const tagnunggak = cols[68]?.trim() || "0";
     const potensialPenagihan = cols[59]?.trim() || null;
     const potensialCater = cols[60]?.trim() || null;
-    const mutasikode = cols[80]?.trim() || '';
-    const mutasinama = cols[81]?.trim() || 'PELANGGAN AKTIF';
-    const metodeCatatRaw = cols[83]?.trim() || '';
-    const metodeCatat = metodeCatatRaw === 'ONSITE' ? 'ONSITE' : 'OFFSITE';
-    const sumberCatat = metodeCatat === 'ONSITE' ? 'PETUGAS_ONSITE' : 'PETUGAS_OFFSITE';
-    const tglCatatStr = cols[84]?.trim() || '';
+    const mutasikode = cols[80]?.trim() || "";
+    const mutasinama = cols[81]?.trim() || "PELANGGAN AKTIF";
+    const metodeCatatRaw = cols[83]?.trim() || "";
+    const metodeCatat = metodeCatatRaw === "ONSITE" ? "ONSITE" : "OFFSITE";
+    const sumberCatat =
+      metodeCatat === "ONSITE" ? "PETUGAS_ONSITE" : "PETUGAS_OFFSITE";
+    const tglCatatStr = cols[84]?.trim() || "";
     const tglCatat = tglCatatStr ? new Date(tglCatatStr) : new Date();
 
     const parsed: ParsedCsvRow = {
@@ -329,16 +382,19 @@ export async function importProgresCater(
           pencatatDefault: pencatat || undefined,
         });
       } else {
-        if (!existingRute.seksiKode && caterseksikode) existingRute.seksiKode = caterseksikode;
-        if (!existingRute.seksiNama && caterseksinama) existingRute.seksiNama = caterseksinama;
-        if (!existingRute.pencatatDefault && pencatat) existingRute.pencatatDefault = pencatat;
+        if (!existingRute.seksiKode && caterseksikode)
+          existingRute.seksiKode = caterseksikode;
+        if (!existingRute.seksiNama && caterseksinama)
+          existingRute.seksiNama = caterseksinama;
+        if (!existingRute.pencatatDefault && pencatat)
+          existingRute.pencatatDefault = pencatat;
       }
     }
     if (trp && !tarifMap.has(trp)) {
       tarifMap.set(trp, {
         kode: trp,
         nama: namatrp,
-        beaBeban: '7000',
+        beaBeban: "7000",
         beaAdmin: beaadmin,
         airKotor: airkotor,
         lainLain: lainlain,
@@ -356,7 +412,10 @@ export async function importProgresCater(
       const candidateRute = r.nprs.slice(0, 5);
       const targetRuteInfo = ruteMap.get(candidateRute);
       const currentRuteInfo = ruteMap.get(r.ruteKode);
-      if (targetRuteInfo?.pencatatDefault && !currentRuteInfo?.pencatatDefault) {
+      if (
+        targetRuteInfo?.pencatatDefault &&
+        !currentRuteInfo?.pencatatDefault
+      ) {
         ruteMap.delete(r.ruteKode);
         r.ruteKode = candidateRute;
         r.pencatat = targetRuteInfo.pencatatDefault;
@@ -373,8 +432,8 @@ export async function importProgresCater(
   const urutanByNolg = new Map<string, number>();
   for (const [, list] of rowsByRute.entries()) {
     const sorted = [...list].sort((a, b) => {
-      const nprsA = a.nprs || '';
-      const nprsB = b.nprs || '';
+      const nprsA = a.nprs || "";
+      const nprsB = b.nprs || "";
       const cmp = nprsA.localeCompare(nprsB);
       if (cmp !== 0) return cmp;
       return a.nolg.localeCompare(b.nolg);
@@ -394,9 +453,9 @@ export async function importProgresCater(
     merkMeter: string;
     ukuranMeter: string;
     tglPasangMeter: string;
-    alasan: 'KOSONG' | 'PLACEHOLDER' | 'DUPLIKAT';
+    alasan: "KOSONG" | "PLACEHOLDER" | "DUPLIKAT";
     jumlahPemakai: number;
-    prioritasBedaAtribut: 'PRIORITAS_TINGGI' | 'NORMAL';
+    prioritasBedaAtribut: "PRIORITAS_TINGGI" | "NORMAL";
     keterangan: string;
   }> = [];
 
@@ -444,10 +503,11 @@ export async function importProgresCater(
 
   for (const r of parsedRows) {
     const freqList = meterFreq.get(r.noMeterRaw) || [];
-    const isKosong = r.noMeterRaw === '' || r.noMeterRaw === '-';
+    const isKosong = r.noMeterRaw === "" || r.noMeterRaw === "-";
     const isPlaceholder =
       !isKosong &&
-      (PLACEHOLDER_METERS.has(r.noMeterRaw) || r.noMeterRaw.toUpperCase().includes('MBR'));
+      (PLACEHOLDER_METERS.has(r.noMeterRaw) ||
+        r.noMeterRaw.toUpperCase().includes("MBR"));
     const isDuplikat = !isKosong && !isPlaceholder && freqList.length > 1;
 
     const isValidUniqueMeter = !isKosong && !isPlaceholder && !isDuplikat;
@@ -462,7 +522,7 @@ export async function importProgresCater(
         tglPasang: r.tglPasang,
         umurTahun: r.umurThn,
         umurBulan: r.umurBln,
-        kondisi: 'Normal',
+        kondisi: "Normal",
       });
     } else {
       // Cek apakah pasangan duplikat memiliki merk atau tglPasang berbeda
@@ -470,13 +530,19 @@ export async function importProgresCater(
       if (isDuplikat && freqList.length > 1) {
         const first = freqList[0];
         bedaAtribut = freqList.some(
-          (item) => item.kdMerkMeter !== first.kdMerkMeter || item.tglPasangStr !== first.tglPasangStr
+          (item) =>
+            item.kdMerkMeter !== first.kdMerkMeter ||
+            item.tglPasangStr !== first.tglPasangStr,
         );
       }
-      const alasan = isKosong ? 'KOSONG' : isPlaceholder ? 'PLACEHOLDER' : 'DUPLIKAT';
-      const prioritas = bedaAtribut ? 'PRIORITAS_TINGGI' : 'NORMAL';
+      const alasan = isKosong
+        ? "KOSONG"
+        : isPlaceholder
+          ? "PLACEHOLDER"
+          : "DUPLIKAT";
+      const prioritas = bedaAtribut ? "PRIORITAS_TINGGI" : "NORMAL";
       const ket = isKosong
-        ? 'Nomor meter kosong / tanda strip (-)'
+        ? "Nomor meter kosong / tanda strip (-)"
         : isPlaceholder
           ? `Nomor meter placeholder (${r.noMeterRaw}) dipakai ${freqList.length} pelanggan`
           : bedaAtribut
@@ -488,7 +554,7 @@ export async function importProgresCater(
         nama: r.nama,
         ruteKode: r.ruteKode,
         noMeterAsli: r.noMeterRaw,
-        merkMeter: r.kdMerkMeter || '',
+        merkMeter: r.kdMerkMeter || "",
         ukuranMeter: r.ukMeter,
         tglPasangMeter: r.tglPasangStr,
         alasan,
@@ -502,13 +568,13 @@ export async function importProgresCater(
     // 1. Jika ketcatat == 'DICABUT' atau tmss == 'D' (29 pelanggan): status = 'DICABUT'
     // 2. Jika mutasinama in ('tupsp','tupsm') tetapi ketcatat != 'DICABUT' (6 pelanggan):
     //    tetap aktif di DPM 202611, tetapi diberi flag perluVerifikasi = true
-    const isDicabut = r.ketcatat === 'DICABUT' || r.tmss === 'D';
-    const isTupsNonDicabut = !isDicabut && r.mutasinama !== 'PELANGGAN AKTIF';
+    const isDicabut = r.ketcatat === "DICABUT" || r.tmss === "D";
+    const isTupsNonDicabut = !isDicabut && r.mutasinama !== "PELANGGAN AKTIF";
 
-    if (isDicabut && r.mutasinama === 'PELANGGAN AKTIF') {
+    if (isDicabut && r.mutasinama === "PELANGGAN AKTIF") {
       dicabutSelisih20List.push({
         nolg: r.nolg,
-        nprs: r.nprs || '',
+        nprs: r.nprs || "",
         nama: r.nama,
         ruteKode: r.ruteKode,
         mutasinama: r.mutasinama,
@@ -527,7 +593,7 @@ export async function importProgresCater(
       catatanReasons.push(msg);
       tupsVerifikasi6List.push({
         nolg: r.nolg,
-        nprs: r.nprs || '',
+        nprs: r.nprs || "",
         nama: r.nama,
         ruteKode: r.ruteKode,
         mutasinama: r.mutasinama,
@@ -542,12 +608,15 @@ export async function importProgresCater(
     }
     if (!isValidUniqueMeter) {
       const lastAudit = invalidMeterAuditList[invalidMeterAuditList.length - 1];
-      catatanReasons.push(`Perlu verifikasi nomor meter: ${lastAudit.keterangan}`);
+      catatanReasons.push(
+        `Perlu verifikasi nomor meter: ${lastAudit.keterangan}`,
+      );
     }
 
-    const statusMaster = isDicabut ? 'DICABUT' : r.mutasinama;
+    const statusMaster = isDicabut ? "DICABUT" : r.mutasinama;
     const perluVerifikasi = isTupsNonDicabut || !isValidUniqueMeter;
-    const catatanVerifikasi = catatanReasons.length > 0 ? catatanReasons.join(' | ') : null;
+    const catatanVerifikasi =
+      catatanReasons.length > 0 ? catatanReasons.join(" | ") : null;
     const noUrut = urutanByNolg.get(r.nolg) ?? 1;
 
     pelangganBatch.push({
@@ -585,13 +654,17 @@ export async function importProgresCater(
       urutan: noUrut,
       standAwal: String(r.stml),
       pakaiLalu: String(r.pakailalu),
-      sumber: 'CARRY_OVER',
-      status: isDicabut ? 'DICABUT' : 'DICATAT',
+      sumber: "CARRY_OVER",
+      status: isDicabut ? "DICABUT" : "DICATAT",
       selesaiAt: r.tglCatat,
-      catatan: isDicabut ? 'Pelanggan DICABUT pada periode ini' : null,
+      catatan: isDicabut ? "Pelanggan DICABUT pada periode ini" : null,
     });
 
-    const resolvedKondisi = resolveKondisiCatatWithPriority(r.tmss, r.ketcatat, kondisiRows);
+    const resolvedKondisi = resolveKondisiCatatWithPriority(
+      r.tmss,
+      r.ketcatat,
+      kondisiRows,
+    );
 
     // Transaksi Catat Meter Periode Closed (LOCKED_BILLING)
     caterBatch.push({
@@ -611,7 +684,7 @@ export async function importProgresCater(
       sumberCatat: r.sumberCatat,
       tglCatat: r.tglCatat,
       durasiDetik: 0,
-      statusVerifikasi: 'LOCKED_BILLING',
+      statusVerifikasi: "LOCKED_BILLING",
       catatan: resolvedKondisi.auditNote,
     });
 
@@ -638,57 +711,57 @@ export async function importProgresCater(
 
   // Simpan file export audit sesuai permintaan di konfirmasi.md
   if (options.exportAuditCsv !== false) {
-    const exportDir = path.resolve(__dirname, '../../data/exports');
+    const exportDir = path.resolve(__dirname, "../../data/exports");
     fs.mkdirSync(exportDir, { recursive: true });
 
     // 1. Export 686 pelanggan tanpa nomor meter valid
     const meterCsvHeader =
-      'nolg;nama;rute_kode;no_meter_asli;merk_meter;ukuran_meter;tgl_pasang_meter;alasan;jumlah_pemakai;prioritas;keterangan\n';
+      "nolg;nama;rute_kode;no_meter_asli;merk_meter;ukuran_meter;tgl_pasang_meter;alasan;jumlah_pemakai;prioritas;keterangan\n";
     const meterCsvBody = invalidMeterAuditList
       .map(
         (x) =>
-          `${x.nolg};${x.nama};${x.ruteKode};${x.noMeterAsli};${x.merkMeter};${x.ukuranMeter};${x.tglPasangMeter};${x.alasan};${x.jumlahPemakai};${x.prioritasBedaAtribut};${x.keterangan}`
+          `${x.nolg};${x.nama};${x.ruteKode};${x.noMeterAsli};${x.merkMeter};${x.ukuranMeter};${x.tglPasangMeter};${x.alasan};${x.jumlahPemakai};${x.prioritasBedaAtribut};${x.keterangan}`,
       )
-      .join('\n');
+      .join("\n");
     fs.writeFileSync(
-      path.join(exportDir, 'daftar-686-pelanggan-tanpa-meter-valid.csv'),
-      meterCsvHeader + meterCsvBody + '\n',
-      'utf8'
+      path.join(exportDir, "daftar-686-pelanggan-tanpa-meter-valid.csv"),
+      meterCsvHeader + meterCsvBody + "\n",
+      "utf8",
     );
 
     // 2. Export 20 pelanggan selisih (mutasinama PELANGGAN AKTIF tapi ketcatat DICABUT)
     const dicabut20Header =
-      'nolg;nprs;nama;rute_kode;mutasinama;ketcatat;tmss;stml;stma;pakai_drd;total_tagihan\n';
+      "nolg;nprs;nama;rute_kode;mutasinama;ketcatat;tmss;stml;stma;pakai_drd;total_tagihan\n";
     const dicabut20Body = dicabutSelisih20List
       .map(
         (x) =>
-          `${x.nolg};${x.nprs};${x.nama};${x.ruteKode};${x.mutasinama};${x.ketcatat};${x.tmss};${x.stml};${x.stma};${x.pakaiDrd};${x.totalTagihan}`
+          `${x.nolg};${x.nprs};${x.nama};${x.ruteKode};${x.mutasinama};${x.ketcatat};${x.tmss};${x.stml};${x.stma};${x.pakaiDrd};${x.totalTagihan}`,
       )
-      .join('\n');
+      .join("\n");
     fs.writeFileSync(
-      path.join(exportDir, 'daftar-20-pelanggan-selisih-dicabut.csv'),
-      dicabut20Header + dicabut20Body + '\n',
-      'utf8'
+      path.join(exportDir, "daftar-20-pelanggan-selisih-dicabut.csv"),
+      dicabut20Header + dicabut20Body + "\n",
+      "utf8",
     );
 
     // 3. Export 6 pelanggan tupsp/tupsm (MTA / RUMAH KOSONG) yang perlu verifikasi lapangan
     const tups6Header =
-      'nolg;nprs;nama;rute_kode;mutasinama;ketcatat;tmss;stml;stma;pakai_drd;total_tagihan;catatan_verifikasi\n';
+      "nolg;nprs;nama;rute_kode;mutasinama;ketcatat;tmss;stml;stma;pakai_drd;total_tagihan;catatan_verifikasi\n";
     const tups6Body = tupsVerifikasi6List
       .map(
         (x) =>
-          `${x.nolg};${x.nprs};${x.nama};${x.ruteKode};${x.mutasinama};${x.ketcatat};${x.tmss};${x.stml};${x.stma};${x.pakaiDrd};${x.totalTagihan};${x.catatanVerifikasi}`
+          `${x.nolg};${x.nprs};${x.nama};${x.ruteKode};${x.mutasinama};${x.ketcatat};${x.tmss};${x.stml};${x.stma};${x.pakaiDrd};${x.totalTagihan};${x.catatanVerifikasi}`,
       )
-      .join('\n');
+      .join("\n");
     fs.writeFileSync(
-      path.join(exportDir, 'daftar-6-pelanggan-tups-verifikasi-lapangan.csv'),
-      tups6Header + tups6Body + '\n',
-      'utf8'
+      path.join(exportDir, "daftar-6-pelanggan-tups-verifikasi-lapangan.csv"),
+      tups6Header + tups6Body + "\n",
+      "utf8",
     );
   }
 
   // Upsert Referensi & Master Data (Idempoten dengan onConflictDoUpdate)
-  console.log('Upserting Master Wilayah Administrasi...');
+  console.log("Upserting Master Wilayah Administrasi...");
   if (wiladmMap.size > 0) {
     await database
       .insert(wilayahAdministrasi)
@@ -699,7 +772,7 @@ export async function importProgresCater(
       });
   }
 
-  console.log('Upserting Master Kecamatan...');
+  console.log("Upserting Master Kecamatan...");
   if (kecMap.size > 0) {
     await database
       .insert(kecamatan)
@@ -713,7 +786,7 @@ export async function importProgresCater(
       });
   }
 
-  console.log('Upserting Master Kelurahan...');
+  console.log("Upserting Master Kelurahan...");
   if (kelMap.size > 0) {
     await database
       .insert(kelurahan)
@@ -727,7 +800,7 @@ export async function importProgresCater(
       });
   }
 
-  console.log('Upserting Master Zona Distribusi...');
+  console.log("Upserting Master Zona Distribusi...");
   if (zonaMap.size > 0) {
     await database
       .insert(zonaDistribusi)
@@ -743,7 +816,7 @@ export async function importProgresCater(
       });
   }
 
-  console.log('Upserting Master Petugas Cater...');
+  console.log("Upserting Master Petugas Cater...");
   if (petugasMap.size > 0) {
     await database
       .insert(petugasCater)
@@ -754,7 +827,7 @@ export async function importProgresCater(
       });
   }
 
-  console.log('Upserting Master Rute Cater...');
+  console.log("Upserting Master Rute Cater...");
   if (ruteMap.size > 0) {
     await database
       .insert(ruteCater)
@@ -769,7 +842,7 @@ export async function importProgresCater(
       });
   }
 
-  console.log('Upserting Master Golongan Tarif...');
+  console.log("Upserting Master Golongan Tarif...");
   if (tarifMap.size > 0) {
     await database
       .insert(golonganTarif)
@@ -786,7 +859,9 @@ export async function importProgresCater(
 
   const BATCH_SIZE = 500;
 
-  console.log(`Upserting ${validMeterBatch.length} Valid Unique Water Meter assets...`);
+  console.log(
+    `Upserting ${validMeterBatch.length} Valid Unique Water Meter assets...`,
+  );
   for (let i = 0; i < validMeterBatch.length; i += BATCH_SIZE) {
     const chunk = validMeterBatch.slice(i, i + BATCH_SIZE);
     await database
@@ -805,7 +880,9 @@ export async function importProgresCater(
       });
   }
 
-  console.log(`Upserting ${pelangganBatch.length} Pelanggan records (preserving custom no_urut_rute)...`);
+  console.log(
+    `Upserting ${pelangganBatch.length} Pelanggan records (preserving custom no_urut_rute)...`,
+  );
   for (let i = 0; i < pelangganBatch.length; i += BATCH_SIZE) {
     const chunk = pelangganBatch.slice(i, i + BATCH_SIZE);
     await database
@@ -839,14 +916,16 @@ export async function importProgresCater(
       });
   }
 
-  let periodeSumber = parsedRows[0]?.thbl;
-  let periodeBerikutnya = periodeSumber ? nextPeriode(periodeSumber) : '';
+  const periodeSumber = parsedRows[0]?.thbl;
+  const periodeBerikutnya = periodeSumber ? nextPeriode(periodeSumber) : "";
   let carryForwardStats: any = null;
 
   if (options.masterOnly) {
-    console.log('Mode masterOnly aktif: Melewatkan seeding transaksi periode.');
+    console.log("Mode masterOnly aktif: Melewatkan seeding transaksi periode.");
   } else if (periodeSumber) {
-    console.log(`Upserting ${dpmClosedBatch.length} DPM (daftar_catat) records for closed period ${periodeSumber}...`);
+    console.log(
+      `Upserting ${dpmClosedBatch.length} DPM (daftar_catat) records for closed period ${periodeSumber}...`,
+    );
     for (let i = 0; i < dpmClosedBatch.length; i += BATCH_SIZE) {
       const chunk = dpmClosedBatch.slice(i, i + BATCH_SIZE);
       await database
@@ -868,7 +947,9 @@ export async function importProgresCater(
         });
     }
 
-    console.log(`Upserting ${caterBatch.length} Transaksi Catat Meter (LOCKED_BILLING) for ${periodeSumber}...`);
+    console.log(
+      `Upserting ${caterBatch.length} Transaksi Catat Meter (LOCKED_BILLING) for ${periodeSumber}...`,
+    );
     for (let i = 0; i < caterBatch.length; i += BATCH_SIZE) {
       const chunk = caterBatch.slice(i, i + BATCH_SIZE);
       await database
@@ -889,14 +970,16 @@ export async function importProgresCater(
             metodeCatat: sql`EXCLUDED.metode_catat`,
             sumberCatat: sql`EXCLUDED.sumber_catat`,
             tglCatat: sql`EXCLUDED.tgl_catat`,
-            statusVerifikasi: 'LOCKED_BILLING',
+            statusVerifikasi: "LOCKED_BILLING",
             catatan: sql`COALESCE(EXCLUDED.catatan, ${caterBacaMeter.catatan})`,
             updatedAt: new Date(),
           },
         });
     }
 
-    console.log(`Upserting ${billingBatch.length} Rekening DRD Billing records for ${periodeSumber}...`);
+    console.log(
+      `Upserting ${billingBatch.length} Rekening DRD Billing records for ${periodeSumber}...`,
+    );
     for (let i = 0; i < billingBatch.length; i += BATCH_SIZE) {
       const chunk = billingBatch.slice(i, i + BATCH_SIZE);
       await database
@@ -934,15 +1017,21 @@ export async function importProgresCater(
 
     const yearNum = parseInt(periodeSumber.slice(0, 4), 10);
     const monthNum = parseInt(periodeSumber.slice(4, 6), 10);
-    const jatuhTempoClosed = new Date(Date.UTC(yearNum, monthNum - 1, 20, 0, 0, 0));
-    const ditutupAtClosed = new Date(Date.UTC(yearNum, monthNum - 1, 28, 17, 0, 0));
+    const jatuhTempoClosed = new Date(
+      Date.UTC(yearNum, monthNum - 1, 20, 0, 0, 0),
+    );
+    const ditutupAtClosed = new Date(
+      Date.UTC(yearNum, monthNum - 1, 28, 17, 0, 0),
+    );
 
-    console.log(`Locking closed period ${periodeSumber} with verified snapshot (${drdAgg.totalSl} SL, ${drdAgg.totalM3} m3, Rp ${drdAgg.totalTagihan})...`);
+    console.log(
+      `Locking closed period ${periodeSumber} with verified snapshot (${drdAgg.totalSl} SL, ${drdAgg.totalM3} m3, Rp ${drdAgg.totalTagihan})...`,
+    );
     await database
       .insert(periodePenagihan)
       .values({
         periode: periodeSumber,
-        status: 'TERKUNCI',
+        status: "TERKUNCI",
         tanggalJatuhTempo: jatuhTempoClosed,
         ditutupAt: ditutupAtClosed,
         ditutupById: null,
@@ -953,7 +1042,7 @@ export async function importProgresCater(
       .onConflictDoUpdate({
         target: periodePenagihan.periode,
         set: {
-          status: 'TERKUNCI',
+          status: "TERKUNCI",
           tanggalJatuhTempo: jatuhTempoClosed,
           ditutupAt: ditutupAtClosed,
           jumlahSl: drdAgg.totalSl,
@@ -964,21 +1053,23 @@ export async function importProgresCater(
       });
 
     // Buka Periode Berikutnya (N+1) menggunakan fungsi carryForwardPeriode yang SAMA dengan proses closing
-    console.log(`Opening next period ${periodeBerikutnya} via shared carryForwardPeriode(${periodeSumber} -> ${periodeBerikutnya})...`);
+    console.log(
+      `Opening next period ${periodeBerikutnya} via shared carryForwardPeriode(${periodeSumber} -> ${periodeBerikutnya})...`,
+    );
     carryForwardStats = await carryForwardPeriode(
       {
         periodeLalu: periodeSumber,
         periodeBaru: periodeBerikutnya,
         userId: null,
       },
-      database
+      database,
     );
     console.log(
-      `✓ Next period ${periodeBerikutnya} opened: ${carryForwardStats.totalDpmDiterbitkan} active DPM rows (${carryForwardStats.dilewatiDicabut} DICABUT skipped).`
+      `✓ Next period ${periodeBerikutnya} opened: ${carryForwardStats.totalDpmDiterbitkan} active DPM rows (${carryForwardStats.dilewatiDicabut} DICABUT skipped).`,
     );
   }
 
-  console.log('=== ETL IMPORT COMPLETED SUCCESSFULLY! ===');
+  console.log("=== ETL IMPORT COMPLETED SUCCESSFULLY! ===");
   return {
     rowsProcessed: parsedRows.length,
     periodeClosed: periodeSumber,
@@ -1003,17 +1094,21 @@ export async function importProgresCater(
 }
 
 if (import.meta.main) {
-  const isFull = process.argv.includes('--all');
-  const limitArg = process.argv.find((a) => a.startsWith('--limit='));
-  const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : isFull ? undefined : undefined;
+  const isFull = process.argv.includes("--all");
+  const limitArg = process.argv.find((a) => a.startsWith("--limit="));
+  const limit = limitArg
+    ? parseInt(limitArg.split("=")[1], 10)
+    : isFull
+      ? undefined
+      : undefined;
 
   importProgresCater({ limit })
     .then((stats) => {
-      console.log('Result Stats:', stats);
+      console.log("Result Stats:", stats);
       process.exit(0);
     })
     .catch((err) => {
-      console.error('ETL Import Error:', err);
+      console.error("ETL Import Error:", err);
       process.exit(1);
     });
 }

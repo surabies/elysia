@@ -28,6 +28,8 @@ export const submitReadingBodySchema = t.Object({
   stml: t.Number({ minimum: 0, description: "Stand Meter Lalu" }),
   stma: t.Number({ minimum: 0, description: "Stand Meter Akhir" }),
   pakaiLalu: t.Optional(t.Number({ minimum: 0, description: "Pemakaian periode lalu" })),
+  pakaiTaksasiManual: t.Optional(t.Number({ minimum: 0, description: "Nilai taksasi yang ditetapkan operator (menggantikan pakai_lalu)" })),
+  alasanTaksasiManual: t.Optional(t.String({ description: "Alasan wajib (min 5 karakter) bila pakaiTaksasiManual diisi" })),
   kondisiCatat: t.Optional(t.String()),
   metodeCatat: t.Optional(t.String()),
   sumberCatat: t.Optional(

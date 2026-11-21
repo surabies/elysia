@@ -50,6 +50,16 @@ export const authPlugin = new Elysia({ name: 'auth-plugin' })
               },
             };
           }
+          if ((user as { wajibGantiPassword?: boolean }).wajibGantiPassword) {
+            set.status = 403;
+            return {
+              success: false,
+              error: {
+                code: 'PASSWORD_CHANGE_REQUIRED',
+                message: 'Anda wajib mengganti password awal sebelum menggunakan sistem.',
+              },
+            };
+          }
         },
       };
     },
@@ -63,6 +73,17 @@ export const authPlugin = new Elysia({ name: 'auth-plugin' })
               error: {
                 code: 'UNAUTHORIZED',
                 message: 'Authentication required to access this resource',
+              },
+            };
+          }
+
+          if ((user as { wajibGantiPassword?: boolean }).wajibGantiPassword) {
+            set.status = 403;
+            return {
+              success: false,
+              error: {
+                code: 'PASSWORD_CHANGE_REQUIRED',
+                message: 'Anda wajib mengganti password awal sebelum menggunakan sistem.',
               },
             };
           }

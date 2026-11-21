@@ -30,6 +30,9 @@ export default async function DashboardLayout({
 
   const { user } = session
 
+  // Akun seed wajib ganti password sebelum membuka halaman apa pun
+  if (user.wajibGantiPassword) redirect("/ganti-password")
+
   // Lapis 3 (Defense-in-Depth): Tolak mutlak pelanggan (USER) dari seluruh area dashboard
   if (!isInternalUser(user.roles)) {
     redirect("/")

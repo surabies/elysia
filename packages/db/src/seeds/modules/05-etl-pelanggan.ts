@@ -1,8 +1,8 @@
-import { db } from '../../client';
-import { pelanggan } from '../../schema';
-import { count } from 'drizzle-orm';
-import { importProgresCater } from '../../etl/import-progres-cater';
-import type { SeedModule, SeedOptions } from '../types';
+import { db } from "../../client";
+import { pelanggan } from "../../schema";
+import { count } from "drizzle-orm";
+import { importProgresCater } from "../../etl/import-progres-cater";
+import type { SeedModule, SeedOptions } from "../types";
 
 export async function seedEtlPelanggan(options: SeedOptions) {
   const [existing] = await db.select({ total: count() }).from(pelanggan);
@@ -21,14 +21,15 @@ export async function seedEtlPelanggan(options: SeedOptions) {
 
   return {
     count: result.pelangganCount,
-    message: `Berhasil ETL: ${result.pelangganCount.toLocaleString()} pelanggan, ${result.meterCount.toLocaleString()} meter, ${result.caterCount.toLocaleString()} baca meter, ${result.billingCount.toLocaleString()} rekening DRD.`,
+    message: `Berhasil ETL: ${result.pelangganCount.toLocaleString()} pelanggan, ${result.validMeterCount.toLocaleString()} meter, ${result.caterClosedCount.toLocaleString()} baca meter, ${result.billingClosedCount.toLocaleString()} rekening DRD.`,
   };
 }
 
 export const etlPelangganModule: SeedModule = {
-  id: 'etl-pelanggan',
-  name: 'ETL Pelanggan, Meter & Billing (CSV)',
-  description: 'Normalisasi arsip ProgresCater & PBPK (22.549 pelanggan, rute, tarif, water meter, catat meter & DRD)',
+  id: "etl-pelanggan",
+  name: "ETL Pelanggan, Meter & Billing (CSV)",
+  description:
+    "Normalisasi arsip ProgresCater & PBPK (22.549 pelanggan, rute, tarif, water meter, catat meter & DRD)",
   run: async (options: SeedOptions) => {
     return await seedEtlPelanggan(options);
   },

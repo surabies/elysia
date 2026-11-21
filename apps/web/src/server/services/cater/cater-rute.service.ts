@@ -3,8 +3,8 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM)
  */
 
-import { eq, inArray } from 'drizzle-orm';
-import { db, pelanggan, ruteCater } from '@cater/db';
+import { eq, inArray } from "drizzle-orm";
+import { db, pelanggan, ruteCater } from "@cater/db";
 
 export interface PindahRuteInput {
   nolgList: string[];
@@ -38,7 +38,9 @@ export class CaterRuteService {
     }
 
     if (nolgList.length === 0) {
-      throw new Error('Daftar nomor langganan yang akan dipindahkan tidak boleh kosong.');
+      throw new Error(
+        "Daftar nomor langganan yang akan dipindahkan tidak boleh kosong.",
+      );
     }
 
     await db

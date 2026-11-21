@@ -23,6 +23,10 @@ import {
   type HargaBlok,
 } from '../../../../apps/web/src/server/domain/tagihan/tagihan.engine';
 import { sql } from 'drizzle-orm';
+import {
+  hitungKubikasiGantiMeter,
+  hitungKoreksiMbSusulan,
+} from '../../../../apps/web/src/server/domain/gwm/gwm.engine';
 
 /**
  * Daftar pengecualian data sumber yang diketahui (disimpan sebagai data di file tes,
@@ -680,4 +684,141 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     }
     expect(rolledBack).toBe(true);
   });
-});
+
+  test('9. ETL infolang: pemetaan konfigurasi bekerja untuk format file berbeda (delimiter, nama header, indeks kolom)', async () => {
+    const dir = path.resolve(__dirname, '../../data/exports');
+    fs.mkdirSync(dir, { recursive: true });
+    const fA = path.join(dir, '.tmp-infolang-A.csv');
+    const fB = path.join(dir, '.tmp-infolang-B.csv');
+    const fC = path.join(dir, '.tmp-infolang-C.csv');
+    let rolledBack = false;
+    try {
+      await db.transaction(async (tx) => {
+        const [c] = await tx.execute(sql`
+          SELECT nolg FROM daftar_catat WHERE periode = '202611' AND akumulasi_perlu_verifikasi = true ORDER BY nolg LIMIT 1
+        `);
+        const nolg = (c as any).nolg as string;
+        const [base] = await tx.execute(sql`SELECT akumulasi_taksasi_m3::numeric AS a FROM daftar_catat WHERE periode='202611' AND nolg=${nolg}`);
+        const akum202610 = Number((base as any).a);
+
+        // Format A: delimiter ';' dengan header default
+        fs.writeFileSync(fA, [
+          'nolg;thbl;stml;stma;pakai;tmss;ketcatat',
+          `${nolg};202608;10;25;15;-;Normal`,
+          `${nolg};202609;25;25;12;2;DK`,
+        ].join('\n'));
+        // Format B: delimiter ',' dengan nama header berbeda + tanda kutip
+        fs.writeFileSync(fB, [
+          '"No Pel","Periode","Stand Awal","Stand Akhir","Konsumsi","Kode","Kondisi"',
+          `"${nolg}","202608","10","25","15","-","Normal"`,
+          `"${nolg}","202609","25","25","12","2","DK"`,
+        ].join('\n'));
+        // Format C: delimiter '|' tanpa header, kolom lewat indeks, urutan berbeda
+        fs.writeFileSync(fC, [
+          `202608|${nolg}|15|25|10|-|Normal`,
+          `202609|${nolg}|12|25|25|2|DK`,
+        ].join('\n'));
+
+        const hasil: Array<{ akum: number; perlu: boolean }> = [];
+        const jalankan = async (opts: Parameters<typeof importRiwayatInfolang>[0]) => {
+          await tx.execute(sql`UPDATE daftar_catat SET akumulasi_taksasi_m3 = ${akum202610}, akumulasi_perlu_verifikasi = true WHERE periode='202611' AND nolg=${nolg}`);
+          const res = await importRiwayatInfolang({ targetPeriodeOpen: '202611', ...opts }, tx as any);
+          expect(res.updatedDpmCount).toBe(1);
+          expect(res.flagTurun).toBe(1); // tanda turun karena bacaan fisik 202608 ditemukan
+          const [r] = await tx.execute(sql`SELECT akumulasi_taksasi_m3::numeric AS a, akumulasi_perlu_verifikasi AS p FROM daftar_catat WHERE periode='202611' AND nolg=${nolg}`);
+          hasil.push({ akum: Number((r as any).a), perlu: (r as any).p });
+        };
+
+        await jalankan({ csvPath: fA }); // default mapping
+        await jalankan({
+          csvPath: fB,
+          columnMapping: { delimiter: ',', nolg: 'No Pel', periode: 'Periode', standAwal: 'Stand Awal', standAkhir: 'Stand Akhir', pakai: 'Konsumsi', kodeKondisi: 'Kode', namaKondisi: 'Kondisi' },
+        });
+        await jalankan({
+          csvPath: fC,
+          columnMapping: { delimiter: '|', hasHeader: false, periode: 0, nolg: 1, pakai: 2, standAkhir: 3, standAwal: 4, kodeKondisi: 5, namaKondisi: 6 },
+        });
+        // Format C: kolom 2=pakai, 3=stand akhir, 4=stand awal. Baris 202608: awal=10, akhir=25; 202609: awal=25, akhir=25
+
+        // Hasil dari 3 format wajib identik: taksasi 202609 (12) + akumulasi Oktober
+        for (const h of hasil) {
+          expect(h.akum).toBe(12 + akum202610);
+          expect(h.perlu).toBe(false);
+        }
+        throw new Error('ROLLBACK_INFOLANG_FORMAT');
+      });
+    } catch (e: any) {
+      if (e.message === 'ROLLBACK_INFOLANG_FORMAT') rolledBack = true;
+      else throw e;
+    } finally {
+      for (const f of [fA, fB, fC]) if (fs.existsSync(f)) fs.unlinkSync(f);
+    }
+    expect(rolledBack).toBe(true);
+  });
+
+  test('10. MB: stand angkat menyusul SEBELUM closing (masuk bulan yang sama) vs SESUDAH closing (koreksi bulan kejadian, bukan bulan berikutnya)', async () => {
+    // --- SEBELUM closing: stand angkat diketahui -> pemakaian gabungan masuk bulan kejadian ---
+    // stml=1000, angkat=1008 (meter lama 8 m3), pasang=0, baca baru=4 -> gabungan 12 m3
+    const sebelum = hitungPemakaianDanRekonsiliasiTaksasi({
+      stml: 1000, stma: 4, modeHitung: 'METER_BARU', pakaiLalu: 10,
+      pemakaianMinimumM3: 5, standAngkat: 1008, standPasang: 0,
+    });
+    expect(sebelum.selisihFisikM3).toBe(12);
+    expect(sebelum.pakaiTagihM3).toBe(12);
+    // Tanpa stand angkat (belum menyusul): hanya meter baru, minimum 5 -> tidak memblokir
+    const tanpaAngkat = hitungPemakaianDanRekonsiliasiTaksasi({
+      stml: 1000, stma: 4, modeHitung: 'METER_BARU', pakaiLalu: 10, pemakaianMinimumM3: 5,
+    });
+    expect(tanpaAngkat.pakaiTagihM3).toBe(5);
+
+    // --- SESUDAH closing: yang terbit 5 m3, seharusnya 12 -> koreksi +7 atas BULAN KEJADIAN ---
+    const koreksi = hitungKoreksiMbSusulan({
+      standLalu: 1000, standAngkat: 1008, standPasang: 0, standBacaBaru: 4,
+      pemakaianMinimumM3: 5, pakaiTagihTerbit: tanpaAngkat.pakaiTagihM3,
+    });
+    expect(koreksi.isValid).toBe(true);
+    expect(koreksi.pemakaianGabunganM3).toBe(12);
+    expect(koreksi.pakaiTagihSeharusnya).toBe(12);
+    expect(koreksi.selisihM3).toBe(7);
+    // Bulan berikutnya TIDAK menerima tambahan: stml bulan depan = stma bulan kejadian (4)
+    const bulanDepan = hitungPemakaianDanRekonsiliasiTaksasi({
+      stml: 4, stma: 9, modeHitung: 'SELISIH_FISIK', pakaiLalu: 5, pemakaianMinimumM3: 5,
+    });
+    expect(bulanDepan.pakaiTagihM3).toBe(5);
+    // Kasus gabungan di bawah minimum & sudah terbit minimum -> tidak ada koreksi
+    const nol = hitungKoreksiMbSusulan({
+      standLalu: 1000, standAngkat: 1001, standPasang: 0, standBacaBaru: 2,
+      pemakaianMinimumM3: 5, pakaiTagihTerbit: 5,
+    });
+    expect(nol.selisihM3).toBe(0);
+    // stand angkat tidak valid ditolak
+    expect(hitungKoreksiMbSusulan({ standLalu: 1000, standAngkat: 990, standPasang: 0, standBacaBaru: 4, pemakaianMinimumM3: 5, pakaiTagihTerbit: 5 }).isValid).toBe(false);
+    expect(hitungKubikasiGantiMeter({ standLalu: 1000, standAngkat: 1008, standPasang: 0, standBacaBaru: 4 }).totalPemakaianM3).toBe(12);
+
+    // --- Skema: DATA_METER_BELUM_LENGKAP boleh NULL; APPROVED wajib lengkap (CHECK constraint) ---
+    let rolledBack = false;
+    try {
+      await db.transaction(async (tx) => {
+        const [c] = await tx.execute(sql`SELECT nolg FROM pelanggan ORDER BY nolg LIMIT 1`);
+        const nolg = (c as any).nolg as string;
+        await tx.execute(sql`
+          INSERT INTO water_meter_mutasi (id, nolg, periode, alasan, no_meter_lama, stand_angkat, no_meter_baru, status_verifikasi)
+          VALUES ('mutasi-test-draft', ${nolg}, 202611, 'LAINNYA', 'LAMA-1', NULL, NULL, 'DATA_METER_BELUM_LENGKAP')
+        `);
+        const [d] = await tx.execute(sql`SELECT status_verifikasi FROM water_meter_mutasi WHERE id = 'mutasi-test-draft'`);
+        expect((d as any).status_verifikasi).toBe('DATA_METER_BELUM_LENGKAP');
+        let ditolak = false;
+        try {
+          await tx.execute(sql`UPDATE water_meter_mutasi SET status_verifikasi = 'APPROVED' WHERE id = 'mutasi-test-draft'`);
+        } catch {
+          ditolak = true;
+        }
+        expect(ditolak).toBe(true);
+        throw new Error('ROLLBACK_MB_SCHEMA');
+      });
+    } catch (e: any) {
+      if (e.message === 'ROLLBACK_MB_SCHEMA') rolledBack = true;
+      else throw e;
+    }
+    expect(rolledBack).toBe(true);
+  });});

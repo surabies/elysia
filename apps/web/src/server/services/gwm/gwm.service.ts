@@ -3,7 +3,7 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM, Transaksi, & Domain Engine)
  */
 
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc } from "drizzle-orm";
 import {
   db,
   waterMeter,
@@ -14,14 +14,21 @@ import {
   caterVerifikasiLog,
   daftarCatat,
   pelanggan,
-} from '@cater/db';
-import type { AlasanGantiMeter } from '@cater/types';
+  periodePenagihan,
+  rekeningDrd,
+  golonganTarif,
+} from "@cater/db";
+import type { AlasanGantiMeter } from "@cater/types";
 import {
   hitungKubikasiGantiMeter,
+  hitungKoreksiMbSusulan,
   hitungNeracaAir,
   type HasilNeracaAir,
-} from '../../domain/gwm/gwm.engine';
-import { isCloudinaryConfigured, uploadToCloudinary } from '../../lib/cloudinary';
+} from "../../domain/gwm/gwm.engine";
+import {
+  isCloudinaryConfigured,
+  uploadToCloudinary,
+} from "../../lib/cloudinary";
 
 export interface CatatMutasiGantiMeterInput {
   nolg: string;
@@ -29,9 +36,11 @@ export interface CatatMutasiGantiMeterInput {
   alasan: AlasanGantiMeter;
   keterangan?: string;
   noMeterLama: string;
-  standAngkat: number;
+  /** Opsional: boleh menyusul dari Teknik (status DATA_METER_BELUM_LENGKAP). Wajib saat APPROVED. */
+  standAngkat?: number | null;
   fotoStandAngkat?: string;
-  noMeterBaru: string;
+  /** Opsional: boleh menyusul dari Teknik (status DATA_METER_BELUM_LENGKAP). Wajib saat APPROVED. */
+  noMeterBaru?: string | null;
   merkBaru?: string;
   ukuranBaru?: string;
   standPasang?: number;
@@ -42,7 +51,7 @@ export interface CatatMutasiGantiMeterInput {
 
 export interface VerifikasiMutasiInput {
   mutasiId: string;
-  action: 'APPROVE' | 'REJECT';
+  action: "APPROVE" | "REJECT";
   standBacaBaru?: number; // Pembacaan meter baru bulan berjalan
   catatan?: string;
   userId: string;
@@ -59,7 +68,9 @@ export interface CatatDebitGwmInput {
 }
 
 export class GwmService {
-  async daftarMutasiGantiMeter(status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
+  async daftarMutasiGantiMeter(
+    status?: "DATA_METER_BELUM_LENGKAP" | "PENDING" | "APPROVED" | "REJECTED",
+  ) {
     const rows = await db
       .select({
         id: waterMeterMutasi.id,
@@ -87,11 +98,7 @@ export class GwmService {
         caterBacaMeter,
         sql`${caterBacaMeter.id} = 'cater-' || ${waterMeterMutasi.periode}::text || '-' || ${waterMeterMutasi.nolg}`,
       )
-      .where(
-        status
-          ? eq(waterMeterMutasi.statusVerifikasi, status)
-          : undefined,
-      )
+      .where(status ? eq(waterMeterMutasi.statusVerifikasi, status) : undefined)
       .orderBy(desc(waterMeterMutasi.updatedAt))
       .limit(100);
 
@@ -112,7 +119,7 @@ export class GwmService {
       fotoStandAngkat,
       noMeterBaru,
       merkBaru,
-      ukuranBaru = '1/2',
+      ukuranBaru = "1/2",
       standPasang = 0,
       noSegelBaru,
       fotoMeterBaru,
@@ -134,9 +141,9 @@ export class GwmService {
       .from(waterMeterMutasi)
       .where(eq(waterMeterMutasi.id, id));
 
-    if (mutasiTersimpan?.statusVerifikasi === 'APPROVED') {
+    if (mutasiTersimpan?.statusVerifikasi === "APPROVED") {
       throw new Error(
-        'Mutasi ganti meter untuk pelanggan dan periode ini sudah disetujui.',
+        "Mutasi ganti meter untuk pelanggan dan periode ini sudah disetujui.",
       );
     }
 
@@ -145,36 +152,43 @@ export class GwmService {
     let processedFotoMeterBaru = fotoMeterBaru;
 
     if (isCloudinaryConfigured()) {
-      if (fotoStandAngkat && fotoStandAngkat.startsWith('data:image/')) {
+      if (fotoStandAngkat && fotoStandAngkat.startsWith("data:image/")) {
         try {
           const res = await uploadToCloudinary({
             file: fotoStandAngkat,
-            modul: 'gwm',
-            jenis: 'angkat',
+            modul: "gwm",
+            jenis: "angkat",
             identifier: nolg,
             thbl: String(periode),
           });
           processedFotoStandAngkat = res.secureUrl;
         } catch (err) {
-          console.error('[CLOUDINARY_GWM_ANGKAT_UPLOAD_ERR]', err);
+          console.error("[CLOUDINARY_GWM_ANGKAT_UPLOAD_ERR]", err);
         }
       }
 
-      if (fotoMeterBaru && fotoMeterBaru.startsWith('data:image/')) {
+      if (fotoMeterBaru && fotoMeterBaru.startsWith("data:image/")) {
         try {
           const res = await uploadToCloudinary({
             file: fotoMeterBaru,
-            modul: 'gwm',
-            jenis: 'pasang',
+            modul: "gwm",
+            jenis: "pasang",
             identifier: nolg,
             thbl: String(periode),
           });
           processedFotoMeterBaru = res.secureUrl;
         } catch (err) {
-          console.error('[CLOUDINARY_GWM_PASANG_UPLOAD_ERR]', err);
+          console.error("[CLOUDINARY_GWM_PASANG_UPLOAD_ERR]", err);
         }
       }
     }
+
+    const dataLengkap =
+      standAngkat !== undefined &&
+      standAngkat !== null &&
+      !!noMeterBaru &&
+      noMeterBaru.trim() !== "";
+    const statusBaru = dataLengkap ? "PENDING" : "DATA_METER_BELUM_LENGKAP";
 
     await db
       .insert(waterMeterMutasi)
@@ -185,16 +199,16 @@ export class GwmService {
         alasan,
         keterangan,
         noMeterLama,
-        standAngkat,
+        standAngkat: standAngkat ?? null,
         fotoStandAngkat: processedFotoStandAngkat,
-        noMeterBaru,
+        noMeterBaru: noMeterBaru ?? null,
         merkBaru,
         ukuranBaru,
         standPasang,
         noSegelBaru,
         fotoMeterBaru: processedFotoMeterBaru,
         petugasPasang,
-        statusVerifikasi: 'PENDING',
+        statusVerifikasi: statusBaru,
       })
       .onConflictDoUpdate({
         target: waterMeterMutasi.id,
@@ -202,28 +216,41 @@ export class GwmService {
           alasan,
           keterangan,
           noMeterLama,
-          standAngkat,
+          // Data yang menyusul dari Teknik tidak boleh tertimpa NULL oleh kiriman parsial
+          standAngkat: sql`COALESCE(${standAngkat ?? null}::integer, ${waterMeterMutasi.standAngkat})`,
           fotoStandAngkat: processedFotoStandAngkat,
-          noMeterBaru,
+          noMeterBaru: sql`COALESCE(${noMeterBaru ?? null}::varchar, ${waterMeterMutasi.noMeterBaru})`,
           merkBaru,
           ukuranBaru,
           standPasang,
           noSegelBaru,
-          fotoMeterBaru,
+          fotoMeterBaru: processedFotoMeterBaru,
           petugasPasang,
-          statusVerifikasi: 'PENDING',
+          statusVerifikasi: sql`CASE WHEN COALESCE(${standAngkat ?? null}::integer, ${waterMeterMutasi.standAngkat}) IS NOT NULL AND COALESCE(${noMeterBaru ?? null}::varchar, ${waterMeterMutasi.noMeterBaru}) IS NOT NULL THEN 'PENDING' ELSE 'DATA_METER_BELUM_LENGKAP' END`,
           updatedAt: new Date(),
         },
       });
+
+    const [tersimpan] = await db
+      .select({
+        statusVerifikasi: waterMeterMutasi.statusVerifikasi,
+        standAngkat: waterMeterMutasi.standAngkat,
+      })
+      .from(waterMeterMutasi)
+      .where(eq(waterMeterMutasi.id, id));
 
     return {
       id,
       nolg,
       periode,
-      standAngkat,
+      standAngkat: tersimpan?.standAngkat ?? null,
       standPasang,
-      statusVerifikasi: 'PENDING',
-      pesan: 'Data mutasi ganti meter berhasil dicatat dan menunggu verifikasi supervisor.',
+      statusVerifikasi: tersimpan?.statusVerifikasi ?? statusBaru,
+      pesan:
+        (tersimpan?.statusVerifikasi ?? statusBaru) ===
+        "DATA_METER_BELUM_LENGKAP"
+          ? "Mutasi dicatat dengan status DATA_METER_BELUM_LENGKAP; no_meter_baru & stand_angkat menyusul dari Teknik (tidak memblokir pembacaan maupun closing)."
+          : "Data mutasi ganti meter berhasil dicatat dan menunggu verifikasi supervisor.",
     };
   }
 
@@ -244,12 +271,12 @@ export class GwmService {
       throw new Error(`Data mutasi ganti meter ${mutasiId} tidak ditemukan.`);
     }
 
-    if (action === 'REJECT') {
+    if (action === "REJECT") {
       await db
         .update(waterMeterMutasi)
         .set({
-          statusVerifikasi: 'REJECTED',
-          catatanVerifikasi: catatan || 'Ditolak oleh supervisor',
+          statusVerifikasi: "REJECTED",
+          catatanVerifikasi: catatan || "Ditolak oleh supervisor",
           verifikatorId: userId,
           tglVerifikasi: new Date(),
           updatedAt: new Date(),
@@ -258,8 +285,8 @@ export class GwmService {
 
       return {
         mutasiId,
-        statusVerifikasi: 'REJECTED',
-        message: 'Pengajuan ganti water meter ditolak.',
+        statusVerifikasi: "REJECTED",
+        message: "Pengajuan ganti water meter ditolak.",
       };
     }
 
@@ -267,9 +294,30 @@ export class GwmService {
     const periodeStr = String(mutasi.periode);
     const caterId = `cater-${periodeStr}-${mutasi.nolg}`;
 
+    if (
+      mutasi.standAngkat === null ||
+      mutasi.standAngkat === undefined ||
+      !mutasi.noMeterBaru ||
+      mutasi.noMeterBaru.trim() === ""
+    ) {
+      throw new Error(
+        "Mutasi belum dapat disetujui: no_meter_baru dan stand_angkat wajib terisi (status masih DATA_METER_BELUM_LENGKAP).",
+      );
+    }
+
+    const [periodeRow] = await db
+      .select({ status: periodePenagihan.status })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, periodeStr));
+    if (periodeRow?.status === "TERKUNCI") {
+      throw new Error(
+        `Periode ${periodeStr} sudah TERKUNCI. Pemakaian meter lama tidak boleh ditambahkan ke bulan berikutnya; koreksi atas bulan kejadian memerlukan mekanisme koreksi DRD (menunggu persetujuan). Gunakan pratinjauKoreksiMbSusulan untuk melihat selisih.`,
+      );
+    }
+
     if (standBacaBaru === undefined) {
       throw new Error(
-        'Stand baca meter baru wajib diisi sebelum mutasi disetujui.',
+        "Stand baca meter baru wajib diisi sebelum mutasi disetujui.",
       );
     }
 
@@ -281,13 +329,20 @@ export class GwmService {
     const [existingDpm] = await db
       .select()
       .from(daftarCatat)
-      .where(and(eq(daftarCatat.periode, periodeStr), eq(daftarCatat.nolg, mutasi.nolg)));
+      .where(
+        and(
+          eq(daftarCatat.periode, periodeStr),
+          eq(daftarCatat.nolg, mutasi.nolg),
+        ),
+      );
 
     // Jika caterBacaMeter bulan berjalan belum ada, ambil standLalu dari daftar_catat.stand_awal atau bacaan terakhir
     let standLaluStr = existingCater?.stml ?? existingDpm?.standAwal ?? null;
-    let pakaiLaluStr = existingCater?.pakaiLalu ?? existingDpm?.pakaiLalu ?? '0';
+    let pakaiLaluStr =
+      existingCater?.pakaiLalu ?? existingDpm?.pakaiLalu ?? "0";
     let ruteKodeVal = existingCater?.ruteKode ?? existingDpm?.ruteKode ?? null;
-    let petugasIdVal = existingCater?.petugasId ?? existingDpm?.petugasId ?? null;
+    let petugasIdVal =
+      existingCater?.petugasId ?? existingDpm?.petugasId ?? null;
 
     if (standLaluStr === null) {
       const [lastReading] = await db
@@ -300,12 +355,21 @@ export class GwmService {
           petugasId: caterBacaMeter.petugasId,
         })
         .from(caterBacaMeter)
-        .where(and(eq(caterBacaMeter.nolg, mutasi.nolg), sql`${caterBacaMeter.thbl} < ${periodeStr}`))
+        .where(
+          and(
+            eq(caterBacaMeter.nolg, mutasi.nolg),
+            sql`${caterBacaMeter.thbl} < ${periodeStr}`,
+          ),
+        )
         .orderBy(desc(caterBacaMeter.thbl))
         .limit(1);
 
-      standLaluStr = String(lastReading?.stmaRevisi ?? lastReading?.stma ?? '0');
-      pakaiLaluStr = String(lastReading?.pakaiTagih ?? lastReading?.pakaiM3 ?? '0');
+      standLaluStr = String(
+        lastReading?.stmaRevisi ?? lastReading?.stma ?? "0",
+      );
+      pakaiLaluStr = String(
+        lastReading?.pakaiTagih ?? lastReading?.pakaiM3 ?? "0",
+      );
       ruteKodeVal = ruteKodeVal ?? lastReading?.ruteKode ?? null;
       petugasIdVal = petugasIdVal ?? lastReading?.petugasId ?? null;
     }
@@ -329,18 +393,18 @@ export class GwmService {
       await tx
         .update(waterMeterMutasi)
         .set({
-          statusVerifikasi: 'APPROVED',
+          statusVerifikasi: "APPROVED",
           verifikatorId: userId,
-          catatanVerifikasi: catatan || 'Disetujui oleh Supervisor',
+          catatanVerifikasi: catatan || "Disetujui oleh Supervisor",
           tglVerifikasi: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(waterMeterMutasi.id, mutasiId));
 
       // 1b. Buat/update aset water_meter baru dan tautkan ke master pelanggan (mendukung pelanggan yang awalnya no_meter = NULL)
-      if (mutasi.noMeterBaru && mutasi.noMeterBaru.trim() !== '-') {
+      if (mutasi.noMeterBaru && mutasi.noMeterBaru.trim() !== "-") {
         const cleanMeterBaru = mutasi.noMeterBaru.trim();
-        const ukuranBaru = mutasi.ukuranBaru || '1/2';
+        const ukuranBaru = mutasi.ukuranBaru || "1/2";
         await tx
           .insert(waterMeter)
           .values({
@@ -349,7 +413,7 @@ export class GwmService {
             ukuran: ukuranBaru,
             noSegel: mutasi.noSegelBaru ?? null,
             tglPasang: mutasi.tglGanti ?? new Date(),
-            kondisi: 'Normal',
+            kondisi: "Normal",
           })
           .onConflictDoUpdate({
             target: waterMeter.noMeter,
@@ -388,10 +452,10 @@ export class GwmService {
           pakaiM3: String(kalkulasi.totalPemakaianM3),
           pakaiTagih: String(kalkulasi.totalPemakaianM3),
           pakaiLalu: pakaiLaluStr,
-          tmss: '4',                        // Kode STI '4 - MB'
-          ketCatat: 'MB',
+          tmss: "4", // Kode STI '4 - MB'
+          ketCatat: "MB",
           waterMeterMutasiId: mutasi.id,
-          statusVerifikasi: 'VERIFIED_L1',
+          statusVerifikasi: "VERIFIED_L1",
           catatan: `[Ganti Meter/MB] Stand Angkat: ${mutasi.standAngkat} | Stand Pasang: ${mutasi.standPasang}`,
         })
         .onConflictDoUpdate({
@@ -401,10 +465,10 @@ export class GwmService {
             stma: String(bacaBaru),
             pakaiM3: String(kalkulasi.totalPemakaianM3),
             pakaiTagih: String(kalkulasi.totalPemakaianM3),
-            tmss: '4',
-            ketCatat: 'MB',
+            tmss: "4",
+            ketCatat: "MB",
             waterMeterMutasiId: mutasi.id,
-            statusVerifikasi: 'VERIFIED_L1',
+            statusVerifikasi: "VERIFIED_L1",
             catatan: `[Ganti Meter/MB] Stand Angkat: ${mutasi.standAngkat} | Stand Pasang: ${mutasi.standPasang}`,
             updatedAt: new Date(),
           },
@@ -414,18 +478,23 @@ export class GwmService {
       await tx
         .update(daftarCatat)
         .set({
-          status: 'DICATAT',
+          status: "DICATAT",
           selesaiAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(and(eq(daftarCatat.periode, periodeStr), eq(daftarCatat.nolg, mutasi.nolg)));
+        .where(
+          and(
+            eq(daftarCatat.periode, periodeStr),
+            eq(daftarCatat.nolg, mutasi.nolg),
+          ),
+        );
 
       // 3. Catat di audit log verifikasi
       await tx.insert(caterVerifikasiLog).values({
         caterId,
         userId,
-        stage: 'V1',
-        action: 'APPROVE',
+        stage: "V1",
+        action: "APPROVE",
         stmaSebelum: existingCater?.stma ?? null,
         stmaSesudah: String(bacaBaru),
         pakaiSebelum: existingCater?.pakaiM3 ?? null,
@@ -437,19 +506,74 @@ export class GwmService {
     return {
       mutasiId,
       caterId,
-      statusVerifikasi: 'APPROVED',
+      statusVerifikasi: "APPROVED",
       pakaiMeterLama: kalkulasi.pakaiMeterLama,
       pakaiMeterBaru: kalkulasi.pakaiMeterBaru,
       totalPemakaianM3: kalkulasi.totalPemakaianM3,
-      message: 'Ganti water meter berhasil disahkan dan tagihan dihitung presisi.',
+      message:
+        "Ganti water meter berhasil disahkan dan tagihan dihitung presisi.",
     };
   }
 
   /**
+   * READ-ONLY. Pratinjau koreksi MB yang datanya menyusul setelah periode closed.
+   * Tidak menulis apa pun (mekanisme koreksi/tagihan susulan DRD belum ada; menunggu persetujuan).
+   */
+  async pratinjauKoreksiMbSusulan(mutasiId: string) {
+    const [m] = await db
+      .select()
+      .from(waterMeterMutasi)
+      .where(eq(waterMeterMutasi.id, mutasiId));
+    if (!m) throw new Error(`Mutasi ${mutasiId} tidak ditemukan.`);
+    if (m.standAngkat === null) throw new Error("stand_angkat belum terisi.");
+    const periodeStr = String(m.periode);
+    const [row] = await db
+      .select({
+        stml: caterBacaMeter.stml,
+        stma: caterBacaMeter.stma,
+        pakaiTagih: caterBacaMeter.pakaiTagih,
+        pakaiDrd: rekeningDrd.pakaiM3,
+        minimum: golonganTarif.pemakaianMinimumM3,
+      })
+      .from(caterBacaMeter)
+      .innerJoin(pelanggan, eq(pelanggan.nolg, caterBacaMeter.nolg))
+      .leftJoin(golonganTarif, eq(golonganTarif.kode, pelanggan.tarifKode))
+      .leftJoin(
+        rekeningDrd,
+        and(
+          eq(rekeningDrd.thbl, caterBacaMeter.thbl),
+          eq(rekeningDrd.nolg, caterBacaMeter.nolg),
+        ),
+      )
+      .where(
+        and(
+          eq(caterBacaMeter.thbl, periodeStr),
+          eq(caterBacaMeter.nolg, m.nolg),
+        ),
+      );
+    if (!row) throw new Error("Bacaan bulan kejadian tidak ditemukan.");
+    return hitungKoreksiMbSusulan({
+      standLalu: Number(row.stml),
+      standAngkat: m.standAngkat,
+      standPasang: m.standPasang,
+      standBacaBaru: Number(row.stma),
+      pemakaianMinimumM3: Number(row.minimum ?? 0),
+      pakaiTagihTerbit: Number(row.pakaiDrd ?? row.pakaiTagih ?? 0),
+    });
+  }
+  /**
    * Mencatat debit rutin Grand Water Meter (Meter Induk Zona DMA)
    */
   async catatDebitGwm(input: CatatDebitGwmInput) {
-    const { kodeGwm, periode, standAwal, standAkhir, petugasId, fotoStand, catatan } = input;
+    const {
+      kodeGwm,
+      periode,
+      standAwal,
+      standAkhir,
+      petugasId,
+      fotoStand,
+      catatan,
+    } = input;
 
     const [gwm] = await db
       .select({ id: grandWaterMeter.id, zonaKode: grandWaterMeter.zonaKode })
@@ -457,7 +581,9 @@ export class GwmService {
       .where(eq(grandWaterMeter.kodeGwm, kodeGwm));
 
     if (!gwm) {
-      throw new Error(`Grand Water Meter dengan kode ${kodeGwm} tidak ditemukan.`);
+      throw new Error(
+        `Grand Water Meter dengan kode ${kodeGwm} tidak ditemukan.`,
+      );
     }
 
     const totalDebitM3 = Math.max(0, standAkhir - standAwal);
@@ -483,22 +609,32 @@ export class GwmService {
       kodeGwm,
       periode,
       totalDebitM3,
-      message: 'Pencatatan debit Grand Water Meter berhasil disimpan.',
+      message: "Pencatatan debit Grand Water Meter berhasil disimpan.",
     };
   }
 
   /**
    * Menghitung Neraca Air (Water Balance) & Tingkat Kehilangan Air (NRW) untuk Zona Tertentu
    */
-  async hitungNeracaAirZona(zonaKode: string, periode: number): Promise<HasilNeracaAir> {
+  async hitungNeracaAirZona(
+    zonaKode: string,
+    periode: number,
+  ): Promise<HasilNeracaAir> {
     const periodeStr = String(periode);
 
     // 1. Akumulasi debit masuk seluruh GWM induk di zona ini
     const debitGwmRows = await db
-      .select({ totalDebit: sql<number>`COALESCE(SUM(${gwmBacaMeter.totalDebitM3}), 0)::int` })
+      .select({
+        totalDebit: sql<number>`COALESCE(SUM(${gwmBacaMeter.totalDebitM3}), 0)::int`,
+      })
       .from(gwmBacaMeter)
       .innerJoin(grandWaterMeter, eq(gwmBacaMeter.gwmId, grandWaterMeter.id))
-      .where(and(eq(grandWaterMeter.zonaKode, zonaKode), eq(gwmBacaMeter.periode, periode)));
+      .where(
+        and(
+          eq(grandWaterMeter.zonaKode, zonaKode),
+          eq(gwmBacaMeter.periode, periode),
+        ),
+      );
 
     const totalDebitGwmM3 = debitGwmRows[0]?.totalDebit ?? 0;
 
@@ -510,7 +646,9 @@ export class GwmService {
       .from(caterBacaMeter)
       .where(eq(caterBacaMeter.thbl, periodeStr));
 
-    const totalPemakaianPelangganM3 = Math.round(pemakaianPelangganRows[0]?.totalPakai ?? 0);
+    const totalPemakaianPelangganM3 = Math.round(
+      pemakaianPelangganRows[0]?.totalPakai ?? 0,
+    );
 
     return hitungNeracaAir({
       totalDebitGwmM3,

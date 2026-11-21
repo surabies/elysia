@@ -1,15 +1,18 @@
-import fs from 'fs';
-import readline from 'readline';
-import { eq, and, sql, inArray, desc } from 'drizzle-orm';
-import { db } from '../client';
+import fs from "fs";
+import readline from "readline";
+import { eq, and, sql, inArray, desc } from "drizzle-orm";
+import { db } from "../client";
 import {
   riwayatPemakaianHistoris,
   caterBacaMeter,
   daftarCatat,
   pelanggan,
   masterKondisiCatat,
-} from '../schema';
-import { getActivePeriode, resolveKondisiCatatWithPriority } from '../carry-forward';
+} from "../schema";
+import {
+  getActivePeriode,
+  resolveKondisiCatatWithPriority,
+} from "../carry-forward";
 
 export interface InfolangColumnMapping {
   /** Nama header kolom atau indeks 0-based untuk nomor pelanggan (nolg) */
@@ -33,14 +36,14 @@ export interface InfolangColumnMapping {
 }
 
 export const DEFAULT_INFOLANG_COLUMN_MAPPING: InfolangColumnMapping = {
-  nolg: 'nolg',
-  periode: 'thbl',
-  standAwal: 'stml',
-  standAkhir: 'stma',
-  pakai: 'pakai',
-  kodeKondisi: 'tmss',
-  namaKondisi: 'ketcatat',
-  delimiter: ';',
+  nolg: "nolg",
+  periode: "thbl",
+  standAwal: "stml",
+  standAkhir: "stma",
+  pakai: "pakai",
+  kodeKondisi: "tmss",
+  namaKondisi: "ketcatat",
+  delimiter: ";",
   hasHeader: true,
 };
 
@@ -70,23 +73,37 @@ export interface ImportRiwayatInfolangResult {
   updatedDpmCount: number;
   verifiedByPhysicalReadingCount: number;
   stillNeedsVerificationCount: number;
+  /** Jumlah tanda akumulasi_perlu_verifikasi pada DPM periode target sebelum/sesudah import */
+  flagSebelum: number;
+  flagSesudah: number;
+  flagTurun: number;
 }
 
 function resolveColIndex(
   colSpec: string | number | undefined,
-  headerCols: string[]
+  headerCols: string[],
 ): number {
   if (colSpec === undefined) return -1;
-  if (typeof colSpec === 'number') return colSpec;
-  const target = colSpec.trim().toLowerCase().replace(/^["']|["']$/g, '');
+  if (typeof colSpec === "number") return colSpec;
+  const target = colSpec
+    .trim()
+    .toLowerCase()
+    .replace(/^["']|["']$/g, "");
   return headerCols.findIndex(
-    (h) => h.trim().toLowerCase().replace(/^["']|["']$/g, '') === target
+    (h) =>
+      h
+        .trim()
+        .toLowerCase()
+        .replace(/^["']|["']$/g, "") === target,
   );
 }
 
 function cleanCsvCell(val: string | undefined): string {
-  if (!val) return '';
-  return val.trim().replace(/^["']|["']$/g, '').trim();
+  if (!val) return "";
+  return val
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .trim();
 }
 
 /**
@@ -100,15 +117,15 @@ function cleanCsvCell(val: string | undefined): string {
  */
 export async function importRiwayatInfolang(
   options: ImportRiwayatInfolangOptions,
-  database: typeof db = db
+  database: typeof db = db,
 ): Promise<ImportRiwayatInfolangResult> {
   const mapping: InfolangColumnMapping = {
     ...DEFAULT_INFOLANG_COLUMN_MAPPING,
     ...(options.columnMapping || {}),
   };
-  const delimiter = mapping.delimiter || ';';
+  const delimiter = mapping.delimiter || ";";
   const hasHeader = mapping.hasHeader !== false;
-  const sumber = options.sumber || 'INFOLANG';
+  const sumber = options.sumber || "INFOLANG";
 
   const parsedRows: InfolangRawRow[] = [];
 
@@ -116,19 +133,28 @@ export async function importRiwayatInfolang(
     parsedRows.push(...options.rows);
   } else if (options.csvPath) {
     if (!fs.existsSync(options.csvPath)) {
-      throw new Error(`File riwayat infolang tidak ditemukan: ${options.csvPath}`);
+      throw new Error(
+        `File riwayat infolang tidak ditemukan: ${options.csvPath}`,
+      );
     }
     const fileStream = fs.createReadStream(options.csvPath);
-    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
 
     let isFirstLine = true;
-    let idxNolg = typeof mapping.nolg === 'number' ? mapping.nolg : -1;
-    let idxPeriode = typeof mapping.periode === 'number' ? mapping.periode : -1;
-    let idxStandAwal = typeof mapping.standAwal === 'number' ? mapping.standAwal : -1;
-    let idxStandAkhir = typeof mapping.standAkhir === 'number' ? mapping.standAkhir : -1;
-    let idxPakai = typeof mapping.pakai === 'number' ? mapping.pakai : -1;
-    let idxKodeKondisi = typeof mapping.kodeKondisi === 'number' ? mapping.kodeKondisi : -1;
-    let idxNamaKondisi = typeof mapping.namaKondisi === 'number' ? mapping.namaKondisi : -1;
+    let idxNolg = typeof mapping.nolg === "number" ? mapping.nolg : -1;
+    let idxPeriode = typeof mapping.periode === "number" ? mapping.periode : -1;
+    let idxStandAwal =
+      typeof mapping.standAwal === "number" ? mapping.standAwal : -1;
+    let idxStandAkhir =
+      typeof mapping.standAkhir === "number" ? mapping.standAkhir : -1;
+    let idxPakai = typeof mapping.pakai === "number" ? mapping.pakai : -1;
+    let idxKodeKondisi =
+      typeof mapping.kodeKondisi === "number" ? mapping.kodeKondisi : -1;
+    let idxNamaKondisi =
+      typeof mapping.namaKondisi === "number" ? mapping.namaKondisi : -1;
 
     for await (const line of rl) {
       if (!line.trim()) continue;
@@ -144,9 +170,15 @@ export async function importRiwayatInfolang(
         idxKodeKondisi = resolveColIndex(mapping.kodeKondisi, cols);
         idxNamaKondisi = resolveColIndex(mapping.namaKondisi, cols);
 
-        if (idxNolg < 0 || idxPeriode < 0 || idxStandAwal < 0 || idxStandAkhir < 0 || idxPakai < 0) {
+        if (
+          idxNolg < 0 ||
+          idxPeriode < 0 ||
+          idxStandAwal < 0 ||
+          idxStandAkhir < 0 ||
+          idxPakai < 0
+        ) {
           throw new Error(
-            `Header CSV infolang tidak sesuai konfigurasi mapping kolom. Ditemukan header: [${cols.join(', ')}]`
+            `Header CSV infolang tidak sesuai konfigurasi mapping kolom. Ditemukan header: [${cols.join(", ")}]`,
           );
         }
         continue;
@@ -157,11 +189,16 @@ export async function importRiwayatInfolang(
       const periode = cleanCsvCell(cols[idxPeriode]);
       if (!nolg || !periode || periode.length !== 6) continue;
 
-      const standAwal = parseFloat(cleanCsvCell(cols[idxStandAwal]).replace(',', '.')) || 0;
-      const standAkhir = parseFloat(cleanCsvCell(cols[idxStandAkhir]).replace(',', '.')) || 0;
-      const pakai = parseFloat(cleanCsvCell(cols[idxPakai]).replace(',', '.')) || 0;
-      const kodeKondisi = idxKodeKondisi >= 0 ? cleanCsvCell(cols[idxKodeKondisi]) : '-';
-      const namaKondisi = idxNamaKondisi >= 0 ? cleanCsvCell(cols[idxNamaKondisi]) : 'Normal';
+      const standAwal =
+        parseFloat(cleanCsvCell(cols[idxStandAwal]).replace(",", ".")) || 0;
+      const standAkhir =
+        parseFloat(cleanCsvCell(cols[idxStandAkhir]).replace(",", ".")) || 0;
+      const pakai =
+        parseFloat(cleanCsvCell(cols[idxPakai]).replace(",", ".")) || 0;
+      const kodeKondisi =
+        idxKodeKondisi >= 0 ? cleanCsvCell(cols[idxKodeKondisi]) : "-";
+      const namaKondisi =
+        idxNamaKondisi >= 0 ? cleanCsvCell(cols[idxNamaKondisi]) : "Normal";
 
       parsedRows.push({
         nolg,
@@ -174,10 +211,13 @@ export async function importRiwayatInfolang(
       });
     }
   } else {
-    throw new Error('Wajib menyertakan csvPath atau rows pada importRiwayatInfolang.');
+    throw new Error(
+      "Wajib menyertakan csvPath atau rows pada importRiwayatInfolang.",
+    );
   }
 
-  const targetPeriodeOpen = options.targetPeriodeOpen || (await getActivePeriode(database));
+  const targetPeriodeOpen =
+    options.targetPeriodeOpen || (await getActivePeriode(database));
 
   // Muat kamus kondisi catat & daftar pelanggan terdaftar
   const [kondisiRows, existingPelangganRows] = await Promise.all([
@@ -215,7 +255,7 @@ export async function importRiwayatInfolang(
     const resolved = resolveKondisiCatatWithPriority(
       r.kodeKondisi,
       r.namaKondisi,
-      kondisiRows
+      kondisiRows,
     );
     // Suatu bulan adalah taksasi apabila stand akhir sama dengan stand awal namun ada pemakaian > 0
     const isTaksasi = r.standAkhir === r.standAwal && r.pakai > 0;
@@ -243,7 +283,10 @@ export async function importRiwayatInfolang(
       .insert(riwayatPemakaianHistoris)
       .values(chunk)
       .onConflictDoUpdate({
-        target: [riwayatPemakaianHistoris.periode, riwayatPemakaianHistoris.nolg],
+        target: [
+          riwayatPemakaianHistoris.periode,
+          riwayatPemakaianHistoris.nolg,
+        ],
         set: {
           standAwal: sql`EXCLUDED.stand_awal`,
           standAkhir: sql`EXCLUDED.stand_akhir`,
@@ -256,6 +299,14 @@ export async function importRiwayatInfolang(
         },
       });
   }
+
+  const hitungFlag = async () => {
+    const [r] = await database.execute(
+      sql`SELECT count(*)::int AS n FROM daftar_catat WHERE periode = ${targetPeriodeOpen} AND akumulasi_perlu_verifikasi = true`,
+    );
+    return Number((r as any).n);
+  };
+  const flagSebelum = await hitungFlag();
 
   // Hitung ulang akumulasi_taksasi_m3 untuk seluruh pelanggan yang terdampak di DPM targetPeriodeOpen
   const affectedNolgs = Array.from(new Set(upsertBatch.map((x) => x.nolg)));
@@ -280,8 +331,8 @@ export async function importRiwayatInfolang(
           .where(
             and(
               inArray(riwayatPemakaianHistoris.nolg, nolgChunk),
-              sql`${riwayatPemakaianHistoris.periode} < ${targetPeriodeOpen}`
-            )
+              sql`${riwayatPemakaianHistoris.periode} < ${targetPeriodeOpen}`,
+            ),
           ),
         database
           .select({
@@ -295,8 +346,8 @@ export async function importRiwayatInfolang(
           .where(
             and(
               inArray(caterBacaMeter.nolg, nolgChunk),
-              sql`${caterBacaMeter.thbl} < ${targetPeriodeOpen}`
-            )
+              sql`${caterBacaMeter.thbl} < ${targetPeriodeOpen}`,
+            ),
           ),
       ]);
 
@@ -327,7 +378,7 @@ export async function importRiwayatInfolang(
       // Telusuri mundur secara kronologis (periode DESC) sejak periode terakhir sebelum targetPeriodeOpen
       for (const [nolg, periodMap] of historyByNolg.entries()) {
         const sortedPeriods = Array.from(periodMap.entries()).sort((a, b) =>
-          b[0].localeCompare(a[0])
+          b[0].localeCompare(a[0]),
         );
 
         let cumulativeTaksasi = 0;
@@ -362,8 +413,8 @@ export async function importRiwayatInfolang(
           .where(
             and(
               eq(daftarCatat.periode, targetPeriodeOpen),
-              eq(daftarCatat.nolg, nolg)
-            )
+              eq(daftarCatat.nolg, nolg),
+            ),
           )
           .returning({ id: daftarCatat.id });
 
@@ -374,7 +425,11 @@ export async function importRiwayatInfolang(
     }
   }
 
+  const flagSesudah = await hitungFlag();
   return {
+    flagSebelum,
+    flagSesudah,
+    flagTurun: flagSebelum - flagSesudah,
     totalRowsImported: upsertBatch.length,
     uniquePelangganImported: affectedNolgs.length,
     targetPeriodeOpen,

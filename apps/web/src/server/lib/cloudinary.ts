@@ -1,5 +1,9 @@
-import { v2 as cloudinary, type UploadApiResponse, type UploadApiOptions } from 'cloudinary';
-import { env } from '@/lib/env';
+import {
+  v2 as cloudinary,
+  type UploadApiResponse,
+  type UploadApiOptions,
+} from "cloudinary";
+import { env } from "@/lib/env";
 
 /**
  * Konfigurasi Cloudinary Instance Tersentralisasi
@@ -23,22 +27,28 @@ if (process.env.CLOUDINARY_URL || env.CLOUDINARY_URL) {
  * Cek apakah Cloudinary telah dikonfigurasi dengan kredensial nyata (bukan placeholder)
  */
 export function isCloudinaryConfigured(): boolean {
-  const cloudName = env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
+  const cloudName =
+    env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = env.CLOUDINARY_API_KEY || process.env.CLOUDINARY_API_KEY;
-  const apiSecret = env.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_API_SECRET;
+  const apiSecret =
+    env.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_API_SECRET;
   const cloudinaryUrl = env.CLOUDINARY_URL || process.env.CLOUDINARY_URL;
 
-  if (cloudinaryUrl && cloudinaryUrl.startsWith('cloudinary://') && !cloudinaryUrl.includes('your_')) {
+  if (
+    cloudinaryUrl &&
+    cloudinaryUrl.startsWith("cloudinary://") &&
+    !cloudinaryUrl.includes("your_")
+  ) {
     return true;
   }
 
   return Boolean(
     cloudName &&
-    cloudName !== 'your_cloud_name' &&
+    cloudName !== "your_cloud_name" &&
     apiKey &&
-    apiKey !== 'your_api_key' &&
+    apiKey !== "your_api_key" &&
     apiSecret &&
-    apiSecret !== 'your_api_secret'
+    apiSecret !== "your_api_secret",
   );
 }
 
@@ -46,20 +56,26 @@ export function isCloudinaryConfigured(): boolean {
  * Core Jenis Foto Berdasarkan Spesifikasi Arsitektur PDAM Tirtawening
  */
 export type JenisFoto =
-  | 'stand'   // Foto stand meteran (angka meter air)
-  | 'segel'   // Foto kondisi segel meter
-  | 'rumah'   // Foto rumah / persil pelanggan
-  | 'aduan'   // Foto laporan pengaduan pelanggan
-  | 'selesai' // Foto bukti penyelesaian perbaikan / SPK
-  | 'angkat'  // Foto water meter lama saat diangkat/dicabut
-  | 'pasang'  // Foto water meter baru saat dipasang
-  | 'avatar'  // Foto profil akun / avatar pengguna
-  | 'banner'  // Foto / banner siaran & promo
-  | 'brosur'  // Brosur promosi gebyar
-  | 'kegiatan'// Dokumentasi tim perbaikan pipa lapangan
-  | 'peta';   // Skematik peta zona terdampak
+  | "stand" // Foto stand meteran (angka meter air)
+  | "segel" // Foto kondisi segel meter
+  | "rumah" // Foto rumah / persil pelanggan
+  | "aduan" // Foto laporan pengaduan pelanggan
+  | "selesai" // Foto bukti penyelesaian perbaikan / SPK
+  | "angkat" // Foto water meter lama saat diangkat/dicabut
+  | "pasang" // Foto water meter baru saat dipasang
+  | "avatar" // Foto profil akun / avatar pengguna
+  | "banner" // Foto / banner siaran & promo
+  | "brosur" // Brosur promosi gebyar
+  | "kegiatan" // Dokumentasi tim perbaikan pipa lapangan
+  | "peta"; // Skematik peta zona terdampak
 
-export type ModulFoto = 'cater' | 'mandiri' | 'gwm' | 'pengaduan' | 'avatars' | 'broadcast';
+export type ModulFoto =
+  | "cater"
+  | "mandiri"
+  | "gwm"
+  | "pengaduan"
+  | "avatars"
+  | "broadcast";
 
 /**
  * Standarisasi Penamaan File Sesuai Format:
@@ -84,11 +100,11 @@ export function generatePhotoPublicId({
 }): string {
   // Format THBL 6 digit (contoh: 202610)
   const periode = thbl
-    ? thbl.replace(/\D/g, '').slice(0, 6)
-    : new Date().toISOString().slice(0, 7).replace('-', '');
+    ? thbl.replace(/\D/g, "").slice(0, 6)
+    : new Date().toISOString().slice(0, 7).replace("-", "");
 
   // Sanitasi identifier (nolg / nomor tiket / user id)
-  const cleanId = identifier.replace(/[^a-zA-Z0-9_-]/g, '');
+  const cleanId = identifier.replace(/[^a-zA-Z0-9_-]/g, "");
 
   return `${periode}_${jenis.toLowerCase()}_${cleanId}`;
 }
@@ -97,13 +113,13 @@ export function generatePhotoPublicId({
  * Mendapatkan Path Folder Terstruktur di Cloudinary
  */
 export function getCloudinaryFolder(modul: ModulFoto, thbl?: string): string {
-  const base = 'tirtawening';
-  if (modul === 'avatars') {
+  const base = "tirtawening";
+  if (modul === "avatars") {
     return `${base}/avatars`;
   }
   const periode = thbl
-    ? thbl.replace(/\D/g, '').slice(0, 6)
-    : new Date().toISOString().slice(0, 7).replace('-', '');
+    ? thbl.replace(/\D/g, "").slice(0, 6)
+    : new Date().toISOString().slice(0, 7).replace("-", "");
 
   return `${base}/${modul}/${periode}`;
 }
@@ -139,7 +155,7 @@ export async function uploadToCloudinary({
 }): Promise<UploadPhotoResult> {
   if (!isCloudinaryConfigured()) {
     throw new Error(
-      'Kredensial Cloudinary belum dikonfigurasi di .env.local (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET).'
+      "Kredensial Cloudinary belum dikonfigurasi di .env.local (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET).",
     );
   }
 
@@ -150,15 +166,16 @@ export async function uploadToCloudinary({
     folder,
     public_id: filename,
     overwrite: true,
-    resource_type: 'image',
-    tags: ['tirtawening', modul, jenis, ...(thbl ? [thbl] : []), ...tags],
+    resource_type: "image",
+    tags: ["tirtawening", modul, jenis, ...(thbl ? [thbl] : []), ...tags],
     // Transformasi standar web modern
-    transformation: [
-      { quality: 'auto:good', fetch_format: 'auto' },
-    ],
+    transformation: [{ quality: "auto:good", fetch_format: "auto" }],
   };
 
-  const result: UploadApiResponse = await cloudinary.uploader.upload(file, options);
+  const result: UploadApiResponse = await cloudinary.uploader.upload(
+    file,
+    options,
+  );
 
   return {
     url: result.url,
@@ -180,9 +197,9 @@ export async function deleteFromCloudinary(publicId: string): Promise<boolean> {
   }
   try {
     const res = await cloudinary.uploader.destroy(publicId);
-    return res.result === 'ok';
+    return res.result === "ok";
   } catch (error) {
-    console.error('[CLOUDINARY_DELETE_ERROR]', error);
+    console.error("[CLOUDINARY_DELETE_ERROR]", error);
     return false;
   }
 }
@@ -197,20 +214,22 @@ export function getCdnUrl(
     height?: number;
     crop?: string;
     quality?: string | number;
-  } = {}
+  } = {},
 ): string {
-  const cloudName = env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
-  if (!cloudName || cloudName === 'your_cloud_name') {
+  const cloudName =
+    env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
+  if (!cloudName || cloudName === "your_cloud_name") {
     return publicId; // fallback jika publicId adalah string URL
   }
 
   return cloudinary.url(publicId, {
     secure: true,
-    quality: options.quality || 'auto',
-    fetch_format: 'auto',
+    quality: options.quality || "auto",
+    fetch_format: "auto",
     width: options.width,
     height: options.height,
-    crop: options.crop || (options.width && options.height ? 'fill' : undefined),
+    crop:
+      options.crop || (options.width && options.height ? "fill" : undefined),
   });
 }
 

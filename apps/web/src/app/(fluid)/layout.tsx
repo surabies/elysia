@@ -26,6 +26,9 @@ export default async function FluidLayout({
 
   const { user } = session;
 
+  // Akun seed wajib ganti password sebelum membuka halaman apa pun
+  if (user.wajibGantiPassword) redirect("/ganti-password");
+
   // Tolak mutlak pelanggan (USER) dari area verifikasi (fluid)
   if (!isInternalUser(user.roles)) {
     redirect("/");

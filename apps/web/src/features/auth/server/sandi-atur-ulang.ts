@@ -99,6 +99,9 @@ export async function pakaiTokenReset(
         )
       )
 
+    // 1b. Password sudah diganti pengguna sendiri -> cabut kewajiban ganti password
+    await tx.update(user).set({ wajibGantiPassword: false, updatedAt: new Date() }).where(eq(user.id, targetUser.id))
+
     // 2. Hapus token dari tabel verification
     await tx.delete(verification).where(eq(verification.identifier, identifier))
   })

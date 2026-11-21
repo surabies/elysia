@@ -8,6 +8,7 @@ import type { NextRequest } from "next/server";
  */
 const PROTECTED_INTERNAL_PREFIXES = [
   "/dashboard",
+  "/ganti-password",
   "/analytics",
   "/broadcast",
   "/cater",

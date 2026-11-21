@@ -6,10 +6,11 @@ import {
   boolean,
   timestamp,
   index,
+  check,
   geometry,
   pgEnum,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { pelanggan } from './pelanggan';
 import { user } from './auth';
 import { zonaDistribusi } from './wilayah';
@@ -29,6 +30,7 @@ export const alasanGantiMeterEnum = pgEnum('alasan_ganti_meter_enum', [
 ]);
 
 export const statusVerifikasiGwmEnum = pgEnum('status_verifikasi_gwm_enum', [
+  'DATA_METER_BELUM_LENGKAP',
   'PENDING',
   'APPROVED',
   'REJECTED',
@@ -53,11 +55,11 @@ export const waterMeterMutasi = pgTable(
 
     // --- DATA METER LAMA (DIANGKAT / DICABUT) ---
     noMeterLama: varchar('no_meter_lama', { length: 50 }).notNull(),
-    standAngkat: integer('stand_angkat').notNull(), // Angka stand terakhir meter lama
+    standAngkat: integer('stand_angkat'), // Angka stand terakhir meter lama
     fotoStandAngkat: text('foto_stand_angkat'),     // Bukti foto meter lama dicabut
 
     // --- DATA METER BARU (DIPASANG) ---
-    noMeterBaru: varchar('no_meter_baru', { length: 50 }).notNull(),
+    noMeterBaru: varchar('no_meter_baru', { length: 50 }),
     merkBaru: varchar('merk_baru', { length: 50 }),
     ukuranBaru: varchar('ukuran_baru', { length: 20 }).default('1/2'),
     standPasang: integer('stand_pasang').notNull().default(0), // Stand awal meter baru (biasanya 0)
@@ -78,6 +80,10 @@ export const waterMeterMutasi = pgTable(
     index('gwm_mutasi_nolg_idx').on(table.nolg),
     index('gwm_mutasi_periode_idx').on(table.periode),
     index('gwm_mutasi_status_idx').on(table.statusVerifikasi),
+    check(
+      'gwm_mutasi_approved_data_lengkap_chk',
+      sql`(${table.statusVerifikasi} <> 'APPROVED') OR (${table.noMeterBaru} IS NOT NULL AND ${table.standAngkat} IS NOT NULL)`
+    ),
   ]
 );
 

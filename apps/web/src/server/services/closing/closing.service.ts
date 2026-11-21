@@ -71,6 +71,8 @@ export interface PratinjauClosingResult {
     totalTagihan: number;
   };
   hambatan: HambatanClosing[];
+  /** Peringatan non-blocking (tidak mempengaruhi bisaDitutup) */
+  peringatan: Array<HambatanClosing & { umurHariTertua: number }>;
   bisaDitutup: boolean;
   audit?: ClosingAuditInfo;
 }
@@ -391,6 +393,31 @@ export class ClosingService {
       });
     }
 
+    // Peringatan (TIDAK memblokir): mutasi MB yang datanya (no_meter_baru/stand_angkat) belum lengkap
+    const peringatan: Array<HambatanClosing & { umurHariTertua: number }> = [];
+    const belumLengkapRows = await db
+      .select({ nolg: waterMeterMutasi.nolg, createdAt: waterMeterMutasi.createdAt })
+      .from(waterMeterMutasi)
+      .where(
+        and(
+          eq(waterMeterMutasi.periode, periodeNum),
+          eq(waterMeterMutasi.statusVerifikasi, 'DATA_METER_BELUM_LENGKAP')
+        )
+      );
+    if (belumLengkapRows.length > 0) {
+      const umur = belumLengkapRows.map((m) =>
+        Math.floor((Date.now() - m.createdAt.getTime()) / 86_400_000)
+      );
+      const tertua = Math.max(...umur);
+      peringatan.push({
+        kode: 'MUTASI_METER_DATA_BELUM_LENGKAP',
+        pesan: `Ada ${belumLengkapRows.length.toLocaleString('id-ID')} mutasi ganti meter (MB) dengan data teknik belum lengkap (tertua ${tertua} hari). Closing tidak diblokir; koreksi atas bulan kejadian akan diperlukan setelah data masuk.`,
+        jumlah: belumLengkapRows.length,
+        contoh: belumLengkapRows.slice(0, MAKS_CONTOH_HAMBATAN).map((m) => m.nolg),
+        umurHariTertua: tertua,
+      });
+    }
+
     if (verifBelumSelesai > 0) {
       hambatan.push({
         kode: 'VERIFIKASI_BELUM_TUNTAS',
@@ -498,6 +525,7 @@ export class ClosingService {
         totalTagihan: finalTotalTagihan,
       },
       hambatan,
+      peringatan,
       bisaDitutup:
         statusPeriode !== 'TERKUNCI' &&
         pendingMutasiRows.length === 0 &&

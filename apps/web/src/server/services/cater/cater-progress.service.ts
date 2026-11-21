@@ -3,7 +3,7 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM Query & Agregasi Lapangan)
  */
 
-import { eq, sql, desc, and, or, like, ilike } from 'drizzle-orm';
+import { eq, sql, desc, and, or, like, ilike } from "drizzle-orm";
 import {
   db,
   caterBacaMeter,
@@ -15,7 +15,7 @@ import {
   daftarCatat,
   periodePenagihan,
   getActivePeriode,
-} from '@cater/db';
+} from "@cater/db";
 
 export interface WilayahProgresItem {
   kelurahanKode: string;
@@ -45,7 +45,7 @@ export interface WilayahProgresResult {
   wilayah: WilayahProgresItem[];
 }
 
-export type JenisAnomali = 'EKSTRIM' | 'NOL' | 'TURUN';
+export type JenisAnomali = "EKSTRIM" | "NOL" | "TURUN";
 
 export interface AnomaliKubikasiItem {
   id: string;
@@ -121,7 +121,9 @@ export class CaterProgressService {
   /**
    * Monitoring Progress Pembacaan Meter Per Wilayah / Kelurahan
    */
-  async getProgressPerWilayah(thblParam?: string): Promise<WilayahProgresResult> {
+  async getProgressPerWilayah(
+    thblParam?: string,
+  ): Promise<WilayahProgresResult> {
     const thbl = thblParam || (await getActivePeriode());
     // 0. Cek status siklus penagihan
     const [periodeInfo] = await db
@@ -129,7 +131,7 @@ export class CaterProgressService {
       .from(periodePenagihan)
       .where(eq(periodePenagihan.periode, thbl));
 
-    const isLocked = periodeInfo?.status === 'TERKUNCI';
+    const isLocked = periodeInfo?.status === "TERKUNCI";
 
     // 1. Ambil target per kelurahan dari tabel master pelanggan
     const targetRows = await db
@@ -144,9 +146,12 @@ export class CaterProgressService {
       .leftJoin(kecamatan, eq(kelurahan.kecamatanKode, kecamatan.kode))
       .groupBy(pelanggan.kelurahanKode, kelurahan.nama, kecamatan.nama);
 
-    const targetMap = new Map<string, { nama: string; kec: string; target: number }>();
+    const targetMap = new Map<
+      string,
+      { nama: string; kec: string; target: number }
+    >();
     for (const r of targetRows) {
-      const code = r.kelurahanKode ?? 'UNKNOWN';
+      const code = r.kelurahanKode ?? "UNKNOWN";
       targetMap.set(code, {
         nama: r.kelurahanNama,
         kec: r.kecamatanNama,
@@ -175,12 +180,12 @@ export class CaterProgressService {
     >();
 
     for (const r of readRows) {
-      const code = r.kelurahanKode ?? 'UNKNOWN';
+      const code = r.kelurahanKode ?? "UNKNOWN";
       const prev = aggMap.get(code) ?? {
         terbaca: 0,
         totalM3: 0,
         anomali: 0,
-        seksi: r.ruteKode ? r.ruteKode.slice(0, 2) : '-',
+        seksi: r.ruteKode ? r.ruteKode.slice(0, 2) : "-",
       };
       prev.terbaca += r.totalTerbaca;
       prev.totalM3 += r.totalM3;
@@ -201,7 +206,8 @@ export class CaterProgressService {
       const terbaca = agg?.terbaca ?? 0;
       const target = isLocked ? terbaca : Math.max(info.target, terbaca); // Safety guard
       const sisa = Math.max(0, target - terbaca);
-      const persenSelesai = target > 0 ? Number(((terbaca / target) * 100).toFixed(1)) : 100;
+      const persenSelesai =
+        target > 0 ? Number(((terbaca / target) * 100).toFixed(1)) : 100;
       const totalM3 = Math.round(agg?.totalM3 ?? 0);
       const totalAnomali = agg?.anomali ?? 0;
 
@@ -214,7 +220,7 @@ export class CaterProgressService {
         kelurahanKode: code,
         kelurahanNama: info.nama,
         kecamatanNama: info.kec,
-        seksiKode: agg?.seksi ?? 'WIL',
+        seksiKode: agg?.seksi ?? "WIL",
         target,
         terbaca,
         sisa,
@@ -229,7 +235,9 @@ export class CaterProgressService {
 
     const grandSisa = Math.max(0, grandTarget - grandTerbaca);
     const persenRataRata =
-      grandTarget > 0 ? Number(((grandTerbaca / grandTarget) * 100).toFixed(1)) : 0;
+      grandTarget > 0
+        ? Number(((grandTerbaca / grandTarget) * 100).toFixed(1))
+        : 0;
 
     return {
       periode: thbl,
@@ -252,10 +260,10 @@ export class CaterProgressService {
    * Logika sinkron 100% dengan aturan Tabel Verifikasi dan dinamis berbasis riwayat Pakai vs Lalu
    */
   async getAnomaliKubikasi(
-    thbl: string = '202610',
-    jenis?: 'all' | 'ekstrim' | 'nol' | 'turun' | 'kendala',
+    thbl: string = "202610",
+    jenis?: "all" | "ekstrim" | "nol" | "turun" | "kendala",
     limit: number = 100,
-    search?: string
+    search?: string,
   ): Promise<AnomaliKubikasiResult> {
     // 1. Hitung ringkasan KPI untuk semua anomali di periode aktif berbasis Pakai vs Lalu
     const kpiRows = await db
@@ -273,8 +281,14 @@ export class CaterProgressService {
       .from(caterBacaMeter)
       .where(eq(caterBacaMeter.thbl, thbl));
 
-    const kpiData = kpiRows[0] ?? { totalEkstrim: 0, totalNol: 0, totalTurun: 0, totalKendala: 0 };
-    const totalAnomali = kpiData.totalEkstrim + kpiData.totalNol + kpiData.totalTurun;
+    const kpiData = kpiRows[0] ?? {
+      totalEkstrim: 0,
+      totalNol: 0,
+      totalTurun: 0,
+      totalKendala: 0,
+    };
+    const totalAnomali =
+      kpiData.totalEkstrim + kpiData.totalNol + kpiData.totalTurun;
 
     // 2. Bangun filter kondisi SQL berbasis perbandingan riil Pakai vs Lalu
     const condition = eq(caterBacaMeter.thbl, thbl);
@@ -290,10 +304,10 @@ export class CaterProgressService {
     const kendalaSql = sql`(${caterBacaMeter.ketCatat} is not null and lower(${caterBacaMeter.ketCatat}) not in ('normal', 'nihil', ''))`;
 
     let typeFilter = or(ekstrimSql, nolSql, turunSql, kendalaSql);
-    if (jenis === 'ekstrim') typeFilter = ekstrimSql;
-    else if (jenis === 'nol') typeFilter = nolSql;
-    else if (jenis === 'turun') typeFilter = turunSql;
-    else if (jenis === 'kendala') typeFilter = kendalaSql;
+    if (jenis === "ekstrim") typeFilter = ekstrimSql;
+    else if (jenis === "nol") typeFilter = nolSql;
+    else if (jenis === "turun") typeFilter = turunSql;
+    else if (jenis === "kendala") typeFilter = kendalaSql;
 
     const baseWhere = and(condition, typeFilter);
 
@@ -305,8 +319,8 @@ export class CaterProgressService {
         or(
           ilike(caterBacaMeter.nolg, q),
           ilike(pelanggan.nama, q),
-          ilike(caterBacaMeter.ruteKode, q)
-        )
+          ilike(caterBacaMeter.ruteKode, q),
+        ),
       );
     }
 
@@ -345,27 +359,32 @@ export class CaterProgressService {
       .leftJoin(kelurahan, eq(pelanggan.kelurahanKode, kelurahan.kode))
       .leftJoin(petugasCater, eq(caterBacaMeter.petugasId, petugasCater.id))
       .where(finalWhere)
-      .orderBy(desc(sql`abs(${caterBacaMeter.pakaiM3}::float - coalesce(${caterBacaMeter.pakaiLalu}::float, 0))`))
+      .orderBy(
+        desc(
+          sql`abs(${caterBacaMeter.pakaiM3}::float - coalesce(${caterBacaMeter.pakaiLalu}::float, 0))`,
+        ),
+      )
       .limit(limit);
 
     const items: AnomaliKubikasiItem[] = rows.map((r) => {
       const m3 = Number(r.pakaiM3 ?? 0);
       const lalu = Number(r.pakaiLalu ?? 0);
       const selisihM3 = m3 - lalu;
-      const persenDeviasi = lalu > 0 ? Math.round(((m3 - lalu) / lalu) * 100) : m3 > 0 ? 100 : 0;
+      const persenDeviasi =
+        lalu > 0 ? Math.round(((m3 - lalu) / lalu) * 100) : m3 > 0 ? 100 : 0;
 
-      let jenisItem: JenisAnomali = 'EKSTRIM';
+      let jenisItem: JenisAnomali = "EKSTRIM";
       if (m3 === 0) {
-        jenisItem = 'NOL';
+        jenisItem = "NOL";
       } else if (lalu >= 10 && m3 <= lalu * 0.5) {
-        jenisItem = 'TURUN';
+        jenisItem = "TURUN";
       } else if (
         (lalu > 0 && m3 >= lalu * 2) ||
         (lalu > 0 && selisihM3 >= 30) ||
         m3 > 75 ||
-        r.statusVerifikasi === 'ANOMALY_HIGH'
+        r.statusVerifikasi === "ANOMALY_HIGH"
       ) {
-        jenisItem = 'EKSTRIM';
+        jenisItem = "EKSTRIM";
       }
 
       return {
@@ -385,7 +404,7 @@ export class CaterProgressService {
         persenDeviasi,
         rataRataHistoris: Number(r.rataRataHistoris ?? lalu),
         ketCatat: r.ketCatat ?? null,
-        statusVerifikasi: r.statusVerifikasi ?? 'SUBMITTED',
+        statusVerifikasi: r.statusVerifikasi ?? "SUBMITTED",
         jenisAnomali: jenisItem,
         fotoMeterUrl: r.fotoMeterUrl ?? null,
         fotoRumahUrl: r.fotoRumahUrl ?? null,
@@ -409,24 +428,26 @@ export class CaterProgressService {
    * Monitoring & Galeri Cek Foto Petugas Lapangan
    */
   async getCekFotoList(
-    thbl: string = '202610',
+    thbl: string = "202610",
     filterKondisi?: string,
     ruteKode?: string,
     limit: number = 30,
     offset: number = 0,
-    search?: string
+    search?: string,
   ): Promise<CekFotoResult> {
     const baseConditions = [eq(caterBacaMeter.thbl, thbl)];
 
-    if (ruteKode && ruteKode !== 'all') {
+    if (ruteKode && ruteKode !== "all") {
       baseConditions.push(eq(caterBacaMeter.ruteKode, ruteKode));
     }
 
-    if (filterKondisi && filterKondisi !== 'all') {
-      if (filterKondisi === 'normal') {
-        baseConditions.push(eq(caterBacaMeter.ketCatat, 'Normal'));
-      } else if (filterKondisi === 'anomali') {
-        baseConditions.push(sql`${caterBacaMeter.ketCatat} != 'Normal' or ${caterBacaMeter.pakaiM3}::float > 50 or ${caterBacaMeter.pakaiM3}::float = 0`);
+    if (filterKondisi && filterKondisi !== "all") {
+      if (filterKondisi === "normal") {
+        baseConditions.push(eq(caterBacaMeter.ketCatat, "Normal"));
+      } else if (filterKondisi === "anomali") {
+        baseConditions.push(
+          sql`${caterBacaMeter.ketCatat} != 'Normal' or ${caterBacaMeter.pakaiM3}::float > 50 or ${caterBacaMeter.pakaiM3}::float = 0`,
+        );
       }
     }
 
@@ -436,8 +457,8 @@ export class CaterProgressService {
         or(
           ilike(caterBacaMeter.nolg, q),
           ilike(pelanggan.nama, q),
-          ilike(caterBacaMeter.ruteKode, q)
-        )!
+          ilike(caterBacaMeter.ruteKode, q),
+        )!,
       );
     }
 
@@ -496,18 +517,20 @@ export class CaterProgressService {
       alamat: r.alamat,
       ruteKode: r.ruteKode,
       petugasId: r.petugasId,
-      petugasNama: r.petugasNama ?? r.petugasId ?? '-',
+      petugasNama: r.petugasNama ?? r.petugasId ?? "-",
       kelurahanNama: r.kelurahanNama ?? null,
       stml: Number(r.stml ?? 0),
       stma: Number(r.stma ?? 0),
       pakaiM3: Number(r.pakaiM3 ?? 0),
-      ketCatat: r.ketCatat ?? 'Normal',
-      statusVerifikasi: r.statusVerifikasi ?? 'SUBMITTED',
+      ketCatat: r.ketCatat ?? "Normal",
+      statusVerifikasi: r.statusVerifikasi ?? "SUBMITTED",
       tglCatat: r.tglCatat,
       fotoMeterUrl: r.fotoMeterUrl,
       fotoSegelUrl: r.fotoSegelUrl,
       fotoRumahUrl: r.fotoRumahUrl,
-      jarakPelangganMeter: r.jarakPelangganMeter ? Number(r.jarakPelangganMeter) : null,
+      jarakPelangganMeter: r.jarakPelangganMeter
+        ? Number(r.jarakPelangganMeter)
+        : null,
     }));
 
     return {
@@ -525,17 +548,17 @@ export class CaterProgressService {
 
   // Legacy compatibility methods
   async getIkhtisarEkstrim(thbl: string, limit: number = 50) {
-    const res = await this.getAnomaliKubikasi(thbl, 'ekstrim', limit);
+    const res = await this.getAnomaliKubikasi(thbl, "ekstrim", limit);
     return res.items;
   }
 
   async getIkhtisarPemakaianNol(thbl: string, limit: number = 50) {
-    const res = await this.getAnomaliKubikasi(thbl, 'nol', limit);
+    const res = await this.getAnomaliKubikasi(thbl, "nol", limit);
     return res.items;
   }
 
   async getIkhtisarTurun(thbl: string, limit: number = 50) {
-    const res = await this.getAnomaliKubikasi(thbl, 'turun', limit);
+    const res = await this.getAnomaliKubikasi(thbl, "turun", limit);
     return res.items;
   }
 
@@ -554,8 +577,8 @@ export class CaterProgressService {
         caterBacaMeter,
         and(
           eq(petugasCater.id, caterBacaMeter.petugasId),
-          eq(caterBacaMeter.thbl, thbl)
-        )
+          eq(caterBacaMeter.thbl, thbl),
+        ),
       )
       .groupBy(petugasCater.id, petugasCater.nama);
   }
@@ -563,7 +586,7 @@ export class CaterProgressService {
   /**
    * Mengambil riwayat seluruh sesi harian siklus pembacaan petugas dari database nyata
    */
-  async getRiwayatSesiPetugas(thbl: string = '202611') {
+  async getRiwayatSesiPetugas(thbl: string = "202611") {
     // 1. Ambil seluruh tanggal siklus kerja catat di periode ini (dinamis, tanpa batasan 20 sesi)
     const dateRows = await db.execute<{ tanggal: string }>(sql`
       SELECT DISTINCT to_char(tgl_catat, 'YYYY-MM-DD') as tanggal
@@ -612,25 +635,38 @@ export class CaterProgressService {
       GROUP BY c.petugas_id, to_char(c.tgl_catat, 'YYYY-MM-DD')
     `);
 
-    const sessionMap = new Map<string, typeof sessionRows[0]>();
+    const sessionMap = new Map<string, (typeof sessionRows)[0]>();
     for (const s of sessionRows) {
       sessionMap.set(`${s.petugas_id}_${s.tanggal}`, s);
     }
 
     const formatTgl = (tglStr: string) => {
-      const parts = tglStr.split('-');
+      const parts = tglStr.split("-");
       if (parts.length < 3) return tglStr;
       const day = parts[2];
       const monthNum = parseInt(parts[1]!, 10);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-      return `${day} ${months[monthNum - 1] || 'Bln'}`;
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "Mei",
+        "Jun",
+        "Jul",
+        "Agu",
+        "Sep",
+        "Okt",
+        "Nov",
+        "Des",
+      ];
+      return `${day} ${months[monthNum - 1] || "Bln"}`;
     };
 
     return officers.map((off) => {
       // Target harian dihitung proporsional dari total beban dibagi jumlah hari siklus kerja
       const targetHarian = Math.max(
         Math.round(off.total_baca / Math.max(dates.length, 1)),
-        50
+        50,
       );
 
       const sesiList = dates.map((tgl, sIdx) => {
@@ -642,12 +678,14 @@ export class CaterProgressService {
           return {
             id: `sesi-${off.id}-${sIdx + 1}`,
             tanggal: formatTgl(tgl),
-            status: 'Dilewati' as const,
+            status: "Dilewati" as const,
             durasiMenit: 0,
             meterTerbaca: 0,
             totalMeter: targetHarian,
             petugasNama: off.nama,
-            waktuSelesaiTeks: isTerakhir ? 'Libur / Tidak ada jadwal' : `${dates.length - sIdx} hari lalu`,
+            waktuSelesaiTeks: isTerakhir
+              ? "Libur / Tidak ada jadwal"
+              : `${dates.length - sIdx} hari lalu`,
           };
         }
 
@@ -661,15 +699,15 @@ export class CaterProgressService {
           durasiMenit = Math.min(360, Math.max(75, Math.round(terbaca * 1.4)));
         }
 
-        let status: 'Tuntas' | 'Terlambat' | 'Gagal' | 'Dilewati' = 'Tuntas';
+        let status: "Tuntas" | "Terlambat" | "Gagal" | "Dilewati" = "Tuntas";
         if (durasiMenit > 360) {
-          status = 'Terlambat';
+          status = "Terlambat";
         } else if (terbaca < Math.round(targetHarian * 0.8)) {
-          status = 'Terlambat';
+          status = "Terlambat";
         } else if (s.anomali > terbaca * 0.5) {
-          status = 'Terlambat';
+          status = "Terlambat";
         } else {
-          status = 'Tuntas';
+          status = "Tuntas";
         }
 
         return {

@@ -1,7 +1,8 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { getActivePeriode } from '@cater/db';
 import { authPlugin } from '../../plugins/auth';
 import { caterKueriService } from '../../services/cater/cater-kueri.service';
+import { daftarAntreanAkumulasi } from '../../services/cater/antrean-akumulasi.service';
 import { caterVerifikasiService } from '../../services/cater/cater-verifikasi.service';
 import { caterRuteService } from '../../services/cater/cater-rute.service';
 import { pelangganService } from '../../services/pelanggan/pelanggan.service';
@@ -100,9 +101,9 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
   // 4. Submit Pembacaan Meter (Aplikasi Mobile Petugas)
   .post(
     '/readings',
-    async ({ body, set }) => {
+    async ({ body, set, user }) => {
       try {
-        const result = await caterVerifikasiService.submitReading(body);
+        const result = await caterVerifikasiService.submitReading({ ...body, operatorUserId: user?.id });
         set.status = 201;
         return {
           success: true,
@@ -122,11 +123,12 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
 
   .post(
     '/readings/simulate',
-    async ({ body, set }) => {
+    async ({ body, set, user }) => {
       try {
         const note = body.catatan?.trim();
         const result = await caterVerifikasiService.submitReading({
           ...body,
+          operatorUserId: user?.id,
           catatan: note?.startsWith('[SIMULASI]')
             ? note
             : `[SIMULASI] ${note || 'Pembacaan uji melalui simulator'}`,
@@ -159,6 +161,41 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     }
   )
 
+  // 4c. Antrean khusus akumulasi_perlu_verifikasi (disaring & diurutkan berdasarkan risiko)
+  .get(
+    '/antrean-akumulasi',
+    async ({ query, set }) => {
+      try {
+        const result = await daftarAntreanAkumulasi({
+          periode: query.periode,
+          ruteKode: query.ruteKode,
+          petugasId: query.petugasId,
+          sudahDibaca: query.sudahDibaca === undefined ? undefined : query.sudahDibaca === 'true',
+          minAkumulasiM3: query.minAkumulasiM3 !== undefined ? Number(query.minAkumulasiM3) : undefined,
+          urut: query.urut as 'RISIKO' | 'AKUMULASI' | 'NOLG' | undefined,
+          limit: query.limit !== undefined ? Number(query.limit) : undefined,
+          offset: query.offset !== undefined ? Number(query.offset) : undefined,
+        });
+        return { success: true, ...result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['VERIFIKATOR_1', 'VERIFIKATOR_2', 'VERIFIKATOR_3', 'STAFF_ADMIN_BILLING'],
+      query: t.Object({
+        periode: t.String({ pattern: '^\\d{6}$' }),
+        ruteKode: t.Optional(t.String()),
+        petugasId: t.Optional(t.String()),
+        sudahDibaca: t.Optional(t.Union([t.Literal('true'), t.Literal('false')])),
+        minAkumulasiM3: t.Optional(t.String()),
+        urut: t.Optional(t.Union([t.Literal('RISIKO'), t.Literal('AKUMULASI'), t.Literal('NOLG')])),
+        limit: t.Optional(t.String()),
+        offset: t.Optional(t.String()),
+      }),
+    }
+  )
   // 5. Daftar Anomali untuk Supervisor
   .get(
     '/anomalies',

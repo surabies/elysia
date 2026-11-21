@@ -186,25 +186,6 @@ export const auth = betterAuth({
         },
       },
     },
-    account: {
-      update: {
-        after: async (updatedAccount) => {
-          try {
-            if (updatedAccount.userId && updatedAccount.password) {
-              await db
-                .update(schema.user)
-                .set({
-                  wajibGantiPassword: false,
-                  updatedAt: new Date(),
-                })
-                .where(eq(schema.user.id, updatedAccount.userId));
-            }
-          } catch (err) {
-            console.error('[AUTH_ACCOUNT_PASSWORD_UPDATE_HOOK_ERROR]', err);
-          }
-        },
-      },
-    },
   },
   secret: env.BETTER_AUTH_SECRET,
   baseURL: serverBaseUrl,

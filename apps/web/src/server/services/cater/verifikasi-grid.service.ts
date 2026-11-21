@@ -79,9 +79,7 @@ function whereStatus(value?: string) {
     case "NEED_RESURVEY":
       return eq(caterBacaMeter.statusVerifikasi, "NEED_RESURVEY");
     default:
-      return value
-        ? eq(caterBacaMeter.statusVerifikasi, value)
-        : undefined;
+      return value ? eq(caterBacaMeter.statusVerifikasi, value) : undefined;
   }
 }
 
@@ -408,7 +406,7 @@ export class VerifikasiGridService {
           standMeterBaru:
             asNumber(row.standMeterBaruRevisi) ??
             (row.ketCatatRevisi === "MB" || row.ketCatat === "MB"
-              ? asNumber(row.stmaRevisi) ?? asNumber(row.stma)
+              ? (asNumber(row.stmaRevisi) ?? asNumber(row.stma))
               : null),
           standPasang: asNumber(row.standPasang),
           pemakaian: asNumber(row.pakaiM3Revisi) ?? asNumber(row.pakaiM3),
@@ -429,8 +427,7 @@ export class VerifikasiGridService {
           isVerified: final,
           isCorrected: rowLogs.some(
             (log) =>
-              log.stage === "FORM_CORRECTION" &&
-              log.action === "ADJUST_STAND",
+              log.stage === "FORM_CORRECTION" && log.action === "ADJUST_STAND",
           ),
           verifiedAt: rejected ? toIso(latestV1?.createdAt) : null,
           catatanVerif: rejected
@@ -528,7 +525,7 @@ export class VerifikasiGridService {
         or(
           eq(pelanggan.status, "PELANGGAN AKTIF"),
           eq(pelanggan.status, "ONSITE"),
-          eq(pelanggan.status, "OFFSITE")
+          eq(pelanggan.status, "OFFSITE"),
         ),
         sql`NOT EXISTS (
           SELECT 1 FROM cater_baca_meter c
@@ -542,7 +539,7 @@ export class VerifikasiGridService {
             SELECT 1 FROM rute_cater rc
             WHERE rc.kode = ${pelanggan.ruteKode}
               AND rc.pencatat_default = ${query.pencatatId}
-          )`
+          )`,
         );
       }
       if (query.ruteId) {
@@ -551,7 +548,7 @@ export class VerifikasiGridService {
       if (query.q) {
         const pattern = `%${query.q}%`;
         pConditions.push(
-          or(ilike(pelanggan.nolg, pattern), ilike(pelanggan.nama, pattern))!
+          or(ilike(pelanggan.nolg, pattern), ilike(pelanggan.nama, pattern))!,
         );
       }
       const pWhere = and(...pConditions);
@@ -798,7 +795,9 @@ export class VerifikasiGridService {
           verifiedAt: toIso(row.verifiedAt),
           verifiedBy: row.verifiedBy ? { name: null } : null,
           verifiedByRole: null,
-          sudahTahapPetugas: Boolean(row.caterMandiriId && row.caterMandiriId === row.id),
+          sudahTahapPetugas: Boolean(
+            row.caterMandiriId && row.caterMandiriId === row.id,
+          ),
           sudahDitagih: final,
           isVerified: row.status === "APPROVED",
           pembacaanId: final ? row.caterId : null,
@@ -1036,9 +1035,15 @@ export class VerifikasiGridService {
             limit 1
           )
         )`,
-        standAkhirSaatIni: sql<number | null>`coalesce(${caterBacaMeter.stmaRevisi}, ${caterBacaMeter.stma})::numeric`,
-        pakaiSaatIni: sql<number | null>`coalesce(${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric`,
-        ketCatatSaatIni: sql<string | null>`coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat})`,
+        standAkhirSaatIni: sql<
+          number | null
+        >`coalesce(${caterBacaMeter.stmaRevisi}, ${caterBacaMeter.stma})::numeric`,
+        pakaiSaatIni: sql<
+          number | null
+        >`coalesce(${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric`,
+        ketCatatSaatIni: sql<
+          string | null
+        >`coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat})`,
         laporanId: caterBacaMeter.id,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
       })

@@ -7,6 +7,7 @@ import {
   pelanggan,
   golonganTarif,
   masterKondisiCatat,
+  waterMeterMutasi,
 } from "@cater/db";
 import { evaluasiPemakaianMeter } from "../../domain/cater/cater-anomali.engine";
 import {
@@ -14,7 +15,10 @@ import {
   type ModeHitungKondisiInput,
   type TagihanSaatKelebihanMode,
 } from "../../domain/tagihan/tagihan.engine";
-import { isCloudinaryConfigured, uploadToCloudinary } from "../../lib/cloudinary";
+import {
+  isCloudinaryConfigured,
+  uploadToCloudinary,
+} from "../../lib/cloudinary";
 
 export interface SubmitReadingInput {
   thbl: string;
@@ -24,6 +28,10 @@ export interface SubmitReadingInput {
   stml: number;
   stma: number;
   pakaiM3Override?: number;
+  /** Taksasi manual operator (menggantikan pakai_lalu). Wajib disertai alasanTaksasiManual & operatorUserId. */
+  pakaiTaksasiManual?: number;
+  alasanTaksasiManual?: string;
+  operatorUserId?: string;
   pakaiLalu?: number;
   kondisiCatat?: string;
   metodeCatat?: string;
@@ -89,6 +97,9 @@ export class CaterVerifikasiService {
       stml,
       stma,
       pakaiM3Override,
+      pakaiTaksasiManual,
+      alasanTaksasiManual,
+      operatorUserId,
       pakaiLalu,
       kondisiCatat,
       metodeCatat,
@@ -135,9 +146,13 @@ export class CaterVerifikasiService {
 
     const dpm = dpmRow[0];
     const pemakaianMinimumM3 = Number(pelRow[0]?.pemakaianMinimumM3 ?? 0);
-    const tagihanSaatKelebihan = ((pelRow[0]?.tagihanSaatKelebihan as TagihanSaatKelebihanMode) || "MINIMUM");
+    const tagihanSaatKelebihan =
+      (pelRow[0]?.tagihanSaatKelebihan as TagihanSaatKelebihanMode) ||
+      "MINIMUM";
     const akumulasiTaksasiM3 = Number(dpm?.akumulasiTaksasiM3 ?? 0);
-    const akumulasiPerluVerifikasi = Boolean(dpm?.akumulasiPerluVerifikasi ?? false);
+    const akumulasiPerluVerifikasi = Boolean(
+      dpm?.akumulasiPerluVerifikasi ?? false,
+    );
     const pakaiLaluEfektif =
       pakaiLalu !== undefined
         ? pakaiLalu
@@ -150,14 +165,25 @@ export class CaterVerifikasiService {
       kondisiRows.find(
         (k) =>
           k.nama.trim().toUpperCase() === rawKondisi.toUpperCase() ||
-          k.kodeTmss.trim().toUpperCase() === rawKondisi.toUpperCase()
+          k.kodeTmss.trim().toUpperCase() === rawKondisi.toUpperCase(),
       ) || kondisiRows.find((k) => k.nama === "Normal");
 
     const kodeTmssFinal = matchKondisi?.kodeTmss ?? " ";
     const namaKondisiFinal = matchKondisi?.nama ?? rawKondisi;
-    const modeHitung = (matchKondisi?.modeHitung ?? "SELISIH_FISIK") as ModeHitungKondisiInput;
+    const modeHitung = (matchKondisi?.modeHitung ??
+      "SELISIH_FISIK") as ModeHitungKondisiInput;
 
     // 2. Hitung pemakaian & rekonsiliasi akumulasi_taksasi_m3 via Domain Engine generik
+    // 1b. Data mutasi MB (jika ada) untuk periode ini: stand angkat/pasang dari Teknik
+    const [mutasiMb] =
+      modeHitung === "METER_BARU"
+        ? await db
+            .select()
+            .from(waterMeterMutasi)
+            .where(eq(waterMeterMutasi.id, `mutasi-${thbl}-${nolg}`))
+            .limit(1)
+        : [undefined];
+
     const hasilMode = hitungPemakaianDanRekonsiliasiTaksasi({
       stml,
       stma: modeHitung === "NOL" ? stml : stma,
@@ -167,7 +193,36 @@ export class CaterVerifikasiService {
       akumulasiTaksasiM3,
       akumulasiPerluVerifikasi,
       tagihanSaatKelebihan,
+      standAngkat: mutasiMb?.standAngkat ?? null,
+      standPasang: mutasiMb?.standPasang ?? 0,
     });
+
+    // 2b. Taksasi manual operator: nilai sendiri (bukan hanya pakai_lalu), alasan wajib + audit log
+    const adaTaksasiManual = pakaiTaksasiManual !== undefined;
+    if (adaTaksasiManual) {
+      if (!alasanTaksasiManual || alasanTaksasiManual.trim().length < 5) {
+        throw new Error(
+          "Taksasi manual wajib disertai alasan (minimal 5 karakter).",
+        );
+      }
+      if (!operatorUserId) {
+        throw new Error(
+          "Taksasi manual wajib dicatat atas nama pengguna yang login (audit).",
+        );
+      }
+      if (pakaiTaksasiManual < 0) {
+        throw new Error("Nilai taksasi manual tidak boleh negatif.");
+      }
+      if (hasilMode.alasanTaksir !== "TAKSIRAN_BULAN_LALU") {
+        throw new Error(
+          "Taksasi manual hanya berlaku untuk bacaan bertaksasi (stand akhir = stand awal pada kondisi taksasi).",
+        );
+      }
+      hasilMode.pakaiTagihM3 = pakaiTaksasiManual;
+      hasilMode.akumulasiTaksasiBerikutnya =
+        akumulasiTaksasiM3 + pakaiTaksasiManual;
+      hasilMode.alasanTaksir = "OVERRIDE_MANUAL";
+    }
 
     const stmaEfektif = hasilMode.stmaEfektif;
 
@@ -193,52 +248,57 @@ export class CaterVerifikasiService {
       longitude !== undefined && latitude !== undefined
         ? { x: longitude, y: latitude }
         : null;
-    const catatanBaca = [
-      catatan,
-      hasilMode.isStandTetap
-        ? "[STAND_TETAP] Stand akhir sama dengan stand awal pada kondisi Normal; menunggu keputusan verifikator"
-        : null,
-      hasilMode.perluReviewVerifikatorAkumulasi && akumulasiTaksasiM3 > 0
-        ? `[VERIFIKASI_AKUMULASI] Riwayat taksasi sebelum Oktober belum terverifikasi infolang (akumulasi tercatat: ${akumulasiTaksasiM3} m³); verifikator wajib memeriksa sebelum tagihan diputuskan`
-        : null,
-      hasilMode.pesanAnomali ? `[Anomali Kredit Taksasi] ${hasilMode.pesanAnomali}` : null,
-      evaluasi.isAnomali && evaluasi.pesan ? `[Anomali] ${evaluasi.pesan}` : null,
-    ]
-      .filter(Boolean)
-      .join(' | ') || null;
+    const catatanBaca =
+      [
+        catatan,
+        hasilMode.isStandTetap
+          ? "[STAND_TETAP] Stand akhir sama dengan stand awal pada kondisi Normal; menunggu keputusan verifikator"
+          : null,
+        hasilMode.perluReviewVerifikatorAkumulasi && akumulasiTaksasiM3 > 0
+          ? `[VERIFIKASI_AKUMULASI] Riwayat taksasi sebelum Oktober belum terverifikasi infolang (akumulasi tercatat: ${akumulasiTaksasiM3} m³); verifikator wajib memeriksa sebelum tagihan diputuskan`
+          : null,
+        hasilMode.pesanAnomali
+          ? `[Anomali Kredit Taksasi] ${hasilMode.pesanAnomali}`
+          : null,
+        evaluasi.isAnomali && evaluasi.pesan
+          ? `[Anomali] ${evaluasi.pesan}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" | ") || null;
 
     // Standardisasi & Upload Cloudinary jika input adalah Base64 DataURL
     let processedFotoMeter = fotoMeterUrl;
     let processedFotoRumah = fotoRumahUrl;
 
     if (isCloudinaryConfigured()) {
-      if (fotoMeterUrl && fotoMeterUrl.startsWith('data:image/')) {
+      if (fotoMeterUrl && fotoMeterUrl.startsWith("data:image/")) {
         try {
           const res = await uploadToCloudinary({
             file: fotoMeterUrl,
-            modul: 'cater',
-            jenis: 'stand',
+            modul: "cater",
+            jenis: "stand",
             identifier: nolg,
             thbl,
           });
           processedFotoMeter = res.secureUrl;
         } catch (err) {
-          console.error('[CLOUDINARY_CATER_METER_UPLOAD_ERR]', err);
+          console.error("[CLOUDINARY_CATER_METER_UPLOAD_ERR]", err);
         }
       }
 
-      if (fotoRumahUrl && fotoRumahUrl.startsWith('data:image/')) {
+      if (fotoRumahUrl && fotoRumahUrl.startsWith("data:image/")) {
         try {
           const res = await uploadToCloudinary({
             file: fotoRumahUrl,
-            modul: 'cater',
-            jenis: 'rumah',
+            modul: "cater",
+            jenis: "rumah",
             identifier: nolg,
             thbl,
           });
           processedFotoRumah = res.secureUrl;
         } catch (err) {
-          console.error('[CLOUDINARY_CATER_RUMAH_UPLOAD_ERR]', err);
+          console.error("[CLOUDINARY_CATER_RUMAH_UPLOAD_ERR]", err);
         }
       }
     }
@@ -256,7 +316,8 @@ export class CaterVerifikasiService {
           petugasId,
           stml: String(stml),
           stma: String(stmaEfektif),
-          pakaiLalu: pakaiLaluEfektif === null ? null : String(pakaiLaluEfektif),
+          pakaiLalu:
+            pakaiLaluEfektif === null ? null : String(pakaiLaluEfektif),
           pakaiM3: String(pakaiM3Fisik),
           pakaiTagih: String(pakaiTagihFinal),
           alasanTaksir: hasilMode.alasanTaksir,
@@ -278,7 +339,8 @@ export class CaterVerifikasiService {
             petugasId,
             stml: String(stml),
             stma: String(stmaEfektif),
-            pakaiLalu: pakaiLaluEfektif === null ? null : String(pakaiLaluEfektif),
+            pakaiLalu:
+              pakaiLaluEfektif === null ? null : String(pakaiLaluEfektif),
             pakaiM3: String(pakaiM3Fisik),
             pakaiTagih: String(pakaiTagihFinal),
             alasanTaksir: hasilMode.alasanTaksir,
@@ -305,6 +367,53 @@ export class CaterVerifikasiService {
         })
         .where(and(eq(daftarCatat.periode, thbl), eq(daftarCatat.nolg, nolg)));
 
+      if (adaTaksasiManual && operatorUserId) {
+        await tx.insert(caterVerifikasiLog).values({
+          caterId: id,
+          userId: operatorUserId,
+          stage: "INPUT",
+          action: "TAKSASI_MANUAL",
+          stmaSebelum: String(stml),
+          stmaSesudah: String(stmaEfektif),
+          pakaiSebelum: String(
+            Math.max(pakaiLaluEfektif ?? 0, pemakaianMinimumM3),
+          ),
+          pakaiSesudah: String(pakaiTagihFinal),
+          alasan: `[Taksasi manual operator] pakai_lalu=${pakaiLaluEfektif ?? 0} -> ${pakaiTagihFinal} m3 | ${alasanTaksasiManual!.trim()}`,
+        });
+      }
+
+      // Kondisi MB tanpa data Teknik: buat draft mutasi agar pembacaan & closing tidak terblokir
+      if (modeHitung === "METER_BARU" && !mutasiMb) {
+        const [pel] = await tx
+          .select({
+            noMeter: pelanggan.noMeter,
+            noMeterAsli: pelanggan.noMeterAsli,
+          })
+          .from(pelanggan)
+          .where(eq(pelanggan.nolg, nolg));
+        const mutasiId = `mutasi-${thbl}-${nolg}`;
+        await tx
+          .insert(waterMeterMutasi)
+          .values({
+            id: mutasiId,
+            nolg,
+            periode: Number(thbl),
+            alasan: "LAINNYA",
+            keterangan:
+              "Draft otomatis dari pembacaan kondisi 4 | MB; data Teknik menyusul",
+            noMeterLama: pel?.noMeterAsli ?? pel?.noMeter ?? "-",
+            standAngkat: null,
+            noMeterBaru: null,
+            standPasang: 0,
+            statusVerifikasi: "DATA_METER_BELUM_LENGKAP",
+          })
+          .onConflictDoNothing();
+        await tx
+          .update(caterBacaMeter)
+          .set({ waterMeterMutasiId: mutasiId })
+          .where(eq(caterBacaMeter.id, id));
+      }
       if (isDicabut) {
         await tx
           .update(pelanggan)
@@ -576,11 +685,14 @@ export class CaterVerifikasiService {
    */
   async resolusiAnomaliKreditTaksasi(
     input: ResolusiKreditTaksasiInput,
-    userId: string
+    userId: string,
   ) {
-    const { caterId, action, akumulasiTaksasiBaru, stmaKoreksi, alasan } = input;
+    const { caterId, action, akumulasiTaksasiBaru, stmaKoreksi, alasan } =
+      input;
     if (!alasan || alasan.trim().length < 5) {
-      throw new Error("Alasan wajib diisi minimal 5 karakter untuk audit verifikasi.");
+      throw new Error(
+        "Alasan wajib diisi minimal 5 karakter untuk audit verifikasi.",
+      );
     }
 
     const [cater] = await db
@@ -602,8 +714,8 @@ export class CaterVerifikasiService {
         .where(
           and(
             eq(daftarCatat.periode, cater.thbl),
-            eq(daftarCatat.nolg, cater.nolg)
-          )
+            eq(daftarCatat.nolg, cater.nolg),
+          ),
         )
         .limit(1),
       db
@@ -629,7 +741,8 @@ export class CaterVerifikasiService {
     const dpm = dpmRow[0];
     const pemakaianMinimumM3 = Number(pelRow[0]?.pemakaianMinimumM3 ?? 0);
     const tagihanSaatKelebihan =
-      ((pelRow[0]?.tagihanSaatKelebihan as TagihanSaatKelebihanMode) || "MINIMUM");
+      (pelRow[0]?.tagihanSaatKelebihan as TagihanSaatKelebihanMode) ||
+      "MINIMUM";
     const akumulasiLama = Number(dpm?.akumulasiTaksasiM3 ?? 0);
 
     const stmlNum = Number(cater.stml);
@@ -646,12 +759,16 @@ export class CaterVerifikasiService {
       modeHitungTarget = "KREDIT_TAKSASI";
     } else if (action === "ADJUST_KREDIT_TAKSASI") {
       if (akumulasiTaksasiBaru === undefined || akumulasiTaksasiBaru < 0) {
-        throw new Error("akumulasiTaksasiBaru wajib diisi (>= 0) untuk penyesuaian kredit taksasi.");
+        throw new Error(
+          "akumulasiTaksasiBaru wajib diisi (>= 0) untuk penyesuaian kredit taksasi.",
+        );
       }
       akumulasiTarget = akumulasiTaksasiBaru;
     } else if (action === "CORRECT_STAND") {
       if (stmaKoreksi === undefined || stmaKoreksi < stmlNum) {
-        throw new Error("stmaKoreksi wajib diisi dan >= stml untuk koreksi angka stand.");
+        throw new Error(
+          "stmaKoreksi wajib diisi dan >= stml untuk koreksi angka stand.",
+        );
       }
       stmaTarget = stmaKoreksi;
     }
@@ -667,7 +784,9 @@ export class CaterVerifikasiService {
       tagihanSaatKelebihan,
     });
 
-    const nextStatus = hasilMode.isAnomaliKreditTaksasi ? "ANOMALY" : "VERIFIED_L1";
+    const nextStatus = hasilMode.isAnomaliKreditTaksasi
+      ? "ANOMALY"
+      : "VERIFIED_L1";
     const pakaiFisikBaru = Math.max(0, hasilMode.selisihFisikM3);
     const pakaiTagihBaru = hasilMode.pakaiTagihM3;
 
@@ -683,8 +802,8 @@ export class CaterVerifikasiService {
           .where(
             and(
               eq(daftarCatat.periode, cater.thbl),
-              eq(daftarCatat.nolg, cater.nolg)
-            )
+              eq(daftarCatat.nolg, cater.nolg),
+            ),
           );
       }
 

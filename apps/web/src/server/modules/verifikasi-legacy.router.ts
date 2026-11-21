@@ -14,7 +14,10 @@ import {
 import { authPlugin } from "../plugins/auth";
 import { caterVerifikasiService } from "../services/cater/cater-verifikasi.service";
 import { mandiriService } from "../services/mandiri/mandiri.service";
-import { verifikasiGridService, FINAL_STATUSES } from "../services/cater/verifikasi-grid.service";
+import {
+  verifikasiGridService,
+  FINAL_STATUSES,
+} from "../services/cater/verifikasi-grid.service";
 import { manualAddMasalService } from "../services/cater/manual-add-masal.service";
 import { hitungKubikasiGantiMeter } from "../domain/gwm/gwm.engine";
 import {
@@ -539,8 +542,12 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
           .limit(100);
 
         const totalManual = rows.length;
-        const totalM3 = rows.reduce((sum, r) => sum + Number(r.pakaiM3 ?? 0), 0);
-        const rataRataM3 = totalManual > 0 ? Number((totalM3 / totalManual).toFixed(1)) : 0;
+        const totalM3 = rows.reduce(
+          (sum, r) => sum + Number(r.pakaiM3 ?? 0),
+          0,
+        );
+        const rataRataM3 =
+          totalManual > 0 ? Number((totalM3 / totalManual).toFixed(1)) : 0;
 
         return {
           success: true,
@@ -1066,24 +1073,25 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
             },
           };
         }
-        const hasilGantiMeter = hitungKubikasiGantiMeter({
-          standLalu: stml,
-          standAngkat: body.standAngkatLama ?? mutasi.standAngkat,
-          standPasang: mutasi.standPasang,
-          standBacaBaru: stma,
-        });
-        if (!hasilGantiMeter.isValid) {
+        const standAngkatMb = body.standAngkatLama ?? mutasi.standAngkat;
+        if (standAngkatMb == null) {
           set.status = 400;
           return {
             success: false,
             error: {
-              code: "INVALID_STAND",
+              code: "METER_DATA_INCOMPLETE",
               message:
-                hasilGantiMeter.pesanError ??
-                "Stand ganti meter tidak valid.",
+                "Stand angkat meter lama belum terisi. Isi stand angkat lama pada form ini atau lengkapi data ganti meter terlebih dahulu.",
             },
           };
         }
+        const hasilGantiMeter = hitungKubikasiGantiMeter({
+          standLalu: stml,
+          standAngkat: standAngkatMb,
+          standPasang: mutasi.standPasang,
+          standBacaBaru: stma,
+        });
+
         pakaiM3 = hasilGantiMeter.totalPemakaianM3;
       } else if (body.pemakaianRevisi != null) {
         // Verifikator mengatur langsung angka pemakaian (misal taksasi / aturan minimum / perdir
@@ -1152,9 +1160,7 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
                 ? null
                 : String(body.standAngkatLama),
             standMeterBaruRevisi:
-              body.standMeterBaru == null
-                ? null
-                : String(body.standMeterBaru),
+              body.standMeterBaru == null ? null : String(body.standMeterBaru),
             ...(body.pemakaianTagihVerif !== undefined && {
               pakaiTagih:
                 body.pemakaianTagihVerif == null
@@ -1361,7 +1367,8 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
             success: false,
             error: {
               code: "READING_LOCKED",
-              message: "Pembacaan periode ini sudah terkunci billing dan tidak dapat ditimpa.",
+              message:
+                "Pembacaan periode ini sudah terkunci billing dan tidak dapat ditimpa.",
             },
           };
         }

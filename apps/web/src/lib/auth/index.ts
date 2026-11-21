@@ -37,6 +37,7 @@ export async function auth() {
         email: sessionData.user.email ?? '',
         image: sessionData.user.image ?? null,
         nolg: (sessionData.user as { nolg?: string | null }).nolg ?? null,
+        wajibGantiPassword: Boolean((sessionData.user as { wajibGantiPassword?: boolean }).wajibGantiPassword),
         role: roles[0] ?? 'USER',
         roles,
       },

@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 import {
   db,
   masterKondisiCatat,
@@ -12,17 +12,17 @@ import {
   ruteCater,
   petugasCater,
   resolveKondisiCatatWithPriority,
-} from '../index';
+} from "../index";
 import {
   hitungPemakaianDanRekonsiliasiTaksasi,
   hitungRincianHargaAir,
   hitungTotalTagihan,
   tentukanBlok,
   type ModeHitungKondisiInput,
-} from '../../../../apps/web/src/server/domain/tagihan/tagihan.engine';
-import { evaluasiPemakaianMeter } from '../../../../apps/web/src/server/domain/cater/cater-anomali.engine';
-import { parseCsvRows } from '../../../../apps/web/src/server/services/import/import-data.service';
-import { sql, eq, and } from 'drizzle-orm';
+} from "../../../../apps/web/src/server/domain/tagihan/tagihan.engine";
+import { evaluasiPemakaianMeter } from "../../../../apps/web/src/server/domain/cater/cater-anomali.engine";
+import { parseCsvRows } from "../../../../apps/web/src/server/services/import/import-data.service";
+import { sql, eq, and } from "drizzle-orm";
 
 /**
  * Skrip Verifikasi Lanjutan & Simulasi LapDataMeter (Periode Berjalan -> Closing -> Buka Periode Berikutnya)
@@ -31,88 +31,142 @@ import { sql, eq, and } from 'drizzle-orm';
  * 1. Mengekspor daftar verifikasi lapangan (DICABUT Oktober vs November, St Akhir < St Awal pakai positif, Pakai > 100 m3).
  * 2. Menerima argumen `--csv=<path>` sehingga dapat dijalankan ulang pada file CSV baru kapan pun tanpa mengubah kode.
  * 3. Menjalankan simulasi 4.3a s/d 4.3d di dalam TRANSAKSI ROLLBACK (100% aman, tidak mengubah database utama!).
+ *
  */
+
+interface BarisLapDataMeter {
+  rowNum: number;
+  nolg: string;
+  nama: string;
+  alamat: string;
+  thbl: string;
+  stAwal: number;
+  stAkhir: number;
+  stAkhirCatat: number;
+  pakai: number;
+  pakaiLalu: number;
+  trf: string;
+  kdKel: string;
+  nmKel: string;
+  petugas: string;
+  kdWm: string;
+  rute: string;
+  tglCatat: string;
+}
+
 async function main() {
-  const csvArg = process.argv.find((a) => a.startsWith('--csv='));
-  const defaultNovCsv = path.resolve(__dirname, '../../data/raw/lapdatametertes.csv');
-  const novCsvPath = csvArg ? path.resolve(csvArg.split('=')[1]) : defaultNovCsv;
+  const csvArg = process.argv.find((a) => a.startsWith("--csv="));
+  const defaultNovCsv = path.resolve(
+    __dirname,
+    "../../data/raw/lapdatametertes.csv",
+  );
+  const novCsvPath = csvArg
+    ? path.resolve(csvArg.split("=")[1])
+    : defaultNovCsv;
 
   if (!fs.existsSync(novCsvPath)) {
     throw new Error(`File CSV tidak ditemukan: ${novCsvPath}`);
   }
 
-  console.log('====================================================================');
-  console.log('SIMULASI & AUDIT LAPDATAMETER (100% ISOLATED TRANSACTION ROLLBACK)');
-  console.log('File Sumber:', novCsvPath);
-  console.log('====================================================================');
+  console.log(
+    "====================================================================",
+  );
+  console.log(
+    "SIMULASI & AUDIT LAPDATAMETER (100% ISOLATED TRANSACTION ROLLBACK)",
+  );
+  console.log("File Sumber:", novCsvPath);
+  console.log(
+    "====================================================================",
+  );
 
-  const rawText = fs.readFileSync(novCsvPath, 'utf8');
+  const rawText = fs.readFileSync(novCsvPath, "utf8");
   const rows = parseCsvRows(rawText);
-  const header = rows[0].map((h) => h.replace(/^["']|["']$/g, '').trim().toLowerCase());
+  const header = rows[0].map((h) =>
+    h
+      .replace(/^["']|["']$/g, "")
+      .trim()
+      .toLowerCase(),
+  );
 
   const findIdx = (aliases: string[]) =>
     header.findIndex((h) => aliases.some((a) => h === a || h.includes(a)));
 
-  const nolgIdx = findIdx(['no pel', 'nolg']);
-  const namaIdx = findIdx(['nama']);
-  const alamatIdx = findIdx(['alamat']);
-  const thblIdx = findIdx(['periode', 'thbl']);
-  const stmlIdx = findIdx(['st awal', 'stml']);
-  const stmaIdx = findIdx(['st akhir', 'stma']);
-  const stmaCatatIdx = findIdx(['st akhir catat']);
-  const pakaiIdx = findIdx(['pakai']);
-  const pakaiLaluIdx = findIdx(['pakai lau', 'pakai lalu']);
-  const trfIdx = findIdx(['trf', 'tarif']);
-  const kdKelIdx = findIdx(['kd_kel', 'tmss']);
-  const nmKelIdx = findIdx(['nm_kel', 'kondisi']);
-  const petugasIdx = findIdx(['kd_petugas', 'nama petugas']);
-  const kdWmIdx = findIdx(['kd_wm', 'nometer']);
-  const ruteIdx = findIdx(['rute']);
-  const tglCatatIdx = findIdx(['tgl_catat']);
+  const nolgIdx = findIdx(["no pel", "nolg"]);
+  const namaIdx = findIdx(["nama"]);
+  const alamatIdx = findIdx(["alamat"]);
+  const thblIdx = findIdx(["periode", "thbl"]);
+  const stmlIdx = findIdx(["st awal", "stml"]);
+  const stmaIdx = findIdx(["st akhir", "stma"]);
+  const stmaCatatIdx = findIdx(["st akhir catat"]);
+  const pakaiIdx = findIdx(["pakai"]);
+  const pakaiLaluIdx = findIdx(["pakai lau", "pakai lalu"]);
+  const trfIdx = findIdx(["trf", "tarif"]);
+  const kdKelIdx = findIdx(["kd_kel", "tmss"]);
+  const nmKelIdx = findIdx(["nm_kel", "kondisi"]);
+  const petugasIdx = findIdx(["kd_petugas", "nama petugas"]);
+  const kdWmIdx = findIdx(["kd_wm", "nometer"]);
+  const ruteIdx = findIdx(["rute"]);
+  const tglCatatIdx = findIdx(["tgl_catat"]);
 
-  const parsedNov = [];
+  const parsedNov: BarisLapDataMeter[] = [];
   for (let i = 1; i < rows.length; i++) {
     const p = rows[i];
     if (p.length < 10) continue;
-    const nolg = (p[nolgIdx] || '').replace(/[^\w-]/g, '').trim();
-    const thbl = (p[thblIdx] || '').replace(/[^\w]/g, '').trim();
+    const nolg = (p[nolgIdx] || "").replace(/[^\w-]/g, "").trim();
+    const thbl = (p[thblIdx] || "").replace(/[^\w]/g, "").trim();
     if (!nolg || !thbl) continue;
     parsedNov.push({
       rowNum: i,
       nolg,
-      nama: p[namaIdx]?.trim() || '',
-      alamat: p[alamatIdx]?.trim() || '',
+      nama: p[namaIdx]?.trim() || "",
+      alamat: p[alamatIdx]?.trim() || "",
       thbl,
-      stAwal: parseFloat(p[stmlIdx] || '0') || 0,
-      stAkhir: parseFloat(p[stmaIdx] || '0') || 0,
-      stAkhirCatat: parseFloat(p[stmaCatatIdx] || '0') || 0,
-      pakai: parseFloat(p[pakaiIdx] || '0') || 0,
-      pakaiLalu: parseFloat(p[pakaiLaluIdx] || '0') || 0,
-      trf: p[trfIdx]?.trim() || '2A3',
-      kdKel: p[kdKelIdx]?.trim() || '-',
-      nmKel: p[nmKelIdx]?.trim() || 'Normal',
-      petugas: p[petugasIdx]?.trim() || '',
-      kdWm: p[kdWmIdx]?.trim() || '',
-      rute: p[ruteIdx]?.trim() || '',
-      tglCatat: p[tglCatatIdx]?.trim() || '',
+      stAwal: parseFloat(p[stmlIdx] || "0") || 0,
+      stAkhir: parseFloat(p[stmaIdx] || "0") || 0,
+      stAkhirCatat: parseFloat(p[stmaCatatIdx] || "0") || 0,
+      pakai: parseFloat(p[pakaiIdx] || "0") || 0,
+      pakaiLalu: parseFloat(p[pakaiLaluIdx] || "0") || 0,
+      trf: p[trfIdx]?.trim() || "2A3",
+      kdKel: p[kdKelIdx]?.trim() || "-",
+      nmKel: p[nmKelIdx]?.trim() || "Normal",
+      petugas: p[petugasIdx]?.trim() || "",
+      kdWm: p[kdWmIdx]?.trim() || "",
+      rute: p[ruteIdx]?.trim() || "",
+      tglCatat: p[tglCatatIdx]?.trim() || "",
     });
   }
 
-  const targetPeriode = parsedNov[0]?.thbl || '202611';
+  const targetPeriode = parsedNov[0]?.thbl || "202611";
 
   // Muat data Oktober & Master dari DB
-  const [kondisiRows, golRows, dpmOpenRows, caterOctRows, pelRows, ruteRows] = await Promise.all([
-    db.select().from(masterKondisiCatat),
-    db.select().from(golonganTarif),
-    db.select().from(daftarCatat).where(eq(daftarCatat.periode, targetPeriode)),
-    db.select().from(caterBacaMeter).where(eq(caterBacaMeter.thbl, '202610')),
-    db.select().from(pelanggan),
-    db.select().from(ruteCater),
-  ]);
+  const [kondisiRows, golRows, dpmOpenRows, caterOctRows, pelRows, ruteRows] =
+    await Promise.all([
+      db.select().from(masterKondisiCatat),
+      db.select().from(golonganTarif),
+      db
+        .select()
+        .from(daftarCatat)
+        .where(eq(daftarCatat.periode, targetPeriode)),
+      db.select().from(caterBacaMeter).where(eq(caterBacaMeter.thbl, "202610")),
+      db.select().from(pelanggan),
+      db.select().from(ruteCater),
+    ]);
 
-  const modeByTmss = new Map(kondisiRows.map((k) => [k.kodeTmss.trim(), k.modeHitung as ModeHitungKondisiInput]));
-  const modeByNama = new Map(kondisiRows.map((k) => [k.nama.trim().toUpperCase(), k.modeHitung as ModeHitungKondisiInput]));
-  const minByTarif = new Map(golRows.map((g) => [g.kode, Number(g.pemakaianMinimumM3 ?? 5)]));
+  const modeByTmss = new Map(
+    kondisiRows.map((k) => [
+      k.kodeTmss.trim(),
+      k.modeHitung as ModeHitungKondisiInput,
+    ]),
+  );
+  const modeByNama = new Map(
+    kondisiRows.map((k) => [
+      k.nama.trim().toUpperCase(),
+      k.modeHitung as ModeHitungKondisiInput,
+    ]),
+  );
+  const minByTarif = new Map(
+    golRows.map((g) => [g.kode, Number(g.pemakaianMinimumM3 ?? 5)]),
+  );
   const dpmOpenMap = new Map(dpmOpenRows.map((d) => [d.nolg, d]));
   const caterOctMap = new Map(caterOctRows.map((c) => [c.nolg, c]));
   const pelMap = new Map(pelRows.map((p) => [p.nolg, p]));
@@ -120,67 +174,73 @@ async function main() {
   // ---------------------------------------------------------------------------
   // EXPORT FILE VERIFIKASI SESUAI BAGIAN 3 run-test.md
   // ---------------------------------------------------------------------------
-  const exportDir = path.resolve(__dirname, '../../data/exports');
+  const exportDir = path.resolve(__dirname, "../../data/exports");
   fs.mkdirSync(exportDir, { recursive: true });
 
   // Export 1: 17 pelanggan DICABUT Oktober yang muncul di November + 4 pelanggan aktif Oktober yang di November tercatat DI CABUT
   const dicabutAuditRows: string[] = [
-    'kategori;nolg;nama;rute_kode;status_master_okt;kondisi_okt;pakai_okt;kd_kel_nov;kondisi_nov;st_awal_nov;st_akhir_nov;pakai_nov',
+    "kategori;nolg;nama;rute_kode;status_master_okt;kondisi_okt;pakai_okt;kd_kel_nov;kondisi_nov;st_awal_nov;st_akhir_nov;pakai_nov",
   ];
   for (const nr of parsedNov) {
     const oct = caterOctMap.get(nr.nolg);
     const pel = pelMap.get(nr.nolg);
-    const isOctDicabut = oct?.ketCatat === 'DICABUT' || oct?.tmss?.trim() === 'D';
-    const isNovDicabut = nr.nmKel === 'DI CABUT' || nr.kdKel === 'D';
+    const isOctDicabut =
+      oct?.ketCatat === "DICABUT" || oct?.tmss?.trim() === "D";
+    const isNovDicabut = nr.nmKel === "DI CABUT" || nr.kdKel === "D";
 
     if (isOctDicabut) {
       dicabutAuditRows.push(
-        `DICABUT_OKT_MUNCUL_DI_NOV;${nr.nolg};${nr.nama};${nr.rute};${pel?.status ?? '-'};${oct?.ketCatat ?? '-'};${oct?.pakaiTagih ?? 0};${nr.kdKel};${nr.nmKel};${nr.stAwal};${nr.stAkhir};${nr.pakai}`
+        `DICABUT_OKT_MUNCUL_DI_NOV;${nr.nolg};${nr.nama};${nr.rute};${pel?.status ?? "-"};${oct?.ketCatat ?? "-"};${oct?.pakaiTagih ?? 0};${nr.kdKel};${nr.nmKel};${nr.stAwal};${nr.stAkhir};${nr.pakai}`,
       );
     } else if (isNovDicabut) {
       dicabutAuditRows.push(
-        `AKTIF_OKT_JADI_DICABUT_DI_NOV;${nr.nolg};${nr.nama};${nr.rute};${pel?.status ?? '-'};${oct?.ketCatat ?? 'BARU'};${oct?.pakaiTagih ?? 0};${nr.kdKel};${nr.nmKel};${nr.stAwal};${nr.stAkhir};${nr.pakai}`
+        `AKTIF_OKT_JADI_DICABUT_DI_NOV;${nr.nolg};${nr.nama};${nr.rute};${pel?.status ?? "-"};${oct?.ketCatat ?? "BARU"};${oct?.pakaiTagih ?? 0};${nr.kdKel};${nr.nmKel};${nr.stAwal};${nr.stAkhir};${nr.pakai}`,
       );
     }
   }
   fs.writeFileSync(
-    path.join(exportDir, 'daftar-pelanggan-dicabut-oktober-vs-november.csv'),
-    dicabutAuditRows.join('\n') + '\n',
-    'utf8'
+    path.join(exportDir, "daftar-pelanggan-dicabut-oktober-vs-november.csv"),
+    dicabutAuditRows.join("\n") + "\n",
+    "utf8",
   );
 
   // Export 2: 3 baris St Akhir < St Awal (non-MB) dengan Pakai positif + 16 seluruh St Akhir < St Awal + 27 baris Pakai > 100 m3
   const anomaliNovRows: string[] = [
-    'kategori_anomali;nolg;nama;rute_kode;petugas;tarif;kd_kel;nm_kel;st_awal;st_akhir;selisih_stand;pakai_csv;pakai_lalu',
+    "kategori_anomali;nolg;nama;rute_kode;petugas;tarif;kd_kel;nm_kel;st_awal;st_akhir;selisih_stand;pakai_csv;pakai_lalu",
   ];
   for (const nr of parsedNov) {
     if (nr.stAkhir < nr.stAwal) {
       const kat =
-        nr.kdKel === '4' || nr.nmKel === 'MB'
+        nr.kdKel === "4" || nr.nmKel === "MB"
           ? nr.pakai < 0
-            ? 'MB_PAKAI_NEGATIF'
-            : 'MB_STAND_RESET_POSITIF'
-          : 'STAND_MUNDUR_NON_MB_PAKAI_POSITIF';
+            ? "MB_PAKAI_NEGATIF"
+            : "MB_STAND_RESET_POSITIF"
+          : "STAND_MUNDUR_NON_MB_PAKAI_POSITIF";
       anomaliNovRows.push(
-        `${kat};${nr.nolg};${nr.nama};${nr.rute};${nr.petugas};${nr.trf};${nr.kdKel};${nr.nmKel};${nr.stAwal};${nr.stAkhir};${nr.stAkhir - nr.stAwal};${nr.pakai};${nr.pakaiLalu}`
+        `${kat};${nr.nolg};${nr.nama};${nr.rute};${nr.petugas};${nr.trf};${nr.kdKel};${nr.nmKel};${nr.stAwal};${nr.stAkhir};${nr.stAkhir - nr.stAwal};${nr.pakai};${nr.pakaiLalu}`,
       );
     }
     if (nr.pakai > 100) {
       anomaliNovRows.push(
-        `PAKAI_EKSTREM_GT_100M3;${nr.nolg};${nr.nama};${nr.rute};${nr.petugas};${nr.trf};${nr.kdKel};${nr.nmKel};${nr.stAwal};${nr.stAkhir};${nr.stAkhir - nr.stAwal};${nr.pakai};${nr.pakaiLalu}`
+        `PAKAI_EKSTREM_GT_100M3;${nr.nolg};${nr.nama};${nr.rute};${nr.petugas};${nr.trf};${nr.kdKel};${nr.nmKel};${nr.stAwal};${nr.stAkhir};${nr.stAkhir - nr.stAwal};${nr.pakai};${nr.pakaiLalu}`,
       );
     }
   }
   fs.writeFileSync(
-    path.join(exportDir, 'daftar-anomali-november-stand-mundur-dan-ekstrem.csv'),
-    anomaliNovRows.join('\n') + '\n',
-    'utf8'
+    path.join(
+      exportDir,
+      "daftar-anomali-november-stand-mundur-dan-ekstrem.csv",
+    ),
+    anomaliNovRows.join("\n") + "\n",
+    "utf8",
   );
 
   // ---------------------------------------------------------------------------
   // 4.3a. REPLAY ATURAN HITUNG (mode_hitung + minimum vs kolom Pakai di CSV)
   // ---------------------------------------------------------------------------
-  console.log('\n--- 4.3a. REPLAY ATURAN HITUNG (mode_hitung + minimum vs Pakai CSV) ---');
+  console.log(
+    "\n--- 4.3a. REPLAY ATURAN HITUNG (mode_hitung + minimum vs Pakai CSV) ---",
+  );
   const replayByKondisi = new Map<
     string,
     { total: number; matchExact: number; diffCount: number; sampleDiffs: any[] }
@@ -194,15 +254,19 @@ async function main() {
   for (const nr of parsedNov) {
     // Normalisasi alias nama kondisi November ke master_kondisi_catat
     const normNama =
-      nr.nmKel === 'RMH/TANAH KSG'
-        ? 'RUMAH KOSONG'
-        : nr.nmKel === 'METER MATI AIR ADA'
-          ? 'MATI ADA AIR'
-          : nr.nmKel === 'DI CABUT'
-            ? 'DICABUT'
+      nr.nmKel === "RMH/TANAH KSG"
+        ? "RUMAH KOSONG"
+        : nr.nmKel === "METER MATI AIR ADA"
+          ? "MATI ADA AIR"
+          : nr.nmKel === "DI CABUT"
+            ? "DICABUT"
             : nr.nmKel;
 
-    const resolvedKondisi = resolveKondisiCatatWithPriority(nr.kdKel, normNama, kondisiRows);
+    const resolvedKondisi = resolveKondisiCatatWithPriority(
+      nr.kdKel,
+      normNama,
+      kondisiRows,
+    );
     if (resolvedKondisi.isMismatch) {
       totalMismatchKodeNama++;
     }
@@ -226,7 +290,12 @@ async function main() {
 
     const key = `${nr.kdKel} | ${nr.nmKel} -> ${resolvedKondisi.ketCatat} (${mode})`;
     if (!replayByKondisi.has(key)) {
-      replayByKondisi.set(key, { total: 0, matchExact: 0, diffCount: 0, sampleDiffs: [] });
+      replayByKondisi.set(key, {
+        total: 0,
+        matchExact: 0,
+        diffCount: 0,
+        sampleDiffs: [],
+      });
     }
     const stat = replayByKondisi.get(key)!;
     stat.total++;
@@ -251,23 +320,27 @@ async function main() {
   }
 
   console.log(
-    `Total Replay 14.238 baris: Cocok=${totalReplayMatch} (${((totalReplayMatch / parsedNov.length) * 100).toFixed(2)}%), Selisih=${totalReplayDiff} | Normal STAND_TETAP (stma==stml): ${totalNormalStandTetap} | Mismatch Kd_kel vs Nm_Kel: ${totalMismatchKodeNama}`
+    `Total Replay 14.238 baris: Cocok=${totalReplayMatch} (${((totalReplayMatch / parsedNov.length) * 100).toFixed(2)}%), Selisih=${totalReplayDiff} | Normal STAND_TETAP (stma==stml): ${totalNormalStandTetap} | Mismatch Kd_kel vs Nm_Kel: ${totalMismatchKodeNama}`,
   );
-  for (const [k, v] of [...replayByKondisi.entries()].sort((a, b) => b[1].total - a[1].total)) {
+  for (const [k, v] of [...replayByKondisi.entries()].sort(
+    (a, b) => b[1].total - a[1].total,
+  )) {
     console.log(
-      `  ${k.padEnd(55)} | Total: ${String(v.total).padStart(5)} | Cocok: ${String(v.matchExact).padStart(5)} | Selisih: ${String(v.diffCount).padStart(4)}`
+      `  ${k.padEnd(55)} | Total: ${String(v.total).padStart(5)} | Cocok: ${String(v.matchExact).padStart(5)} | Selisih: ${String(v.diffCount).padStart(4)}`,
     );
   }
 
   // ---------------------------------------------------------------------------
   // 4.3b. CAKUPAN DATA PER PETUGAS DAN PER RUTE (UJI BIAS SAMPEL)
   // ---------------------------------------------------------------------------
-  console.log('\n--- 4.3b. CAKUPAN DATA PER PETUGAS & PER RUTE (14.238 / 22.495 DPM) ---');
+  console.log(
+    "\n--- 4.3b. CAKUPAN DATA PER PETUGAS & PER RUTE (14.238 / 22.495 DPM) ---",
+  );
   const dpmByPetugas = new Map<string, number>();
   const dpmByRute = new Map<string, number>();
   for (const d of dpmOpenRows) {
-    const p = d.petugasId || 'TANPA_PETUGAS';
-    const r = d.ruteKode || 'TANPA_RUTE';
+    const p = d.petugasId || "TANPA_PETUGAS";
+    const r = d.ruteKode || "TANPA_RUTE";
     dpmByPetugas.set(p, (dpmByPetugas.get(p) || 0) + 1);
     dpmByRute.set(r, (dpmByRute.get(r) || 0) + 1);
   }
@@ -279,11 +352,13 @@ async function main() {
     novByRute.set(nr.rute, (novByRute.get(nr.rute) || 0) + 1);
   }
 
-  console.log('Cakupan per Petugas (9 Petugas):');
+  console.log("Cakupan per Petugas (9 Petugas):");
   for (const [petugas, target] of [...dpmByPetugas.entries()].sort()) {
     const terbaca = novByPetugas.get(petugas) || 0;
-    const persen = target > 0 ? ((terbaca / target) * 100).toFixed(2) : '0.00';
-    console.log(`  ${petugas.padEnd(12)} : Terbaca ${String(terbaca).padStart(5)} / Target ${String(target).padStart(5)} (${persen}%)`);
+    const persen = target > 0 ? ((terbaca / target) * 100).toFixed(2) : "0.00";
+    console.log(
+      `  ${petugas.padEnd(12)} : Terbaca ${String(terbaca).padStart(5)} / Target ${String(target).padStart(5)} (${persen}%)`,
+    );
   }
 
   let rute100Persen = 0;
@@ -296,13 +371,15 @@ async function main() {
     else ruteSebagian++;
   }
   console.log(
-    `Cakupan per Rute (125 Rute): >=100% Selesai: ${rute100Persen} rute | Sebagian (1..99%): ${ruteSebagian} rute | Belum Mulai (0%): ${rute0Persen} rute`
+    `Cakupan per Rute (125 Rute): >=100% Selesai: ${rute100Persen} rute | Sebagian (1..99%): ${ruteSebagian} rute | Belum Mulai (0%): ${rute0Persen} rute`,
   );
 
   // ---------------------------------------------------------------------------
   // 4.3c & 4.3d. SIMULASI IMPOR, GUARD CLOSING, TAKSASI EKSPLISIT SISA DPM, CLOSING 202611, & BUKA 202612 (DALAM TRANSAKSI ROLLBACK!)
   // ---------------------------------------------------------------------------
-  console.log('\n--- 4.3c & 4.3d. SIMULASI END-TO-END DI TRANSAKSI ISOLASI (ROLLBACK) ---');
+  console.log(
+    "\n--- 4.3c & 4.3d. SIMULASI END-TO-END DI TRANSAKSI ISOLASI (ROLLBACK) ---",
+  );
   try {
     await db.transaction(async (tx) => {
       // 1. Impor 14.238 baris dengan evaluasi status SUBMITTED / ANOMALY_* (tanpa LOCKED_BILLING)
@@ -322,7 +399,7 @@ async function main() {
         `);
         await tx.execute(sql`
           INSERT INTO daftar_catat (id, periode, nolg, rute_kode, petugas_id, urutan, stand_awal, pakai_lalu, akumulasi_taksasi_m3, sumber, status)
-          VALUES (${'dpm-' + targetPeriode + '-' + nc.nolg}, ${targetPeriode}, ${nc.nolg}, ${nc.rute}, ${nc.petugas}, 999, 0, 0, 0, 'PBPK', 'BELUM_DICATAT')
+          VALUES (${"dpm-" + targetPeriode + "-" + nc.nolg}, ${targetPeriode}, ${nc.nolg}, ${nc.rute}, ${nc.petugas}, 999, 0, 0, 0, 'PBPK', 'BELUM_DICATAT')
           ON CONFLICT (periode, nolg) DO NOTHING
         `);
       }
@@ -335,17 +412,22 @@ async function main() {
         // stml tetap angka meter asli dari database (bukan stml_revisi!)
         const stmlAsli = dpm ? Number(dpm.standAwal) : nr.stAwal;
         const normNama =
-          nr.nmKel === 'RMH/TANAH KSG'
-            ? 'RUMAH KOSONG'
-            : nr.nmKel === 'METER MATI AIR ADA'
-              ? 'MATI ADA AIR'
-              : nr.nmKel === 'DI CABUT'
-                ? 'DICABUT'
+          nr.nmKel === "RMH/TANAH KSG"
+            ? "RUMAH KOSONG"
+            : nr.nmKel === "METER MATI AIR ADA"
+              ? "MATI ADA AIR"
+              : nr.nmKel === "DI CABUT"
+                ? "DICABUT"
                 : nr.nmKel;
-        const resolvedKondisi = resolveKondisiCatatWithPriority(nr.kdKel, normNama, kondisiRows);
-        const isMb = resolvedKondisi.modeHitung === 'METER_BARU';
+        const resolvedKondisi = resolveKondisiCatatWithPriority(
+          nr.kdKel,
+          normNama,
+          kondisiRows,
+        );
+        const isMb = resolvedKondisi.modeHitung === "METER_BARU";
         const isStandTetap =
-          resolvedKondisi.modeHitung === 'SELISIH_FISIK' && nr.stAkhir === nr.stAwal;
+          resolvedKondisi.modeHitung === "SELISIH_FISIK" &&
+          nr.stAkhir === nr.stAwal;
 
         const evaluasi = evaluasiPemakaianMeter({
           stml: isMb ? 0 : nr.stAwal,
@@ -355,17 +437,20 @@ async function main() {
 
         let statusVerif: string = evaluasi.statusVerifikasi;
         if (nr.pakai < 0 || (!isMb && nr.stAkhir < nr.stAwal)) {
-          statusVerif = 'ANOMALY_NEGATIVE';
+          statusVerif = "ANOMALY_NEGATIVE";
           countAnomalyNegative++;
-        } else if (evaluasi.statusVerifikasi === 'ANOMALY_HIGH') {
+        } else if (evaluasi.statusVerifikasi === "ANOMALY_HIGH") {
           countAnomalyHigh++;
-        } else if (evaluasi.statusVerifikasi === 'ANOMALY_LOW') {
+        } else if (evaluasi.statusVerifikasi === "ANOMALY_LOW") {
           countAnomalyLow++;
-        } else if (nr.stAwal !== stmlAsli && nr.stAkhir < stmlAsli + Number(dpm?.akumulasiTaksasiM3 ?? 0)) {
-          statusVerif = 'ANOMALY';
+        } else if (
+          nr.stAwal !== stmlAsli &&
+          nr.stAkhir < stmlAsli + Number(dpm?.akumulasiTaksasiM3 ?? 0)
+        ) {
+          statusVerif = "ANOMALY";
           countAnomalyCredit++;
         } else {
-          statusVerif = 'SUBMITTED';
+          statusVerif = "SUBMITTED";
           countSubmitted++;
         }
 
@@ -373,7 +458,7 @@ async function main() {
         if (isStandTetap) {
           countStandTetapNormal++;
           catatanParts.push(
-            '[STAND_TETAP] Stand akhir sama dengan stand awal pada kondisi Normal; menunggu keputusan verifikator'
+            "[STAND_TETAP] Stand akhir sama dengan stand awal pada kondisi Normal; menunggu keputusan verifikator",
           );
         }
         if (resolvedKondisi.auditNote) {
@@ -381,7 +466,9 @@ async function main() {
           catatanParts.push(resolvedKondisi.auditNote);
         }
 
-        const isDicabutNov = resolvedKondisi.ketCatat === 'DICABUT' || resolvedKondisi.kodeTmss.trim() === 'D';
+        const isDicabutNov =
+          resolvedKondisi.ketCatat === "DICABUT" ||
+          resolvedKondisi.kodeTmss.trim() === "D";
         caterToInsert.push({
           id: `cater-${targetPeriode}-${nr.nolg}`,
           thbl: targetPeriode,
@@ -393,12 +480,12 @@ async function main() {
           pakaiM3: String(Math.max(0, nr.stAkhir - stmlAsli)),
           pakaiTagih: String(Math.max(0, nr.pakai)),
           pakaiLalu: String(nr.pakaiLalu),
-          tmss: isDicabutNov ? 'D' : resolvedKondisi.kodeTmss,
-          ketCatat: isDicabutNov ? 'DICABUT' : resolvedKondisi.ketCatat,
-          metodeCatat: 'ONSITE',
-          sumberCatat: 'PETUGAS_ONSITE',
+          tmss: isDicabutNov ? "D" : resolvedKondisi.kodeTmss,
+          ketCatat: isDicabutNov ? "DICABUT" : resolvedKondisi.ketCatat,
+          metodeCatat: "ONSITE",
+          sumberCatat: "PETUGAS_ONSITE",
           statusVerifikasi: statusVerif,
-          catatan: catatanParts.length > 0 ? catatanParts.join(' | ') : null,
+          catatan: catatanParts.length > 0 ? catatanParts.join(" | ") : null,
         });
       }
 
@@ -419,7 +506,7 @@ async function main() {
           AND d.nolg = c.nolg
       `);
 
-      console.log('Hasil Impor Normal 14.238 Baris (Status Verifikasi):', {
+      console.log("Hasil Impor Normal 14.238 Baris (Status Verifikasi):", {
         totalImported: caterToInsert.length,
         SUBMITTED: countSubmitted,
         STAND_TETAP_NORMAL_FLAGGED: countStandTetapNormal,
@@ -437,7 +524,9 @@ async function main() {
         WHERE periode = ${targetPeriode} AND status = 'BELUM_DICATAT'
       `);
       const jmlSisaDpm = (sisaDpmBefore as any).sisa_belum_dicatat;
-      console.log(`Guard Closing Check: Sisa DPM BELUM_DICATAT = ${jmlSisaDpm} pelanggan -> Closing WAJIB DITOLAK!`);
+      console.log(
+        `Guard Closing Check: Sisa DPM BELUM_DICATAT = ${jmlSisaDpm} pelanggan -> Closing WAJIB DITOLAK!`,
+      );
 
       // 3. Selesaikan sisa 8.278 pelanggan yang BELUM_DICATAT melalui Taksasi Eksplisit Operator (stma = stml, pakai_tagih = max(pakai_lalu, min 5m3))
       await tx.execute(sql`
@@ -517,14 +606,19 @@ async function main() {
         FROM dec_projection
       `);
 
-      console.log('Hasil Proyeksi Carry-Forward & Akumulasi Taksasi ke Desember (202612):', carryDecStats);
+      console.log(
+        "Hasil Proyeksi Carry-Forward & Akumulasi Taksasi ke Desember (202612):",
+        carryDecStats,
+      );
 
       // Paksa rollback agar 0 perubahan tersimpan di database utama
-      throw new Error('ROLLBACK_SIMULATION_SUCCESS');
+      throw new Error("ROLLBACK_SIMULATION_SUCCESS");
     });
   } catch (e: any) {
-    if (e.message === 'ROLLBACK_SIMULATION_SUCCESS') {
-      console.log('✓ Simulasi selesai dan 100% di-ROLLBACK (Database utama tetap bersih pada state 202610 Closed & 202611 Open).');
+    if (e.message === "ROLLBACK_SIMULATION_SUCCESS") {
+      console.log(
+        "✓ Simulasi selesai dan 100% di-ROLLBACK (Database utama tetap bersih pada state 202610 Closed & 202611 Open).",
+      );
     } else {
       throw e;
     }
@@ -534,6 +628,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Error:', err);
+  console.error("Error:", err);
   process.exit(1);
 });
