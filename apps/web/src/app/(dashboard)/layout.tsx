@@ -30,8 +30,15 @@ export default async function DashboardLayout({
 
   const { user } = session
 
+  // Baca pathname aktual dari header proxy untuk mencegah redirect loop ke /ganti-password
+  const headerList = await headers()
+  const currentPathname = headerList.get("x-pathname")
+
   // Akun seed wajib ganti password sebelum membuka halaman apa pun
-  if (user.wajibGantiPassword) redirect("/ganti-password")
+  // (kecuali saat sudah berada di halaman ganti password itu sendiri)
+  if (user.wajibGantiPassword && currentPathname !== "/ganti-password") {
+    redirect("/ganti-password")
+  }
 
   // Lapis 3 (Defense-in-Depth): Tolak mutlak pelanggan (USER) dari seluruh area dashboard
   if (!isInternalUser(user.roles)) {
@@ -39,8 +46,6 @@ export default async function DashboardLayout({
   }
 
   // Verifikasi pemetaan Role-to-Route berdasarkan pathname aktual (Default Deny)
-  const headerList = await headers()
-  const currentPathname = headerList.get("x-pathname")
   if (
     currentPathname &&
     currentPathname !== "/dashboard" &&

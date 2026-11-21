@@ -26,8 +26,15 @@ export default async function FluidLayout({
 
   const { user } = session;
 
+  // Baca pathname aktual dari header proxy untuk mencegah redirect loop ke /ganti-password
+  const headerList = await headers();
+  const currentPathname = headerList.get("x-pathname") ?? "/verifikasi";
+
   // Akun seed wajib ganti password sebelum membuka halaman apa pun
-  if (user.wajibGantiPassword) redirect("/ganti-password");
+  // (kecuali saat sudah berada di halaman ganti password itu sendiri)
+  if (user.wajibGantiPassword && currentPathname !== "/ganti-password") {
+    redirect("/ganti-password");
+  }
 
   // Tolak mutlak pelanggan (USER) dari area verifikasi (fluid)
   if (!isInternalUser(user.roles)) {
@@ -35,8 +42,6 @@ export default async function FluidLayout({
   }
 
   // Verifikasi role terhadap halaman verifikasi yang diminta
-  const headerList = await headers();
-  const currentPathname = headerList.get("x-pathname") ?? "/verifikasi";
   if (!canAccessInternalRoute(user.roles, currentPathname)) {
     redirect("/dashboard?error=forbidden");
   }
