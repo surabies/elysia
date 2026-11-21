@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
+import fs from "fs";
+import path from "path";
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import {
   db,
   tarifBlok,
@@ -13,20 +13,20 @@ import {
   carryForwardPeriode,
   resolveKondisiCatatWithPriority,
   importRiwayatInfolang,
-} from '../index';
-import { importProgresCater } from '../etl/import-progres-cater';
+} from "../index";
+import { importProgresCater } from "../etl/import-progres-cater";
 import {
   hitungRincianHargaAir,
   hitungTotalTagihan,
   tentukanBlok,
   hitungPemakaianDanRekonsiliasiTaksasi,
   type HargaBlok,
-} from '../../../../apps/web/src/server/domain/tagihan/tagihan.engine';
-import { sql } from 'drizzle-orm';
+} from "../../../../apps/web/src/server/domain/tagihan/tagihan.engine";
+import { sql } from "drizzle-orm";
 import {
   hitungKubikasiGantiMeter,
   hitungKoreksiMbSusulan,
-} from '../../../../apps/web/src/server/domain/gwm/gwm.engine';
+} from "../../../../apps/web/src/server/domain/gwm/gwm.engine";
 
 /**
  * Daftar pengecualian data sumber yang diketahui (disimpan sebagai data di file tes,
@@ -36,38 +36,42 @@ import {
  */
 const KNOWN_BILLING_EXCEPTIONS: ReadonlyMap<string, string> = new Map([
   [
-    '00008001503',
-    'Tarif khusus hasil kesepakatan di aplikasi lama (3.000 m3 ditagih Rp 10.391.250 pada CSV Oktober, bukan tarif blok umum golongan 2B)',
+    "00008001503",
+    "Tarif khusus hasil kesepakatan di aplikasi lama (3.000 m3 ditagih Rp 10.391.250 pada CSV Oktober, bukan tarif blok umum golongan 2B)",
   ],
 ]);
 
 const KEY_TABLES = [
-  'pelanggan',
-  'water_meter',
-  'periode_penagihan',
-  'daftar_catat',
-  'cater_baca_meter',
-  'rekening_drd',
-  'riwayat_pemakaian_historis',
+  "pelanggan",
+  "water_meter",
+  "periode_penagihan",
+  "daftar_catat",
+  "cater_baca_meter",
+  "rekening_drd",
+  "riwayat_pemakaian_historis",
 ];
 
-let rowCountSnapshot: Record<string, number> = {};
+const rowCountSnapshot: Record<string, number> = {};
 let snapshotCaptured = false;
 
 beforeAll(() => {
-  const dbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '';
-  const allowedPatterns = ['test', 'elysia_test', 'testing'];
-  const isAllowed = allowedPatterns.some((p) => dbUrl.toLowerCase().includes(p));
+  const dbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
+  const allowedPatterns = ["test", "elysia_test", "testing"];
+  const isAllowed = allowedPatterns.some((p) =>
+    dbUrl.toLowerCase().includes(p),
+  );
   if (!isAllowed) {
     throw new Error(
-      `TEST_DATABASE_URL not in allowlist. Current value: ${dbUrl}. Allowed patterns: ${allowedPatterns.join(', ')}`
+      `TEST_DATABASE_URL not in allowlist. Current value: ${dbUrl}. Allowed patterns: ${allowedPatterns.join(", ")}`,
     );
   }
 });
 
 beforeAll(async () => {
   for (const table of KEY_TABLES) {
-    const [row] = await db.execute(sql`SELECT count(*)::int AS c FROM ${sql.identifier(table)}`);
+    const [row] = await db.execute(
+      sql`SELECT count(*)::int AS c FROM ${sql.identifier(table)}`,
+    );
     rowCountSnapshot[table] = (row as any).c;
   }
   snapshotCaptured = true;
@@ -78,28 +82,30 @@ afterAll(async () => {
     return;
   }
   for (const table of KEY_TABLES) {
-    const [row] = await db.execute(sql`SELECT count(*)::int AS c FROM ${sql.identifier(table)}`);
+    const [row] = await db.execute(
+      sql`SELECT count(*)::int AS c FROM ${sql.identifier(table)}`,
+    );
     const after = (row as any).c;
     const before = rowCountSnapshot[table];
     if (after !== before) {
       throw new Error(
-        `Row count changed for table ${table}: before=${before}, after=${after}. Suite may have leaked data.`
+        `Row count changed for table ${table}: before=${before}, after=${after}. Suite may have leaked data.`,
       );
     }
   }
 });
 
-describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus Periode (Read-Only)', () => {
-  test('1. Fungsi transisi periode lintas tahun (nextPeriode & prevPeriode) bebas hardcode', () => {
-    expect(nextPeriode('202512')).toBe('202601');
-    expect(prevPeriode('202601')).toBe('202512');
-    expect(nextPeriode('202610')).toBe('202611');
-    expect(nextPeriode('202611')).toBe('202612');
-    expect(nextPeriode('202612')).toBe('202701');
-    expect(prevPeriode('202701')).toBe('202612');
+describe("Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus Periode (Read-Only)", () => {
+  test("1. Fungsi transisi periode lintas tahun (nextPeriode & prevPeriode) bebas hardcode", () => {
+    expect(nextPeriode("202512")).toBe("202601");
+    expect(prevPeriode("202601")).toBe("202512");
+    expect(nextPeriode("202610")).toBe("202611");
+    expect(nextPeriode("202611")).toBe("202612");
+    expect(nextPeriode("202612")).toBe("202701");
+    expect(prevPeriode("202701")).toBe("202612");
   });
 
-  test('2. Rekonsiliasi Master, Referensi, Akun (tanpa demo@example.com), & 0 FK Yatim', async () => {
+  test("2. Rekonsiliasi Master, Referensi, Akun (tanpa demo@example.com), & 0 FK Yatim", async () => {
     const [row] = await db.execute(sql`
       SELECT
         (SELECT count(*)::int FROM pelanggan) AS total_pelanggan,
@@ -136,7 +142,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     expect(r.fk_yatim_drd).toBe(0);
   });
 
-  test('3. Opening State: Periode Closed (TERKUNCI) & Periode Open (BERJALAN) dengan Carry-Forward 100%', async () => {
+  test("3. Opening State: Periode Closed (TERKUNCI) & Periode Open (BERJALAN) dengan Carry-Forward 100%", async () => {
     const active = await getActivePeriode();
     const closed = await getLastClosedPeriode();
     expect(active).toBe(nextPeriode(closed));
@@ -160,16 +166,19 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const r = row as any;
     expect(r.cater_locked_closed).toBe(22524);
     expect(r.total_m3_closed).toBe(330209);
-    expect(r.total_tagihan_closed).toBe('2983083540');
+    expect(r.total_tagihan_closed).toBe("2983083540");
     expect(r.dpm_open).toBe(22495);
     expect(r.cater_open).toBe(0);
     expect(r.drd_open).toBe(0);
     expect(r.stand_awal_mismatch).toBe(0);
   });
 
-  test('4. Replay Tagihan Oktober: 22.523 dari 22.524 pelanggan cocok 100% (1 pengecualian terdokumentasi di KNOWN_BILLING_EXCEPTIONS)', async () => {
-    const csvPath = path.resolve(__dirname, '../../data/raw/ProgresCater-PW5.csv');
-    const csvText = fs.readFileSync(csvPath, 'utf8');
+  test("4. Replay Tagihan Oktober: 22.523 dari 22.524 pelanggan cocok 100% (1 pengecualian terdokumentasi di KNOWN_BILLING_EXCEPTIONS)", async () => {
+    const csvPath = path.resolve(
+      __dirname,
+      "../../data/raw/ProgresCater-PW5.csv",
+    );
+    const csvText = fs.readFileSync(csvPath, "utf8");
     const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
 
     const [semuaBlok, semuaBiaya, semuaGolongan] = await Promise.all([
@@ -190,7 +199,10 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
       blokPerTarif.set(b.tarifKode, list);
     }
 
-    const golonganMap = new Map<string, { beaAdmin: number; airKotor: number; lainLain: number }>();
+    const golonganMap = new Map<
+      string,
+      { beaAdmin: number; airKotor: number; lainLain: number }
+    >();
     for (const g of semuaGolongan) {
       golonganMap.set(g.kode, {
         beaAdmin: Number(g.beaAdmin),
@@ -201,7 +213,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
 
     const beaBebanPerUkuran = new Map<string, number>();
     for (const b of semuaBiaya) {
-      if (b.jenis === 'BEA_BEBAN' && b.ukuranMeter) {
+      if (b.jenis === "BEA_BEBAN" && b.ukuranMeter) {
         beaBebanPerUkuran.set(b.ukuranMeter.trim(), Number(b.nominal));
       }
     }
@@ -211,7 +223,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const unexpectedMismatches: any[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-      const c = lines[i].split(';');
+      const c = lines[i].split(";");
       if (c.length < 50) continue;
       const nolg = c[1]?.trim();
       const trp = c[5]?.trim();
@@ -223,12 +235,15 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
       const airKotorCsv = Number(c[17]?.trim() || 0);
       const lainLainCsv = Number(c[18]?.trim() || 0);
       const totalCsv = Number(c[19]?.trim() || 0);
-      const ukmeter = c[49]?.trim() || '1/2';
+      const ukmeter = c[49]?.trim() || "1/2";
 
       const tarifList = blokPerTarif.get(trp) ?? [];
       const gol = golonganMap.get(trp)!;
       const beaBebanCalc = beaBebanPerUkuran.get(ukmeter)!;
-      const { total: hargaAirCalc } = hitungRincianHargaAir(pakaiDrd, tarifList);
+      const { total: hargaAirCalc } = hitungRincianHargaAir(
+        pakaiDrd,
+        tarifList,
+      );
       const blokCalc = tentukanBlok(pakaiDrd);
       const totalCalc = hitungTotalTagihan({
         jmlHargaAir: hargaAirCalc,
@@ -270,7 +285,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     expect(exactMatchCount).toBe(22523);
   });
 
-  test('5. Simulasi 5 Skenario Bisnis & Periode Sintetis (202512 -> 202601) dalam Transaksi Rollback (Read-Only)', async () => {
+  test("5. Simulasi 5 Skenario Bisnis & Periode Sintetis (202512 -> 202601) dalam Transaksi Rollback (Read-Only)", async () => {
     let rolledBack = false;
     try {
       await db.transaction(async (tx) => {
@@ -301,7 +316,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
           SELECT stand_awal::numeric::int AS st_awal, sumber FROM daftar_catat WHERE periode = '202611' AND nolg = '99999999999'
         `);
         expect((newCustDpm as any).st_awal).toBe(0);
-        expect((newCustDpm as any).sumber).toBe('PBPK');
+        expect((newCustDpm as any).sumber).toBe("PBPK");
 
         // Skenario 3: Ganti Meter (Stand Reset) untuk pelanggan tanpa water_meter awal
         await tx.execute(sql`
@@ -329,8 +344,8 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
           INSERT INTO cater_baca_meter (id, thbl, nolg, rute_kode, stml, stma, pakai_m3, pakai_tagih, tmss, ket_catat, status_verifikasi)
           VALUES ('cater-202512-99999999999', '202512', '99999999999', 'TC211', 100, 125, 25, 25, ' ', 'Normal', 'LOCKED_BILLING')
         `);
-        const nextPeriodFrom202512 = nextPeriode('202512');
-        expect(nextPeriodFrom202512).toBe('202601');
+        const nextPeriodFrom202512 = nextPeriode("202512");
+        expect(nextPeriodFrom202512).toBe("202601");
 
         const [syntheticCarry] = await tx.execute(sql`
           SELECT COALESCE(stma_revisi, stma)::numeric::int AS carry_stand_awal
@@ -339,10 +354,10 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
         `);
         expect((syntheticCarry as any).carry_stand_awal).toBe(125);
 
-        throw new Error('ROLLBACK_INTENTIONAL_READ_ONLY');
+        throw new Error("ROLLBACK_INTENTIONAL_READ_ONLY");
       });
     } catch (e: any) {
-      if (e.message === 'ROLLBACK_INTENTIONAL_READ_ONLY') {
+      if (e.message === "ROLLBACK_INTENTIONAL_READ_ONLY") {
         rolledBack = true;
       } else {
         throw e;
@@ -351,14 +366,14 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     expect(rolledBack).toBe(true);
   });
 
-  test('6. Aturan Taksasi (mode_hitung & pemakaian_minimum_m3) serta 3 Contoh Angka Rekonsiliasi Akumulasi Taksasi', () => {
+  test("6. Aturan Taksasi (mode_hitung & pemakaian_minimum_m3) serta 3 Contoh Angka Rekonsiliasi Akumulasi Taksasi", () => {
     // Contoh (a): Taksasi bulan lalu = 5 m3, selisih fisik bulan ini = 7 m3 (mis. stml=100, stma=107)
     // Prinsip wajib: Total ditagih sepanjang rentang (5 + 2 = 7 m3) == pemakaian fisik riil (7 m3).
     // Jika netto (2 m3) dipaksa naik ke minimum 5 m3, maka total ditagih = 5 + 5 = 10 != 7 (melanggar prinsip!).
     const contohA = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 100,
       stma: 107,
-      modeHitung: 'SELISIH_FISIK',
+      modeHitung: "SELISIH_FISIK",
       pakaiLalu: 5,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 5,
@@ -374,7 +389,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const contohB = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 3909,
       stma: 3963,
-      modeHitung: 'SELISIH_FISIK',
+      modeHitung: "SELISIH_FISIK",
       pakaiLalu: 27,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 27,
@@ -391,7 +406,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const contohC = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 1000,
       stma: 1020,
-      modeHitung: 'SELISIH_FISIK',
+      modeHitung: "SELISIH_FISIK",
       pakaiLalu: 27,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 27,
@@ -399,14 +414,14 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     expect(contohC.selisihFisikM3).toBe(20);
     expect(contohC.pakaiTagihM3).toBe(-7);
     expect(contohC.isAnomaliKreditTaksasi).toBe(true);
-    expect(contohC.alasanTaksir).toBe('ANOMALI_KREDIT_TAKSASI');
+    expect(contohC.alasanTaksir).toBe("ANOMALI_KREDIT_TAKSASI");
     expect(contohC.akumulasiTaksasiBerikutnya).toBe(27); // Belum di-reset sebelum koreksi manual
 
     // Uji tambahan: Akumulasi kumulatif 2 bulan taksasi berturut-turut (DK bulan 1 = 15 m3, DK bulan 2 = 15 m3 -> akumulasi = 30 m3)
     const taksasiBulan1 = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 500,
       stma: 500,
-      modeHitung: 'TAKSASI_HISTORI',
+      modeHitung: "TAKSASI_HISTORI",
       pakaiLalu: 15,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 0,
@@ -417,7 +432,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const taksasiBulan2 = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 500,
       stma: 500,
-      modeHitung: 'TAKSASI_HISTORI',
+      modeHitung: "TAKSASI_HISTORI",
       pakaiLalu: taksasiBulan1.pakaiTagihM3,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: taksasiBulan1.akumulasiTaksasiBerikutnya,
@@ -430,7 +445,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const mbMinimum = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 1452,
       stma: 3,
-      modeHitung: 'METER_BARU',
+      modeHitung: "METER_BARU",
       pakaiLalu: 12,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 12,
@@ -444,16 +459,16 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const mbNormal = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 1417,
       stma: 14,
-      modeHitung: 'METER_BARU',
+      modeHitung: "METER_BARU",
       pakaiLalu: 5,
       pemakaianMinimumM3: 5,
     });
     expect(mbNormal.selisihFisikM3).toBe(14);
     expect(mbNormal.pakaiTagihM3).toBe(14);
-    expect(mbNormal.alasanTaksir).toBe('METER_BARU_RESET');
+    expect(mbNormal.alasanTaksir).toBe("METER_BARU_RESET");
   });
 
-  test('7. Regresi Permanen M | KELEBIHAN (KREDIT_TAKSASI) Multi-Bulan, Normal STAND_TETAP, & Prioritas Mismatch Kondisi', () => {
+  test("7. Regresi Permanen M | KELEBIHAN (KREDIT_TAKSASI) Multi-Bulan, Normal STAND_TETAP, & Prioritas Mismatch Kondisi", () => {
     // Skenario Wajib: Stand sistem terbayar 1000, stand fisik awal 900 (kredit akumulasi_taksasi_m3 = 100)
     // -> Bulan 1 fisik 920 (selisih fisik 20, kredit sisa 80)
     // -> Bulan 2 fisik 1010 (selisih fisik 90, kredit 80 habis, tagih 10 m3)
@@ -463,14 +478,14 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const bulan1AwalNormal = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 900,
       stma: 920,
-      modeHitung: 'SELISIH_FISIK',
+      modeHitung: "SELISIH_FISIK",
       pakaiLalu: 25,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 100,
     });
     expect(bulan1AwalNormal.selisihFisikM3).toBe(20);
     expect(bulan1AwalNormal.isAnomaliKreditTaksasi).toBe(true);
-    expect(bulan1AwalNormal.alasanTaksir).toBe('ANOMALI_KREDIT_TAKSASI');
+    expect(bulan1AwalNormal.alasanTaksir).toBe("ANOMALI_KREDIT_TAKSASI");
 
     // Langkah 1b: Verifikator menetapkan kondisi M | KELEBIHAN (modeHitung = 'KREDIT_TAKSASI').
     // - Stand fisik 920 disimpan apa adanya (stmaEfektif = 920).
@@ -479,11 +494,11 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const bulan1KelebihanMin = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 900,
       stma: 920,
-      modeHitung: 'KREDIT_TAKSASI',
+      modeHitung: "KREDIT_TAKSASI",
       pakaiLalu: 25,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 100,
-      tagihanSaatKelebihan: 'MINIMUM',
+      tagihanSaatKelebihan: "MINIMUM",
     });
     expect(bulan1KelebihanMin.stmaEfektif).toBe(920);
     expect(bulan1KelebihanMin.selisihFisikM3).toBe(20);
@@ -491,16 +506,16 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     expect(bulan1KelebihanMin.akumulasiTaksasiBerikutnya).toBe(80);
     expect(bulan1KelebihanMin.pakaiTagihM3).toBe(5);
     expect(bulan1KelebihanMin.isAnomaliKreditTaksasi).toBe(false);
-    expect(bulan1KelebihanMin.alasanTaksir).toBe('KREDIT_TAKSASI_KELEBIHAN');
+    expect(bulan1KelebihanMin.alasanTaksir).toBe("KREDIT_TAKSASI_KELEBIHAN");
 
     const bulan1KelebihanNol = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 900,
       stma: 920,
-      modeHitung: 'KREDIT_TAKSASI',
+      modeHitung: "KREDIT_TAKSASI",
       pakaiLalu: 25,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 100,
-      tagihanSaatKelebihan: 'NOL',
+      tagihanSaatKelebihan: "NOL",
     });
     expect(bulan1KelebihanNol.pakaiTagihM3).toBe(0);
     expect(bulan1KelebihanNol.akumulasiTaksasiBerikutnya).toBe(80);
@@ -511,7 +526,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     const bulan2KreditHabis = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: bulan1KelebihanMin.stmaEfektif, // 920
       stma: 1010,
-      modeHitung: 'SELISIH_FISIK',
+      modeHitung: "SELISIH_FISIK",
       pakaiLalu: bulan1KelebihanMin.pakaiTagihM3,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: bulan1KelebihanMin.akumulasiTaksasiBerikutnya, // 80
@@ -521,13 +536,13 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     expect(bulan2KreditHabis.akumulasiTaksasiBerikutnya).toBe(0);
     expect(bulan2KreditHabis.pakaiTagihM3).toBe(10);
     expect(bulan2KreditHabis.isAnomaliKreditTaksasi).toBe(false);
-    expect(bulan2KreditHabis.alasanTaksir).toBe('REKONSILIASI_TAKSASI_LALU');
+    expect(bulan2KreditHabis.alasanTaksir).toBe("REKONSILIASI_TAKSASI_LALU");
 
     // Uji Normal dengan stma == stml -> tetap SELISIH_FISIK (dikenai minimum), namun ditandai isStandTetap = true (STAND_TETAP)
     const normalStandTetap = hitungPemakaianDanRekonsiliasiTaksasi({
       stml: 350,
       stma: 350,
-      modeHitung: 'SELISIH_FISIK',
+      modeHitung: "SELISIH_FISIK",
       pakaiLalu: 14,
       pemakaianMinimumM3: 5,
       akumulasiTaksasiM3: 0,
@@ -535,303 +550,397 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     expect(normalStandTetap.selisihFisikM3).toBe(0);
     expect(normalStandTetap.pakaiTagihM3).toBe(5);
     expect(normalStandTetap.isStandTetap).toBe(true);
-    expect(normalStandTetap.alasanTaksir).toBe('STAND_TETAP');
+    expect(normalStandTetap.alasanTaksir).toBe("STAND_TETAP");
 
     // Uji Prioritas Mismatch Kd_kel vs Nm_Kel: selalu utamakan kondisi non-Normal dan catat auditNote
     const sampleKondisi = [
-      { kodeTmss: '-', nama: 'Normal', modeHitung: 'SELISIH_FISIK' },
-      { kodeTmss: 'Z', nama: 'STAND-KONSUMEN', modeHitung: 'TAKSASI_HISTORI' },
-      { kodeTmss: '6', nama: 'BMK/BMB', modeHitung: 'TAKSASI_HISTORI' },
+      { kodeTmss: "-", nama: "Normal", modeHitung: "SELISIH_FISIK" },
+      { kodeTmss: "Z", nama: "STAND-KONSUMEN", modeHitung: "TAKSASI_HISTORI" },
+      { kodeTmss: "6", nama: "BMK/BMB", modeHitung: "TAKSASI_HISTORI" },
     ];
-    const mismatch1 = resolveKondisiCatatWithPriority('-', 'STAND-KONSUMEN', sampleKondisi);
+    const mismatch1 = resolveKondisiCatatWithPriority(
+      "-",
+      "STAND-KONSUMEN",
+      sampleKondisi,
+    );
     expect(mismatch1.isMismatch).toBe(true);
-    expect(mismatch1.kodeTmss).toBe('Z');
-    expect(mismatch1.ketCatat).toBe('STAND-KONSUMEN');
-    expect(mismatch1.modeHitung).toBe('TAKSASI_HISTORI');
-    expect(mismatch1.auditNote).toContain('[AUDIT_KONDISI]');
+    expect(mismatch1.kodeTmss).toBe("Z");
+    expect(mismatch1.ketCatat).toBe("STAND-KONSUMEN");
+    expect(mismatch1.modeHitung).toBe("TAKSASI_HISTORI");
+    expect(mismatch1.auditNote).toContain("[AUDIT_KONDISI]");
 
-    const mismatch2 = resolveKondisiCatatWithPriority('6', 'Normal', sampleKondisi);
+    const mismatch2 = resolveKondisiCatatWithPriority(
+      "6",
+      "Normal",
+      sampleKondisi,
+    );
     expect(mismatch2.isMismatch).toBe(true);
-    expect(mismatch2.kodeTmss).toBe('6');
-    expect(mismatch2.ketCatat).toBe('BMK/BMB');
-    expect(mismatch2.modeHitung).toBe('TAKSASI_HISTORI');
-    expect(mismatch2.auditNote).toContain('[AUDIT_KONDISI]');
+    expect(mismatch2.kodeTmss).toBe("6");
+    expect(mismatch2.ketCatat).toBe("BMK/BMB");
+    expect(mismatch2.modeHitung).toBe("TAKSASI_HISTORI");
+    expect(mismatch2.auditNote).toContain("[AUDIT_KONDISI]");
   });
 
-  test('8. Simulasi Jalur Produksi (202610 Seeded -> Infolang 12-Bulan & Import ProgresCater Closing 202611 -> 202612 Open) Tanpa Double-Count (Rollback)', async () => {
-    // 1. Verifikasi state awal DPM 202611: semua 8.733 pelanggan dengan akumulasi_taksasi_m3 > 0 memiliki akumulasi_perlu_verifikasi = true
-    const [initialFlagRow] = await db.execute(sql`
+  test(
+    "8. Simulasi Jalur Produksi (202610 Seeded -> Infolang 12-Bulan & Import ProgresCater Closing 202611 -> 202612 Open) Tanpa Double-Count (Rollback)",
+    async () => {
+      // 1. Verifikasi state awal DPM 202611: semua 8.733 pelanggan dengan akumulasi_taksasi_m3 > 0 memiliki akumulasi_perlu_verifikasi = true
+      const [initialFlagRow] = await db.execute(sql`
       SELECT
         count(*) FILTER (WHERE akumulasi_taksasi_m3::numeric > 0)::int AS total_akumulasi_positif,
         count(*) FILTER (WHERE akumulasi_taksasi_m3::numeric > 0 AND akumulasi_perlu_verifikasi = true)::int AS total_perlu_verifikasi
       FROM daftar_catat
       WHERE periode = '202611'
     `);
-    expect((initialFlagRow as any).total_akumulasi_positif).toBe(8733);
-    expect((initialFlagRow as any).total_perlu_verifikasi).toBe(8733);
+      expect((initialFlagRow as any).total_akumulasi_positif).toBe(8733);
+      expect((initialFlagRow as any).total_perlu_verifikasi).toBe(8733);
 
-    // 2. Uji ETL Riwayat Infolang & Jalur Import ProgresCater 202611 -> 202612 di dalam transaksi rollback
-    const tmpCsvPath = path.resolve(__dirname, '../../data/exports/.tmp-test-progrescater-202611.csv');
-    let rolledBack = false;
+      // 2. Uji ETL Riwayat Infolang & Jalur Import ProgresCater 202611 -> 202612 di dalam transaksi rollback
+      const tmpCsvPath = path.resolve(
+        __dirname,
+        "../../data/exports/.tmp-test-progrescater-202611.csv",
+      );
+      let rolledBack = false;
 
-    try {
-      await db.transaction(async (tx) => {
-        // Ambil 2 pelanggan di DPM 202611 yang punya akumulasi_taksasi_m3 > 0 dari Oktober (202610)
-        const sampleTaxedRows = await tx.execute(sql`
+      try {
+        await db.transaction(async (tx) => {
+          // Ambil 2 pelanggan di DPM 202611 yang punya akumulasi_taksasi_m3 > 0 dari Oktober (202610)
+          const sampleTaxedRows = await tx.execute(sql`
           SELECT d.nolg, d.stand_awal::numeric AS stand_awal, d.pakai_lalu::numeric AS pakai_lalu, d.akumulasi_taksasi_m3::numeric AS akum_11
           FROM daftar_catat d
           WHERE d.periode = '202611' AND d.akumulasi_taksasi_m3::numeric > 0
           ORDER BY d.nolg ASC
           LIMIT 2
         `);
-        const custA = (sampleTaxedRows as any[])[0];
-        const custB = (sampleTaxedRows as any[])[1];
-        const akumA_fromOct = Number(custA.akum_11);
-        const akumB_fromOct = Number(custB.akum_11);
+          const custA = (sampleTaxedRows as any[])[0];
+          const custB = (sampleTaxedRows as any[])[1];
+          const akumA_fromOct = Number(custA.akum_11);
+          const akumB_fromOct = Number(custB.akum_11);
 
-        // (A) Uji ETL importRiwayatInfolang untuk custA:
-        // Misal di infolang:
-        // - 202607: Baca fisik (stand 10 -> 25, pakai 15)
-        // - 202608: Taksasi DK (stand 25 -> 25, pakai 15)
-        // - 202609: Taksasi DK (stand 25 -> 25, pakai 15)
-        // Ditambah Oktober (202610) di cater_baca_meter yang sudah punya taksasi = akumA_fromOct:
-        // Maka akumulasi_taksasi_m3 di DPM 202611 untuk custA harus menjadi 15 + 15 + akumA_fromOct,
-        // dan akumulasi_perlu_verifikasi berubah menjadi FALSE karena ditemukan bacaan fisik di 202607!
-        const tSeedStart = Date.now();
-        const infolangRes = await importRiwayatInfolang(
-          {
-            targetPeriodeOpen: '202611',
-            rows: [
-              {
-                nolg: custA.nolg,
-                periode: '202607',
-                standAwal: 10,
-                standAkhir: 25,
-                pakai: 15,
-                kodeKondisi: '-',
-                namaKondisi: 'Normal',
-              },
-              {
-                nolg: custA.nolg,
-                periode: '202608',
-                standAwal: 25,
-                standAkhir: 25,
-                pakai: 15,
-                kodeKondisi: '2',
-                namaKondisi: 'DK',
-              },
-              {
-                nolg: custA.nolg,
-                periode: '202609',
-                standAwal: 25,
-                standAkhir: 25,
-                pakai: 15,
-                kodeKondisi: '2',
-                namaKondisi: 'DK',
-              },
-            ],
-          },
-          tx as any
-        );
-        const tSeedEnd = Date.now();
-        console.log(`[T8] infolang/seed duration: ${tSeedEnd - tSeedStart} ms`);
-        expect(infolangRes.updatedDpmCount).toBe(1);
-        expect(infolangRes.verifiedByPhysicalReadingCount).toBe(1);
+          // (A) Uji ETL importRiwayatInfolang untuk custA:
+          // Misal di infolang:
+          // - 202607: Baca fisik (stand 10 -> 25, pakai 15)
+          // - 202608: Taksasi DK (stand 25 -> 25, pakai 15)
+          // - 202609: Taksasi DK (stand 25 -> 25, pakai 15)
+          // Ditambah Oktober (202610) di cater_baca_meter yang sudah punya taksasi = akumA_fromOct:
+          // Maka akumulasi_taksasi_m3 di DPM 202611 untuk custA harus menjadi 15 + 15 + akumA_fromOct,
+          // dan akumulasi_perlu_verifikasi berubah menjadi FALSE karena ditemukan bacaan fisik di 202607!
+          const tSeedStart = Date.now();
+          const infolangRes = await importRiwayatInfolang(
+            {
+              targetPeriodeOpen: "202611",
+              rows: [
+                {
+                  nolg: custA.nolg,
+                  periode: "202607",
+                  standAwal: 10,
+                  standAkhir: 25,
+                  pakai: 15,
+                  kodeKondisi: "-",
+                  namaKondisi: "Normal",
+                },
+                {
+                  nolg: custA.nolg,
+                  periode: "202608",
+                  standAwal: 25,
+                  standAkhir: 25,
+                  pakai: 15,
+                  kodeKondisi: "2",
+                  namaKondisi: "DK",
+                },
+                {
+                  nolg: custA.nolg,
+                  periode: "202609",
+                  standAwal: 25,
+                  standAkhir: 25,
+                  pakai: 15,
+                  kodeKondisi: "2",
+                  namaKondisi: "DK",
+                },
+              ],
+            },
+            tx as any,
+          );
+          const tSeedEnd = Date.now();
+          console.log(
+            `[T8] infolang/seed duration: ${tSeedEnd - tSeedStart} ms`,
+          );
+          expect(infolangRes.updatedDpmCount).toBe(1);
+          expect(infolangRes.verifiedByPhysicalReadingCount).toBe(1);
 
-        const [dpmAAfterInfolang] = await tx.execute(sql`
+          const [dpmAAfterInfolang] = await tx.execute(sql`
           SELECT akumulasi_taksasi_m3::numeric AS akum, akumulasi_perlu_verifikasi AS perlu_verif
           FROM daftar_catat
           WHERE periode = '202611' AND nolg = ${custA.nolg}
         `);
-        const expectedAkumA_202611 = 15 + 15 + akumA_fromOct;
-        expect(Number((dpmAAfterInfolang as any).akum)).toBe(expectedAkumA_202611);
-        expect((dpmAAfterInfolang as any).perlu_verif).toBe(false);
+          const expectedAkumA_202611 = 15 + 15 + akumA_fromOct;
+          expect(Number((dpmAAfterInfolang as any).akum)).toBe(
+            expectedAkumA_202611,
+          );
+          expect((dpmAAfterInfolang as any).perlu_verif).toBe(false);
 
-        // (B) Uji Jalur Produksi: Import ProgresCater Closing 202611 di atas DB yang sama -> membuka 202612!
-        // Ambil baris asli custA dan custB dari ProgresCater-PW5.csv, lalu ubah ke thbl=202611:
-        // - custA di 202611 kembali ditaksir (stma == stml, pakai_drd = 10 m3, kondisi '2' / 'DK')
-        // - custB di 202611 terbaca fisik (stma = stml + 20, pakai_drd = 20 m3, kondisi ' ' / 'Normal')
-        const octCsvPath = path.resolve(__dirname, '../../data/raw/ProgresCater-PW5.csv');
-        const octLines = fs.readFileSync(octCsvPath, 'utf8').split(/\r?\n/);
-        const headerLine = octLines[0];
-        const lineA = octLines.find((l) => l.startsWith(`202610;${custA.nolg};`))!;
-        const lineB = octLines.find((l) => l.startsWith(`202610;${custB.nolg};`))!;
+          // (B) Uji Jalur Produksi: Import ProgresCater Closing 202611 di atas DB yang sama -> membuka 202612!
+          // Ambil baris asli custA dan custB dari ProgresCater-PW5.csv, lalu ubah ke thbl=202611:
+          // - custA di 202611 kembali ditaksir (stma == stml, pakai_drd = 10 m3, kondisi '2' / 'DK')
+          // - custB di 202611 terbaca fisik (stma = stml + 20, pakai_drd = 20 m3, kondisi ' ' / 'Normal')
+          const octCsvPath = path.resolve(
+            __dirname,
+            "../../data/raw/ProgresCater-PW5.csv",
+          );
+          const octLines = fs.readFileSync(octCsvPath, "utf8").split(/\r?\n/);
+          const headerLine = octLines[0];
+          const lineA = octLines.find((l) =>
+            l.startsWith(`202610;${custA.nolg};`),
+          )!;
+          const lineB = octLines.find((l) =>
+            l.startsWith(`202610;${custB.nolg};`),
+          )!;
 
-        const colsA = lineA.split(';');
-        colsA[0] = '202611';
-        colsA[8] = '2';
-        colsA[9] = 'DK';
-        colsA[10] = String(custA.stand_awal);
-        colsA[11] = String(custA.stand_awal); // stma == stml (ditaksir lagi di 202611)
-        colsA[12] = '10'; // pakai_drd 202611 = 10 m3
+          const colsA = lineA.split(";");
+          colsA[0] = "202611";
+          colsA[8] = "2";
+          colsA[9] = "DK";
+          colsA[10] = String(custA.stand_awal);
+          colsA[11] = String(custA.stand_awal); // stma == stml (ditaksir lagi di 202611)
+          colsA[12] = "10"; // pakai_drd 202611 = 10 m3
 
-        const colsB = lineB.split(';');
-        colsB[0] = '202611';
-        colsB[8] = ' ';
-        colsB[9] = 'Normal';
-        colsB[10] = String(custB.stand_awal);
-        colsB[11] = String(Number(custB.stand_awal) + 20); // stma > stml (terbaca fisik di 202611)
-        colsB[12] = '20';
+          const colsB = lineB.split(";");
+          colsB[0] = "202611";
+          colsB[8] = " ";
+          colsB[9] = "Normal";
+          colsB[10] = String(custB.stand_awal);
+          colsB[11] = String(Number(custB.stand_awal) + 20); // stma > stml (terbaca fisik di 202611)
+          colsB[12] = "20";
 
-        fs.writeFileSync(
-          tmpCsvPath,
-          [headerLine, colsA.join(';'), colsB.join(';')].join('\n') + '\n',
-          'utf8'
-        );
+          fs.writeFileSync(
+            tmpCsvPath,
+            [headerLine, colsA.join(";"), colsB.join(";")].join("\n") + "\n",
+            "utf8",
+          );
 
-        // Jalankan importProgresCater untuk file closing 202611 (Run #1)
-        const tImportStart = Date.now();
-        await importProgresCater(
-          { csvPath: tmpCsvPath, exportAuditCsv: false },
-          tx as any
-        );
-        const tImportEnd = Date.now();
-        console.log(`[T8] import progrescater duration: ${tImportEnd - tImportStart} ms`);
+          // Jalankan importProgresCater untuk file closing 202611 (Run #1)
+          const tImportStart = Date.now();
+          await importProgresCater(
+            { csvPath: tmpCsvPath, exportAuditCsv: false },
+            tx as any,
+          );
+          const tImportEnd = Date.now();
+          console.log(
+            `[T8] import progrescater duration: ${tImportEnd - tImportStart} ms`,
+          );
 
-        // Periksa bagaimana akumulasi_taksasi_m3 di 202611 dan 202612 diperlakukan:
-        // 1. daftar_catat(202611).akumulasi_taksasi_m3 TIDAK ditimpa menjadi 0 (tetap menyimpan kredit yang masuk ke 202611)
-        const [dpmA_202611_after] = await tx.execute(sql`
+          // Periksa bagaimana akumulasi_taksasi_m3 di 202611 dan 202612 diperlakukan:
+          // 1. daftar_catat(202611).akumulasi_taksasi_m3 TIDAK ditimpa menjadi 0 (tetap menyimpan kredit yang masuk ke 202611)
+          const [dpmA_202611_after] = await tx.execute(sql`
           SELECT akumulasi_taksasi_m3::numeric AS akum FROM daftar_catat WHERE periode = '202611' AND nolg = ${custA.nolg}
         `);
-        expect(Number((dpmA_202611_after as any).akum)).toBe(expectedAkumA_202611);
+          expect(Number((dpmA_202611_after as any).akum)).toBe(
+            expectedAkumA_202611,
+          );
 
-        // 2. Di DPM 202612 yang baru terbuka:
-        //    - custA (ditaksir lagi 10 m3 di 202611) -> akumulasi_taksasi_m3(202612) = expectedAkumA_202611 + 10 (dijumlahkan kumulatif!)
-        //    - custB (terbaca fisik di 202611) -> akumulasi_taksasi_m3(202612) = 0 (di-reset ke 0!) dan akumulasi_perlu_verifikasi = false
-        const [dpmA_202612_run1] = await tx.execute(sql`
+          // 2. Di DPM 202612 yang baru terbuka:
+          //    - custA (ditaksir lagi 10 m3 di 202611) -> akumulasi_taksasi_m3(202612) = expectedAkumA_202611 + 10 (dijumlahkan kumulatif!)
+          //    - custB (terbaca fisik di 202611) -> akumulasi_taksasi_m3(202612) = 0 (di-reset ke 0!) dan akumulasi_perlu_verifikasi = false
+          const [dpmA_202612_run1] = await tx.execute(sql`
           SELECT akumulasi_taksasi_m3::numeric AS akum, akumulasi_perlu_verifikasi AS perlu_verif
           FROM daftar_catat WHERE periode = '202612' AND nolg = ${custA.nolg}
         `);
-        const [dpmB_202612_run1] = await tx.execute(sql`
+          const [dpmB_202612_run1] = await tx.execute(sql`
           SELECT akumulasi_taksasi_m3::numeric AS akum, akumulasi_perlu_verifikasi AS perlu_verif, stand_awal::numeric AS st_awal
           FROM daftar_catat WHERE periode = '202612' AND nolg = ${custB.nolg}
         `);
-        expect(Number((dpmA_202612_run1 as any).akum)).toBe(expectedAkumA_202611 + 10);
-        expect((dpmA_202612_run1 as any).perlu_verif).toBe(false);
-        expect(Number((dpmB_202612_run1 as any).akum)).toBe(0);
-        expect((dpmB_202612_run1 as any).perlu_verif).toBe(false);
-        expect(Number((dpmB_202612_run1 as any).st_awal)).toBe(Number(custB.stand_awal) + 20);
+          expect(Number((dpmA_202612_run1 as any).akum)).toBe(
+            expectedAkumA_202611 + 10,
+          );
+          expect((dpmA_202612_run1 as any).perlu_verif).toBe(false);
+          expect(Number((dpmB_202612_run1 as any).akum)).toBe(0);
+          expect((dpmB_202612_run1 as any).perlu_verif).toBe(false);
+          expect(Number((dpmB_202612_run1 as any).st_awal)).toBe(
+            Number(custB.stand_awal) + 20,
+          );
 
-        // 3. Uji Idempotensi (Run #2): Jalankan carryForwardPeriode('202611', '202612') sekali lagi
-        //    untuk membuktikan akumulasi_taksasi_m3 TIDAK PERNAH TERHITUNG DUA KALI (no double-counting)!
-        const tCarryStart = Date.now();
-        await carryForwardPeriode(
-          { periodeLalu: '202611', periodeBaru: '202612' },
-          tx as any
-        );
-        const tCarryEnd = Date.now();
-        console.log(`[T8] carryForward duration: ${tCarryEnd - tCarryStart} ms`);
-        const [dpmA_202612_run2] = await tx.execute(sql`
+          // 3. Uji Idempotensi (Run #2): Jalankan carryForwardPeriode('202611', '202612') sekali lagi
+          //    untuk membuktikan akumulasi_taksasi_m3 TIDAK PERNAH TERHITUNG DUA KALI (no double-counting)!
+          const tCarryStart = Date.now();
+          await carryForwardPeriode(
+            { periodeLalu: "202611", periodeBaru: "202612" },
+            tx as any,
+          );
+          const tCarryEnd = Date.now();
+          console.log(
+            `[T8] carryForward duration: ${tCarryEnd - tCarryStart} ms`,
+          );
+          const [dpmA_202612_run2] = await tx.execute(sql`
           SELECT akumulasi_taksasi_m3::numeric AS akum FROM daftar_catat WHERE periode = '202612' AND nolg = ${custA.nolg}
         `);
-        expect(Number((dpmA_202612_run2 as any).akum)).toBe(expectedAkumA_202611 + 10);
+          expect(Number((dpmA_202612_run2 as any).akum)).toBe(
+            expectedAkumA_202611 + 10,
+          );
 
-        throw new Error('ROLLBACK_GO_LIVE_PATH_TEST');
-      });
-    } catch (e: any) {
-      if (e.message === 'ROLLBACK_GO_LIVE_PATH_TEST') {
-        rolledBack = true;
-      } else {
-        throw e;
+          throw new Error("ROLLBACK_GO_LIVE_PATH_TEST");
+        });
+      } catch (e: any) {
+        if (e.message === "ROLLBACK_GO_LIVE_PATH_TEST") {
+          rolledBack = true;
+        } else {
+          throw e;
+        }
+      } finally {
+        if (fs.existsSync(tmpCsvPath)) {
+          fs.unlinkSync(tmpCsvPath);
+        }
       }
-    } finally {
-      if (fs.existsSync(tmpCsvPath)) {
-        fs.unlinkSync(tmpCsvPath);
-      }
-    }
-    expect(rolledBack).toBe(true);
-  }, { timeout: 120_000 });
+      expect(rolledBack).toBe(true);
+    },
+    { timeout: 120_000 },
+  );
 
-  test('9. ETL infolang: pemetaan konfigurasi bekerja untuk format file berbeda (delimiter, nama header, indeks kolom)', async () => {
-    const dir = path.resolve(__dirname, '../../data/exports');
-    fs.mkdirSync(dir, { recursive: true });
-    const fA = path.join(dir, '.tmp-infolang-A.csv');
-    const fB = path.join(dir, '.tmp-infolang-B.csv');
-    const fC = path.join(dir, '.tmp-infolang-C.csv');
-    let rolledBack = false;
-    try {
-      await db.transaction(async (tx) => {
-        const [c] = await tx.execute(sql`
+  test(
+    "9. ETL infolang: pemetaan konfigurasi bekerja untuk format file berbeda (delimiter, nama header, indeks kolom)",
+    async () => {
+      const dir = path.resolve(__dirname, "../../data/exports");
+      fs.mkdirSync(dir, { recursive: true });
+      const fA = path.join(dir, ".tmp-infolang-A.csv");
+      const fB = path.join(dir, ".tmp-infolang-B.csv");
+      const fC = path.join(dir, ".tmp-infolang-C.csv");
+      let rolledBack = false;
+      try {
+        await db.transaction(async (tx) => {
+          const [c] = await tx.execute(sql`
           SELECT nolg FROM daftar_catat WHERE periode = '202611' AND akumulasi_perlu_verifikasi = true ORDER BY nolg LIMIT 1
         `);
-        const nolg = (c as any).nolg as string;
-        const [base] = await tx.execute(sql`SELECT akumulasi_taksasi_m3::numeric AS a FROM daftar_catat WHERE periode='202611' AND nolg=${nolg}`);
-        const akum202610 = Number((base as any).a);
+          const nolg = (c as any).nolg as string;
+          const [base] = await tx.execute(
+            sql`SELECT akumulasi_taksasi_m3::numeric AS a FROM daftar_catat WHERE periode='202611' AND nolg=${nolg}`,
+          );
+          const akum202610 = Number((base as any).a);
 
-        // Format A: delimiter ';' dengan header default
-        fs.writeFileSync(fA, [
-          'nolg;thbl;stml;stma;pakai;tmss;ketcatat',
-          `${nolg};202608;10;25;15;-;Normal`,
-          `${nolg};202609;25;25;12;2;DK`,
-        ].join('\n'));
-        // Format B: delimiter ',' dengan nama header berbeda + tanda kutip
-        fs.writeFileSync(fB, [
-          '"No Pel","Periode","Stand Awal","Stand Akhir","Konsumsi","Kode","Kondisi"',
-          `"${nolg}","202608","10","25","15","-","Normal"`,
-          `"${nolg}","202609","25","25","12","2","DK"`,
-        ].join('\n'));
-        // Format C: delimiter '|' tanpa header, kolom lewat indeks, urutan berbeda
-        fs.writeFileSync(fC, [
-          `202608|${nolg}|15|25|10|-|Normal`,
-          `202609|${nolg}|12|25|25|2|DK`,
-        ].join('\n'));
+          // Format A: delimiter ';' dengan header default
+          fs.writeFileSync(
+            fA,
+            [
+              "nolg;thbl;stml;stma;pakai;tmss;ketcatat",
+              `${nolg};202608;10;25;15;-;Normal`,
+              `${nolg};202609;25;25;12;2;DK`,
+            ].join("\n"),
+          );
+          // Format B: delimiter ',' dengan nama header berbeda + tanda kutip
+          fs.writeFileSync(
+            fB,
+            [
+              '"No Pel","Periode","Stand Awal","Stand Akhir","Konsumsi","Kode","Kondisi"',
+              `"${nolg}","202608","10","25","15","-","Normal"`,
+              `"${nolg}","202609","25","25","12","2","DK"`,
+            ].join("\n"),
+          );
+          // Format C: delimiter '|' tanpa header, kolom lewat indeks, urutan berbeda
+          fs.writeFileSync(
+            fC,
+            [
+              `202608|${nolg}|15|25|10|-|Normal`,
+              `202609|${nolg}|12|25|25|2|DK`,
+            ].join("\n"),
+          );
 
-        const hasil: Array<{ akum: number; perlu: boolean }> = [];
-        const jalankan = async (opts: Parameters<typeof importRiwayatInfolang>[0]) => {
-          await tx.execute(sql`UPDATE daftar_catat SET akumulasi_taksasi_m3 = ${akum202610}, akumulasi_perlu_verifikasi = true WHERE periode='202611' AND nolg=${nolg}`);
-          const res = await importRiwayatInfolang({ targetPeriodeOpen: '202611', ...opts }, tx as any);
-          expect(res.updatedDpmCount).toBe(1);
-          expect(res.flagTurun).toBe(1); // tanda turun karena bacaan fisik 202608 ditemukan
-          const [r] = await tx.execute(sql`SELECT akumulasi_taksasi_m3::numeric AS a, akumulasi_perlu_verifikasi AS p FROM daftar_catat WHERE periode='202611' AND nolg=${nolg}`);
-          hasil.push({ akum: Number((r as any).a), perlu: (r as any).p });
-        };
+          const hasil: Array<{ akum: number; perlu: boolean }> = [];
+          const jalankan = async (
+            opts: Parameters<typeof importRiwayatInfolang>[0],
+          ) => {
+            await tx.execute(
+              sql`UPDATE daftar_catat SET akumulasi_taksasi_m3 = ${akum202610}, akumulasi_perlu_verifikasi = true WHERE periode='202611' AND nolg=${nolg}`,
+            );
+            const res = await importRiwayatInfolang(
+              { targetPeriodeOpen: "202611", ...opts },
+              tx as any,
+            );
+            expect(res.updatedDpmCount).toBe(1);
+            expect(res.flagTurun).toBe(1); // tanda turun karena bacaan fisik 202608 ditemukan
+            const [r] = await tx.execute(
+              sql`SELECT akumulasi_taksasi_m3::numeric AS a, akumulasi_perlu_verifikasi AS p FROM daftar_catat WHERE periode='202611' AND nolg=${nolg}`,
+            );
+            hasil.push({ akum: Number((r as any).a), perlu: (r as any).p });
+          };
 
-        await jalankan({ csvPath: fA }); // default mapping
-        await jalankan({
-          csvPath: fB,
-          columnMapping: { delimiter: ',', nolg: 'No Pel', periode: 'Periode', standAwal: 'Stand Awal', standAkhir: 'Stand Akhir', pakai: 'Konsumsi', kodeKondisi: 'Kode', namaKondisi: 'Kondisi' },
+          await jalankan({ csvPath: fA }); // default mapping
+          await jalankan({
+            csvPath: fB,
+            columnMapping: {
+              delimiter: ",",
+              nolg: "No Pel",
+              periode: "Periode",
+              standAwal: "Stand Awal",
+              standAkhir: "Stand Akhir",
+              pakai: "Konsumsi",
+              kodeKondisi: "Kode",
+              namaKondisi: "Kondisi",
+            },
+          });
+          await jalankan({
+            csvPath: fC,
+            columnMapping: {
+              delimiter: "|",
+              hasHeader: false,
+              periode: 0,
+              nolg: 1,
+              pakai: 2,
+              standAkhir: 3,
+              standAwal: 4,
+              kodeKondisi: 5,
+              namaKondisi: 6,
+            },
+          });
+          // Format C: kolom 2=pakai, 3=stand akhir, 4=stand awal. Baris 202608: awal=10, akhir=25; 202609: awal=25, akhir=25
+
+          // Hasil dari 3 format wajib identik: taksasi 202609 (12) + akumulasi Oktober
+          for (const h of hasil) {
+            expect(h.akum).toBe(12 + akum202610);
+            expect(h.perlu).toBe(false);
+          }
+          throw new Error("ROLLBACK_INFOLANG_FORMAT");
         });
-        await jalankan({
-          csvPath: fC,
-          columnMapping: { delimiter: '|', hasHeader: false, periode: 0, nolg: 1, pakai: 2, standAkhir: 3, standAwal: 4, kodeKondisi: 5, namaKondisi: 6 },
-        });
-        // Format C: kolom 2=pakai, 3=stand akhir, 4=stand awal. Baris 202608: awal=10, akhir=25; 202609: awal=25, akhir=25
+      } catch (e: any) {
+        if (e.message === "ROLLBACK_INFOLANG_FORMAT") rolledBack = true;
+        else throw e;
+      } finally {
+        for (const f of [fA, fB, fC]) if (fs.existsSync(f)) fs.unlinkSync(f);
+      }
+      expect(rolledBack).toBe(true);
+    },
+    { timeout: 120_000 },
+  );
 
-        // Hasil dari 3 format wajib identik: taksasi 202609 (12) + akumulasi Oktober
-        for (const h of hasil) {
-          expect(h.akum).toBe(12 + akum202610);
-          expect(h.perlu).toBe(false);
-        }
-        throw new Error('ROLLBACK_INFOLANG_FORMAT');
-      });
-    } catch (e: any) {
-      if (e.message === 'ROLLBACK_INFOLANG_FORMAT') rolledBack = true;
-      else throw e;
-    } finally {
-      for (const f of [fA, fB, fC]) if (fs.existsSync(f)) fs.unlinkSync(f);
-    }
-    expect(rolledBack).toBe(true);
-  }, { timeout: 120_000 });
-
-  test('10. MB: stand angkat menyusul SEBELUM closing (masuk bulan yang sama) vs SESUDAH closing (koreksi bulan kejadian, bukan bulan berikutnya)', async () => {
+  test("10. MB: stand angkat menyusul SEBELUM closing (masuk bulan yang sama) vs SESUDAH closing (koreksi bulan kejadian, bukan bulan berikutnya)", async () => {
     // --- SEBELUM closing: stand angkat diketahui -> pemakaian gabungan masuk bulan kejadian ---
     // stml=1000, angkat=1008 (meter lama 8 m3), pasang=0, baca baru=4 -> gabungan 12 m3
     const sebelum = hitungPemakaianDanRekonsiliasiTaksasi({
-      stml: 1000, stma: 4, modeHitung: 'METER_BARU', pakaiLalu: 10,
-      pemakaianMinimumM3: 5, standAngkat: 1008, standPasang: 0,
+      stml: 1000,
+      stma: 4,
+      modeHitung: "METER_BARU",
+      pakaiLalu: 10,
+      pemakaianMinimumM3: 5,
+      standAngkat: 1008,
+      standPasang: 0,
     });
     expect(sebelum.selisihFisikM3).toBe(12);
     expect(sebelum.pakaiTagihM3).toBe(12);
     // Tanpa stand angkat (belum menyusul): hanya meter baru, minimum 5 -> tidak memblokir
     const tanpaAngkat = hitungPemakaianDanRekonsiliasiTaksasi({
-      stml: 1000, stma: 4, modeHitung: 'METER_BARU', pakaiLalu: 10, pemakaianMinimumM3: 5,
+      stml: 1000,
+      stma: 4,
+      modeHitung: "METER_BARU",
+      pakaiLalu: 10,
+      pemakaianMinimumM3: 5,
     });
     expect(tanpaAngkat.pakaiTagihM3).toBe(5);
 
     // --- SESUDAH closing: yang terbit 5 m3, seharusnya 12 -> koreksi +7 atas BULAN KEJADIAN ---
     const koreksi = hitungKoreksiMbSusulan({
-      standLalu: 1000, standAngkat: 1008, standPasang: 0, standBacaBaru: 4,
-      pemakaianMinimumM3: 5, pakaiTagihTerbit: tanpaAngkat.pakaiTagihM3,
+      standLalu: 1000,
+      standAngkat: 1008,
+      standPasang: 0,
+      standBacaBaru: 4,
+      pemakaianMinimumM3: 5,
+      pakaiTagihTerbit: tanpaAngkat.pakaiTagihM3,
     });
     expect(koreksi.isValid).toBe(true);
     expect(koreksi.pemakaianGabunganM3).toBe(12);
@@ -839,44 +948,84 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     expect(koreksi.selisihM3).toBe(7);
     // Bulan berikutnya TIDAK menerima tambahan: stml bulan depan = stma bulan kejadian (4)
     const bulanDepan = hitungPemakaianDanRekonsiliasiTaksasi({
-      stml: 4, stma: 9, modeHitung: 'SELISIH_FISIK', pakaiLalu: 5, pemakaianMinimumM3: 5,
+      stml: 4,
+      stma: 9,
+      modeHitung: "SELISIH_FISIK",
+      pakaiLalu: 5,
+      pemakaianMinimumM3: 5,
     });
     expect(bulanDepan.pakaiTagihM3).toBe(5);
     // Kasus gabungan di bawah minimum & sudah terbit minimum -> tidak ada koreksi
     const nol = hitungKoreksiMbSusulan({
-      standLalu: 1000, standAngkat: 1001, standPasang: 0, standBacaBaru: 2,
-      pemakaianMinimumM3: 5, pakaiTagihTerbit: 5,
+      standLalu: 1000,
+      standAngkat: 1001,
+      standPasang: 0,
+      standBacaBaru: 2,
+      pemakaianMinimumM3: 5,
+      pakaiTagihTerbit: 5,
     });
     expect(nol.selisihM3).toBe(0);
     // stand angkat tidak valid ditolak
-    expect(hitungKoreksiMbSusulan({ standLalu: 1000, standAngkat: 990, standPasang: 0, standBacaBaru: 4, pemakaianMinimumM3: 5, pakaiTagihTerbit: 5 }).isValid).toBe(false);
-    expect(hitungKoreksiMbSusulan({ standLalu: 1000, standAngkat: 990, standPasang: 0, standBacaBaru: 4, pemakaianMinimumM3: 5, pakaiTagihTerbit: 5 }).isValid).toBe(false);
-    expect(hitungKubikasiGantiMeter({ standLalu: 1000, standAngkat: 1008, standPasang: 0, standBacaBaru: 4 }).totalPemakaianM3).toBe(12);
+    expect(
+      hitungKoreksiMbSusulan({
+        standLalu: 1000,
+        standAngkat: 990,
+        standPasang: 0,
+        standBacaBaru: 4,
+        pemakaianMinimumM3: 5,
+        pakaiTagihTerbit: 5,
+      }).isValid,
+    ).toBe(false);
+    expect(
+      hitungKoreksiMbSusulan({
+        standLalu: 1000,
+        standAngkat: 990,
+        standPasang: 0,
+        standBacaBaru: 4,
+        pemakaianMinimumM3: 5,
+        pakaiTagihTerbit: 5,
+      }).isValid,
+    ).toBe(false);
+    expect(
+      hitungKubikasiGantiMeter({
+        standLalu: 1000,
+        standAngkat: 1008,
+        standPasang: 0,
+        standBacaBaru: 4,
+      }).totalPemakaianM3,
+    ).toBe(12);
 
     // --- Skema: DATA_METER_BELUM_LENGKAP boleh NULL; APPROVED wajib lengkap (CHECK constraint) ---
     let rolledBack = false;
     try {
       await db.transaction(async (tx) => {
-        const [c] = await tx.execute(sql`SELECT nolg FROM pelanggan ORDER BY nolg LIMIT 1`);
+        const [c] = await tx.execute(
+          sql`SELECT nolg FROM pelanggan ORDER BY nolg LIMIT 1`,
+        );
         const nolg = (c as any).nolg as string;
         await tx.execute(sql`
           INSERT INTO water_meter_mutasi (id, nolg, periode, alasan, no_meter_lama, stand_angkat, no_meter_baru, status_verifikasi)
           VALUES ('mutasi-test-draft', ${nolg}, 202611, 'LAINNYA', 'LAMA-1', NULL, NULL, 'DATA_METER_BELUM_LENGKAP')
         `);
-        const [d] = await tx.execute(sql`SELECT status_verifikasi FROM water_meter_mutasi WHERE id = 'mutasi-test-draft'`);
-        expect((d as any).status_verifikasi).toBe('DATA_METER_BELUM_LENGKAP');
+        const [d] = await tx.execute(
+          sql`SELECT status_verifikasi FROM water_meter_mutasi WHERE id = 'mutasi-test-draft'`,
+        );
+        expect((d as any).status_verifikasi).toBe("DATA_METER_BELUM_LENGKAP");
         let ditolak = false;
         try {
-          await tx.execute(sql`UPDATE water_meter_mutasi SET status_verifikasi = 'APPROVED' WHERE id = 'mutasi-test-draft'`);
+          await tx.execute(
+            sql`UPDATE water_meter_mutasi SET status_verifikasi = 'APPROVED' WHERE id = 'mutasi-test-draft'`,
+          );
         } catch {
           ditolak = true;
         }
         expect(ditolak).toBe(true);
-        throw new Error('ROLLBACK_MB_SCHEMA');
+        throw new Error("ROLLBACK_MB_SCHEMA");
       });
     } catch (e: any) {
-      if (e.message === 'ROLLBACK_MB_SCHEMA') rolledBack = true;
+      if (e.message === "ROLLBACK_MB_SCHEMA") rolledBack = true;
       else throw e;
     }
     expect(rolledBack).toBe(true);
-  });});
+  });
+});
