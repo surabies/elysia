@@ -364,217 +364,255 @@ export function ImportLapDataMeterView() {
               size="sm"
               onClick={handleLoadSample}
               disabled={isSubmitting || isLoadingSample}
+              className="h-8 text-label-12 cursor-pointer"
             >
               <Sparkles className="mr-1.5 size-3.5 text-amber-500" />
               {isLoadingSample ? "Memuat..." : "Muat Contoh LapDataMeter"}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting}>
+            <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting} className="h-8 text-label-12 cursor-pointer">
               <RefreshCw className="mr-1.5 size-3.5" />
               Reset
             </Button>
             <label className="cursor-pointer">
               <input type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
                 <span>
                   <Upload className="mr-1.5 size-3.5 text-primary" />
                   Unggah CSV LapDataMeter
                 </span>
               </Button>
             </label>
-            <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0}>
-              <Database className="mr-1.5 size-4" />
-              {isSubmitting ? "Memproses Ingestion..." : `Import ${items.length} Data ke cater_baca_meter`}
+            <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0} className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+              <Database className="mr-1.5 size-3.5" />
+              {isSubmitting ? "Memproses..." : `Import ${items.length} Data ke cater_baca_meter`}
             </Button>
           </div>
         }
       />
 
       {/* 2. Kartu Ringkasan Metrik */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total Baris Meter</CardTitle>
-            <Layers className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono">{items.length.toLocaleString("id-ID")}</div>
-            <p className="text-[11px] text-muted-foreground truncate">{fileName || "Belum ada berkas dimuat"}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total Pemakaian</CardTitle>
-            <Gauge className="size-4 text-sky-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-sky-600 dark:text-sky-400">
-              {totalKubikasi.toLocaleString("id-ID")} <span className="text-xs font-normal text-muted-foreground">m³</span>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Total Baris Meter</span>
+              <Layers className="size-4 text-primary" />
             </div>
-            <p className="text-[11px] text-muted-foreground">Akumulasi volume air terbaca</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Status Kondisi</CardTitle>
-            <CheckCircle2 className="size-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-              {terbacaNormalCount.toLocaleString("id-ID")}
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+                {items.length.toLocaleString("id-ID")}
+              </span>
+              <span className="text-label-11 text-muted-foreground">Baris</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Normal terbaca &bull; <span className="text-amber-500 font-medium">{kendalaCount} kendala/akses</span>
-            </p>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-primary" />
+              <span>{fileName || "Belum ada berkas dimuat"}</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Periode Pembacaan</CardTitle>
-            <Users className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-foreground">{activePeriode}</div>
-            <p className="text-[11px] text-muted-foreground">Format baku YYYYMM (THBL)</p>
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-sky-500/30">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Total Pemakaian</span>
+              <Gauge className="size-4 text-sky-500" />
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400 font-mono">
+                {totalKubikasi.toLocaleString("id-ID")}
+              </span>
+              <span className="text-label-11 text-muted-foreground">m³</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-sky-500" />
+              <span>Akumulasi volume air terbaca</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-emerald-500/30">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Status Kondisi</span>
+              <CheckCircle2 className="size-4 text-emerald-500" />
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono">
+                {terbacaNormalCount.toLocaleString("id-ID")}
+              </span>
+              <span className="text-label-11 text-muted-foreground">Normal</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
+              <span>{kendalaCount} kendala/akses</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-indigo-500/30 col-span-2 sm:col-span-1">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Periode Pembacaan</span>
+              <Users className="size-4 text-indigo-500" />
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400 font-mono">
+                {activePeriode}
+              </span>
+              <span className="text-label-11 text-muted-foreground">THBL</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-indigo-500" />
+              <span>Format baku YYYYMM</span>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* 3. Notifikasi Hasil Import */}
       {resultStats && (
-        <Card className="border-emerald-500/30 bg-emerald-500/5">
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="size-5 text-emerald-500" />
-              <div>
-                <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+        <div className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-emerald-800 dark:text-emerald-200">
                   Proses Import Selesai dengan Sukses!
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Total {resultStats.total} baris data diproses &bull; {resultStats.sukses} berhasil &bull;{" "}
-                  {resultStats.created ?? 0} transaksi baru dibuat &bull; {resultStats.updated ?? 0} data stand
-                  diperbarui &bull; {resultStats.gagal} gagal.
-                </p>
+                </span>
+                <Badge className="bg-emerald-600 text-white font-mono text-[10px]">
+                  Batch Selesai
+                </Badge>
               </div>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                Total {resultStats.total} baris data diproses &bull; {resultStats.sukses} berhasil &bull;{" "}
+                {resultStats.created ?? 0} transaksi baru dibuat &bull; {resultStats.updated ?? 0} data stand
+                diperbarui &bull; {resultStats.gagal} gagal.
+              </p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             <Badge variant="outline" className="border-emerald-500 text-emerald-600 font-mono text-xs w-fit">
               cater_baca_meter: SYNC OK
             </Badge>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* 4. Tabel Preview Pemetaan */}
-      <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4">
-          <div>
-            <CardTitle className="text-base font-semibold">
-              Preview Pemetaan Kolom LapDataMeter &rarr; cater_baca_meter
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Menampilkan {Math.min(filteredItems.length, 50)} dari {items.length} data baris hasil parsing.
-            </CardDescription>
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 text-label-12">
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground">
+              Menampilkan{" "}
+              <strong className="font-mono text-foreground font-semibold">
+                {Math.min(filteredItems.length, 50)}
+              </strong>{" "}
+              / {items.length} baris
+            </span>
+            <span>·</span>
+            <span className="text-muted-foreground">
+              Hasil parsing CSV
+            </span>
           </div>
+
           <div className="flex items-center gap-2">
             <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
               <Input
                 placeholder="Cari No Pel / Nama / Rute..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 text-xs h-9"
+                className="h-8 pl-8 text-copy-13"
               />
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto border-t">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 text-muted-foreground border-b font-medium">
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted/50 text-muted-foreground border-b font-medium">
+              <tr>
+                <th className="py-2.5 px-3">Periode</th>
+                <th className="py-2.5 px-3">No. Pelanggan (NOLG)</th>
+                <th className="py-2.5 px-3">Nama Pelanggan</th>
+                <th className="py-2.5 px-3">Rute</th>
+                <th className="py-2.5 px-3 text-right">Stand Awal (STML)</th>
+                <th className="py-2.5 px-3 text-right">Stand Akhir (STMA)</th>
+                <th className="py-2.5 px-3 text-right">Pakai (m³)</th>
+                <th className="py-2.5 px-3 text-right">Pakai Lalu</th>
+                <th className="py-2.5 px-3">Kondisi / TMSS</th>
+                <th className="py-2.5 px-3">Petugas</th>
+                <th className="py-2.5 px-3">Tgl Catat</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {items.length === 0 ? (
                 <tr>
-                  <th className="py-2.5 px-3">Periode</th>
-                  <th className="py-2.5 px-3">No. Pelanggan (NOLG)</th>
-                  <th className="py-2.5 px-3">Nama Pelanggan</th>
-                  <th className="py-2.5 px-3">Rute</th>
-                  <th className="py-2.5 px-3 text-right">Stand Awal (STML)</th>
-                  <th className="py-2.5 px-3 text-right">Stand Akhir (STMA)</th>
-                  <th className="py-2.5 px-3 text-right">Pakai (m³)</th>
-                  <th className="py-2.5 px-3 text-right">Pakai Lalu</th>
-                  <th className="py-2.5 px-3">Kondisi / TMSS</th>
-                  <th className="py-2.5 px-3">Petugas</th>
-                  <th className="py-2.5 px-3">Tgl Catat</th>
+                  <td colSpan={11} className="py-12 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <FileSpreadsheet className="size-8 text-muted-foreground/40" />
+                      <p className="font-medium text-foreground">Belum ada data LapDataMeter yang dimuat</p>
+                      <p className="text-xs">
+                        Klik <strong>&ldquo;Muat Contoh LapDataMeter&rdquo;</strong> atau unggah berkas CSV Anda.
+                      </p>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="py-12 text-center text-muted-foreground">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <FileSpreadsheet className="size-8 text-muted-foreground/40" />
-                        <p className="font-medium text-foreground">Belum ada data LapDataMeter yang dimuat</p>
-                        <p className="text-xs">
-                          Klik <strong>&ldquo;Muat Contoh LapDataMeter&rdquo;</strong> atau unggah berkas CSV Anda.
-                        </p>
-                      </div>
+              ) : filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="py-8 text-center text-muted-foreground">
+                    Tidak ada data yang sesuai dengan pencarian &ldquo;{searchQuery}&rdquo;.
+                  </td>
+                </tr>
+              ) : (
+                filteredItems.map((row, idx) => (
+                  <tr key={`${row.nolg}-${idx}`} className="transition-colors hover:bg-muted/30 font-mono">
+                    <td className="py-2 px-3 text-foreground font-semibold">{row.thbl}</td>
+                    <td className="py-2 px-3 text-primary font-semibold">{row.nolg}</td>
+                    <td className="py-2 px-3 font-sans truncate max-w-[160px] text-foreground font-medium">
+                      {row.nama || "-"}
+                    </td>
+                    <td className="py-2 px-3">
+                      <Badge variant="secondary" className="text-[10px] px-1 py-0 font-mono">
+                        {row.ruteKode || "-"}
+                      </Badge>
+                    </td>
+                    <td className="py-2 px-3 text-right">{row.stml.toLocaleString("id-ID")}</td>
+                    <td className="py-2 px-3 text-right font-semibold text-foreground">
+                      {row.stma.toLocaleString("id-ID")}
+                    </td>
+                    <td className="py-2 px-3 text-right font-semibold text-sky-600 dark:text-sky-400">
+                      {row.pakaiM3.toLocaleString("id-ID")}
+                    </td>
+                    <td className="py-2 px-3 text-right text-muted-foreground">
+                      {row.pakaiLalu !== undefined ? row.pakaiLalu.toLocaleString("id-ID") : "-"}
+                    </td>
+                    <td className="py-2 px-3 font-sans">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className={`size-1.5 rounded-full ${
+                            row.ketCatat.toLowerCase().includes("normal")
+                              ? "bg-emerald-500"
+                              : "bg-amber-500"
+                          }`}
+                        />
+                        <span className="truncate max-w-[120px] text-[11px]">{row.ketCatat}</span>
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 font-sans text-[11px] text-muted-foreground">
+                      {row.petugasId || row.namaPetugas || "-"}
+                    </td>
+                    <td className="py-2 px-3 text-[10px] text-muted-foreground truncate max-w-[100px]">
+                      {row.tglCatat?.slice(0, 10) || "-"}
                     </td>
                   </tr>
-                ) : filteredItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="py-8 text-center text-muted-foreground">
-                      Tidak ada data yang sesuai dengan pencarian &ldquo;{searchQuery}&rdquo;.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredItems.map((row, idx) => (
-                    <tr key={`${row.nolg}-${idx}`} className="hover:bg-muted/30 transition-colors font-mono">
-                      <td className="py-2 px-3 text-foreground font-semibold">{row.thbl}</td>
-                      <td className="py-2 px-3 text-primary font-semibold">{row.nolg}</td>
-                      <td className="py-2 px-3 font-sans truncate max-w-[160px] text-foreground font-medium">
-                        {row.nama || "-"}
-                      </td>
-                      <td className="py-2 px-3">
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-mono">
-                          {row.ruteKode || "-"}
-                        </Badge>
-                      </td>
-                      <td className="py-2 px-3 text-right">{row.stml.toLocaleString("id-ID")}</td>
-                      <td className="py-2 px-3 text-right font-semibold text-foreground">
-                        {row.stma.toLocaleString("id-ID")}
-                      </td>
-                      <td className="py-2 px-3 text-right font-semibold text-sky-600 dark:text-sky-400">
-                        {row.pakaiM3.toLocaleString("id-ID")}
-                      </td>
-                      <td className="py-2 px-3 text-right text-muted-foreground">
-                        {row.pakaiLalu !== undefined ? row.pakaiLalu.toLocaleString("id-ID") : "-"}
-                      </td>
-                      <td className="py-2 px-3 font-sans">
-                        <span className="inline-flex items-center gap-1.5">
-                          <span
-                            className={`size-1.5 rounded-full ${
-                              row.ketCatat.toLowerCase().includes("normal")
-                                ? "bg-emerald-500"
-                                : "bg-amber-500"
-                            }`}
-                          />
-                          <span className="truncate max-w-[120px] text-[11px]">{row.ketCatat}</span>
-                        </span>
-                      </td>
-                      <td className="py-2 px-3 font-sans text-[11px] text-muted-foreground">
-                        {row.petugasId || row.namaPetugas || "-"}
-                      </td>
-                      <td className="py-2 px-3 text-[10px] text-muted-foreground truncate max-w-[100px]">
-                        {row.tglCatat?.slice(0, 10) || "-"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

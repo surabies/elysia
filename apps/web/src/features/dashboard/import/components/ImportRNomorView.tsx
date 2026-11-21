@@ -133,6 +133,7 @@ export function ImportRNomorView() {
               size="sm"
               onClick={handleReset}
               disabled={isSubmitting}
+              className="h-8 text-label-12 cursor-pointer"
             >
               <RefreshCw className="mr-1.5 size-3.5" />
               Reset Contoh
@@ -142,6 +143,7 @@ export function ImportRNomorView() {
               size="sm"
               onClick={handleImport}
               disabled={isSubmitting || items.length === 0}
+              className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
             >
               <ShieldAlert className="mr-1.5 size-4" />
               {isSubmitting ? "Memproses..." : "Eksekusi Pemutusan (R)"}
@@ -152,142 +154,171 @@ export function ImportRNomorView() {
 
       {/* 2. Notifikasi Hasil Pemrosesan */}
       {resultStats && (
-        <Card className="border-rose-500/30 bg-rose-500/5">
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="size-5 text-rose-500" />
-              <div>
-                <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+        <div className="flex flex-col gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="size-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-rose-800 dark:text-rose-200">
                   Pemutusan R-Nomor Selesai Diproses
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Total {resultStats.total} pelanggan: {resultStats.sukses}{" "}
-                  status diubah menjadi NON AKTIF (R), {resultStats.gagal}{" "}
-                  gagal.
-                </p>
+                </span>
+                <Badge className="bg-rose-600 text-white font-mono text-[10px]">
+                  Batch Selesai
+                </Badge>
               </div>
+              <p className="text-xs text-rose-700 dark:text-rose-300">
+                Total {resultStats.total} pelanggan: {resultStats.sukses}{" "}
+                status diubah menjadi NON AKTIF (R), {resultStats.gagal}{" "}
+                gagal.
+              </p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             <Badge className="bg-rose-600 text-white">Status: Diputus</Badge>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* 3. Kartu Ringkasan */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total Rekening</CardTitle>
-            <FileText className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono">{items.length.toLocaleString("id-ID")}</div>
-            <p className="text-[11px] text-muted-foreground">Rekening siap diproses</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Total Rekening</span>
+              <FileText className="size-4 text-primary" />
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+                {items.length.toLocaleString("id-ID")}
+              </span>
+              <span className="text-label-11 text-muted-foreground">Rekening</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-primary" />
+              <span>Rekening siap diproses</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Status Aktif</CardTitle>
-            <UserMinus className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-foreground">
-              {items.length.toLocaleString("id-ID")}
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Status Aktif</span>
+              <UserMinus className="size-4 text-primary" />
             </div>
-            <p className="text-[11px] text-muted-foreground">Diajukan pemutusan</p>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+                {items.length.toLocaleString("id-ID")}
+              </span>
+              <span className="text-label-11 text-muted-foreground">Diajukan</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-primary" />
+              <span>Pemutusan</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Tanggal Awal</CardTitle>
-            <AlertTriangle className="size-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
-              {items[0]?.tglPutus || "-"}
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-amber-500/30">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Tanggal Awal</span>
+              <AlertTriangle className="size-4 text-amber-500" />
             </div>
-            <p className="text-[11px] text-muted-foreground">Pemutusan terdekat</p>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono">
+                {items[0]?.tglPutus || "-"}
+              </span>
+              <span className="text-label-11 text-muted-foreground">Terdekat</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-amber-500" />
+              <span>Pemutusan</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Stand Cabut</CardTitle>
-            <ShieldAlert className="size-4 text-rose-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-rose-600 dark:text-rose-400">
-              {items.reduce((sum, i) => sum + i.standCabut, 0).toLocaleString("id-ID")} m³
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-rose-500/30 col-span-2 sm:col-span-1">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Stand Cabut</span>
+              <ShieldAlert className="size-4 text-rose-500" />
             </div>
-            <p className="text-[11px] text-muted-foreground">Total stand akhir pengangkatan</p>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono">
+                {items.reduce((sum, i) => sum + i.standCabut, 0).toLocaleString("id-ID")}
+              </span>
+              <span className="text-label-11 text-muted-foreground">m³</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-rose-500" />
+              <span>Total stand akhir pengangkatan</span>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* 4. Tabel Daftar Rekening */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-medium">
-                Daftar Rekening yang Diajukan Pemutusan (R Nomor)
-              </CardTitle>
-              <CardDescription>
-                Verifikasi nomor Berita Acara (BA) pemutusan dan stand akhir
-                pengangkatan water meter.
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-rose-500 font-medium">
-              <AlertTriangle className="size-4" />
-              <span>{items.length} Rekening Siap Cabut</span>
-            </div>
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 text-label-12">
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground">
+              {items.length} Rekening Siap Cabut
+            </span>
+            <span>·</span>
+            <span className="text-muted-foreground">
+              Verifikasi nomor Berita Acara (BA)
+            </span>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-border/50">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-border/50 bg-muted/40 font-medium text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2.5">No. Langganan</th>
-                  <th className="px-3 py-2.5">Nama Pelanggan</th>
-                  <th className="px-3 py-2.5">Alamat Sambungan</th>
-                  <th className="px-3 py-2.5">Tanggal Putus</th>
-                  <th className="px-3 py-2.5">Nomor BA</th>
-                  <th className="px-3 py-2.5">Stand Cabut</th>
-                  <th className="px-3 py-2.5">Alasan Pemutusan</th>
+
+          <div className="flex items-center gap-2 text-xs text-rose-500 font-medium">
+            <AlertTriangle className="size-4" />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted/50 text-muted-foreground border-b font-medium">
+              <tr>
+                <th className="py-2.5 px-3">No. Langganan</th>
+                <th className="py-2.5 px-3">Nama Pelanggan</th>
+                <th className="py-2.5 px-3">Alamat Sambungan</th>
+                <th className="py-2.5 px-3">Tanggal Putus</th>
+                <th className="py-2.5 px-3">Nomor BA</th>
+                <th className="py-2.5 px-3">Stand Cabut</th>
+                <th className="py-2.5 px-3">Alasan Pemutusan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {items.map((row) => (
+                <tr key={row.nolg} className="transition-colors hover:bg-muted/30 font-mono">
+                  <td className="py-2 px-3 font-medium text-foreground">
+                    {row.nolg}
+                  </td>
+                  <td className="py-2 px-3 font-medium">{row.nama}</td>
+                  <td className="py-2 px-3 text-muted-foreground">
+                    {row.alamat}
+                  </td>
+                  <td className="py-2 px-3">{row.tglPutus}</td>
+                  <td className="py-2 px-3 font-mono text-xs">
+                    {row.nomorBa}
+                  </td>
+                  <td className="py-2 px-3 font-semibold text-rose-600 dark:text-rose-400">
+                    {row.standCabut} m³
+                  </td>
+                  <td
+                    className="max-w-65 truncate px-3 py-2 text-muted-foreground"
+                    title={row.alasan}
+                  >
+                    {row.alasan}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {items.map((row) => (
-                  <tr key={row.nolg} className="hover:bg-muted/20">
-                    <td className="px-3 py-2 font-mono font-medium text-foreground">
-                      {row.nolg}
-                    </td>
-                    <td className="px-3 py-2 font-medium">{row.nama}</td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {row.alamat}
-                    </td>
-                    <td className="px-3 py-2">{row.tglPutus}</td>
-                    <td className="px-3 py-2 font-mono text-xs">
-                      {row.nomorBa}
-                    </td>
-                    <td className="px-3 py-2 font-semibold text-rose-600 dark:text-rose-400">
-                      {row.standCabut} m³
-                    </td>
-                    <td
-                      className="max-w-65 truncate px-3 py-2 text-muted-foreground"
-                      title={row.alasan}
-                    >
-                      {row.alasan}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

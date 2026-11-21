@@ -176,6 +176,7 @@ export function ImportPbpkView() {
               size="sm"
               onClick={handleLoadSample}
               disabled={isLoadingSample || isSubmitting}
+              className="h-8 text-label-12 cursor-pointer"
             >
               <Sparkles className="mr-1.5 size-3.5 text-amber-500" />
               {isLoadingSample ? "Memuat..." : "Muat PBPK.csv"}
@@ -187,7 +188,7 @@ export function ImportPbpkView() {
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
                 <span>
                   <Upload className="mr-1.5 size-3.5" />
                   Unggah CSV Lain
@@ -198,8 +199,9 @@ export function ImportPbpkView() {
               size="sm"
               onClick={handleExecuteImport}
               disabled={isSubmitting || rows.length === 0}
+              className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
             >
-              <FolderSync className="mr-1.5 size-4" />
+              <FolderSync className="mr-1.5 size-3.5" />
               {isSubmitting ? "Memproses..." : "Eksekusi Import ke DPM"}
             </Button>
           </div>
@@ -208,163 +210,191 @@ export function ImportPbpkView() {
 
       {/* 2. Notifikasi Hasil Import */}
       {resultStats && (
-        <Card className="border-emerald-500/30 bg-emerald-500/5">
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="size-5 text-emerald-500" />
-              <div>
-                <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+        <div className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-emerald-800 dark:text-emerald-200">
                   Sinkronisasi PBPK Berhasil
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Total {resultStats.total} data ({resultStats.pb} Pasang Baru,{" "}
-                  {resultStats.pk} Pemasangan Kembali). Seluruhnya siap dicatat
-                  pada DPM periode {targetPeriode}.
-                </p>
+                </span>
+                <Badge className="bg-emerald-600 text-white font-mono text-[10px]">
+                  Batch Selesai
+                </Badge>
               </div>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                Total {resultStats.total} data ({resultStats.pb} Pasang Baru,{" "}
+                {resultStats.pk} Pemasangan Kembali). Seluruhnya siap dicatat
+                pada DPM periode {targetPeriode}.
+              </p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             <Badge className="bg-emerald-600 text-white">
               Status: Masuk DPM
             </Badge>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* 3. Statistik Ringkas PBPK */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">
-            Total Rekening PBPK
-          </div>
-          <div className="mt-1 text-2xl font-bold tracking-tight text-foreground">
-            {rows.length}
-          </div>
-          <div className="mt-1 text-[11px] text-muted-foreground">
-            Dari berkas PBPK.csv
-          </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Total Rekening PBPK</span>
+              <FileText className="size-4 text-primary" />
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-foreground font-mono">
+                {rows.length}
+              </span>
+              <span className="text-label-11 text-muted-foreground">Sambungan</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-primary" />
+              <span>Dari berkas PBPK.csv</span>
+            </div>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Pasang Baru (PB)</div>
-          <div className="mt-1 text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400">
-            {pbCount}
-          </div>
-          <div className="mt-1 text-[11px] text-muted-foreground">
-            Pelanggan & Water Meter Baru
-          </div>
+
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-sky-500/30">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Pasang Baru (PB)</span>
+              <FolderSync className="size-4 text-sky-500" />
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400 font-mono">
+                {pbCount}
+              </span>
+              <span className="text-label-11 text-muted-foreground">Baru</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-sky-500" />
+              <span>Pelanggan & Water Meter Baru</span>
+            </div>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">
-            Pemasangan Kembali (PK)
-          </div>
-          <div className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-            {pkCount}
-          </div>
-          <div className="mt-1 text-[11px] text-muted-foreground">
-            Aktivasi Sambungan Eksisting
-          </div>
+
+        <Card className="border-border bg-card p-3.5 transition-colors hover:border-emerald-500/30">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-label-11 font-medium tracking-wide uppercase">Pemasangan Kembali (PK)</span>
+              <CheckCircle2 className="size-4 text-emerald-500" />
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono">
+                {pkCount}
+              </span>
+              <span className="text-label-11 text-muted-foreground">Aktif</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
+              <span>Aktivasi Sambungan Eksisting</span>
+            </div>
+          </CardContent>
         </Card>
       </div>
 
       {/* 4. Tabel Pratinjau Data PBPK */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-medium">
-                Pratinjau Data PBPK (data/raw/PBPK.csv)
-              </CardTitle>
-              <CardDescription>
-                Daftar pelanggan baru (PB) dan pemasangan kembali (PK) yang siap
-                didaftarkan ke DPM periode {targetPeriode}.
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <FileText className="size-4" />
-              <span>{rows.length} Sambungan</span>
-            </div>
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 text-label-12">
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground">
+              Daftar pelanggan baru (PB) dan pemasangan kembali (PK) yang siap didaftarkan ke DPM periode {targetPeriode}.
+            </span>
+            <span>·</span>
+            <span className="text-muted-foreground">
+              {rows.length} Sambungan
+            </span>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-border/50">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-border/50 bg-muted/40 font-medium text-muted-foreground">
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <FileText className="size-4" />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted/50 text-muted-foreground border-b font-medium">
+              <tr>
+                <th className="py-2.5 px-3">Tipe Mutasi</th>
+                <th className="py-2.5 px-3">No. Langganan</th>
+                <th className="py-2.5 px-3">Nama Pelanggan</th>
+                <th className="py-2.5 px-3">Alamat Sambungan</th>
+                <th className="py-2.5 px-3">Tarif</th>
+                <th className="py-2.5 px-3">Rute DPM</th>
+                <th className="py-2.5 px-3">No. Meter</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {rows.length === 0 ? (
                 <tr>
-                  <th className="px-3 py-2.5">Tipe Mutasi</th>
-                  <th className="px-3 py-2.5">No. Langganan</th>
-                  <th className="px-3 py-2.5">Nama Pelanggan</th>
-                  <th className="px-3 py-2.5">Alamat Sambungan</th>
-                  <th className="px-3 py-2.5">Tarif</th>
-                  <th className="px-3 py-2.5">Rute DPM</th>
-                  <th className="px-3 py-2.5">No. Meter</th>
+                  <td
+                    colSpan={7}
+                    className="py-12 text-center text-muted-foreground"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <FileText className="size-8 text-muted-foreground/40" />
+                      <p className="font-medium text-foreground">
+                        Belum ada data mutasi PBPK yang dimuat.
+                      </p>
+                      <p className="text-xs">
+                        Silakan unggah berkas CSV mutasi PBPK Anda atau gunakan
+                        tombol &ldquo;Muat PBPK.csv&rdquo; untuk melihat contoh
+                        format template.
+                      </p>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {rows.length === 0 ? (
-                  <tr>
+              ) : (
+                rows.slice(0, 30).map((row, idx) => (
+                  <tr
+                    key={`${row.nolg}-${idx}`}
+                    className="transition-colors hover:bg-muted/30 font-mono"
+                  >
+                    <td className="py-2 px-3">
+                      <Badge
+                        variant="outline"
+                        className={
+                          row.mutasian === "PB"
+                            ? "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold text-[10px]"
+                            : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]"
+                        }
+                      >
+                        {row.mutasian === "PB"
+                          ? "Pasang Baru (PB)"
+                          : "Pasang Kembali (PK)"}
+                      </Badge>
+                    </td>
+                    <td className="py-2 px-3 font-medium text-foreground">
+                      {row.nolg}
+                    </td>
+                    <td className="py-2 px-3 font-medium">{row.nama}</td>
                     <td
-                      colSpan={7}
-                      className="px-3 py-12 text-center text-muted-foreground"
+                      className="max-w-70 truncate px-3 py-2 text-muted-foreground"
+                      title={row.alamat}
                     >
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <FileText className="size-8 text-muted-foreground/40" />
-                        <p className="font-medium text-foreground">
-                          Belum ada data mutasi PBPK yang dimuat.
-                        </p>
-                        <p className="text-xs">
-                          Silakan unggah berkas CSV mutasi PBPK Anda atau gunakan
-                          tombol &ldquo;Muat PBPK.csv&rdquo; untuk melihat contoh
-                          format template.
-                        </p>
-                      </div>
+                      {row.alamat}
+                    </td>
+                    <td className="py-2 px-3 font-mono">
+                      {row.kd_goltarif || "2A2"}
+                    </td>
+                    <td className="py-2 px-3 font-mono">
+                      {row.kd_rute || "99999"}
+                    </td>
+                    <td className="py-2 px-3 font-mono text-muted-foreground">
+                      {row.nometer || "-"}
                     </td>
                   </tr>
-                ) : (
-                  rows.slice(0, 30).map((row, idx) => (
-                    <tr
-                      key={`${row.nolg}-${idx}`}
-                      className="hover:bg-muted/20"
-                    >
-                      <td className="px-3 py-2">
-                        <Badge
-                          variant="outline"
-                          className={
-                            row.mutasian === "PB"
-                              ? "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold text-[10px]"
-                              : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]"
-                          }
-                        >
-                          {row.mutasian === "PB"
-                            ? "Pasang Baru (PB)"
-                            : "Pasang Kembali (PK)"}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2 font-mono font-medium text-foreground">
-                        {row.nolg}
-                      </td>
-                      <td className="px-3 py-2 font-medium">{row.nama}</td>
-                      <td
-                        className="max-w-70 truncate px-3 py-2 text-muted-foreground"
-                        title={row.alamat}
-                      >
-                        {row.alamat}
-                      </td>
-                      <td className="px-3 py-2 font-mono">
-                        {row.kd_goltarif || "2A2"}
-                      </td>
-                      <td className="px-3 py-2 font-mono">
-                        {row.kd_rute || "99999"}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-muted-foreground">
-                        {row.nometer || "-"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
