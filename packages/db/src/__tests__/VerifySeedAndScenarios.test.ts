@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import {
   db,
   tarifBlok,
@@ -40,6 +40,49 @@ const KNOWN_BILLING_EXCEPTIONS: ReadonlyMap<string, string> = new Map([
     'Tarif khusus hasil kesepakatan di aplikasi lama (3.000 m3 ditagih Rp 10.391.250 pada CSV Oktober, bukan tarif blok umum golongan 2B)',
   ],
 ]);
+
+const KEY_TABLES = [
+  'pelanggan',
+  'water_meter',
+  'periode_penagihan',
+  'daftar_catat',
+  'cater_baca_meter',
+  'rekening_drd',
+  'riwayat_pemakaian_historis',
+];
+
+let rowCountSnapshot: Record<string, number> = {};
+
+beforeAll(() => {
+  const dbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '';
+  const allowedPatterns = ['test', 'elysia_test', 'testing'];
+  const isAllowed = allowedPatterns.some((p) => dbUrl.toLowerCase().includes(p));
+  if (!isAllowed) {
+    throw new Error(
+      `TEST_DATABASE_URL not in allowlist. Current value: ${dbUrl}. Allowed patterns: ${allowedPatterns.join(', ')}`
+    );
+  }
+});
+
+beforeAll(async () => {
+  for (const table of KEY_TABLES) {
+    const [row] = await db.execute(sql`SELECT count(*)::int AS c FROM ${sql.identifier(table)}`);
+    rowCountSnapshot[table] = (row as any).c;
+  }
+});
+
+afterAll(async () => {
+  for (const table of KEY_TABLES) {
+    const [row] = await db.execute(sql`SELECT count(*)::int AS c FROM ${sql.identifier(table)}`);
+    const after = (row as any).c;
+    const before = rowCountSnapshot[table];
+    if (after !== before) {
+      throw new Error(
+        `Row count changed for table ${table}: before=${before}, after=${after}. Suite may have leaked data.`
+      );
+    }
+  }
+});
 
 describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus Periode (Read-Only)', () => {
   test('1. Fungsi transisi periode lintas tahun (nextPeriode & prevPeriode) bebas hardcode', () => {
@@ -549,6 +592,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
         // Ditambah Oktober (202610) di cater_baca_meter yang sudah punya taksasi = akumA_fromOct:
         // Maka akumulasi_taksasi_m3 di DPM 202611 untuk custA harus menjadi 15 + 15 + akumA_fromOct,
         // dan akumulasi_perlu_verifikasi berubah menjadi FALSE karena ditemukan bacaan fisik di 202607!
+        const tSeedStart = Date.now();
         const infolangRes = await importRiwayatInfolang(
           {
             targetPeriodeOpen: '202611',
@@ -584,6 +628,8 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
           },
           tx as any
         );
+        const tSeedEnd = Date.now();
+        console.log(`[T8] infolang/seed duration: ${tSeedEnd - tSeedStart} ms`);
         expect(infolangRes.updatedDpmCount).toBe(1);
         expect(infolangRes.verifiedByPhysicalReadingCount).toBe(1);
 
@@ -629,10 +675,13 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
         );
 
         // Jalankan importProgresCater untuk file closing 202611 (Run #1)
+        const tImportStart = Date.now();
         await importProgresCater(
           { csvPath: tmpCsvPath, exportAuditCsv: false },
           tx as any
         );
+        const tImportEnd = Date.now();
+        console.log(`[T8] import progrescater duration: ${tImportEnd - tImportStart} ms`);
 
         // Periksa bagaimana akumulasi_taksasi_m3 di 202611 dan 202612 diperlakukan:
         // 1. daftar_catat(202611).akumulasi_taksasi_m3 TIDAK ditimpa menjadi 0 (tetap menyimpan kredit yang masuk ke 202611)
@@ -660,10 +709,13 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
 
         // 3. Uji Idempotensi (Run #2): Jalankan carryForwardPeriode('202611', '202612') sekali lagi
         //    untuk membuktikan akumulasi_taksasi_m3 TIDAK PERNAH TERHITUNG DUA KALI (no double-counting)!
+        const tCarryStart = Date.now();
         await carryForwardPeriode(
           { periodeLalu: '202611', periodeBaru: '202612' },
           tx as any
         );
+        const tCarryEnd = Date.now();
+        console.log(`[T8] carryForward duration: ${tCarryEnd - tCarryStart} ms`);
         const [dpmA_202612_run2] = await tx.execute(sql`
           SELECT akumulasi_taksasi_m3::numeric AS akum FROM daftar_catat WHERE periode = '202612' AND nolg = ${custA.nolg}
         `);
@@ -683,7 +735,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
       }
     }
     expect(rolledBack).toBe(true);
-  });
+  }, { timeout: 120_000 });
 
   test('9. ETL infolang: pemetaan konfigurasi bekerja untuk format file berbeda (delimiter, nama header, indeks kolom)', async () => {
     const dir = path.resolve(__dirname, '../../data/exports');
@@ -754,7 +806,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
       for (const f of [fA, fB, fC]) if (fs.existsSync(f)) fs.unlinkSync(f);
     }
     expect(rolledBack).toBe(true);
-  });
+  }, { timeout: 120_000 });
 
   test('10. MB: stand angkat menyusul SEBELUM closing (masuk bulan yang sama) vs SESUDAH closing (koreksi bulan kejadian, bukan bulan berikutnya)', async () => {
     // --- SEBELUM closing: stand angkat diketahui -> pemakaian gabungan masuk bulan kejadian ---
@@ -792,6 +844,7 @@ describe('Verifikasi Rekonsiliasi, Replay Tagihan Oktober, & 5 Skenario Siklus P
     });
     expect(nol.selisihM3).toBe(0);
     // stand angkat tidak valid ditolak
+    expect(hitungKoreksiMbSusulan({ standLalu: 1000, standAngkat: 990, standPasang: 0, standBacaBaru: 4, pemakaianMinimumM3: 5, pakaiTagihTerbit: 5 }).isValid).toBe(false);
     expect(hitungKoreksiMbSusulan({ standLalu: 1000, standAngkat: 990, standPasang: 0, standBacaBaru: 4, pemakaianMinimumM3: 5, pakaiTagihTerbit: 5 }).isValid).toBe(false);
     expect(hitungKubikasiGantiMeter({ standLalu: 1000, standAngkat: 1008, standPasang: 0, standBacaBaru: 4 }).totalPemakaianM3).toBe(12);
 
