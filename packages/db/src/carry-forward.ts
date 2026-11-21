@@ -22,7 +22,7 @@ export interface KondisiRowLookup {
 export interface ResolvedKondisiPriority {
   kodeTmss: string;
   ketCatat: string;
-  modeHitung: ModeHitungKondisi;
+  modeHitung: string;
   isMismatch: boolean;
   auditNote: string | null;
 }
@@ -64,7 +64,7 @@ export function resolveKondisiCatatWithPriority(
       return {
         kodeTmss: fromKode.kodeTmss,
         ketCatat: fromKode.nama,
-        modeHitting: fromKode.modeHitung as ModeHitungKondisi,
+        modeHitung: fromKode.modeHitung as ModeHitungKondisi,
         isMismatch: false,
         auditNote: null,
       };
