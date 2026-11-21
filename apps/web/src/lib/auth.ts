@@ -186,6 +186,24 @@ export const auth = betterAuth({
         },
       },
     },
+    account: {
+      update: {
+        after: async (account) => {
+          // Setelah password berhasil diubah (melalui alur apa pun, termasuk lupa password),
+          // cabut flag wajib_ganti_password agar pengguna tidak terkunci selamanya.
+          if (account?.userId) {
+            try {
+              await db
+                .update(schema.user)
+                .set({ wajibGantiPassword: false })
+                .where(eq(schema.user.id, account.userId));
+            } catch (err) {
+              console.error('[AUTH_ACCOUNT_UPDATE_AFTER_ERROR]', err);
+            }
+          }
+        },
+      },
+    },
   },
   secret: env.BETTER_AUTH_SECRET,
   baseURL: serverBaseUrl,
