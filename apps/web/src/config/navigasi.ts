@@ -176,6 +176,22 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
+        title: "Capaian Pencatatan",
+        href: "/cater/capaian",
+        description: "Evaluasi target vs realisasi SL, kubikasi M³, LPS, dan tren capaian tahunan.",
+        keywords: ["capaian", "target", "realisasi", "lps", "kubikasi", "tahunan"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+          "PENCATAT",
+          "PELAKSANA",
+        ],
+      },
+      {
         title: "Simulasi Baca",
         href: "/cater/simulasi",
         description: "Uji coba pembacaan meter, validasi foto, dan deteksi deviasi.",

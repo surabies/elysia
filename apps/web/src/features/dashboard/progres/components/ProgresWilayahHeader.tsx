@@ -201,10 +201,7 @@ export function ProgresWilayahHeader({
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 font-mono uppercase text-[10px]"
-              >
+              <Badge variant="blue-subtle" size="sm">
                 Wilayah Operasional
               </Badge>
               <span className="text-label-12 text-muted-foreground">
@@ -220,41 +217,41 @@ export function ProgresWilayahHeader({
             </p>
           </div>
 
-          {/* Quick Visual KPI Pills */}
+          {/* Quick Visual KPI Pills (Vercel Geist Badge Style) */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1.5 rounded-md border border-border/80 bg-background/60 px-2.5 py-1 text-label-12 backdrop-blur-sm">
+            <Badge variant="pill" size="md" className="gap-1.5 font-normal">
               <span className="text-muted-foreground">Target:</span>
               <span className="font-semibold text-foreground font-mono">
                 {totalTarget > 0 ? totalTarget.toLocaleString("id-ID") : "-"} SL
               </span>
-            </div>
+            </Badge>
 
-            <div className="flex items-center gap-1.5 rounded-md border border-border/80 bg-background/60 px-2.5 py-1 text-label-12 backdrop-blur-sm">
-              <span className="text-muted-foreground">Terbaca:</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
+            <Badge variant="green-subtle" size="md" className="gap-1.5 font-normal">
+              <span className="text-(--ds-green-900)/80">Terbaca:</span>
+              <span className="font-semibold font-mono text-(--ds-green-900)">
                 {totalTerbaca > 0 ? totalTerbaca.toLocaleString("id-ID") : "-"}
               </span>
               {totalTarget > 0 && (
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[11px] text-(--ds-green-900)/70 font-mono">
                   ({persenCapaian}%)
                 </span>
               )}
-            </div>
+            </Badge>
 
-            <div className="flex items-center gap-1.5 rounded-md border border-border/80 bg-background/60 px-2.5 py-1 text-label-12 backdrop-blur-sm">
+            <Badge variant="pill" size="md" className="gap-1.5 font-normal">
               <span className="text-muted-foreground">Kelurahan:</span>
               <span className="font-semibold text-foreground font-mono">
                 {kpi?.totalKelurahan ?? 21} Wilayah
               </span>
-            </div>
+            </Badge>
 
             {kpi && kpi.totalAnomali > 0 && (
-              <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-label-12">
-                <span className="text-amber-700 dark:text-amber-400 font-medium">Anomali:</span>
-                <span className="font-semibold text-amber-700 dark:text-amber-300 font-mono">
+              <Badge variant="amber-subtle" size="md" className="gap-1.5 font-normal">
+                <span className="text-(--ds-amber-900)/80 font-medium">Anomali:</span>
+                <span className="font-semibold text-(--ds-amber-900) font-mono">
                   {kpi.totalAnomali} Kasus
                 </span>
-              </div>
+              </Badge>
             )}
           </div>
         </div>

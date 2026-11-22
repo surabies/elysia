@@ -1,148 +1,115 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { generateMonotoneAreaPath } from "../lib/metric-visual-helpers"
+import * as React from "react";
+import { AreaSparkline } from "@/components/charts/sparkline";
+import { cn } from "@/lib/utils";
 
 interface MetricVisualSparklineProps {
-  data: number[]
-  labels?: string[]
-  color?: string
-  unit?: string
+  data: number[];
+  labels?: string[];
+  color?: string;
+  unit?: string;
+  height?: number;
+}
+
+interface SparklineDatum {
+  index: number;
+  value: number;
+  label: string;
 }
 
 export function MetricVisualSparkline({
   data,
   labels,
-  color = "#0070f3",
+  color = "var(--ds-blue-700, #0070f3)",
   unit,
+  height = 48,
 }: MetricVisualSparklineProps) {
-  const containerRef = React.useRef<HTMLDivElement | null>(null)
-  const [width, setWidth] = React.useState(320)
-  const [hoverIdx, setHoverIdx] = React.useState<number | null>(null)
-  const height = 72
+  const [hoveredDatum, setHoveredDatum] = React.useState<SparklineDatum | null>(null);
 
-  React.useEffect(() => {
-    if (!containerRef.current) return
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setWidth(containerRef.current.clientWidth || 320)
-      }
+  // Normalisasi data menjadi array objek datum agar Bklit AreaSparkline dapat membaca dataKey & label
+  const points: SparklineDatum[] = React.useMemo(() => {
+    if (!data || data.length === 0) {
+      return [
+        { index: 0, value: 0, label: "Tgl 1" },
+        { index: 1, value: 0, label: "Tgl 2" },
+      ];
     }
-    updateWidth()
-    const observer = new ResizeObserver(updateWidth)
-    observer.observe(containerRef.current)
-    return () => observer.disconnect()
-  }, [])
 
-  const { linePath, areaPath, lastPoint, points } = React.useMemo(() => {
-    return generateMonotoneAreaPath(data, width, height, 8, 52, 5)
-  }, [data, width])
+    // Jika hanya ada 1 titik data, duplikasi agar kurva area Bklit tetap terbentuk anggun
+    const sourceData = data.length === 1 ? [data[0], data[0]] : data;
 
-  const gradientId = React.useId()
-  const activePoint =
-    hoverIdx !== null && points[hoverIdx] ? points[hoverIdx] : null
+    return sourceData.map((val, idx) => ({
+      index: idx,
+      value: typeof val === "number" && !isNaN(val) ? val : 0,
+      label: labels && labels[idx] ? labels[idx] : `Tgl ${idx + 1}`,
+    }));
+  }, [data, labels]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current || points.length === 0) return
-    const rect = containerRef.current.getBoundingClientRect()
-    const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left))
-    const idx = Math.round((relX / Math.max(rect.width, 1)) * (points.length - 1))
-    setHoverIdx(Math.max(0, Math.min(points.length - 1, idx)))
-  }
+  // Titik terakhir untuk indikator ringkasan default saat tidak hover
+  const latestDatum = points[points.length - 1];
 
   return (
-    <div
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => setHoverIdx(null)}
-      className="relative flex h-[72px] w-full items-end select-none"
-    >
-      {/* Tooltip ringkas saat hover (tidak mengubah tampilan diam) */}
-      {activePoint ? (
-        <div
-          className="pointer-events-none absolute top-0 z-10 rounded-md border border-border bg-popover px-1.5 py-0.5 font-mono text-[10.5px] font-medium tabular-nums text-popover-foreground shadow-xs whitespace-nowrap"
-          style={{
-            left: `${Math.min(Math.max(activePoint.x - 28, 0), Math.max(width - 76, 0))}px`,
-          }}
-        >
-          {labels && labels[hoverIdx ?? 0] ? labels[hoverIdx ?? 0] : `Tgl ${(hoverIdx ?? 0) + 1}`}: {Math.round(activePoint.value).toLocaleString("id-ID")}
-          {unit ? ` ${unit}` : ""}
-        </div>
-      ) : null}
-
-      <svg
-        width={width}
-        height={height}
-        className="overflow-visible"
-        viewBox={`0 0 ${width} ${height}`}
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.16" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
-
-        {/* Area Gradien Halus */}
-        {areaPath ? <path d={areaPath} fill={`url(#${gradientId})`} /> : null}
-
-        {/* Garis Kurva Monotone Halus (1.5px) */}
-        {linePath ? (
-          <path
-            d={linePath}
-            fill="none"
-            stroke={color}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ) : null}
-
-        {/* Garis Panduan Vertikal & Titik Aktif (Hover atau Titik Terakhir) */}
-        {activePoint ? (
-          <>
-            <line
-              x1={activePoint.x}
-              y1={activePoint.y}
-              x2={activePoint.x}
-              y2={height}
-              stroke={color}
-              strokeOpacity="0.35"
-              strokeWidth="1"
-              strokeDasharray="2 2"
+    <div className="relative flex w-full flex-col justify-end select-none">
+      {/* 1. Baris Telemetri Header Mini Sparkline (Hover Tracking) */}
+      <div className="flex h-5 items-center justify-between text-[11px] mb-1 px-0.5">
+        {hoveredDatum ? (
+          <div className="inline-flex items-center gap-1.5 font-mono text-[11px] text-foreground animate-in fade-in-50 duration-150">
+            <span
+              className="size-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: color }}
             />
-            <circle
-              cx={activePoint.x}
-              cy={activePoint.y}
-              r="3.5"
-              fill={color}
-              stroke="var(--card)"
-              strokeWidth="1.5"
-            />
-          </>
+            <span className="text-muted-foreground">{hoveredDatum.label}:</span>
+            <span className="font-semibold tabular-nums">
+              {Math.round(hoveredDatum.value).toLocaleString("id-ID")}
+              {unit ? ` ${unit}` : ""}
+            </span>
+          </div>
         ) : (
-          <>
-            <line
-              x1={lastPoint.x}
-              y1={lastPoint.y}
-              x2={lastPoint.x}
-              y2={height}
-              stroke={color}
-              strokeOpacity="0.25"
-              strokeWidth="1"
-              strokeDasharray="2 2"
+          <div className="inline-flex items-center gap-1.5 font-mono text-[10.5px] text-muted-foreground/80">
+            <span
+              className="size-1 rounded-full shrink-0 opacity-60"
+              style={{ backgroundColor: color }}
             />
-            <circle
-              cx={lastPoint.x}
-              cy={lastPoint.y}
-              r="3.5"
-              fill={color}
-              stroke="var(--card)"
-              strokeWidth="1.5"
-            />
-          </>
+            <span>Tren {points.length} titik aktif</span>
+          </div>
         )}
-      </svg>
+
+        {/* Nilai titik terakhir saat idle */}
+        {!hoveredDatum && latestDatum && (
+          <span className="font-mono text-[10px] text-muted-foreground/60 tabular-nums">
+            Aktual: {Math.round(latestDatum.value).toLocaleString("id-ID")}
+            {unit ? ` ${unit}` : ""}
+          </span>
+        )}
+      </div>
+
+      {/* 2. Komponen Resmi Bklit AreaSparkline (https://bklit.com/docs/components/sparkline) */}
+      <div className="relative w-full overflow-hidden rounded-xs">
+        <AreaSparkline<SparklineDatum>
+          data={points}
+          dataKey="value"
+          color={color}
+          height={height}
+          curve="monotone"
+          fill="gradient"
+          fillOpacity={0.25}
+          strokeWidth={1.75}
+          endDot={true}
+          dot={true}
+          crosshair="dashed"
+          showHighlight={true}
+          inactiveOpacity={0.4}
+          animate={true}
+          animationDuration={900}
+          dataTransitionDuration={500}
+          padding={{ top: 6, bottom: 4, left: 4, right: 4 }}
+          onHoverChange={(_idx, datum) => {
+            setHoveredDatum(datum);
+          }}
+          className="w-full"
+        />
+      </div>
     </div>
-  )
+  );
 }

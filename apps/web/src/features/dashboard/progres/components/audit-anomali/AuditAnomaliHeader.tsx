@@ -200,10 +200,7 @@ export function AuditAnomaliHeader({
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5 font-mono uppercase text-[10px]"
-              >
+              <Badge variant="blue-subtle" size="sm">
                 Data Governance &amp; SSOT Audit
               </Badge>
               <span className="text-label-12 text-muted-foreground">
@@ -219,28 +216,28 @@ export function AuditAnomaliHeader({
             </p>
           </div>
 
-          {/* Quick Visual KPI Pills */}
+          {/* Quick Visual KPI Pills (Vercel Geist Badge Style) */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1.5 rounded-md border border-border/80 bg-background/60 px-2.5 py-1 text-label-12 backdrop-blur-sm">
+            <Badge variant="pill" size="md" className="gap-1.5 font-normal">
               <span className="text-muted-foreground">Total Baca:</span>
               <span className="font-semibold text-foreground font-mono">
                 {totalTercatat.toLocaleString("id-ID")} SL
               </span>
-            </div>
+            </Badge>
 
-            <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-label-12">
-              <span className="text-amber-700 dark:text-amber-400 font-medium">Anomali Validasi:</span>
-              <span className="font-semibold text-amber-700 dark:text-amber-300 font-mono">
+            <Badge variant="amber-subtle" size="md" className="gap-1.5 font-normal">
+              <span className="text-(--ds-amber-900)/80 font-medium">Anomali Validasi:</span>
+              <span className="font-semibold text-(--ds-amber-900) font-mono">
                 {totalAnomali.toLocaleString("id-ID")}
               </span>
-            </div>
+            </Badge>
 
-            <div className="flex items-center gap-1.5 rounded-md border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-label-12">
-              <span className="text-blue-700 dark:text-blue-400 font-medium">Kendala Lapangan:</span>
-              <span className="font-semibold text-blue-700 dark:text-blue-300 font-mono">
+            <Badge variant="blue-subtle" size="md" className="gap-1.5 font-normal">
+              <span className="text-(--ds-blue-900)/80 font-medium">Kendala Lapangan:</span>
+              <span className="font-semibold text-(--ds-blue-900) font-mono">
                 {totalWarning.toLocaleString("id-ID")}
               </span>
-            </div>
+            </Badge>
           </div>
         </div>
       </div>

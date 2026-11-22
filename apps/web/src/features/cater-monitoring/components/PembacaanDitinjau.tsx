@@ -84,7 +84,7 @@ export function PembacaanDitinjau({
         pakai === 0
       ) {
         kategori = 'nol';
-      } else if (kode === 'ANOM_PENURUNAN_DRASTIS' || jenisRaw === 'TURUN') {
+      } else if (kode === 'ANOM_PENURUNAN_DRASTIS' || jenisRaw === 'TURUN' || (pakai > 0 && pakai < lalu)) {
         kategori = 'turun';
       } else {
         kategori = 'ekstrem';
@@ -119,7 +119,9 @@ export function PembacaanDitinjau({
     if (filterKategori === 'nol') {
       list = zeroReadings.map((item) => mapItem(item, 'nol'));
     } else if (filterKategori === 'ekstrem') {
-      list = extremeReadings.map((item) => mapItem(item, 'ekstrem'));
+      list = extremeReadings
+        .filter((item) => Number(item.pakaiM3 ?? 0) > Number(item.pakaiLalu ?? 0))
+        .map((item) => mapItem(item, 'ekstrem'));
     } else if (filterKategori === 'turun') {
       list = downReadings.map((item) => mapItem(item, 'turun'));
     } else {
@@ -161,7 +163,7 @@ export function PembacaanDitinjau({
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <Radio className="size-4 text-rose-500 animate-pulse shrink-0" />
+                <Radio className="size-4 text-(--ds-red-700) animate-pulse shrink-0" />
                 <h2 className="text-heading-16 font-semibold tracking-tight text-[var(--ds-gray-1000)] truncate">
                   Radar Anomali Pembacaan
                 </h2>
@@ -178,7 +180,7 @@ export function PembacaanDitinjau({
                   onClick={() => setFilterKategori('semua')}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium transition-all cursor-pointer border ${
                     filterKategori === 'semua'
-                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25 ring-1 ring-rose-500/20'
+                      ? 'bg-(--ds-red-200) text-(--ds-red-900) border-(--ds-red-400) ring-1 ring-(--ds-red-400)'
                       : 'bg-muted/60 text-muted-foreground border-border hover:text-foreground hover:bg-muted'
                   }`}
                 >
@@ -194,83 +196,83 @@ export function PembacaanDitinjau({
             </Tooltip>
           </div>
 
-          {/* 3 KPI Trigger Cards (Pemicu Filter Langsung) */}
+          {/* 3 KPI Trigger Cards (Pemicu Filter Langsung - Vercel Geist Badge Style) */}
           <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/60">
-            {/* KPI 1: Lonjakan Ekstrem */}
+            {/* KPI 1: Lonjakan Ekstrem (Geist Red Subtle) */}
             <div
               onClick={() => handleToggleFilter('ekstrem')}
-              className={`rounded-md p-2.5 border cursor-pointer transition-all ${
+              className={`rounded-md p-2.5 border border-transparent cursor-pointer transition-all ${
                 filterKategori === 'ekstrem'
-                  ? 'bg-red-500/15 border-red-500/50 ring-2 ring-red-500/20 shadow-xs'
-                  : 'bg-red-500/5 dark:bg-red-950/20 border-red-500/15 hover:border-red-500/40 hover:bg-red-500/10'
+                  ? 'bg-(--ds-red-200) ring-1 ring-(--ds-red-700)/25 shadow-xs'
+                  : 'bg-(--ds-red-100) hover:bg-(--ds-red-200)'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-                  <TrendingUp className="size-3 text-red-500" />
+                <span className="text-[11px] text-(--ds-red-900) font-medium flex items-center gap-1">
+                  <TrendingUp className="size-3 text-(--ds-red-700)" />
                   Ekstrem
                 </span>
                 {filterKategori === 'ekstrem' && (
-                  <span className="size-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="size-1.5 rounded-full bg-(--ds-red-700) animate-pulse" />
                 )}
               </div>
               <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-copy-16 font-bold text-red-600 dark:text-red-400 font-mono tabular-nums">
+                <span className="text-copy-16 font-bold text-(--ds-red-900) font-mono tabular-nums">
                   {totalEkstrim.toLocaleString('id-ID')}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-normal">kasus</span>
+                <span className="text-[10px] text-(--ds-red-900)/70 font-normal">kasus</span>
               </div>
             </div>
 
-            {/* KPI 2: Pemakaian Nol */}
+            {/* KPI 2: Pemakaian Nol / Stand 0 m³ (Geist Amber Subtle) */}
             <div
               onClick={() => handleToggleFilter('nol')}
-              className={`rounded-md p-2.5 border cursor-pointer transition-all ${
+              className={`rounded-md p-2.5 border border-transparent cursor-pointer transition-all ${
                 filterKategori === 'nol'
-                  ? 'bg-amber-500/15 border-amber-500/50 ring-2 ring-amber-500/20 shadow-xs'
-                  : 'bg-amber-500/5 dark:bg-amber-950/20 border-amber-500/15 hover:border-amber-500/40 hover:bg-amber-500/10'
+                  ? 'bg-(--ds-amber-200) ring-1 ring-(--ds-amber-700)/25 shadow-xs'
+                  : 'bg-(--ds-amber-100) hover:bg-(--ds-amber-200)'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-                  <HelpCircle className="size-3 text-amber-500" />
+                <span className="text-[11px] text-(--ds-amber-900) font-medium flex items-center gap-1">
+                  <HelpCircle className="size-3 text-(--ds-amber-700)" />
                   Stand 0 m³
                 </span>
                 {filterKategori === 'nol' && (
-                  <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="size-1.5 rounded-full bg-(--ds-amber-700) animate-pulse" />
                 )}
               </div>
               <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-copy-16 font-bold text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+                <span className="text-copy-16 font-bold text-(--ds-amber-900) font-mono tabular-nums">
                   {totalNol.toLocaleString('id-ID')}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-normal">kasus</span>
+                <span className="text-[10px] text-(--ds-amber-900)/70 font-normal">kasus</span>
               </div>
             </div>
 
-            {/* KPI 3: Turun Drastis */}
+            {/* KPI 3: Turun Drastis (Geist Blue Subtle) */}
             <div
               onClick={() => handleToggleFilter('turun')}
-              className={`rounded-md p-2.5 border cursor-pointer transition-all ${
+              className={`rounded-md p-2.5 border border-transparent cursor-pointer transition-all ${
                 filterKategori === 'turun'
-                  ? 'bg-blue-500/15 border-blue-500/50 ring-2 ring-blue-500/20 shadow-xs'
-                  : 'bg-blue-500/5 dark:bg-blue-950/20 border-blue-500/15 hover:border-blue-500/40 hover:bg-blue-500/10'
+                  ? 'bg-(--ds-blue-200) ring-1 ring-(--ds-blue-700)/25 shadow-xs'
+                  : 'bg-(--ds-blue-100) hover:bg-(--ds-blue-200)'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-                  <TrendingDown className="size-3 text-blue-500" />
+                <span className="text-[11px] text-(--ds-blue-900) font-medium flex items-center gap-1">
+                  <TrendingDown className="size-3 text-(--ds-blue-700)" />
                   Turun Drastis
                 </span>
                 {filterKategori === 'turun' && (
-                  <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="size-1.5 rounded-full bg-(--ds-blue-700) animate-pulse" />
                 )}
               </div>
               <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-copy-16 font-bold text-blue-600 dark:text-blue-400 font-mono tabular-nums">
+                <span className="text-copy-16 font-bold text-(--ds-blue-900) font-mono tabular-nums">
                   {totalTurun.toLocaleString('id-ID')}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-normal">kasus</span>
+                <span className="text-[10px] text-(--ds-blue-900)/70 font-normal">kasus</span>
               </div>
             </div>
           </div>
@@ -318,10 +320,10 @@ export function PembacaanDitinjau({
                   const pakaiKini = Number(item.pakaiM3 ?? 0);
 
                   const volumeColor = isEkstrem
-                    ? 'text-red-600 dark:text-red-400'
+                    ? 'text-(--ds-red-900)'
                     : isTurun
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : 'text-amber-600 dark:text-amber-400';
+                    ? 'text-(--ds-blue-900)'
+                    : 'text-(--ds-amber-900)';
 
                   const deviasiBadgeVariant = isEkstrem
                     ? ('red-subtle' as const)

@@ -7,6 +7,7 @@ import {
   Calendar,
   Check,
   Copy,
+  HelpCircle,
   RotateCw,
   TrendingDown,
   TrendingUp,
@@ -203,10 +204,7 @@ export function AnomaliKubikasiHeader({
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5 font-mono uppercase text-[10px]"
-              >
+              <Badge variant="amber-subtle" size="sm">
                 Quality Control &amp; Validasi Meter
               </Badge>
               <span className="text-label-12 text-muted-foreground">
@@ -222,38 +220,39 @@ export function AnomaliKubikasiHeader({
             </p>
           </div>
 
-          {/* Quick Visual KPI Pills */}
+          {/* Quick Visual KPI Pills (Vercel Geist Badge Style) */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-label-12">
-              <AlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400" />
-              <span className="text-muted-foreground">Total:</span>
-              <span className="font-semibold text-amber-700 dark:text-amber-300 font-mono">
+            <Badge variant="amber-subtle" size="md" className="gap-1.5 font-normal">
+              <AlertTriangle className="size-3 text-(--ds-amber-700)" />
+              <span className="text-(--ds-amber-900)/80">Total:</span>
+              <span className="font-semibold text-(--ds-amber-900) font-mono">
                 {totalAnomali > 0 ? totalAnomali.toLocaleString("id-ID") : "-"} Kasus
               </span>
-            </div>
+            </Badge>
 
-            <div className="flex items-center gap-1.5 rounded-md border border-border/80 bg-background/60 px-2.5 py-1 text-label-12 backdrop-blur-sm">
-              <TrendingUp className="size-3.5 text-rose-600 dark:text-rose-400" />
-              <span className="text-muted-foreground">Lonjakan:</span>
-              <span className="font-semibold text-rose-600 dark:text-rose-400 font-mono">
+            <Badge variant="red-subtle" size="md" className="gap-1.5 font-normal">
+              <TrendingUp className="size-3 text-(--ds-red-700)" />
+              <span className="text-(--ds-red-900)/80">Lonjakan:</span>
+              <span className="font-semibold text-(--ds-red-900) font-mono">
                 {totalEkstrim > 0 ? totalEkstrim.toLocaleString("id-ID") : "-"}
               </span>
-            </div>
+            </Badge>
 
-            <div className="flex items-center gap-1.5 rounded-md border border-border/80 bg-background/60 px-2.5 py-1 text-label-12 backdrop-blur-sm">
-              <span className="text-muted-foreground">Stand 0 m³:</span>
-              <span className="font-semibold text-amber-600 dark:text-amber-400 font-mono">
+            <Badge variant="amber-subtle" size="md" className="gap-1.5 font-normal">
+              <HelpCircle className="size-3 text-(--ds-amber-700)" />
+              <span className="text-(--ds-amber-900)/80">Stand 0 m³:</span>
+              <span className="font-semibold text-(--ds-amber-900) font-mono">
                 {totalNol > 0 ? totalNol.toLocaleString("id-ID") : "-"}
               </span>
-            </div>
+            </Badge>
 
-            <div className="flex items-center gap-1.5 rounded-md border border-border/80 bg-background/60 px-2.5 py-1 text-label-12 backdrop-blur-sm">
-              <TrendingDown className="size-3.5 text-blue-600 dark:text-blue-400" />
-              <span className="text-muted-foreground">Turun:</span>
-              <span className="font-semibold text-blue-600 dark:text-blue-400 font-mono">
+            <Badge variant="blue-subtle" size="md" className="gap-1.5 font-normal">
+              <TrendingDown className="size-3 text-(--ds-blue-700)" />
+              <span className="text-(--ds-blue-900)/80">Turun:</span>
+              <span className="font-semibold text-(--ds-blue-900) font-mono">
                 {totalTurun > 0 ? totalTurun.toLocaleString("id-ID") : "-"}
               </span>
-            </div>
+            </Badge>
           </div>
         </div>
       </div>

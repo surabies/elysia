@@ -15,6 +15,7 @@ import {
   Layers,
   ChevronRight,
   ShieldAlert,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -223,7 +224,7 @@ export function MonitoringProgresWilayah({
               <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
               Kelurahan Capaian Tertinggi
             </h2>
-            <span className="text-label-11 text-muted-foreground">3 Teratas</span>
+            <Badge variant="pill" size="sm" className="font-mono">3 Teratas</Badge>
           </div>
           <div className="space-y-2">
             {topCapaian.map((item, idx) => (
@@ -232,19 +233,23 @@ export function MonitoringProgresWilayah({
                 className="flex items-center justify-between p-2.5 rounded-md border border-border bg-(--ds-gray-100) text-copy-12"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-label-11 font-semibold text-emerald-600 dark:text-emerald-400">
+                  <Badge
+                    variant="green-subtle"
+                    size="sm"
+                    className="size-5 p-0 rounded-full font-mono font-bold justify-center shrink-0"
+                  >
                     {idx + 1}
-                  </span>
+                  </Badge>
                   <div className="truncate">
                     <p className="text-label-13 font-medium text-foreground truncate">{item.kelurahanNama}</p>
                     <p className="text-label-11 text-muted-foreground">{item.kecamatanNama}</p>
                   </div>
                 </div>
-                <div className="text-right shrink-0 font-mono tabular-nums">
-                  <p className="text-label-13 font-semibold text-emerald-600 dark:text-emerald-400">
+                <div className="text-right shrink-0 font-mono tabular-nums flex items-center gap-2">
+                  <Badge variant="green-subtle" size="sm">
                     {item.persenSelesai}%
-                  </p>
-                  <p className="text-label-11 text-muted-foreground">
+                  </Badge>
+                  <p className="text-label-11 text-muted-foreground hidden sm:block">
                     {numberFormat.format(item.terbaca)} / {numberFormat.format(item.target)} SL
                   </p>
                 </div>
@@ -260,7 +265,7 @@ export function MonitoringProgresWilayah({
               <ShieldAlert className="size-3.5 text-amber-600 dark:text-amber-400" />
               Perlu Perhatian Khusus
             </h2>
-            <span className="text-label-11 text-muted-foreground">Anomali / Progres Rendah</span>
+            <Badge variant="amber-subtle" size="sm" className="font-mono">Anomali / Progres Rendah</Badge>
           </div>
           <div className="space-y-2">
             {butuhPerhatian.map((item) => (
@@ -274,11 +279,11 @@ export function MonitoringProgresWilayah({
                     Seksi {item.seksiKode} • Sisa {numberFormat.format(item.sisa)} SL
                   </p>
                 </div>
-                <div className="text-right shrink-0 font-mono tabular-nums">
-                  <p className="text-label-13 font-semibold text-amber-600 dark:text-amber-400">
+                <div className="text-right shrink-0 font-mono tabular-nums flex items-center gap-2">
+                  <Badge variant="amber-subtle" size="sm">
                     {item.totalAnomali} Anomali
-                  </p>
-                  <p className="text-label-11 text-muted-foreground">
+                  </Badge>
+                  <p className="text-label-11 text-muted-foreground hidden sm:block">
                     Capaian {item.persenSelesai}%
                   </p>
                 </div>
@@ -288,238 +293,293 @@ export function MonitoringProgresWilayah({
         </Card>
       </div>
 
-      {/* 4. Controls: Search, Sort, View Toggle */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
-          <Input
-            size="sm"
-            placeholder="Cari kelurahan / kecamatan..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 bg-card"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          {/* Sorting */}
-          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12 text-muted-foreground">
-            <span className="mr-1.5">Urutkan:</span>
-            <NativeSelect
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              size="xs"
-              className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
-            >
-              <NativeSelectOption value="persen">% Capaian</NativeSelectOption>
-              <NativeSelectOption value="target">Target Terbanyak</NativeSelectOption>
-              <NativeSelectOption value="anomali">Anomali Terbanyak</NativeSelectOption>
-            </NativeSelect>
+      {/* ========================================================= */}
+      {/* 4. PANEL DAFTAR WILAYAH (Standar Container Geist Vercel)  */}
+      {/* ========================================================= */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none space-y-4">
+        {/* Header Panel Toolbar dengan Badge & Fitur Kontrol Lengkap */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-border/60">
+          <div>
+            <div className="flex items-center gap-2">
+              <MapPin className="size-4 text-(--ds-blue-700)" />
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Daftar Capaian &amp; Distribusi Wilayah
+              </h2>
+              <Badge variant="pill" size="sm" className="font-mono">
+                {filteredWilayah.length} / {data?.wilayah?.length ?? 0} Kelurahan
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Rincian capaian pembacaan meter, target sambungan, kubikasi, dan status per kelurahan periode {periodeLabel}.
+            </p>
           </div>
 
-          {/* View Mode */}
-          <div className="flex items-center rounded-md border border-border p-0.5 bg-(--ds-gray-100)">
-            <Button
-              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-              size="xs"
-              onClick={() => setViewMode('table')}
-            >
-              <TableIcon className="size-3.5" />
-              Tabel
-            </Button>
-            <Button
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="xs"
-              onClick={() => setViewMode('grid')}
-            >
-              <LayoutGrid className="size-3.5" />
-              Kartu
-            </Button>
+          {/* Filter Controls Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search Box */}
+            <div className="relative min-w-[200px] sm:min-w-[240px]">
+              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+              <Input
+                size="sm"
+                placeholder="Cari kelurahan / kecamatan..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 pl-8 pr-7 text-xs bg-background border-border shadow-none"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Bersihkan pencarian"
+                  className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Sorting */}
+            <div className="flex items-center rounded-md border border-border bg-background px-2.5 h-8 text-label-12 text-muted-foreground">
+              <span className="mr-1.5 text-xs">Urutkan:</span>
+              <NativeSelect
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                size="xs"
+                className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6 text-xs"
+              >
+                <NativeSelectOption value="persen">% Capaian</NativeSelectOption>
+                <NativeSelectOption value="target">Target Terbanyak</NativeSelectOption>
+                <NativeSelectOption value="anomali">Anomali Terbanyak</NativeSelectOption>
+              </NativeSelect>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center rounded-md border border-border p-0.5 bg-(--ds-gray-100) h-8">
+              <Button
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="xs"
+                onClick={() => setViewMode('table')}
+                className="h-6.5 px-2 text-xs"
+              >
+                <TableIcon className="size-3.5 mr-1" />
+                Tabel
+              </Button>
+              <Button
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                size="xs"
+                onClick={() => setViewMode('grid')}
+                className="h-6.5 px-2 text-xs"
+              >
+                <LayoutGrid className="size-3.5 mr-1" />
+                Kartu
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* 5. Main Content: Table or Grid */}
-      {loading ? (
-        <div className="flex h-64 w-full items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Spinner className="size-6 text-primary" />
-            <p className="text-copy-12 text-muted-foreground">Memuat data progres wilayah...</p>
+        {/* 5. Main Content: Table or Grid */}
+        {loading ? (
+          <div className="flex h-64 w-full items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Spinner className="size-6 text-primary" />
+              <p className="text-copy-12 text-muted-foreground">Memuat data progres wilayah...</p>
+            </div>
           </div>
-        </div>
-      ) : filteredWilayah.length === 0 ? (
-        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-copy-13 text-muted-foreground">
-          Tidak ada data wilayah yang sesuai pencarian.
-        </div>
-      ) : viewMode === 'table' ? (
-        /* Tabel Rinci menggunakan shadcn Table */
-        <Card className="border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kode</TableHead>
-                <TableHead>Kelurahan</TableHead>
-                <TableHead>Kecamatan</TableHead>
-                <TableHead className="text-right">Target</TableHead>
-                <TableHead className="text-right">Terbaca</TableHead>
-                <TableHead className="text-right">Sisa</TableHead>
-                <TableHead className="w-48">Progres Capaian</TableHead>
-                <TableHead className="text-right">Total Kubikasi</TableHead>
-                <TableHead className="text-right">Anomali</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="font-mono tabular-nums">
-              {filteredWilayah.map((row) => {
-                const isComplete = row.persenSelesai >= 100;
-                const isGood = row.persenSelesai >= 70;
-                const isLow = row.persenSelesai < 40;
+        ) : filteredWilayah.length === 0 ? (
+          <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-copy-13 text-muted-foreground">
+            Tidak ada data wilayah yang sesuai pencarian.
+          </div>
+        ) : viewMode === 'table' ? (
+          /* Tabel Rinci menggunakan shadcn Table */
+          <div className="border border-border rounded-lg bg-card overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Kode</TableHead>
+                  <TableHead>Kelurahan</TableHead>
+                  <TableHead>Kecamatan</TableHead>
+                  <TableHead className="text-right">Target</TableHead>
+                  <TableHead className="text-right">Terbaca</TableHead>
+                  <TableHead className="text-right">Sisa</TableHead>
+                  <TableHead className="w-48">Progres Capaian</TableHead>
+                  <TableHead className="text-right">Total Kubikasi</TableHead>
+                  <TableHead className="text-right">Anomali</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="font-mono tabular-nums">
+                {filteredWilayah.map((row) => {
+                  const isComplete = row.persenSelesai >= 100;
+                  const isGood = row.persenSelesai >= 70;
+                  const isLow = row.persenSelesai < 40;
 
-                return (
-                  <TableRow key={row.kelurahanKode}>
-                    <TableCell className="font-medium text-foreground font-sans">
-                      {row.kelurahanKode}
-                    </TableCell>
-                    <TableCell className="font-sans font-medium text-foreground">
-                      {row.kelurahanNama}
-                    </TableCell>
-                    <TableCell className="font-sans text-muted-foreground">
-                      {row.kecamatanNama}
-                    </TableCell>
-                    <TableCell className="text-right text-foreground">
-                      {numberFormat.format(row.target)}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
-                      {numberFormat.format(row.terbaca)}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {numberFormat.format(row.sisa)}
-                    </TableCell>
-                    <TableCell className="font-sans">
-                      <div className="space-y-1 w-32">
-                        <div className="flex justify-between text-label-11 font-mono">
-                          <span className="font-semibold text-foreground">{row.persenSelesai}%</span>
-                          <span className="text-[10px] text-muted-foreground">{numberFormat.format(row.terbaca)}/{numberFormat.format(row.target)}</span>
+                  return (
+                    <TableRow key={row.kelurahanKode}>
+                      <TableCell className="font-medium text-foreground font-sans">
+                        {row.kelurahanKode}
+                      </TableCell>
+                      <TableCell className="font-sans font-medium text-foreground">
+                        {row.kelurahanNama}
+                      </TableCell>
+                      <TableCell className="font-sans text-muted-foreground">
+                        {row.kecamatanNama}
+                      </TableCell>
+                      <TableCell className="text-right text-foreground">
+                        {numberFormat.format(row.target)}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-(--ds-green-900)">
+                        {numberFormat.format(row.terbaca)}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {numberFormat.format(row.sisa)}
+                      </TableCell>
+                      <TableCell className="font-sans">
+                        <div className="space-y-1 w-32">
+                          <div className="flex justify-between text-label-11 font-mono">
+                            <span className="font-semibold text-foreground">{row.persenSelesai}%</span>
+                            <span className="text-[10px] text-muted-foreground">{numberFormat.format(row.terbaca)}/{numberFormat.format(row.target)}</span>
+                          </div>
+                          <VerticalProgress
+                            value={row.persenSelesai}
+                            ticks={16}
+                            variant={isComplete ? "emerald" : isGood ? "blue" : isLow ? "red" : "amber"}
+                            heightClass="h-2"
+                            gapClass="gap-[2px]"
+                            ariaLabel={`Capaian ${row.kelurahanNama}`}
+                          />
                         </div>
-                        <VerticalProgress
-                          value={row.persenSelesai}
-                          ticks={16}
-                          variant={isComplete ? "emerald" : isGood ? "blue" : isLow ? "red" : "amber"}
-                          heightClass="h-2"
-                          gapClass="gap-[2px]"
-                          ariaLabel={`Capaian ${row.kelurahanNama}`}
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right text-foreground">
-                      {numberFormat.format(row.totalM3)} m³
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.totalAnomali > 0 ? (
-                        <span className="text-amber-600 dark:text-amber-400 font-medium">
-                          {numberFormat.format(row.totalAnomali)}
+                      </TableCell>
+                      <TableCell className="text-right text-foreground">
+                        {numberFormat.format(row.totalM3)} m³
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {row.totalAnomali > 0 ? (
+                          <Badge variant="amber-subtle" size="sm">
+                            {numberFormat.format(row.totalAnomali)}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center font-sans">
+                        {isComplete ? (
+                          <Badge variant="green-subtle" size="sm">
+                            Selesai
+                          </Badge>
+                        ) : isGood ? (
+                          <Badge variant="blue-subtle" size="sm">
+                            Lancar
+                          </Badge>
+                        ) : isLow ? (
+                          <Badge variant="red-subtle" size="sm">
+                            Kritis
+                          </Badge>
+                        ) : (
+                          <Badge variant="amber-subtle" size="sm">
+                            Berjalan
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          /* Grid Kartu */
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredWilayah.map((row) => {
+              const isComplete = row.persenSelesai >= 100;
+              const isGood = row.persenSelesai >= 70;
+              const isLow = row.persenSelesai < 40;
+
+              return (
+                <Card
+                  key={row.kelurahanKode}
+                  className="p-4 border-border bg-card flex flex-col justify-between gap-3 hover:border-(--ds-gray-500) transition-colors"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-label-11 font-mono text-muted-foreground uppercase">
+                          {row.kelurahanKode} • Seksi {row.seksiKode}
                         </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center font-sans">
-                      {isComplete ? (
-                        <Badge variant="green-subtle" size="sm">
-                          Selesai
-                        </Badge>
-                      ) : isGood ? (
-                        <Badge variant="blue-subtle" size="sm">
-                          Lancar
-                        </Badge>
-                      ) : (
-                        <Badge variant="amber-subtle" size="sm">
-                          Berjalan
-                        </Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
-      ) : (
-        /* Grid Kartu */
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredWilayah.map((row) => (
-            <Card
-              key={row.kelurahanKode}
-              className="p-4 border-border bg-card flex flex-col justify-between gap-3 hover:border-(--ds-gray-500) transition-colors"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-label-11 font-mono text-muted-foreground uppercase">
-                      {row.kelurahanKode} • Seksi {row.seksiKode}
+                        <h3 className="text-label-14 font-semibold text-foreground leading-tight mt-0.5">
+                          {row.kelurahanNama}
+                        </h3>
+                        <p className="text-copy-12 text-muted-foreground">{row.kecamatanNama}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="font-mono tabular-nums text-label-14 font-semibold text-foreground">
+                          {row.persenSelesai}%
+                        </span>
+                        {isComplete ? (
+                          <Badge variant="green-subtle" size="sm">Selesai</Badge>
+                        ) : isGood ? (
+                          <Badge variant="blue-subtle" size="sm">Lancar</Badge>
+                        ) : isLow ? (
+                          <Badge variant="red-subtle" size="sm">Kritis</Badge>
+                        ) : (
+                          <Badge variant="amber-subtle" size="sm">Berjalan</Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Gaya ||| Bar Vertikal */}
+                    <div className="mt-3">
+                      <VerticalProgress
+                        value={row.persenSelesai}
+                        ticks={24}
+                        variant={
+                          isComplete
+                            ? 'emerald'
+                            : isGood
+                            ? 'blue'
+                            : isLow
+                            ? 'red'
+                            : 'amber'
+                        }
+                        heightClass="h-2.5"
+                        gapClass="gap-[3px]"
+                        ariaLabel={`Capaian ${row.kelurahanNama}`}
+                      />
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-1 rounded-md border border-border bg-(--ds-gray-100) p-2 text-center font-mono tabular-nums text-label-12">
+                      <div>
+                        <span className="block text-label-11 text-muted-foreground font-sans">Target</span>
+                        <span className="font-medium text-foreground">{numberFormat.format(row.target)}</span>
+                      </div>
+                      <div>
+                        <span className="block text-label-11 text-muted-foreground font-sans">Terbaca</span>
+                        <span className="font-medium text-(--ds-green-900)">{numberFormat.format(row.terbaca)}</span>
+                      </div>
+                      <div>
+                        <span className="block text-label-11 text-muted-foreground font-sans">Sisa</span>
+                        <span className="font-medium text-muted-foreground">{numberFormat.format(row.sisa)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-border pt-2.5 text-label-12 text-muted-foreground">
+                    <span className="flex items-center gap-1 font-mono tabular-nums">
+                      <Droplets className="size-3 text-(--ds-blue-900)" />
+                      {numberFormat.format(row.totalM3)} m³
                     </span>
-                    <h3 className="text-label-14 font-semibold text-foreground leading-tight mt-0.5">
-                      {row.kelurahanNama}
-                    </h3>
-                    <p className="text-copy-12 text-muted-foreground">{row.kecamatanNama}</p>
+                    {row.totalAnomali > 0 && (
+                      <Badge variant="amber-subtle" size="sm" className="gap-1 font-mono">
+                        <AlertTriangle className="size-3" />
+                        {row.totalAnomali} Anomali
+                      </Badge>
+                    )}
                   </div>
-                  <span className="font-mono tabular-nums text-label-14 font-semibold text-emerald-600 dark:text-emerald-400">
-                    {row.persenSelesai}%
-                  </span>
-                </div>
-
-                {/* Gaya ||| Bar Vertikal */}
-                <div className="mt-3">
-                  <VerticalProgress
-                    value={row.persenSelesai}
-                    ticks={24}
-                    variant={
-                      row.persenSelesai >= 100
-                        ? 'emerald'
-                        : row.persenSelesai >= 70
-                        ? 'blue'
-                        : row.persenSelesai < 40
-                        ? 'red'
-                        : 'amber'
-                    }
-                    heightClass="h-2.5"
-                    gapClass="gap-[3px]"
-                    ariaLabel={`Capaian ${row.kelurahanNama}`}
-                  />
-                </div>
-
-                <div className="mt-3 grid grid-cols-3 gap-1 rounded-md border border-border bg-(--ds-gray-100) p-2 text-center font-mono tabular-nums text-label-12">
-                  <div>
-                    <span className="block text-label-11 text-muted-foreground font-sans">Target</span>
-                    <span className="font-medium text-foreground">{numberFormat.format(row.target)}</span>
-                  </div>
-                  <div>
-                    <span className="block text-label-11 text-muted-foreground font-sans">Terbaca</span>
-                    <span className="font-medium text-emerald-600 dark:text-emerald-400">{numberFormat.format(row.terbaca)}</span>
-                  </div>
-                  <div>
-                    <span className="block text-label-11 text-muted-foreground font-sans">Sisa</span>
-                    <span className="font-medium text-muted-foreground">{numberFormat.format(row.sisa)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-border pt-2.5 text-label-12 text-muted-foreground">
-                <span className="flex items-center gap-1 font-mono tabular-nums">
-                  <Droplets className="size-3 text-(--ds-blue-900)" />
-                  {numberFormat.format(row.totalM3)} m³
-                </span>
-                {row.totalAnomali > 0 && (
-                  <span className="text-amber-600 dark:text-amber-400 font-medium font-mono tabular-nums flex items-center gap-0.5">
-                    <AlertTriangle className="size-3" />
-                    {row.totalAnomali} Anomali
-                  </span>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </PageContainer>
   );
 }

@@ -170,7 +170,7 @@ export function AuditSplitExplorer({
             className={cn(
               "group p-3 rounded-lg border transition-all cursor-pointer flex flex-col gap-1",
               selectedKode === null
-                ? "bg-primary/[0.05] border-primary/40 ring-1 ring-primary/30"
+                ? "bg-muted/30 border-foreground ring-1 ring-foreground/30 shadow-xs"
                 : "border-border/60 hover:bg-muted/40 hover:border-foreground/30"
             )}
           >
@@ -210,9 +210,7 @@ export function AuditSplitExplorer({
                 className={cn(
                   "group p-3 rounded-lg border transition-all cursor-pointer flex flex-col gap-1.5",
                   isSelected
-                    ? isAnomali
-                      ? "bg-amber-500/[0.06] border-amber-500/60 ring-1 ring-amber-500/40 shadow-xs"
-                      : "bg-blue-500/[0.06] border-blue-500/60 ring-1 ring-blue-500/40 shadow-xs"
+                    ? "border-foreground ring-1 ring-foreground/30 bg-muted/30 shadow-xs"
                     : "border-border/60 hover:bg-muted/40 hover:border-foreground/30"
                 )}
               >
@@ -313,7 +311,7 @@ export function AuditSplitExplorer({
         </div>
 
         {/* Tabel Data Rekening & Alamat dengan Sticky Header Sempurna */}
-        <div className="flex-1 overflow-y-auto relative">
+        <div className={cn("flex-1 overflow-y-auto relative transition-opacity duration-150", loading && "opacity-60")}>
           {pelanggan.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center p-8 text-center">
               <IconStack className="h-16 w-14 mb-3 text-muted-foreground/60">

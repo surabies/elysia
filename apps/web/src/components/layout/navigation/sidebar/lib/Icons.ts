@@ -100,6 +100,7 @@ export const PRIMARY_ICONS: Record<string, SidebarIconComponent> = {
   "/pelanggan": Users,
   "/info-pelanggan": Contact,
   "/cater/ganti-meter": RefreshCw,
+  "/cater/capaian": Award,
   "/progres/koreksi": FilePenLine,
   "/laporan/lap-drd": Receipt,
   "/meter/hitung-rata-rata": Calculator,
@@ -161,6 +162,7 @@ const ITEM_ICONS: Record<string, SidebarIconComponent> = {
   // === 1. PILAR 1: PENCATATAN METER ===
   "monitoring baca": Gauge,
   "monitoring baca meter": Gauge,
+  "capaian pencatatan": Award,
   "simulasi baca": FlaskConical,
   "simulasi baca meter": FlaskConical,
   "verifikasi chn": ClipboardCheck,

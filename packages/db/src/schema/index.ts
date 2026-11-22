@@ -20,4 +20,5 @@ export * from './pengaturan';
 export * from './jaringan';
 export * from './riwayat';
 export * from './anomali';
+export * from './capaian';
 

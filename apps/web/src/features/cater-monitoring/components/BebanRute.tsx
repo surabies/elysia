@@ -157,80 +157,83 @@ export function BebanRute({
             </Tooltip>
           </div>
 
-          {/* 3 KPI Trigger Cards (Senada dengan Radar Anomali) */}
+          {/* 3 KPI Trigger Cards (Senada dengan Radar Anomali - Vercel Geist Badge Style) */}
           <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/60">
-            {/* KPI 1: Rata-rata Beban */}
+            {/* KPI 1: Rata-rata Beban (Geist Gray Subtle) */}
             <div
               onClick={() => setFilterMode('semua')}
-              className={`rounded-md p-2.5 border cursor-pointer transition-all ${
+              className={`rounded-md p-2.5 border border-transparent cursor-pointer transition-all ${
                 filterMode === 'semua'
-                  ? 'bg-muted/50 border-border ring-1 ring-border shadow-xs'
-                  : 'bg-muted/20 border-border/60 hover:bg-muted/40 hover:border-border'
+                  ? 'bg-(--ds-gray-200) ring-1 ring-(--ds-gray-700)/25 shadow-xs'
+                  : 'bg-(--ds-gray-100) hover:bg-(--ds-gray-200)'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-                  <Users className="size-3 text-muted-foreground" />
+                <span className="text-[11px] text-(--ds-gray-900) font-medium flex items-center gap-1">
+                  <Users className="size-3 text-(--ds-gray-700)" />
                   Rata-rata
                 </span>
+                {filterMode === 'semua' && (
+                  <span className="size-1.5 rounded-full bg-(--ds-gray-700) animate-pulse" />
+                )}
               </div>
               <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-copy-16 font-bold text-foreground font-mono tabular-nums">
+                <span className="text-copy-16 font-bold text-(--ds-gray-1000) font-mono tabular-nums">
                   {stats.rataRata}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-normal">SL/rute</span>
+                <span className="text-[10px] text-(--ds-gray-900)/70 font-normal">SL/rute</span>
               </div>
             </div>
 
-            {/* KPI 2: Rute Padat / Overload */}
+            {/* KPI 2: Rute Padat / Overload (Geist Amber Subtle) */}
             <div
               onClick={() => handleToggleFilter('padat')}
-              className={`rounded-md p-2.5 border cursor-pointer transition-all ${
+              className={`rounded-md p-2.5 border border-transparent cursor-pointer transition-all ${
                 filterMode === 'padat'
-                  ? 'bg-amber-500/15 border-amber-500/50 ring-2 ring-amber-500/20 shadow-xs'
-                  : 'bg-amber-500/5 dark:bg-amber-950/20 border-amber-500/15 hover:border-amber-500/40 hover:bg-amber-500/10'
+                  ? 'bg-(--ds-amber-200) ring-1 ring-(--ds-amber-700)/25 shadow-xs'
+                  : 'bg-(--ds-amber-100) hover:bg-(--ds-amber-200)'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-                  <AlertTriangle className="size-3 text-amber-500" />
+                <span className="text-[11px] text-(--ds-amber-900) font-medium flex items-center gap-1">
+                  <AlertTriangle className="size-3 text-(--ds-amber-700)" />
                   Rute Padat
                 </span>
                 {filterMode === 'padat' && (
-                  <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="size-1.5 rounded-full bg-(--ds-amber-700) animate-pulse" />
                 )}
               </div>
               <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-copy-16 font-bold text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+                <span className="text-copy-16 font-bold text-(--ds-amber-900) font-mono tabular-nums">
                   {stats.padatCount}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-normal">&gt;220 SL</span>
+                <span className="text-[10px] text-(--ds-amber-900)/70 font-normal">&gt;220 SL</span>
               </div>
             </div>
 
-            {/* KPI 3: Belum Ada Petugas */}
+            {/* KPI 3: Belum Ada Petugas / Kosong (Geist Red Subtle) */}
             <div
               onClick={() => handleToggleFilter('unassigned')}
-              className={`rounded-md p-2.5 border cursor-pointer transition-all ${
+              className={`rounded-md p-2.5 border border-transparent cursor-pointer transition-all ${
                 filterMode === 'unassigned'
-                  ? 'bg-rose-500/15 border-rose-500/50 ring-2 ring-rose-500/20 shadow-xs'
-                  : 'bg-rose-500/5 dark:bg-rose-950/20 border-rose-500/15 hover:border-rose-500/40 hover:bg-rose-500/10'
+                  ? 'bg-(--ds-red-200) ring-1 ring-(--ds-red-700)/25 shadow-xs'
+                  : 'bg-(--ds-red-100) hover:bg-(--ds-red-200)'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-                  <UserX className="size-3 text-rose-500" />
+                <span className="text-[11px] text-(--ds-red-900) font-medium flex items-center gap-1">
+                  <UserX className="size-3 text-(--ds-red-700)" />
                   Kosong
                 </span>
                 {filterMode === 'unassigned' && (
-                  <span className="size-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  <span className="size-1.5 rounded-full bg-(--ds-red-700) animate-pulse" />
                 )}
               </div>
               <div className="mt-1 flex items-baseline justify-between">
-                <span className="text-copy-16 font-bold text-rose-600 dark:text-rose-400 font-mono tabular-nums">
+                <span className="text-copy-16 font-bold text-(--ds-red-900) font-mono tabular-nums">
                   {stats.unassigned}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-normal">tanpa petugas</span>
+                <span className="text-[10px] text-(--ds-red-900)/70 font-normal">tanpa petugas</span>
               </div>
             </div>
           </div>
@@ -314,7 +317,7 @@ export function BebanRute({
                             <span className="truncate">{route.petugasDefault}</span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 text-rose-500 font-medium">
+                          <div className="flex items-center gap-1.5 text-(--ds-red-700) font-medium">
                             <UserX className="size-3 shrink-0" />
                             <span className="italic">Belum ditugaskan</span>
                           </div>
@@ -419,8 +422,8 @@ export function BebanRute({
                       </>
                     ) : (
                       <>
-                        <UserX className="size-3.5 text-red-500" />
-                        <span className="text-red-500">Belum Ditugaskan</span>
+                        <UserX className="size-3.5 text-(--ds-red-700)" />
+                        <span className="text-(--ds-red-700)">Belum Ditugaskan</span>
                       </>
                     )}
                   </span>

@@ -106,7 +106,7 @@ export function AuditAturanTable({
                   ) : item.tingkatKeparahan === "TINGGI" ? (
                     <Badge variant="amber-subtle" size="sm">TINGGI</Badge>
                   ) : item.tingkatKeparahan === "SEDANG" ? (
-                    <Badge variant="outline" size="sm" className="border-amber-500/40 text-amber-600">SEDANG</Badge>
+                    <Badge variant="amber-subtle" size="sm">SEDANG</Badge>
                   ) : (
                     <Badge variant="gray-subtle" size="sm">PERINGATAN</Badge>
                   )}

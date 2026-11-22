@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia';
+import { capaianRouter } from './capaian.router';
 import { getActivePeriode } from '@cater/db';
 import { authPlugin } from '../../plugins/auth';
 import { caterKueriService } from '../../services/cater/cater-kueri.service';
@@ -42,6 +43,7 @@ import {
  */
 export const caterRouter = new Elysia({ prefix: '/cater' })
   .use(authPlugin)
+  .use(capaianRouter)
 
   // 1. Dashboard Overview Stats
   .get('/stats', async ({ query }: { query?: { thbl?: string } }) => {

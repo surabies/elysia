@@ -322,9 +322,9 @@ export class CaterProgressService {
     const condition = eq(caterBacaMeter.thbl, thbl);
 
     // 1. Logika filter kondisi SQL berbasis SSOT is_anomali & aturan deviasi kubikasi
-    const ekstrimSql = sql`(${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_LONJAKAN_M3', 'ANOM_LONJAKAN_PERSEN', 'ANOM_LONJAKAN_RELATIF', 'ANOM_METER_MUNDUR') or (${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_DEVIASI_RING3', 'ANOM_DEVIASI_RING_3') and ${caterBacaMeter.pakaiM3} > ${caterBacaMeter.pakaiLalu}) or ${caterBacaMeter.pakaiM3} >= 100)`;
     const nolSql = sql`(${caterBacaMeter.pakaiM3} = 0 or ${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_PEMAKAIAN_NOL', 'ANOM_TIDAK_ADA_AIR_MENDADAK', 'ANOM_TIDAK_ADA_AIR_BERKEPANJANGAN'))`;
-    const turunSql = sql`(${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_PENURUNAN_DRASTIS') or (${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_DEVIASI_RING2', 'ANOM_DEVIASI_RING3') and ${caterBacaMeter.pakaiM3} < ${caterBacaMeter.pakaiLalu}) or (${caterBacaMeter.pakaiLalu} >= 10 and ${caterBacaMeter.pakaiM3} > 0 and ${caterBacaMeter.pakaiM3} <= ${caterBacaMeter.pakaiLalu} * 0.5))`;
+    const turunSql = sql`(${caterBacaMeter.pakaiM3} > 0 and ${caterBacaMeter.pakaiM3} < ${caterBacaMeter.pakaiLalu} and (${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_PENURUNAN_DRASTIS') or (${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_DEVIASI_RING2', 'ANOM_DEVIASI_RING3')) or (${caterBacaMeter.pakaiLalu} >= 10 and ${caterBacaMeter.pakaiM3} <= ${caterBacaMeter.pakaiLalu} * 0.5)))`;
+    const ekstrimSql = sql`(${caterBacaMeter.pakaiM3} > ${caterBacaMeter.pakaiLalu} and (${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_LONJAKAN_M3', 'ANOM_LONJAKAN_PERSEN', 'ANOM_LONJAKAN_RELATIF') or (${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_DEVIASI_RING3', 'ANOM_DEVIASI_RING_3')) or (${caterBacaMeter.pakaiM3} >= 100 and ${caterBacaMeter.pakaiLalu} < 100) or (${caterBacaMeter.pakaiM3} - ${caterBacaMeter.pakaiLalu}) >= 50))`;
     const kendalaSql = sql`(${caterBacaMeter.kodeAnomaliUtama} in ('ANOM_KERUSAKAN_METER', 'WARN_KENDALA_AKSES') or ${caterBacaMeter.kodeAnomaliUtama} like 'WARN_%')`;
 
     // 2. Hitung ringkasan KPI untuk semua anomali di periode aktif berbasis SSOT Aturan
@@ -430,6 +430,7 @@ export class CaterProgressService {
       ) {
         jenisItem = "NOL";
       } else if (
+        m3 < lalu ||
         kode === "ANOM_PENURUNAN_DRASTIS" ||
         ((kode === "ANOM_DEVIASI_RING2" || kode === "ANOM_DEVIASI_RING3") && m3 < lalu) ||
         (lalu >= 10 && m3 > 0 && m3 <= lalu * 0.5)

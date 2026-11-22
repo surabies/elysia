@@ -65,7 +65,8 @@ export function MonitoringAnomaliKubikasi({
 }: MonitoringAnomaliKubikasiProps) {
   const router = useRouter();
   const [data, setData] = React.useState<AnomaliKubikasiResult | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [initialLoading, setInitialLoading] = React.useState(true);
+  const [isUpdating, setIsUpdating] = React.useState(false);
   const [periode, setPeriode] = React.useState(initialPeriode || PERIODE_TERKUNCI_KANTOR);
   const [jenisFilter, setJenisFilter] = React.useState<'all' | 'ekstrim' | 'nol' | 'turun'>('all');
   const [search, setSearch] = React.useState('');
@@ -102,8 +103,9 @@ export function MonitoringAnomaliKubikasi({
     });
   };
 
-  const fetchData = React.useCallback(async () => {
-    setLoading(true);
+  const fetchData = React.useCallback(async (isFirst = false) => {
+    if (isFirst) setInitialLoading(true);
+    else setIsUpdating(true);
     try {
       const q = search.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
       const filterParam = jenisFilter !== 'all' ? `&jenis=${jenisFilter}` : '';
@@ -117,13 +119,18 @@ export function MonitoringAnomaliKubikasi({
     } catch (err) {
       console.error('Failed to fetch anomali kubikasi:', err);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setIsUpdating(false);
     }
   }, [periode, jenisFilter, search]);
 
   React.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData(true);
+  }, [periode]);
+
+  React.useEffect(() => {
+    fetchData(false);
+  }, [jenisFilter, search]);
 
   return (
     <PageContainer className="space-y-6">
@@ -133,267 +140,298 @@ export function MonitoringAnomaliKubikasi({
         periodeLabel={periodeLabel}
         availablePeriods={availablePeriods}
         onPeriodChange={handlePeriodChange}
-        onRefresh={fetchData}
-        loading={loading}
+        onRefresh={() => fetchData(false)}
+        loading={isUpdating || initialLoading}
         kpi={data?.kpi}
       />
 
-      {/* 2. KPI Cards */}
+      {/* 2. KPI Cards (Filter Triggers - Vercel Geist Subtle Background Style Tanpa Border Kaku) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {/* Total Anomali */}
-        <Card
+        <div
           onClick={() => setJenisFilter('all')}
           className={cn(
-            'p-4 border-border bg-card cursor-pointer transition-colors hover:border-(--ds-gray-500)',
-            jenisFilter === 'all' && 'ring-2 ring-ring border-foreground'
+            'p-4 rounded-lg border border-transparent cursor-pointer transition-all',
+            jenisFilter === 'all'
+              ? 'bg-(--ds-red-200) ring-1 ring-(--ds-red-700)/25 shadow-xs'
+              : 'bg-(--ds-red-100) hover:bg-(--ds-red-200)'
           )}
         >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-label-12">Total Anomali Terdeteksi</span>
-            <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+          <div className="flex items-center justify-between">
+            <span className="text-label-12 font-medium text-(--ds-red-900)">Total Anomali Terdeteksi</span>
+            <div className="flex items-center gap-1.5">
+              {jenisFilter === 'all' && (
+                <span className="size-1.5 rounded-full bg-(--ds-red-700) animate-pulse" />
+              )}
+              <AlertTriangle className="size-4 text-(--ds-red-700)" />
+            </div>
           </div>
-          <div className="mt-2 text-heading-24 text-foreground font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-(--ds-red-900) font-mono font-bold tabular-nums">
             {data ? numberFormat.format(data.kpi.totalAnomali) : '...'}
-            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
+            <span className="text-label-12 font-normal text-(--ds-red-900)/70 ml-1.5 font-sans">kasus</span>
           </div>
-          <p className="mt-1 text-copy-12 text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-(--ds-red-900)/80">
             Rekening berpotensi kelainan catat
           </p>
-        </Card>
+        </div>
 
         {/* Lonjakan Ekstrem */}
-        <Card
+        <div
           onClick={() => setJenisFilter('ekstrim')}
           className={cn(
-            'p-4 border-border bg-card cursor-pointer transition-colors hover:border-(--ds-gray-500)',
-            jenisFilter === 'ekstrim' && 'ring-2 ring-rose-500/40 border-rose-500'
+            'p-4 rounded-lg border border-transparent cursor-pointer transition-all',
+            jenisFilter === 'ekstrim'
+              ? 'bg-(--ds-red-200) ring-1 ring-(--ds-red-700)/25 shadow-xs'
+              : 'bg-(--ds-red-100) hover:bg-(--ds-red-200)'
           )}
         >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-label-12">Lonjakan Ekstrem (&gt;50 m³)</span>
-            <TrendingUp className="size-4 text-rose-600 dark:text-rose-400" />
+          <div className="flex items-center justify-between">
+            <span className="text-label-12 font-medium text-(--ds-red-900)">Lonjakan Ekstrem (&gt;50 m³)</span>
+            <div className="flex items-center gap-1.5">
+              {jenisFilter === 'ekstrim' && (
+                <span className="size-1.5 rounded-full bg-(--ds-red-700) animate-pulse" />
+              )}
+              <TrendingUp className="size-4 text-(--ds-red-700)" />
+            </div>
           </div>
-          <div className="mt-2 text-heading-24 text-rose-600 dark:text-rose-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-(--ds-red-900) font-mono font-bold tabular-nums">
             {data ? numberFormat.format(data.kpi.totalEkstrim) : '...'}
-            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
+            <span className="text-label-12 font-normal text-(--ds-red-900)/70 ml-1.5 font-sans">kasus</span>
           </div>
-          <p className="mt-1 text-copy-12 text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-(--ds-red-900)/80">
             Pemakaian melompat tinggi
           </p>
-        </Card>
+        </div>
 
         {/* Pemakaian Nol */}
-        <Card
+        <div
           onClick={() => setJenisFilter('nol')}
           className={cn(
-            'p-4 border-border bg-card cursor-pointer transition-colors hover:border-(--ds-gray-500)',
-            jenisFilter === 'nol' && 'ring-2 ring-amber-500/40 border-amber-500'
+            'p-4 rounded-lg border border-transparent cursor-pointer transition-all',
+            jenisFilter === 'nol'
+              ? 'bg-(--ds-amber-200) ring-1 ring-(--ds-amber-700)/25 shadow-xs'
+              : 'bg-(--ds-amber-100) hover:bg-(--ds-amber-200)'
           )}
         >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-label-12">Stand 0 m³ (Nihil / Macet)</span>
-            <HelpCircle className="size-4 text-amber-600 dark:text-amber-400" />
+          <div className="flex items-center justify-between">
+            <span className="text-label-12 font-medium text-(--ds-amber-900)">Stand 0 m³ (Nihil / Macet)</span>
+            <div className="flex items-center gap-1.5">
+              {jenisFilter === 'nol' && (
+                <span className="size-1.5 rounded-full bg-(--ds-amber-700) animate-pulse" />
+              )}
+              <HelpCircle className="size-4 text-(--ds-amber-700)" />
+            </div>
           </div>
-          <div className="mt-2 text-heading-24 text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-(--ds-amber-900) font-mono font-bold tabular-nums">
             {data ? numberFormat.format(data.kpi.totalNol) : '...'}
-            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
+            <span className="text-label-12 font-normal text-(--ds-amber-900)/70 ml-1.5 font-sans">kasus</span>
           </div>
-          <p className="mt-1 text-copy-12 text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-(--ds-amber-900)/80">
             Meter tidak bergerak / rumah kosong
           </p>
-        </Card>
+        </div>
 
         {/* Pemakaian Turun */}
-        <Card
+        <div
           onClick={() => setJenisFilter('turun')}
           className={cn(
-            'p-4 border-border bg-card cursor-pointer transition-colors hover:border-(--ds-gray-500)',
-            jenisFilter === 'turun' && 'ring-2 ring-(--ds-blue-400) border-(--ds-blue-900)'
+            'p-4 rounded-lg border border-transparent cursor-pointer transition-all',
+            jenisFilter === 'turun'
+              ? 'bg-(--ds-blue-200) ring-1 ring-(--ds-blue-700)/25 shadow-xs'
+              : 'bg-(--ds-blue-100) hover:bg-(--ds-blue-200)'
           )}
         >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-label-12">Pemakaian Turun Drastis</span>
-            <TrendingDown className="size-4 text-(--ds-blue-900)" />
+          <div className="flex items-center justify-between">
+            <span className="text-label-12 font-medium text-(--ds-blue-900)">Pemakaian Turun Drastis</span>
+            <div className="flex items-center gap-1.5">
+              {jenisFilter === 'turun' && (
+                <span className="size-1.5 rounded-full bg-(--ds-blue-700) animate-pulse" />
+              )}
+              <TrendingDown className="size-4 text-(--ds-blue-700)" />
+            </div>
           </div>
-          <div className="mt-2 text-heading-24 text-(--ds-blue-900) font-mono tabular-nums">
+          <div className="mt-2 text-heading-24 text-(--ds-blue-900) font-mono font-bold tabular-nums">
             {data ? numberFormat.format(data.kpi.totalTurun) : '...'}
-            <span className="text-label-12 font-normal text-muted-foreground ml-1.5 font-sans">kasus</span>
+            <span className="text-label-12 font-normal text-(--ds-blue-900)/70 ml-1.5 font-sans">kasus</span>
           </div>
-          <p className="mt-1 text-copy-12 text-muted-foreground">
+          <p className="mt-1 text-copy-12 text-(--ds-blue-900)/80">
             Turun &gt; 50% dari bulan lalu
           </p>
-        </Card>
-      </div>
-
-      {/* 3. Filter Tabs & Search */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1">
-        <div className="flex flex-wrap items-center gap-1 p-1 rounded-md bg-(--ds-gray-100) border border-border w-fit">
-          <Button
-            variant={jenisFilter === 'all' ? 'secondary' : 'ghost'}
-            size="xs"
-            onClick={() => setJenisFilter('all')}
-          >
-            Semua Anomali
-          </Button>
-          <Button
-            variant={jenisFilter === 'ekstrim' ? 'secondary' : 'ghost'}
-            size="xs"
-            onClick={() => setJenisFilter('ekstrim')}
-          >
-            <TrendingUp className="size-3 text-rose-600 dark:text-rose-400" />
-            Lonjakan Ekstrem
-          </Button>
-          <Button
-            variant={jenisFilter === 'nol' ? 'secondary' : 'ghost'}
-            size="xs"
-            onClick={() => setJenisFilter('nol')}
-          >
-            <HelpCircle className="size-3 text-amber-600 dark:text-amber-400" />
-            Stand 0 m³
-          </Button>
-          <Button
-            variant={jenisFilter === 'turun' ? 'secondary' : 'ghost'}
-            size="xs"
-            onClick={() => setJenisFilter('turun')}
-          >
-            <TrendingDown className="size-3 text-(--ds-blue-900)" />
-            Turun Drastis
-          </Button>
-        </div>
-
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
-          <Input
-            size="sm"
-            placeholder="Cari NOLG, nama, atau rute..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 bg-card"
-          />
         </div>
       </div>
 
-      {/* 4. Anomaly Data Table */}
-      {loading ? (
-        <div className="flex h-64 w-full items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Spinner className="size-6 text-primary" />
-            <p className="text-copy-12 text-muted-foreground">Memuat daftar kasus anomali...</p>
+      {/* ========================================================= */}
+      {/* 3. PANEL DAFTAR KASUS ANOMALI (Standar Container Geist)   */}
+      {/* ========================================================= */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none space-y-4">
+        {/* Header Panel Toolbar dengan Fitur Filter Lengkap & Konsisten */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-border/60">
+          <div>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="size-4 text-(--ds-amber-700)" />
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Daftar Temuan Kasus Anomali Meter
+              </h2>
+              <Badge variant="pill" size="sm" className="font-mono">
+                {data?.items?.length ?? 0} Kasus Ditampilkan
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Daftar pelanggan terindikasi lonjakan ekstrem, meter tidak bergerak (0 m³), atau penurunan drastis periode {periodeLabel}.
+            </p>
+          </div>
+
+          {/* Filter Controls Row (Pencarian Cepat) */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search Box */}
+            <div className="relative min-w-[200px] sm:min-w-[260px]">
+              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+              <Input
+                size="sm"
+                placeholder="Cari NOLG, nama, atau rute…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 pl-8 pr-7 text-xs bg-background border-border shadow-none"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Bersihkan pencarian"
+                  className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      ) : !data || data.items.length === 0 ? (
-        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-copy-13 text-muted-foreground">
-          Tidak ditemukan kasus anomali pada filter ini.
-        </div>
-      ) : (
-        <Card className="border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>No. Langganan</TableHead>
-                <TableHead>Pelanggan & Alamat</TableHead>
-                <TableHead>Rute / Wilayah</TableHead>
-                <TableHead className="text-right">Stand Lalu</TableHead>
-                <TableHead className="text-right">Stand Akhir</TableHead>
-                <TableHead className="text-right">Pakai m³</TableHead>
-                <TableHead className="text-right">Bulan Lalu</TableHead>
-                <TableHead className="text-right">Deviasi</TableHead>
-                <TableHead className="text-center">Jenis Anomali</TableHead>
-                <TableHead>Keterangan</TableHead>
-                <TableHead className="text-center">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="font-mono tabular-nums">
-              {data.items.map((row) => {
-                const isEkstrim = row.jenisAnomali === 'EKSTRIM';
-                const isNol = row.jenisAnomali === 'NOL';
-                const isTurun = row.jenisAnomali === 'TURUN';
 
-                return (
-                  <TableRow
-                    key={row.id}
-                    className="cursor-pointer"
-                    onClick={() => setSelectedItem(row)}
-                  >
-                    <TableCell className="font-medium text-foreground font-sans">
-                      {row.nolg}
-                    </TableCell>
-                    <TableCell className="font-sans">
-                      <div className="max-w-[200px] truncate">
-                        <p className="font-medium text-foreground truncate">{row.nama}</p>
-                        <p className="text-label-11 text-muted-foreground truncate">{row.alamat}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-sans text-muted-foreground">
-                      <div className="text-label-12">
-                        <span className="font-medium text-foreground font-mono">{row.ruteKode ?? '-'}</span>
-                        <p className="text-label-11 text-muted-foreground">{row.kelurahanNama ?? '-'}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {numberFormat.format(row.stml)}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-foreground">
-                      {numberFormat.format(row.stma)}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-foreground">
-                      {numberFormat.format(row.pakaiM3)} m³
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {numberFormat.format(row.pakaiLalu)} m³
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.selisihM3 > 0 ? (
-                        <span className="inline-flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-medium">
-                          <ArrowUpRight className="size-3" />
-                          +{row.selisihM3} (+{row.persenDeviasi}%)
-                        </span>
-                      ) : row.selisihM3 < 0 ? (
-                        <span className="inline-flex items-center gap-0.5 text-(--ds-blue-900) font-medium">
-                          <ArrowDownRight className="size-3" />
-                          {row.selisihM3} ({row.persenDeviasi}%)
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">0%</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center font-sans">
-                      {isEkstrim ? (
-                        <Badge variant="red-subtle" size="sm">
-                          Lonjakan Ekstrem
-                        </Badge>
-                      ) : isNol ? (
-                        <Badge variant="amber-subtle" size="sm">
-                          Stand 0 m³
-                        </Badge>
-                      ) : isTurun ? (
-                        <Badge variant="blue-subtle" size="sm">
-                          Turun Drastis
-                        </Badge>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="font-sans text-muted-foreground max-w-[140px] truncate">
-                      {row.ketCatat ?? 'Normal'}
-                    </TableCell>
-                    <TableCell className="text-center font-sans">
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedItem(row);
-                        }}
-                      >
-                        <Eye className="size-3.5 text-muted-foreground" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+        {/* 4. Anomaly Data Table (Transisi Mulus Tanpa Unmount) */}
+        {initialLoading && !data ? (
+          <div className="flex h-64 w-full items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Spinner className="size-6 text-primary" />
+              <p className="text-copy-12 text-muted-foreground">Memuat daftar kasus anomali...</p>
+            </div>
+          </div>
+        ) : !data || data.items.length === 0 ? (
+          <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-copy-13 text-muted-foreground">
+            Tidak ditemukan kasus anomali pada filter ini.
+          </div>
+        ) : (
+          <div className={cn(
+            "border border-border rounded-lg bg-card overflow-hidden transition-opacity duration-150",
+            isUpdating && "opacity-60"
+          )}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No. Langganan</TableHead>
+                  <TableHead>Pelanggan &amp; Alamat</TableHead>
+                  <TableHead>Rute / Wilayah</TableHead>
+                  <TableHead className="text-right">Stand Lalu</TableHead>
+                  <TableHead className="text-right">Stand Akhir</TableHead>
+                  <TableHead className="text-right">Pakai m³</TableHead>
+                  <TableHead className="text-right">Bulan Lalu</TableHead>
+                  <TableHead className="text-right">Deviasi</TableHead>
+                  <TableHead className="text-center">Jenis Anomali</TableHead>
+                  <TableHead>Keterangan</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="font-mono tabular-nums">
+                {data.items.map((row) => {
+                  const isEkstrim = row.jenisAnomali === 'EKSTRIM';
+                  const isNol = row.jenisAnomali === 'NOL';
+                  const isTurun = row.jenisAnomali === 'TURUN';
+
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedItem(row)}
+                    >
+                      <TableCell className="font-medium text-foreground font-sans">
+                        {row.nolg}
+                      </TableCell>
+                      <TableCell className="font-sans">
+                        <div className="max-w-[200px] truncate">
+                          <p className="font-medium text-foreground truncate">{row.nama}</p>
+                          <p className="text-label-11 text-muted-foreground truncate">{row.alamat}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-sans text-muted-foreground">
+                        <div className="text-label-12">
+                          <span className="font-medium text-foreground font-mono">{row.ruteKode ?? '-'}</span>
+                          <p className="text-label-11 text-muted-foreground">{row.kelurahanNama ?? '-'}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {numberFormat.format(row.stml)}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-foreground">
+                        {numberFormat.format(row.stma)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-foreground">
+                        {numberFormat.format(row.pakaiM3)} m³
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {numberFormat.format(row.pakaiLalu)} m³
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {row.selisihM3 > 0 ? (
+                          <span className="inline-flex items-center gap-0.5 text-(--ds-red-900) font-medium">
+                            <ArrowUpRight className="size-3 text-(--ds-red-700)" />
+                            +{row.selisihM3} (+{row.persenDeviasi}%)
+                          </span>
+                        ) : row.selisihM3 < 0 ? (
+                          <span className="inline-flex items-center gap-0.5 text-(--ds-blue-900) font-medium">
+                            <ArrowDownRight className="size-3 text-(--ds-blue-700)" />
+                            {row.selisihM3} ({row.persenDeviasi}%)
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">0%</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center font-sans">
+                        {isEkstrim ? (
+                          <Badge variant="red-subtle" size="sm">
+                            Lonjakan Ekstrem
+                          </Badge>
+                        ) : isNol ? (
+                          <Badge variant="amber-subtle" size="sm">
+                            Stand 0 m³
+                          </Badge>
+                        ) : isTurun ? (
+                          <Badge variant="blue-subtle" size="sm">
+                            Turun Drastis
+                          </Badge>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="font-sans text-muted-foreground max-w-[140px] truncate">
+                        {row.ketCatat ?? 'Normal'}
+                      </TableCell>
+                      <TableCell className="text-center font-sans">
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedItem(row);
+                          }}
+                        >
+                          <Eye className="size-3.5 text-muted-foreground" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
 
       {/* 5. Detail Modal Preview using shadcn Dialog */}
       <Dialog open={Boolean(selectedItem)} onOpenChange={(open) => !open && setSelectedItem(null)}>
