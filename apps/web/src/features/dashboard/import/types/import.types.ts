@@ -122,6 +122,7 @@ export interface LapDataMeterRow {
 export interface LapDataMeterResultStats extends ImportBatchStats {
   created: number;
   updated: number;
+  skipped: number;
 }
 
 export interface LapDataMeterImportResponse extends ImportApiBase {
@@ -129,6 +130,7 @@ export interface LapDataMeterImportResponse extends ImportApiBase {
   gagal?: number;
   created?: number;
   updated?: number;
+  skipped?: number;
 }
 
 /* ---------- Foto Backup ---------- */

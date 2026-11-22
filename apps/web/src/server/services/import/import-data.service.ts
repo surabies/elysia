@@ -701,7 +701,8 @@ export class ImportDataService {
       gagal: 0,
       created: 0,
       updated: 0,
-      detail: [] as { nolg: string; thbl: string; status: 'SUCCESS' | 'FAILED'; error?: string }[],
+      skipped: 0,
+      detail: [] as { nolg: string; thbl: string; status: 'SUCCESS' | 'FAILED' | 'SKIPPED'; error?: string }[],
     };
 
     // Kelompokkan per periode (thbl) untuk pengecekan lock dan transaksi terpisah
@@ -846,7 +847,7 @@ export class ImportDataService {
               .onConflictDoNothing({ target: masterKondisiCatat.kodeTmss });
           }
 
-          // 6. Cek existing cater_baca_meter berdasarkan (thbl, nolg) untuk statistik created vs updated
+          // 6. Cek existing cater_baca_meter berdasarkan (thbl, nolg) untuk statistik created vs skipped
           const existingCaterRows = await tx
             .select({
               nolg: caterBacaMeter.nolg,
@@ -859,15 +860,18 @@ export class ImportDataService {
               )
             );
 
+          const existingNolgSet = new Set(existingCaterRows.map((r) => r.nolg));
           const existingCount = existingCaterRows.length;
-          results.updated += existingCount;
+          results.skipped += existingCount;
           results.created += uniqueBatch.length - existingCount;
 
           // 7a. Ambil aturan anomali terpusat untuk klasifikasi otomatis
           const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
 
-          // 7b. Siapkan records untuk bulk atomic upsert
-          const bulkRecords = uniqueBatch.map((item) => {
+          // 7b. Siapkan records untuk bulk insert (hanya yang belum ada di database agar tidak menimpa status/hasil verifikasi)
+          const newBatchItems = uniqueBatch.filter((item) => !existingNolgSet.has(item.nolg));
+
+          const bulkRecords = newBatchItems.map((item) => {
             let pakaiM3 = item.pakaiM3;
             if (pakaiM3 === undefined || isNaN(pakaiM3)) {
               if (item.stma >= item.stml) {
@@ -926,40 +930,28 @@ export class ImportDataService {
             };
           });
 
-          // 8. Eksekusi atomic upsert dalam chunks 1.000 baris (batas max parameter PostgreSQL)
+          // 8. Eksekusi insert untuk data baru dalam chunks 1.000 baris (batas max parameter PostgreSQL)
           const CHUNK_SIZE = 1000;
           for (let i = 0; i < bulkRecords.length; i += CHUNK_SIZE) {
             const chunk = bulkRecords.slice(i, i + CHUNK_SIZE);
             await tx
               .insert(caterBacaMeter)
               .values(chunk)
-              .onConflictDoUpdate({
-                target: [caterBacaMeter.thbl, caterBacaMeter.nolg],
-                set: {
-                  ruteKode: sql`excluded.rute_kode`,
-                  petugasId: sql`excluded.petugas_id`,
-                  stml: sql`excluded.stml`,
-                  stma: sql`excluded.stma`,
-                  pakaiM3: sql`excluded.pakai_m3`,
-                  pakaiLalu: sql`excluded.pakai_lalu`,
-                  tmss: sql`excluded.tmss`,
-                  ketCatat: sql`excluded.ket_catat`,
-                  sumberCatat: sql`excluded.sumber_catat`,
-                  statusVerifikasi: sql`excluded.status_verifikasi`,
-                  isAnomali: sql`excluded.is_anomali`,
-                  kodeAnomaliUtama: sql`excluded.kode_anomali_utama`,
-                  kodeAnomaliList: sql`excluded.kode_anomali_list`,
-                  aturanVersi: sql`excluded.aturan_versi`,
-                  tglCatat: sql`excluded.tgl_catat`,
-                  catatan: sql`excluded.catatan`,
-                  updatedAt: sql`now()`,
-                },
-              });
+              .onConflictDoNothing({ target: [caterBacaMeter.thbl, caterBacaMeter.nolg] });
           }
 
           results.sukses += bulkRecords.length;
           for (const item of uniqueBatch) {
-            results.detail.push({ nolg: item.nolg, thbl: item.thbl, status: 'SUCCESS' });
+            if (existingNolgSet.has(item.nolg)) {
+              results.detail.push({
+                nolg: item.nolg,
+                thbl: item.thbl,
+                status: 'SKIPPED',
+                error: 'Data pembacaan periode ini sudah tersedia di sistem (dilewati)',
+              });
+            } else {
+              results.detail.push({ nolg: item.nolg, thbl: item.thbl, status: 'SUCCESS' });
+            }
           }
         });
       } catch (err: unknown) {

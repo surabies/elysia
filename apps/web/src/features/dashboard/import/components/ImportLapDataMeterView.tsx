@@ -250,6 +250,7 @@ export function ImportLapDataMeterView() {
     let totalGagal = 0;
     let totalCreated = 0;
     let totalUpdated = 0;
+    let totalSkipped = 0;
     let wasAborted = false;
 
     const totalRows = items.length;
@@ -316,6 +317,7 @@ export function ImportLapDataMeterView() {
           totalGagal += json.gagal ?? 0;
           totalCreated += json.created ?? 0;
           totalUpdated += json.updated ?? 0;
+          totalSkipped += json.skipped ?? json.updated ?? 0;
         } catch (batchError) {
           if (controller.signal.aborted || batchController.signal.aborted) {
             wasAborted = true;
@@ -347,9 +349,16 @@ export function ImportLapDataMeterView() {
 
       if (wasAborted) {
         toast.warning(
-          `Impor dibatalkan oleh pengguna. ${totalSukses.toLocaleString("id-ID")} baris telah tersimpan.`,
+          `Impor dibatalkan oleh pengguna. ${totalSukses.toLocaleString("id-ID")} baris telah diproses.`,
         );
       } else {
+        const selesaiLabel =
+          totalCreated === 0 && totalSkipped > 0
+            ? `Selesai! Seluruh ${totalSkipped.toLocaleString("id-ID")} baris data dilewati (sudah tersedia).`
+            : totalSkipped > 0
+              ? `Selesai! ${totalCreated.toLocaleString("id-ID")} baru diimpor, ${totalSkipped.toLocaleString("id-ID")} dilewati.`
+              : "Seluruh baris data baru berhasil diimpor!";
+
         setProgressState((prev) =>
           prev
             ? {
@@ -357,9 +366,9 @@ export function ImportLapDataMeterView() {
                 stage: "completed",
                 percent: 100,
                 processed: totalRows,
-                sukses: totalSukses,
+                sukses: totalCreated,
                 gagal: totalGagal,
-                currentLabel: "Seluruh baris data berhasil diproses!",
+                currentLabel: selesaiLabel,
               }
             : null,
         );
@@ -368,17 +377,28 @@ export function ImportLapDataMeterView() {
           setTimeout(resolve, IMPORT_LIMITS.progressSettleMs),
         );
 
-        toast.success(
-          `Sukses! Berhasil memetakan ${totalSukses.toLocaleString("id-ID")} baris data meter ke tabel cater_baca_meter.`,
-        );
+        if (totalCreated === 0 && totalSkipped > 0) {
+          toast.info(
+            `Seluruh ${totalSkipped.toLocaleString("id-ID")} baris data dilewati karena sudah tersedia di sistem.`,
+          );
+        } else if (totalSkipped > 0) {
+          toast.success(
+            `${totalCreated.toLocaleString("id-ID")} data baru berhasil diimpor, ${totalSkipped.toLocaleString("id-ID")} data dilewati (sudah tersedia).`,
+          );
+        } else {
+          toast.success(
+            `Sukses! Berhasil memetakan ${totalCreated.toLocaleString("id-ID")} baris data meter baru ke tabel cater_baca_meter.`,
+          );
+        }
       }
 
       const stats: LapDataMeterResultStats = {
-        total: totalSukses + totalGagal,
-        sukses: totalSukses,
+        total: totalCreated + totalSkipped + totalGagal,
+        sukses: totalCreated,
         gagal: totalGagal,
         created: totalCreated,
         updated: totalUpdated,
+        skipped: totalSkipped,
       };
       setResultStats(stats);
       if (totalSukses > 0) {
@@ -518,10 +538,30 @@ export function ImportLapDataMeterView() {
 
       {resultStats && (
         <ImportResultBanner
-          tone="green"
-          title="Proses Import Selesai dengan Sukses!"
-          description={`Total ${resultStats.total} baris data diproses • ${resultStats.sukses} berhasil • ${resultStats.created} transaksi baru dibuat • ${resultStats.updated} data stand diperbarui • ${resultStats.gagal} gagal.`}
-          actions={<Badge variant="pill">cater_baca_meter: SYNC OK</Badge>}
+          tone={
+            resultStats.created === 0 && resultStats.skipped > 0
+              ? "blue"
+              : resultStats.gagal > 0
+                ? "amber"
+                : "green"
+          }
+          title={
+            resultStats.created === 0 && resultStats.skipped > 0
+              ? "Data Sudah Tersedia di Sistem (Dilewati)"
+              : "Proses Import Selesai!"
+          }
+          description={
+            resultStats.created === 0 && resultStats.skipped > 0
+              ? `Seluruh ${resultStats.skipped.toLocaleString("id-ID")} baris data dilewati karena data pembacaan periode ini sudah tercatat di database.`
+              : `Total ${resultStats.total.toLocaleString("id-ID")} baris data diproses • ${resultStats.created.toLocaleString("id-ID")} transaksi baru dibuat • ${resultStats.skipped.toLocaleString("id-ID")} data dilewati (sudah ada) • ${resultStats.gagal.toLocaleString("id-ID")} gagal.`
+          }
+          actions={
+            <Badge variant="pill">
+              {resultStats.created === 0 && resultStats.skipped > 0
+                ? "cater_baca_meter: DATA IDENTIK"
+                : "cater_baca_meter: SYNC OK"}
+            </Badge>
+          }
         />
       )}
 

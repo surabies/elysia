@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { corsPlugin } from "./plugins/cors";
 import { errorHandler } from "./plugins/error-handler";
+import { loggerPlugin } from "./plugins/logger";
 import { healthModule } from "./modules/health";
 import { echoModule } from "./modules/echo";
 import { authModule } from "./modules/auth";
@@ -22,6 +23,7 @@ import { aturanAnomaliRouter } from "./modules/cater/aturan-anomali.router";
 
 export const app = new Elysia({ prefix: "/api" })
   .use(corsPlugin)
+  .use(loggerPlugin)
   .use(errorHandler)
   .get("/", () => {
     return {

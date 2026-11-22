@@ -2,13 +2,19 @@ import { z } from 'zod';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env.local') });
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env.local') });
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
-dotenv.config();
+// Next.js & platform deploy (seperti Vercel) secara native telah memuat env vars ke process.env.
+// Hanya muat dotenv jika DATABASE_URL belum ada di process.env (misal saat standalone test/script)
+// untuk mencegah spam stderr "◇ injected env (0)" yang dicatat sebagai error oleh Vercel.
+if (!process.env.DATABASE_URL && process.env.NODE_ENV !== 'production') {
+  try {
+    dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+    if (!process.env.DATABASE_URL) {
+      dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+    }
+  } catch {
+    // Abaikan jika berkas tidak ditemukan
+  }
+}
 
 const DEV_FALLBACK_SECRET = 'development-secret-key-must-be-at-least-32-chars-long';
 

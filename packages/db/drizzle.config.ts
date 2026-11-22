@@ -2,8 +2,16 @@ import { defineConfig } from 'drizzle-kit';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+if (!process.env.DATABASE_URL) {
+  try {
+    dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+    if (!process.env.DATABASE_URL) {
+      dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+    }
+  } catch {
+    // Abaikan
+  }
+}
 
 export default defineConfig({
   schema: './src/schema/index.ts',

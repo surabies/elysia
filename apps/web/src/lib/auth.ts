@@ -102,13 +102,14 @@ export const auth = betterAuth({
       : {}),
   },
   rateLimit: {
-    enabled: true,
+    enabled: isProduction,
     window: 60,
-    max: 30,
+    max: 300,
     customRules: {
-      '/sign-in/email': { window: 60, max: 10 },
-      '/sign-up/email': { window: 300, max: 5 },
-      '/request-password-reset': { window: 300, max: 5 },
+      '/get-session': false,
+      '/sign-in/email': { window: 60, max: 15 },
+      '/sign-up/email': { window: 300, max: 10 },
+      '/request-password-reset': { window: 300, max: 10 },
     },
   },
   databaseHooks: {

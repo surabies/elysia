@@ -1,0 +1,83 @@
+Compiled in 1ms
+GET /api/auth/get-session 429 in 8ms (next.js: 1.4ms, application-code: 7ms)
+GET /pelanggan/mutasi 200 in 94ms (next.js: 6ms, proxy.ts: 3ms, application-code: 85ms)
+✓ Compiled in 4ms
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.5ms, application-code: 5ms)
+GET /api/auth/get-session 429 in 8ms (next.js: 1.3ms, application-code: 7ms)
+GET /manifest.webmanifest 200 in 8ms (next.js: 1.2ms, application-code: 6ms)
+GET /pelanggan/mutasi 200 in 475ms (next.js: 20ms, proxy.ts: 59ms, application-code: 395ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.7ms, application-code: 5ms)
+✓ Compiled in 1ms
+GET /dashboard 200 in 827ms (next.js: 11ms, proxy.ts: 3ms, application-code: 814ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.1ms, application-code: 6ms)
+GET /api/auth/get-session 429 in 12ms (next.js: 6ms, application-code: 6ms)
+GET /pelanggan/mutasi 200 in 407ms (next.js: 67ms, proxy.ts: 17ms, application-code: 323ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.4ms, application-code: 5ms)
+✓ Compiled in 1ms
+GET /api/auth/get-session 429 in 8ms (next.js: 1.1ms, application-code: 7ms)
+GET /manifest.webmanifest 200 in 6ms (next.js: 1.3ms, application-code: 5ms)
+GET /dashboard 200 in 815ms (next.js: 22ms, proxy.ts: 17ms, application-code: 776ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.5ms, application-code: 6ms)
+GET /pelanggan/mutasi 200 in 473ms (next.js: 6ms, proxy.ts: 3ms, application-code: 464ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.3ms, application-code: 5ms)
+✓ Compiled in 1ms
+GET /manifest.webmanifest 200 in 11ms (next.js: 1.9ms, application-code: 9ms)
+GET /api/auth/get-session 429 in 19ms (next.js: 8ms, application-code: 11ms)
+GET /api/auth/get-session 429 in 12ms (next.js: 2ms, application-code: 10ms)
+GET /manifest.webmanifest 200 in 6ms (next.js: 1.4ms, application-code: 5ms)
+GET /pelanggan/mutasi 200 in 389ms (next.js: 8ms, proxy.ts: 3ms, application-code: 379ms)
+GET /manifest.webmanifest 200 in 6ms (next.js: 1.4ms, application-code: 5ms)
+GET /dashboard 200 in 551ms (next.js: 6ms, proxy.ts: 3ms, application-code: 543ms)
+✓ Compiled in 2ms
+GET /manifest.webmanifest 200 in 8ms (next.js: 1.4ms, application-code: 6ms)
+GET /api/auth/get-session 429 in 14ms (next.js: 7ms, application-code: 7ms)
+GET /pelanggan/mutasi 200 in 625ms (next.js: 55ms, proxy.ts: 5ms, application-code: 565ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.5ms, application-code: 5ms)
+✓ Compiled in 1ms
+GET /api/auth/get-session 429 in 7ms (next.js: 1.3ms, application-code: 6ms)
+GET /manifest.webmanifest 200 in 6ms (next.js: 1.1ms, application-code: 5ms)
+GET /dashboard 200 in 1035ms (next.js: 9ms, proxy.ts: 5ms, application-code: 1022ms)
+GET /manifest.webmanifest 200 in 8ms (next.js: 1.2ms, application-code: 6ms)
+GET /pelanggan/mutasi 200 in 481ms (next.js: 5ms, proxy.ts: 2ms, application-code: 473ms)
+GET /manifest.webmanifest 200 in 14ms (next.js: 3ms, application-code: 11ms)
+✓ Compiled in 2ms
+GET /api/auth/get-session 429 in 17ms (next.js: 6ms, application-code: 10ms)
+GET /pelanggan/mutasi 200 in 105ms (next.js: 6ms, proxy.ts: 3ms, application-code: 96ms)
+✓ Compiled in 2ms
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.1ms, application-code: 6ms)
+GET /api/auth/get-session 429 in 8ms (next.js: 1.1ms, application-code: 7ms)
+GET /manifest.webmanifest 200 in 6ms (next.js: 1.2ms, application-code: 5ms)
+GET /pelanggan/mutasi 200 in 489ms (next.js: 15ms, proxy.ts: 5ms, application-code: 469ms)
+GET /manifest.webmanifest 200 in 11ms (next.js: 1.9ms, application-code: 9ms)
+GET /dashboard 200 in 875ms (next.js: 10ms, proxy.ts: 3ms, application-code: 862ms)
+GET /manifest.webmanifest 200 in 9ms (next.js: 1.5ms, application-code: 8ms)
+✓ Compiled in 2ms
+GET /api/auth/get-session 429 in 13ms (next.js: 7ms, application-code: 6ms)
+GET /manifest.webmanifest 200 in 8ms (next.js: 1.3ms, application-code: 6ms)
+GET /api/auth/get-session 429 in 8ms (next.js: 1.2ms, application-code: 7ms)
+GET /pelanggan/mutasi 200 in 340ms (next.js: 8ms, proxy.ts: 4ms, application-code: 328ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.3ms, application-code: 6ms)
+GET /manifest.webmanifest 200 in 10ms (next.js: 1.5ms, application-code: 9ms)
+✓ Compiled in 1ms
+GET /dashboard 200 in 386ms (next.js: 5ms, proxy.ts: 4ms, application-code: 377ms)
+GET /manifest.webmanifest 200 in 8ms (next.js: 1.5ms, application-code: 6ms)
+GET /api/auth/get-session 429 in 9ms (next.js: 1.8ms, application-code: 7ms)
+GET /pelanggan/mutasi 200 in 662ms (next.js: 91ms, proxy.ts: 12ms, application-code: 559ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.5ms, application-code: 5ms)
+✓ Compiled in 2ms
+GET /api/auth/get-session 429 in 11ms (next.js: 5ms, application-code: 6ms)
+GET /manifest.webmanifest 200 in 6ms (next.js: 1.0ms, application-code: 5ms)
+GET /dashboard 200 in 1083ms (next.js: 23ms, proxy.ts: 12ms, application-code: 1048ms)
+GET /manifest.webmanifest 200 in 6ms (next.js: 1.2ms, application-code: 5ms)
+GET /pelanggan/mutasi 200 in 496ms (next.js: 6ms, proxy.ts: 3ms, application-code: 487ms)
+GET /manifest.webmanifest 200 in 8ms (next.js: 1.6ms, application-code: 6ms)
+✓ Compiled in 1ms
+GET /api/auth/get-session 429 in 8ms (next.js: 1.3ms, application-code: 7ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.1ms, application-code: 6ms)
+GET /api/auth/get-session 429 in 7ms (next.js: 1.4ms, application-code: 5ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.2ms, application-code: 5ms)
+GET /pelanggan/mutasi 200 in 436ms (next.js: 6ms, proxy.ts: 4ms, application-code: 426ms)
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.3ms, application-code: 6ms)
+GET /dashboard 200 in 427ms (next.js: 8ms, proxy.ts: 3ms, application-code: 415ms)
+✓ Compiled in 1ms
+GET /manifest.webmanifest 200 in 7ms (next.js: 1.4ms, application-code: 5ms
