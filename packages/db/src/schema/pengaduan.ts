@@ -140,6 +140,7 @@ export const riwayatPengaduan = pgTable(
     statusDari: statusPengaduanEnum('status_dari'),
     statusKe: statusPengaduanEnum('status_ke'),
     petugasId: text('petugas_id').references(() => user.id),
+    petugasTujuanId: text('petugas_tujuan_id').references(() => user.id),
     catatan: text('catatan'),
     fotoUrl: text('foto_url'),
     fotoPublicId: varchar('foto_public_id', { length: 255 }),
@@ -149,10 +150,20 @@ export const riwayatPengaduan = pgTable(
   (table) => [
     index('riwayat_pengaduan_id_idx').on(table.pengaduanId),
     index('riwayat_pengaduan_created_at_idx').on(table.createdAt),
+    index('riwayat_pengaduan_petugas_tujuan_idx').on(table.petugasTujuanId),
   ]
 );
+
+// 4. Tabel Pelacak Nomor Urut Harian Pengaduan (Pencegah Race Condition B4)
+export const pengaduanNomorUrut = pgTable('pengaduan_nomor_urut', {
+  prefix: varchar('prefix', { length: 20 }).primaryKey(),
+  lastUrut: integer('last_urut').notNull(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
 
 export type PengaduanRow = typeof pengaduan.$inferSelect;
 export type NewPengaduanRow = typeof pengaduan.$inferInsert;
 export type RiwayatPengaduanRow = typeof riwayatPengaduan.$inferSelect;
 export type NewRiwayatPengaduanRow = typeof riwayatPengaduan.$inferInsert;
+export type PengaduanNomorUrutRow = typeof pengaduanNomorUrut.$inferSelect;
+export type NewPengaduanNomorUrutRow = typeof pengaduanNomorUrut.$inferInsert;

@@ -9,8 +9,10 @@ import {
   db,
   pengaduan,
   riwayatPengaduan,
+  pengaduanNomorUrut,
   pelanggan,
   user,
+  userRoles,
   type PengaduanRow,
   type RiwayatPengaduanRow,
 } from '@cater/db';
@@ -31,6 +33,7 @@ import type {
   KlasifikasiPengaduan,
   PrioritasPengaduan,
   StatusPengaduan,
+  AppRole,
 } from '@cater/types';
 
 export interface CreatePengaduanInput {
@@ -67,6 +70,11 @@ export interface TugaskanPengaduanInput {
 export class PengaduanService {
   /**
    * 1. Membuat Pengaduan Baru (Publik maupun Internal Kantor)
+   * Perbaikan Integritas Data (B4, B5, B14, B15):
+   * - B4: Nomor urut atomik dengan pengaduan_nomor_urut + retry maks 3x bila race condition.
+   * - B5: Pelanggan tidak ditemukan -> pelangganId = null, nomorLangganan tetap tersimpan, tidak melempar FK error.
+   * - B14: Upload Cloudinary di luar transaksi database.
+   * - B15: Jika upload gagal / Cloudinary tidak aktif, jangan simpan data URL base64 ke DB.
    */
   async createPengaduan(input: CreatePengaduanInput) {
     // Validasi aturan bisnis domain engine
@@ -91,17 +99,21 @@ export class PengaduanService {
       }
     }
 
-    // Resolusi Kode Wilayah Pelayanan (2 Digit)
+    // B5: Resolusi Pelanggan & Kode Wilayah Pelayanan (2 Digit) secara aman tanpa FK violation
     let wilayah = '00';
+    let resolvedPelangganId: string | null = null;
     if (input.nomorLangganan) {
       const [cust] = await db
-        .select({ ruteKode: pelanggan.ruteKode })
+        .select({ nolg: pelanggan.nolg, ruteKode: pelanggan.ruteKode })
         .from(pelanggan)
         .where(eq(pelanggan.nolg, input.nomorLangganan));
-      if (cust?.ruteKode) {
-        const match = cust.ruteKode.match(/\d+/);
-        if (match) {
-          wilayah = match[0].slice(0, 2).padStart(2, '0');
+      if (cust) {
+        resolvedPelangganId = cust.nolg;
+        if (cust.ruteKode) {
+          const match = cust.ruteKode.match(/\d+/);
+          if (match) {
+            wilayah = match[0].slice(0, 2).padStart(2, '0');
+          }
         }
       }
     }
@@ -109,92 +121,181 @@ export class PengaduanService {
     const prioritas = input.prioritas ?? 'NORMAL';
     const sla = hitungTargetSla(prioritas);
 
-    return db.transaction(async (tx) => {
-      // Hitung nomor urut harian per wilayah untuk format [KODE][WILAYAH][TANGGAL][URUT]
-      const tgl = new Date();
-      const wibTime = new Date(tgl.getTime() + 7 * 60 * 60 * 1000);
-      const yy = String(wibTime.getUTCFullYear()).slice(-2);
-      const mm = String(wibTime.getUTCMonth() + 1).padStart(2, '0');
-      const dd = String(wibTime.getUTCDate()).padStart(2, '0');
-      const tanggalStr = `${yy}${mm}${dd}`;
+    // B14: Siapkan ID tiket dan lakukan upload Cloudinary DI LUAR transaksi DB
+    const ticketId = crypto.randomUUID();
+    let processedFotoUrl: string | null = null;
+    let fotoPublicId: string | null = null;
+    let fotoGagalDiunggah = false;
 
-      const kode = KODE_JENIS_PENGADUAN[input.jenis] ?? 'TK';
-      const prefix = `${kode}${wilayah}${tanggalStr}`;
-      const [cnt] = await tx
-        .select({ total: sql<number>`count(*)::int` })
-        .from(pengaduan)
-        .where(like(pengaduan.nomorTiket, `${prefix}%`));
-      const urut = (cnt?.total ?? 0) + 1;
-
-      const nomorTiket = generateNomorTiket({
-        kode,
-        jenis: input.jenis,
-        wilayah,
-        tanggal: tgl,
-        urut,
-      });
-
-      // Auto-generate judul terstandar jika tidak disertakan secara manual
-      const labelJenis = LABEL_JENIS_PENGADUAN[input.jenis] ?? input.jenis;
-      const ringkasanAlamat = input.alamatKejadian?.trim() ? ` (${input.alamatKejadian.trim().slice(0, 40)})` : '';
-      const cuplikanDeskripsi = input.deskripsi.trim().slice(0, 60);
-      const autoJudul = `${labelJenis}${ringkasanAlamat} — ${cuplikanDeskripsi}`;
-      const finalJudul = (input.judul?.trim() || autoJudul).slice(0, 255);
-
-      let processedFotoUrl = input.fotoUrl;
-      let fotoPublicId: string | null = null;
-
-      if (isCloudinaryConfigured() && input.fotoUrl && input.fotoUrl.startsWith('data:image/')) {
-        try {
-          const res = await uploadToCloudinary({
-            file: input.fotoUrl,
-            modul: 'pengaduan',
-            jenis: 'aduan',
-            identifier: nomorTiket,
-          });
-          processedFotoUrl = res.secureUrl;
-          fotoPublicId = res.publicId;
-        } catch (err) {
-          console.error('[CLOUDINARY_ADUAN_UPLOAD_ERR]', err);
+    if (input.fotoUrl) {
+      if (input.fotoUrl.startsWith('http://') || input.fotoUrl.startsWith('https://')) {
+        processedFotoUrl = input.fotoUrl;
+      } else if (input.fotoUrl.startsWith('data:image/')) {
+        if (isCloudinaryConfigured()) {
+          try {
+            const res = await uploadToCloudinary({
+              file: input.fotoUrl,
+              modul: 'pengaduan',
+              jenis: 'aduan',
+              identifier: ticketId,
+            });
+            processedFotoUrl = res.secureUrl;
+            fotoPublicId = res.publicId;
+          } catch (err) {
+            console.error('[CLOUDINARY_ADUAN_UPLOAD_ERR]', err);
+            fotoGagalDiunggah = true;
+          }
+        } else {
+          // B15: Cloudinary tidak terkonfigurasi, tolak penyimpanan base64 data:image
+          fotoGagalDiunggah = true;
         }
       }
+    }
 
-      const [row] = await tx
-        .insert(pengaduan)
-        .values({
-          nomorTiket,
-          clientRequestId: input.clientRequestId,
-          nomorLangganan: input.nomorLangganan,
-          pelangganId: input.nomorLangganan,
-          klasifikasi: input.klasifikasi ?? 'BUKAN_NILAI_TAGIHAN_REKENING',
-          jenis: input.jenis,
-          judul: finalJudul,
-          deskripsi: input.deskripsi.trim(),
-          koordinat: input.koordinat,
-          alamatKejadian: input.alamatKejadian,
-          prioritas,
-          status: 'BARU',
-          pelapor: input.pelapor.trim(),
-          kontakPelapor: input.kontakPelapor,
-          fotoUrl: processedFotoUrl,
-          fotoPublicId,
-          videoUrl: input.videoUrl,
-          targetResponsAt: sla.targetResponsAt,
-          targetSelesaiAt: sla.targetSelesaiAt,
-        })
-        .returning();
+    // Auto-generate judul terstandar jika tidak disertakan secara manual
+    const labelJenis = LABEL_JENIS_PENGADUAN[input.jenis] ?? input.jenis;
+    const ringkasanAlamat = input.alamatKejadian?.trim() ? ` (${input.alamatKejadian.trim().slice(0, 40)})` : '';
+    const cuplikanDeskripsi = input.deskripsi.trim().slice(0, 60);
+    const autoJudul = `${labelJenis}${ringkasanAlamat} — ${cuplikanDeskripsi}`;
+    const finalJudul = (input.judul?.trim() || autoJudul).slice(0, 255);
 
-      // Catat baris linimasa pertama
-      await tx.insert(riwayatPengaduan).values({
-        pengaduanId: row.id,
-        aksi: 'DIBUAT',
-        statusKe: 'BARU',
-        catatan: 'Pengaduan berhasil didaftarkan oleh pelapor.',
-        isPublik: true,
-      });
+    // B4: Retry loop maks 3x untuk menjamin nomor tiket unik dan atomik
+    let attempt = 0;
+    const maxAttempts = 3;
 
-      return row;
-    });
+    while (attempt < maxAttempts) {
+      attempt++;
+      try {
+        return await db.transaction(async (tx) => {
+          // Hitung komponen tanggal YYMMDD dalam WIB UTC+7
+          const tgl = new Date();
+          const wibTime = new Date(tgl.getTime() + 7 * 60 * 60 * 1000);
+          const yy = String(wibTime.getUTCFullYear()).slice(-2);
+          const mm = String(wibTime.getUTCMonth() + 1).padStart(2, '0');
+          const dd = String(wibTime.getUTCDate()).padStart(2, '0');
+          const tanggalStr = `${yy}${mm}${dd}`;
+
+          const kode = KODE_JENIS_PENGADUAN[input.jenis] ?? 'TK';
+          const prefix = `${kode}${wilayah}${tanggalStr}`;
+
+          // Ambil nomor urut tertinggi eksisting untuk prefix ini sebagai seed awal yang aman
+          const [maxExisting] = await tx
+            .select({
+              maxUrut: sql<number>`COALESCE(MAX(CAST(RIGHT(${pengaduan.nomorTiket}, 4) AS int)), 0)`,
+            })
+            .from(pengaduan)
+            .where(like(pengaduan.nomorTiket, `${prefix}%`));
+
+          const seed = (maxExisting?.maxUrut ?? 0) + 1;
+
+          // B4: Upsert atomik ke tabel pengaduan_nomor_urut
+          const [seqRow] = await tx
+            .insert(pengaduanNomorUrut)
+            .values({
+              prefix,
+              lastUrut: seed,
+            })
+            .onConflictDoUpdate({
+              target: pengaduanNomorUrut.prefix,
+              set: {
+                lastUrut: sql`${pengaduanNomorUrut.lastUrut} + 1`,
+                updatedAt: new Date(),
+              },
+            })
+            .returning({ lastUrut: pengaduanNomorUrut.lastUrut });
+
+          const urut = seqRow.lastUrut;
+          if (urut > 9999) {
+            throw new Error(
+              `Nomor urut tiket untuk prefix '${prefix}' telah melampaui batas maksimum 9999 per hari.`
+            );
+          }
+
+          const nomorTiket = generateNomorTiket({
+            kode,
+            jenis: input.jenis,
+            wilayah,
+            tanggal: tgl,
+            urut,
+          });
+
+          const [row] = await tx
+            .insert(pengaduan)
+            .values({
+              id: ticketId,
+              nomorTiket,
+              clientRequestId: input.clientRequestId,
+              nomorLangganan: input.nomorLangganan,
+              pelangganId: resolvedPelangganId,
+              klasifikasi: input.klasifikasi ?? 'BUKAN_NILAI_TAGIHAN_REKENING',
+              jenis: input.jenis,
+              judul: finalJudul,
+              deskripsi: input.deskripsi.trim(),
+              koordinat: input.koordinat,
+              alamatKejadian: input.alamatKejadian,
+              prioritas,
+              status: 'BARU',
+              pelapor: input.pelapor.trim(),
+              kontakPelapor: input.kontakPelapor,
+              fotoUrl: processedFotoUrl,
+              fotoPublicId,
+              videoUrl: input.videoUrl,
+              targetResponsAt: sla.targetResponsAt,
+              targetSelesaiAt: sla.targetSelesaiAt,
+            })
+            .returning();
+
+          // Catat baris linimasa pertama
+          await tx.insert(riwayatPengaduan).values({
+            pengaduanId: row.id,
+            aksi: 'DIBUAT',
+            statusKe: 'BARU',
+            catatan: 'Pengaduan berhasil didaftarkan oleh pelapor.',
+            isPublik: true,
+          });
+
+          // Catat audit internal jika foto gagal diunggah (B15)
+          if (fotoGagalDiunggah) {
+            await tx.insert(riwayatPengaduan).values({
+              pengaduanId: row.id,
+              aksi: 'CATATAN',
+              statusKe: 'BARU',
+              catatan: 'Foto bukti pengaduan gagal diunggah ke cloud storage.',
+              isPublik: false,
+            });
+          }
+
+          return row;
+        });
+      } catch (err: any) {
+        const isUniqueViolation =
+          err?.code === '23505' ||
+          err?.cause?.code === '23505' ||
+          err?.message?.includes('unique') ||
+          err?.cause?.message?.includes('unique');
+
+        if (isUniqueViolation) {
+          // Jika bentrok clientRequestId pada concurrent request, return tiket yang sudah dibuat
+          if (input.clientRequestId) {
+            const [existing] = await db
+              .select()
+              .from(pengaduan)
+              .where(eq(pengaduan.clientRequestId, input.clientRequestId));
+            if (existing) {
+              return existing;
+            }
+          }
+
+          if (attempt < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, 30 * attempt));
+            continue;
+          }
+        }
+        throw err;
+      }
+    }
+
+    throw new Error('Gagal membuat tiket pengaduan setelah beberapa percobaan.');
   }
 
   /**
@@ -303,25 +404,30 @@ export class PengaduanService {
       throw new Error('Penyelesaian tiket wajib menyertakan foto bukti atau catatan pekerjaan.');
     }
 
-    let processedFotoPenyelesaian = input.fotoPenyelesaianUrl;
+    let processedFotoPenyelesaian: string | null = null;
     let fotoPenyelesaianPublicId: string | null = null;
 
-    if (
-      isCloudinaryConfigured() &&
-      input.fotoPenyelesaianUrl &&
-      input.fotoPenyelesaianUrl.startsWith('data:image/')
-    ) {
-      try {
-        const res = await uploadToCloudinary({
-          file: input.fotoPenyelesaianUrl,
-          modul: 'pengaduan',
-          jenis: 'selesai',
-          identifier: row.nomorTiket,
-        });
-        processedFotoPenyelesaian = res.secureUrl;
-        fotoPenyelesaianPublicId = res.publicId;
-      } catch (err) {
-        console.error('[CLOUDINARY_PENYELESAIAN_UPLOAD_ERR]', err);
+    if (input.fotoPenyelesaianUrl) {
+      if (
+        input.fotoPenyelesaianUrl.startsWith('http://') ||
+        input.fotoPenyelesaianUrl.startsWith('https://')
+      ) {
+        processedFotoPenyelesaian = input.fotoPenyelesaianUrl;
+      } else if (input.fotoPenyelesaianUrl.startsWith('data:image/')) {
+        if (isCloudinaryConfigured()) {
+          try {
+            const res = await uploadToCloudinary({
+              file: input.fotoPenyelesaianUrl,
+              modul: 'pengaduan',
+              jenis: 'selesai',
+              identifier: row.nomorTiket,
+            });
+            processedFotoPenyelesaian = res.secureUrl;
+            fotoPenyelesaianPublicId = res.publicId;
+          } catch (err) {
+            console.error('[CLOUDINARY_PENYELESAIAN_UPLOAD_ERR]', err);
+          }
+        }
       }
     }
 
@@ -913,29 +1019,40 @@ export class PengaduanService {
 
   /**
    * 10. Daftar Petugas untuk Penugasan / Eskalasi
+   * Filter role petugas yang layak (PELAKSANA, VERIFIKATOR_*, SUPERADMIN)
+   * Hapus fallback data tiruan fiktif (B3)
    */
   async listPetugasPengaduan() {
+    const rolesLayak: AppRole[] = [
+      'PELAKSANA',
+      'PENCATAT',
+      'VERIFIKATOR_1',
+      'VERIFIKATOR_2',
+      'VERIFIKATOR_3',
+      'SUPERADMIN',
+    ];
+
     try {
-      const users = await db
-        .select({ id: user.id, name: user.name })
+      const eligibleUsers = await db
+        .selectDistinct({
+          id: user.id,
+          name: user.name,
+          role: userRoles.role,
+        })
         .from(user)
+        .innerJoin(userRoles, eq(user.id, userRoles.userId))
+        .where(inArray(userRoles.role, rolesLayak))
         .limit(100);
 
-      if (users.length > 0) {
-        return users.map((u) => ({
-          id: u.id,
-          name: u.name,
-          role: 'PETUGAS_LAPANGAN',
-        }));
-      }
-    } catch {}
-
-    return [
-      { id: 'usr-1', name: 'Asep Sunandar (Tim Reaksi Cepat)', role: 'PETUGAS_LAPANGAN' },
-      { id: 'usr-2', name: 'Budi Santoso (Operator CS)', role: 'VERIFIKATOR_1' },
-      { id: 'usr-3', name: 'Dadang Hidayat (Teknisi Pipa)', role: 'PELAKSANA' },
-      { id: 'usr-4', name: 'Cecep Suryana (Spv Wilayah 5)', role: 'SUPERVISOR' },
-    ];
+      return eligibleUsers.map((u) => ({
+        id: u.id,
+        name: u.name,
+        role: u.role,
+      }));
+    } catch (err) {
+      console.error('[LIST_PETUGAS_PENGADUAN_ERR]', err);
+      throw err;
+    }
   }
 
   /**
