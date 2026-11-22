@@ -17,7 +17,16 @@ import {
   publicCreatePengaduanBodySchema,
   publicDetailPengaduanParamsSchema,
   publicRatingPengaduanBodySchema,
+  publicKonfirmasiPengaduanBodySchema,
+  publicBukaKembaliPengaduanBodySchema,
 } from './publik.schema';
+import {
+  samarkanNama,
+  cekBatasPercobaan,
+  catatKegagalanPercobaan,
+  resetPercobaan,
+  verifikasiEmpatDigitKontak,
+} from '../../lib/public-rate-limiter';
 
 /**
  * Publik Routes: Menangani endpoint portal publik warga
@@ -159,12 +168,24 @@ const publikRoutes = new Elysia()
     }
   )
 
-  // 6. Lacak Status Pengaduan Air (Hanya Linimasa Publik yang Ditampilkan)
+  // 6. Lacak Status Pengaduan Air Publik (Sanitasi PII: nama disamarkan, tanpa kontak, tanpa data staf)
   .get(
     '/pengaduan/:nomorTiket',
     async ({ params: { nomorTiket }, set }) => {
       try {
         const result = await pengaduanService.getDetailPengaduan(nomorTiket, false);
+
+        // Sanitasi linimasa: hanya status, waktu, dan catatan publik tanpa PII staf
+        const linimasaBersih = result.linimasa.map((rw) => ({
+          id: rw.id,
+          aksi: rw.aksi,
+          statusDari: rw.statusDari,
+          statusKe: rw.statusKe,
+          catatan: rw.catatan,
+          fotoUrl: rw.fotoUrl,
+          createdAt: rw.createdAt,
+        }));
+
         return {
           success: true,
           data: {
@@ -173,12 +194,12 @@ const publikRoutes = new Elysia()
             jenis: result.pengaduan.jenis,
             status: result.pengaduan.status,
             prioritas: result.pengaduan.prioritas,
-            pelapor: result.pengaduan.pelapor,
+            pelapor: samarkanNama(result.pengaduan.pelapor),
             targetSelesaiAt: result.pengaduan.targetSelesaiAt,
             selesaiAt: result.pengaduan.selesaiAt,
             catatanPenyelesaian: result.pengaduan.catatanPenyelesaian,
             fotoPenyelesaianUrl: result.pengaduan.fotoPenyelesaianUrl,
-            linimasa: result.linimasa,
+            linimasa: linimasaBersih,
           },
         };
       } catch (err: any) {
@@ -191,25 +212,194 @@ const publikRoutes = new Elysia()
     }
   )
 
-  // 7. Rating Kepuasan Pelanggan terhadap Tiket Selesai
+  // 7. Rating Kepuasan Pelanggan (Wajib verifikasi 4 digit terakhir nomor telepon pelapor)
   .post(
     '/pengaduan/:nomorTiket/rating',
-    async ({ params: { nomorTiket }, body, set }) => {
+    async ({ params: { nomorTiket }, body, set, request }) => {
+      const ip = (request.headers.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0].trim();
+
+      // Cek batas percobaan gagal
+      const batas = cekBatasPercobaan(ip, nomorTiket);
+      if (!batas.boleh) {
+        set.status = 429;
+        return {
+          success: false,
+          error: `Terlalu banyak percobaan verifikasi gagal. Silakan coba lagi dalam ${batas.sisaDetik} detik.`,
+        };
+      }
+
       try {
-        const result = await pengaduanService.beriRating(
+        const result = await pengaduanService.getDetailPengaduan(nomorTiket, false);
+
+        if (!result.pengaduan.kontakPelapor) {
+          set.status = 422;
+          return {
+            success: false,
+            error: 'Aksi rating mandiri tidak tersedia untuk laporan tanpa nomor kontak pelapor.',
+          };
+        }
+
+        const cocok = verifikasiEmpatDigitKontak(
+          result.pengaduan.kontakPelapor,
+          body.empatDigitKontak
+        );
+
+        if (!cocok) {
+          catatKegagalanPercobaan(ip, nomorTiket);
+          set.status = 403;
+          return {
+            success: false,
+            error: 'Verifikasi 4 digit terakhir nomor telepon pelapor tidak sesuai.',
+          };
+        }
+
+        resetPercobaan(ip, nomorTiket);
+        const res = await pengaduanService.beriRating(
           nomorTiket,
           body.rating,
           body.komentar
         );
-        return { success: true, ...result };
+        return { success: true, ...res };
       } catch (err: any) {
-        set.status = 400;
+        set.status = err.statusCode ?? (err.message.includes('tidak ditemukan') ? 404 : 400);
         return { success: false, error: err.message };
       }
     },
     {
       params: publicDetailPengaduanParamsSchema,
       body: publicRatingPengaduanBodySchema,
+    }
+  )
+
+  // 7b. Konfirmasi Penyelesaian Pengaduan oleh Pelapor (-> DITUTUP, aksi DIKONFIRMASI)
+  .post(
+    '/pengaduan/:nomorTiket/konfirmasi',
+    async ({ params: { nomorTiket }, body, set, request }) => {
+      const ip = (request.headers.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0].trim();
+
+      const batas = cekBatasPercobaan(ip, nomorTiket);
+      if (!batas.boleh) {
+        set.status = 429;
+        return {
+          success: false,
+          error: `Terlalu banyak percobaan verifikasi gagal. Silakan coba lagi dalam ${batas.sisaDetik} detik.`,
+        };
+      }
+
+      try {
+        const result = await pengaduanService.getDetailPengaduan(nomorTiket, false);
+
+        if (!result.pengaduan.kontakPelapor) {
+          set.status = 422;
+          return {
+            success: false,
+            error: 'Aksi konfirmasi mandiri tidak tersedia untuk laporan tanpa nomor kontak pelapor.',
+          };
+        }
+
+        const cocok = verifikasiEmpatDigitKontak(
+          result.pengaduan.kontakPelapor,
+          body.empatDigitKontak
+        );
+
+        if (!cocok) {
+          catatKegagalanPercobaan(ip, nomorTiket);
+          set.status = 403;
+          return {
+            success: false,
+            error: 'Verifikasi 4 digit terakhir nomor telepon pelapor tidak sesuai.',
+          };
+        }
+
+        resetPercobaan(ip, nomorTiket);
+        const updated = await pengaduanService.ubahStatusPengaduan({
+          pengaduanId: result.pengaduan.id,
+          statusKe: 'DITUTUP',
+          catatan: body.catatan ?? 'Pelapor mengonfirmasi hasil pekerjaan telah selesai.',
+          sumberAksi: 'PELAPOR',
+        });
+
+        return {
+          success: true,
+          message: 'Terima kasih, pengaduan telah dikonfirmasi dan ditutup.',
+          data: { nomorTiket, status: updated.status },
+        };
+      } catch (err: any) {
+        set.status = err.statusCode ?? (err.message.includes('tidak ditemukan') ? 404 : 400);
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      params: publicDetailPengaduanParamsSchema,
+      body: publicKonfirmasiPengaduanBodySchema,
+    }
+  )
+
+  // 7c. Pembukaan Kembali Pengaduan oleh Pelapor (-> DIBUKA_KEMBALI)
+  .post(
+    '/pengaduan/:nomorTiket/buka-kembali',
+    async ({ params: { nomorTiket }, body, set, request }) => {
+      const ip = (request.headers.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0].trim();
+
+      const batas = cekBatasPercobaan(ip, nomorTiket);
+      if (!batas.boleh) {
+        set.status = 429;
+        return {
+          success: false,
+          error: `Terlalu banyak percobaan verifikasi gagal. Silakan coba lagi dalam ${batas.sisaDetik} detik.`,
+        };
+      }
+
+      try {
+        const result = await pengaduanService.getDetailPengaduan(nomorTiket, false);
+
+        if (!result.pengaduan.kontakPelapor) {
+          set.status = 422;
+          return {
+            success: false,
+            error: 'Aksi pembukaan kembali tidak tersedia untuk laporan tanpa nomor kontak pelapor.',
+          };
+        }
+
+        const cocok = verifikasiEmpatDigitKontak(
+          result.pengaduan.kontakPelapor,
+          body.empatDigitKontak
+        );
+
+        if (!cocok) {
+          catatKegagalanPercobaan(ip, nomorTiket);
+          set.status = 403;
+          return {
+            success: false,
+            error: 'Verifikasi 4 digit terakhir nomor telepon pelapor tidak sesuai.',
+          };
+        }
+
+        resetPercobaan(ip, nomorTiket);
+        const updated = await pengaduanService.ubahStatusPengaduan({
+          pengaduanId: result.pengaduan.id,
+          statusKe: 'DIBUKA_KEMBALI',
+          catatan: body.alasan,
+          sumberAksi: 'PELAPOR',
+        });
+
+        return {
+          success: true,
+          message: 'Pengaduan berhasil dibuka kembali untuk penanganan lanjutan.',
+          data: {
+            nomorTiket,
+            status: updated.status,
+            jumlahDibukaKembali: updated.jumlahDibukaKembali,
+          },
+        };
+      } catch (err: any) {
+        set.status = err.statusCode ?? (err.message.includes('tidak ditemukan') ? 404 : 400);
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      params: publicDetailPengaduanParamsSchema,
+      body: publicBukaKembaliPengaduanBodySchema,
     }
   )
 

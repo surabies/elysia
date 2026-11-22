@@ -1515,6 +1515,81 @@ export class PengaduanService {
       return updated;
     });
   }
+
+  /**
+   * 14. Penutupan Otomatis Pengaduan Selesai yang Melewati Batas Konfirmasi (K4, K6)
+   * Hanya menyasar tiket SELESAI dengan konfirmasiBatasAt tidak null dan < now
+   */
+  async tutupOtomatisKedaluwarsa(options: { dryRun?: boolean } = {}) {
+    const sekarang = new Date();
+    const dryRun = Boolean(options.dryRun);
+
+    const expiredRows = await db
+      .select({
+        id: pengaduan.id,
+        nomorTiket: pengaduan.nomorTiket,
+        status: pengaduan.status,
+        konfirmasiBatasAt: pengaduan.konfirmasiBatasAt,
+      })
+      .from(pengaduan)
+      .where(
+        and(
+          eq(pengaduan.status, 'SELESAI'),
+          isNotNull(pengaduan.konfirmasiBatasAt),
+          sql`${pengaduan.konfirmasiBatasAt} < NOW()`
+        )
+      );
+
+    if (dryRun) {
+      return {
+        dryRun: true,
+        totalDitemukan: expiredRows.length,
+        tiketKedaluwarsa: expiredRows.map((r) => ({
+          id: r.id,
+          nomorTiket: r.nomorTiket,
+          konfirmasiBatasAt: r.konfirmasiBatasAt,
+        })),
+        berhasilDitutup: 0,
+      };
+    }
+
+    let berhasilDitutup = 0;
+    for (const tiket of expiredRows) {
+      try {
+        await db.transaction(async (tx) => {
+          const [updated] = await tx
+            .update(pengaduan)
+            .set({
+              status: 'DITUTUP',
+              updatedAt: new Date(),
+            })
+            .where(and(eq(pengaduan.id, tiket.id), eq(pengaduan.status, 'SELESAI')))
+            .returning();
+
+          if (updated) {
+            await tx.insert(riwayatPengaduan).values({
+              pengaduanId: tiket.id,
+              aksi: 'DITUTUP_OTOMATIS',
+              statusDari: 'SELESAI',
+              statusKe: 'DITUTUP',
+              catatan:
+                'Tiket ditutup secara otomatis oleh sistem karena melewati batas waktu konfirmasi warga.',
+              isPublik: true,
+            });
+            berhasilDitutup++;
+          }
+        });
+      } catch (err) {
+        console.error(`[AUTO_CLOSE_TIKET_ERR] Gagal menutup tiket ${tiket.nomorTiket}:`, err);
+      }
+    }
+
+    return {
+      dryRun: false,
+      totalDitemukan: expiredRows.length,
+      berhasilDitutup,
+    };
+  }
 }
 
 export const pengaduanService = new PengaduanService();
