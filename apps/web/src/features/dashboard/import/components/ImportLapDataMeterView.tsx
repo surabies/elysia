@@ -41,6 +41,7 @@ import {
 } from "./shared/ImportPanels";
 import { ImportProgressModal } from "./shared/ImportProgressModal";
 import { ImportResultBanner } from "./shared/ImportResultBanner";
+import { ImportSafetyModal, type ImportMode, type LapDataMeterPreflightInfo } from "./shared/ImportSafetyModal";
 import { ImportStatCard, ImportStatGrid } from "./shared/ImportStatCard";
 
 export type { LapDataMeterRow } from "../types/import.types";
@@ -138,8 +139,14 @@ export function ImportLapDataMeterView() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [resultStats, setResultStats] =
     React.useState<LapDataMeterResultStats | null>(null);
+  const [lastImportMode, setLastImportMode] =
+    React.useState<ImportMode>("SKIP_EXISTING");
   const [progressState, setProgressState] =
     React.useState<ImportProgressState | null>(null);
+  const [isSafetyModalOpen, setIsSafetyModalOpen] = React.useState(false);
+  const [preflightInfo, setPreflightInfo] =
+    React.useState<LapDataMeterPreflightInfo | null>(null);
+  const [isPreflighting, setIsPreflighting] = React.useState(false);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
   const handleFileUpload = async (
@@ -242,7 +249,38 @@ export function ImportLapDataMeterView() {
       return;
     }
 
+    const thbl = items[0]?.thbl;
+    if (!thbl) {
+      executeImport("SKIP_EXISTING");
+      return;
+    }
+
+    setIsPreflighting(true);
+    try {
+      const res = await fetch(
+        `${IMPORT_API.lapDataMeterPreflight}?thbl=${encodeURIComponent(thbl)}`,
+      );
+      const data = await res.json();
+      if (data.success && data.totalExisting > 0) {
+        setPreflightInfo(data);
+        setIsSafetyModalOpen(true);
+        return;
+      }
+      // Jika data belum ada sama sekali di database, langsung jalankan mode aman
+      executeImport("SKIP_EXISTING");
+    } catch (err) {
+      console.warn("Gagal melakukan pre-flight check, melanjutkan mode aman:", err);
+      executeImport("SKIP_EXISTING");
+    } finally {
+      setIsPreflighting(false);
+    }
+  };
+
+  const executeImport = async (mode: ImportMode) => {
+    setIsSafetyModalOpen(false);
     setIsSubmitting(true);
+    setLastImportMode(mode);
+
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -256,6 +294,7 @@ export function ImportLapDataMeterView() {
     const totalRows = items.length;
     const batchSize = IMPORT_LIMITS.lapDataMeterBatchSize;
     const totalBatches = Math.ceil(totalRows / batchSize);
+    const isForceReset = mode === "FORCE_RESET_OVERWRITE";
 
     setProgressState({
       isActive: true,
@@ -266,9 +305,12 @@ export function ImportLapDataMeterView() {
       gagal: 0,
       percent: 0,
       currentLabel: `Batch 1 / ${totalBatches} (0 / ${totalRows.toLocaleString("id-ID")} baris)`,
-      customTitle: "Mengimpor & Memetakan Data Meter",
-      customDescription:
-        "Menyimpan data pembacaan meter ke tabel cater_baca_meter secara bertahap...",
+      customTitle: isForceReset
+        ? "Memulihkan & Menimpa Data Meter"
+        : "Mengimpor & Memetakan Data Meter",
+      customDescription: isForceReset
+        ? "Menimpa stand lama & mereset verifikasi ke antrean awal (SUBMITTED)..."
+        : "Menyimpan data pembacaan meter ke tabel cater_baca_meter secara bertahap...",
       isCancelling: false,
     });
 
@@ -306,7 +348,7 @@ export function ImportLapDataMeterView() {
         try {
           const json = await postImport<LapDataMeterImportResponse>(
             IMPORT_API.lapDataMeter,
-            { items: chunk },
+            { items: chunk, mode },
             {
               signal: batchController.signal,
               fallbackError: `Gagal mengimpor batch ${batchIdx}.`,
@@ -317,7 +359,7 @@ export function ImportLapDataMeterView() {
           totalGagal += json.gagal ?? 0;
           totalCreated += json.created ?? 0;
           totalUpdated += json.updated ?? 0;
-          totalSkipped += json.skipped ?? json.updated ?? 0;
+          totalSkipped += json.skipped ?? 0;
         } catch (batchError) {
           if (controller.signal.aborted || batchController.signal.aborted) {
             wasAborted = true;
@@ -338,7 +380,7 @@ export function ImportLapDataMeterView() {
             ? {
                 ...prev,
                 processed,
-                sukses: totalSukses,
+                sukses: totalCreated + totalUpdated,
                 gagal: totalGagal,
                 percent,
                 currentLabel: `Batch ${batchIdx} / ${totalBatches} selesai (${processed.toLocaleString("id-ID")} / ${totalRows.toLocaleString("id-ID")} baris)`,
@@ -352,8 +394,9 @@ export function ImportLapDataMeterView() {
           `Impor dibatalkan oleh pengguna. ${totalSukses.toLocaleString("id-ID")} baris telah diproses.`,
         );
       } else {
-        const selesaiLabel =
-          totalCreated === 0 && totalSkipped > 0
+        const selesaiLabel = isForceReset
+          ? `Selesai! ${totalCreated.toLocaleString("id-ID")} baru, ${totalUpdated.toLocaleString("id-ID")} ditimpa & di-reset ke Menunggu.`
+          : totalCreated === 0 && totalSkipped > 0
             ? `Selesai! Seluruh ${totalSkipped.toLocaleString("id-ID")} baris data dilewati (sudah tersedia).`
             : totalSkipped > 0
               ? `Selesai! ${totalCreated.toLocaleString("id-ID")} baru diimpor, ${totalSkipped.toLocaleString("id-ID")} dilewati.`
@@ -366,7 +409,7 @@ export function ImportLapDataMeterView() {
                 stage: "completed",
                 percent: 100,
                 processed: totalRows,
-                sukses: totalCreated,
+                sukses: isForceReset ? totalCreated + totalUpdated : totalCreated,
                 gagal: totalGagal,
                 currentLabel: selesaiLabel,
               }
@@ -377,7 +420,11 @@ export function ImportLapDataMeterView() {
           setTimeout(resolve, IMPORT_LIMITS.progressSettleMs),
         );
 
-        if (totalCreated === 0 && totalSkipped > 0) {
+        if (isForceReset) {
+          toast.success(
+            `Sukses Pemulihan! ${totalCreated.toLocaleString("id-ID")} data baru dibuat, ${totalUpdated.toLocaleString("id-ID")} data stand ditimpa & diverifikasi ulang.`,
+          );
+        } else if (totalCreated === 0 && totalSkipped > 0) {
           toast.info(
             `Seluruh ${totalSkipped.toLocaleString("id-ID")} baris data dilewati karena sudah tersedia di sistem.`,
           );
@@ -393,8 +440,8 @@ export function ImportLapDataMeterView() {
       }
 
       const stats: LapDataMeterResultStats = {
-        total: totalCreated + totalSkipped + totalGagal,
-        sukses: totalCreated,
+        total: totalCreated + totalSkipped + totalUpdated + totalGagal,
+        sukses: isForceReset ? totalCreated + totalUpdated : totalCreated,
         gagal: totalGagal,
         created: totalCreated,
         updated: totalUpdated,
@@ -525,12 +572,14 @@ export function ImportLapDataMeterView() {
 
             <Button
               onClick={handleImport}
-              disabled={isSubmitting || items.length === 0}
+              disabled={isSubmitting || isPreflighting || items.length === 0}
             >
               <Database />
-              {isSubmitting
-                ? "Memproses..."
-                : `Import ${items.length} Data ke cater_baca_meter`}
+              {isPreflighting
+                ? "Memeriksa Status Data..."
+                : isSubmitting
+                  ? "Memproses..."
+                  : `Import ${items.length} Data ke cater_baca_meter`}
             </Button>
           </>
         }
@@ -539,27 +588,35 @@ export function ImportLapDataMeterView() {
       {resultStats && (
         <ImportResultBanner
           tone={
-            resultStats.created === 0 && resultStats.skipped > 0
-              ? "blue"
-              : resultStats.gagal > 0
-                ? "amber"
-                : "green"
+            lastImportMode === "FORCE_RESET_OVERWRITE"
+              ? "amber"
+              : resultStats.created === 0 && resultStats.skipped > 0
+                ? "blue"
+                : resultStats.gagal > 0
+                  ? "amber"
+                  : "green"
           }
           title={
-            resultStats.created === 0 && resultStats.skipped > 0
-              ? "Data Sudah Tersedia di Sistem (Dilewati)"
-              : "Proses Import Selesai!"
+            lastImportMode === "FORCE_RESET_OVERWRITE"
+              ? "Pemulihan & Timpa Data Selesai!"
+              : resultStats.created === 0 && resultStats.skipped > 0
+                ? "Data Sudah Tersedia di Sistem (Dilewati)"
+                : "Proses Import Selesai!"
           }
           description={
-            resultStats.created === 0 && resultStats.skipped > 0
-              ? `Seluruh ${resultStats.skipped.toLocaleString("id-ID")} baris data dilewati karena data pembacaan periode ini sudah tercatat di database.`
-              : `Total ${resultStats.total.toLocaleString("id-ID")} baris data diproses • ${resultStats.created.toLocaleString("id-ID")} transaksi baru dibuat • ${resultStats.skipped.toLocaleString("id-ID")} data dilewati (sudah ada) • ${resultStats.gagal.toLocaleString("id-ID")} gagal.`
+            lastImportMode === "FORCE_RESET_OVERWRITE"
+              ? `Total ${resultStats.total.toLocaleString("id-ID")} baris data diproses • ${resultStats.created.toLocaleString("id-ID")} data baru • ${resultStats.updated.toLocaleString("id-ID")} data stand ditimpa & di-reset ke Menunggu • ${resultStats.gagal} gagal.`
+              : resultStats.created === 0 && resultStats.skipped > 0
+                ? `Seluruh ${resultStats.skipped.toLocaleString("id-ID")} baris data dilewati karena data pembacaan periode ini sudah tercatat di database.`
+                : `Total ${resultStats.total.toLocaleString("id-ID")} baris data diproses • ${resultStats.created.toLocaleString("id-ID")} transaksi baru dibuat • ${resultStats.skipped.toLocaleString("id-ID")} data dilewati (sudah ada) • ${resultStats.gagal.toLocaleString("id-ID")} gagal.`
           }
           actions={
             <Badge variant="pill">
-              {resultStats.created === 0 && resultStats.skipped > 0
-                ? "cater_baca_meter: DATA IDENTIK"
-                : "cater_baca_meter: SYNC OK"}
+              {lastImportMode === "FORCE_RESET_OVERWRITE"
+                ? "cater_baca_meter: DIRESET ULANG"
+                : resultStats.created === 0 && resultStats.skipped > 0
+                  ? "cater_baca_meter: DATA IDENTIK"
+                  : "cater_baca_meter: SYNC OK"}
             </Badge>
           }
         />
@@ -611,6 +668,15 @@ export function ImportLapDataMeterView() {
       <ImportProgressModal
         progress={progressState}
         onCancel={handleCancelImport}
+      />
+
+      <ImportSafetyModal
+        isOpen={isSafetyModalOpen}
+        onClose={() => setIsSafetyModalOpen(false)}
+        onConfirm={(mode) => executeImport(mode)}
+        isSubmitting={isSubmitting}
+        preflightInfo={preflightInfo}
+        totalRowsToImport={items.length}
       />
     </div>
   );

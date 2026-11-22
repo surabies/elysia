@@ -117,4 +117,10 @@ export const lapDataMeterItemSchema = t.Object({
 export const importLapDataMeterBodySchema = t.Object({
   csvText: t.Optional(t.String()),
   items: t.Optional(t.Array(lapDataMeterItemSchema)),
+  mode: t.Optional(
+    t.Union([
+      t.Literal('SKIP_EXISTING'),
+      t.Literal('FORCE_RESET_OVERWRITE'),
+    ])
+  ),
 });

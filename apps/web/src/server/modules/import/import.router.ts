@@ -112,10 +112,32 @@ export const importRouter = new Elysia({ prefix: '/import' })
         }
       )
 
+      // 2a. Pre-flight check LapDataMeter: cek apakah data periode sudah ada di DB
+      .get(
+        '/lapdatameter/preflight',
+        async ({ query, set }) => {
+          try {
+            const thbl = (query as any)?.thbl;
+            if (!thbl) {
+              set.status = 400;
+              return { success: false, error: 'Parameter thbl wajib diisi.' };
+            }
+            const info = await importDataService.getLapDataMeterPreflight(thbl);
+            return { success: true, ...info };
+          } catch (err: any) {
+            set.status = 500;
+            return { success: false, error: err.message };
+          }
+        },
+        {
+          requireAuth: true,
+        }
+      )
+
       // 2b. Import Laporan Data Meter PDAM (lapdatameter) ke cater_baca_meter
       .post(
         '/lapdatameter',
-        async ({ body, set }) => {
+        async ({ body, set, user }) => {
           try {
             let items = body.items as any;
             if (body.csvText) {
@@ -141,7 +163,11 @@ export const importRouter = new Elysia({ prefix: '/import' })
               }
             }
 
-            const result = await importDataService.importLapDataMeter(items);
+            const mode = body.mode ?? 'SKIP_EXISTING';
+            const result = await importDataService.importLapDataMeter(items, mode, {
+              userId: user?.id ?? 'user-superadmin',
+              userName: user?.name ?? 'Operator Import',
+            });
             return { success: true, ...result, data: result };
           } catch (err: any) {
             console.error('[IMPORT_LAPDATA_METER_ERROR]', err);

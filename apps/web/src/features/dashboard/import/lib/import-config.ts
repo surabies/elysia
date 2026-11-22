@@ -7,6 +7,7 @@ export const IMPORT_API = {
   rNomor: "/api/import/r-nomor",
   data: "/api/import/data",
   lapDataMeter: "/api/import/lapdatameter",
+  lapDataMeterPreflight: "/api/import/lapdatameter/preflight",
   lapDataMeterSample: "/api/import/sample/lapdatameter",
   fotoBackup: "/api/import/foto-backup",
   lookupPelanggan: "/api/import/lookup-pelanggan",

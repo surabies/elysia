@@ -19,6 +19,7 @@ import {
   db,
   pelanggan,
   caterBacaMeter,
+  caterVerifikasiLog,
   waterMeter,
   daftarCatat,
   petugasCater,
@@ -42,6 +43,8 @@ export interface ParsedPhotoInfo {
   ext: string;
   rawFileName: string;
 }
+
+export type ImportLapDataMeterMode = 'SKIP_EXISTING' | 'FORCE_RESET_OVERWRITE';
 
 export interface FotoUploadFileItem {
   fileName: string;
@@ -675,6 +678,65 @@ export class ImportDataService {
   }
 
   /**
+   * Pre-flight Check: Cek status periode & jumlah data yang sudah ada di database sebelum impor LapDataMeter
+   */
+  async getLapDataMeterPreflight(thbl: string) {
+    const [periodeRow] = await db.execute(sql`
+      SELECT status FROM periode_penagihan WHERE periode = ${thbl} LIMIT 1
+    `);
+    const isLockedPeriode = periodeRow ? String((periodeRow as any).status) === 'TERKUNCI' : false;
+
+    const rows = await db
+      .select({
+        status: caterBacaMeter.statusVerifikasi,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(caterBacaMeter)
+      .where(eq(caterBacaMeter.thbl, thbl))
+      .groupBy(caterBacaMeter.statusVerifikasi);
+
+    let totalExisting = 0;
+    let verifiedV3 = 0;
+    let verifiedV2 = 0;
+    let verifiedV1 = 0;
+    let submitted = 0;
+    let lockedBilling = 0;
+
+    for (const r of rows) {
+      totalExisting += r.count;
+      if (['APPROVED_FINAL', 'CORRECTED_POST_VERIF', 'LOCKED_BILLING'].includes(r.status)) {
+        verifiedV3 += r.count;
+      }
+      if (r.status === 'LOCKED_BILLING') {
+        lockedBilling += r.count;
+      }
+      if (r.status === 'VERIFIED_L2') {
+        verifiedV2 += r.count;
+      }
+      if (r.status === 'VERIFIED_L1') {
+        verifiedV1 += r.count;
+      }
+      if (r.status === 'SUBMITTED' || r.status === 'PENDING') {
+        submitted += r.count;
+      }
+    }
+
+    const isLocked = isLockedPeriode || lockedBilling > 0;
+
+    return {
+      thbl,
+      isLocked,
+      isLockedPeriode,
+      hasLockedBilling: lockedBilling > 0,
+      totalExisting,
+      verifiedV3,
+      verifiedV2,
+      verifiedV1,
+      submitted,
+    };
+  }
+
+  /**
    * Import Laporan Data Meter PDAM (lapdatameter) ke tabel cater_baca_meter
    * Mendukung pemrosesan batching performa tinggi dengan integritas relasi:
    * 1. Upsert rute_cater & petugas_cater jika belum ada
@@ -682,7 +744,7 @@ export class ImportDataService {
    * 3. Upsert data pembacaan meter ke tabel cater_baca_meter (kolom stml, stma, pakai_m3, pakai_lalu, tmss, ket_catat, dll.)
    *
    * Perbaikan terkait:
-   * - Kelompokkan item per periode (thbl) untuk pengecekan lock periode dan transaksi terpisah.
+   * - Mendukung 2 mode impor: 'SKIP_EXISTING' (Default) dan 'FORCE_RESET_OVERWRITE' (Pemulihan Darurat).
    * - Pengecekan status TERKUNCI dilakukan di dalam transaksi untuk mencegah race condition.
    * - Jika periode status = 'TERKUNCI', seluruh baris periode tersebut ditolak.
    * - Setiap periode diproses dalam satu transaksi DB untuk atomicity.
@@ -690,7 +752,11 @@ export class ImportDataService {
    * - Deteksi duplikat NOLG dalam satu periode.
    * - Error handling per baris agar satu baris gagal tidak membatalkan batch lain dalam periode yang sama.
    */
-  async importLapDataMeter(items: LapDataMeterItem[]) {
+  async importLapDataMeter(
+    items: LapDataMeterItem[],
+    mode: ImportLapDataMeterMode = 'SKIP_EXISTING',
+    userContext?: { userId: string; userName?: string }
+  ) {
     if (!items || items.length === 0) {
       throw new Error('Tidak ada baris data LapDataMeter untuk diproses.');
     }
@@ -847,10 +913,12 @@ export class ImportDataService {
               .onConflictDoNothing({ target: masterKondisiCatat.kodeTmss });
           }
 
-          // 6. Cek existing cater_baca_meter berdasarkan (thbl, nolg) untuk statistik created vs skipped
+          // 6. Cek existing cater_baca_meter berdasarkan (thbl, nolg) untuk statistik created vs skipped/updated
           const existingCaterRows = await tx
             .select({
+              id: caterBacaMeter.id,
               nolg: caterBacaMeter.nolg,
+              status: caterBacaMeter.statusVerifikasi,
             })
             .from(caterBacaMeter)
             .where(
@@ -862,16 +930,27 @@ export class ImportDataService {
 
           const existingNolgSet = new Set(existingCaterRows.map((r) => r.nolg));
           const existingCount = existingCaterRows.length;
-          results.skipped += existingCount;
-          results.created += uniqueBatch.length - existingCount;
+
+          // Jika mode FORCE_RESET_OVERWRITE, cegah bila ada data yang sudah menjadi tagihan terkunci
+          if (mode === 'FORCE_RESET_OVERWRITE') {
+            const hasLockedRow = existingCaterRows.some((r) => r.status === 'LOCKED_BILLING');
+            if (hasLockedRow) {
+              throw new Error(
+                `Periode ${thbl} telah memiliki transaksi tagihan resmi yang terkunci (LOCKED_BILLING). Penimpaan total dilarang.`
+              );
+            }
+          }
 
           // 7a. Ambil aturan anomali terpusat untuk klasifikasi otomatis
           const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
 
-          // 7b. Siapkan records untuk bulk insert (hanya yang belum ada di database agar tidak menimpa status/hasil verifikasi)
-          const newBatchItems = uniqueBatch.filter((item) => !existingNolgSet.has(item.nolg));
+          // 7b. Tentukan batch items yang akan diproses sesuai mode
+          const isForceOverwrite = mode === 'FORCE_RESET_OVERWRITE';
+          const itemsToProcess = isForceOverwrite
+            ? uniqueBatch
+            : uniqueBatch.filter((item) => !existingNolgSet.has(item.nolg));
 
-          const bulkRecords = newBatchItems.map((item) => {
+          const bulkRecords = itemsToProcess.map((item) => {
             let pakaiM3 = item.pakaiM3;
             if (pakaiM3 === undefined || isNaN(pakaiM3)) {
               if (item.stma >= item.stml) {
@@ -930,27 +1009,91 @@ export class ImportDataService {
             };
           });
 
-          // 8. Eksekusi insert untuk data baru dalam chunks 1.000 baris (batas max parameter PostgreSQL)
+          // 8. Eksekusi penyimpanan data dalam chunks 1.000 baris
           const CHUNK_SIZE = 1000;
-          for (let i = 0; i < bulkRecords.length; i += CHUNK_SIZE) {
-            const chunk = bulkRecords.slice(i, i + CHUNK_SIZE);
-            await tx
-              .insert(caterBacaMeter)
-              .values(chunk)
-              .onConflictDoNothing({ target: [caterBacaMeter.thbl, caterBacaMeter.nolg] });
-          }
+          if (isForceOverwrite) {
+            for (let i = 0; i < bulkRecords.length; i += CHUNK_SIZE) {
+              const chunk = bulkRecords.slice(i, i + CHUNK_SIZE);
+              await tx
+                .insert(caterBacaMeter)
+                .values(chunk)
+                .onConflictDoUpdate({
+                  target: [caterBacaMeter.thbl, caterBacaMeter.nolg],
+                  set: {
+                    ruteKode: sql`excluded.rute_kode`,
+                    petugasId: sql`excluded.petugas_id`,
+                    stml: sql`excluded.stml`,
+                    stma: sql`excluded.stma`,
+                    pakaiM3: sql`excluded.pakai_m3`,
+                    pakaiLalu: sql`excluded.pakai_lalu`,
+                    tmss: sql`excluded.tmss`,
+                    ketCatat: sql`excluded.ket_catat`,
+                    sumberCatat: sql`excluded.sumber_catat`,
+                    statusVerifikasi: 'SUBMITTED',
+                    stmlRevisi: null,
+                    stmaRevisi: null,
+                    pakaiM3Revisi: null,
+                    ketCatatRevisi: null,
+                    standAngkatRevisi: null,
+                    standMeterBaruRevisi: null,
+                    pakaiTagih: null,
+                    isAnomali: sql`excluded.is_anomali`,
+                    kodeAnomaliUtama: sql`excluded.kode_anomali_utama`,
+                    kodeAnomaliList: sql`excluded.kode_anomali_list`,
+                    aturanVersi: sql`excluded.aturan_versi`,
+                    tglCatat: sql`excluded.tgl_catat`,
+                    catatan: sql`excluded.catatan`,
+                    updatedAt: sql`now()`,
+                  },
+                });
+            }
 
-          results.sukses += bulkRecords.length;
-          for (const item of uniqueBatch) {
-            if (existingNolgSet.has(item.nolg)) {
-              results.detail.push({
-                nolg: item.nolg,
-                thbl: item.thbl,
-                status: 'SKIPPED',
-                error: 'Data pembacaan periode ini sudah tersedia di sistem (dilewati)',
-              });
-            } else {
+            // Catat audit log reset untuk baris yang ditimpa
+            if (existingCaterRows.length > 0) {
+              const auditLogItems = existingCaterRows.map((r) => ({
+                caterId: r.id,
+                userId: userContext?.userId || 'user-superadmin',
+                stage: 'SYSTEM_RESET',
+                action: 'RESET_OVERWRITE',
+                alasan: `Reset data pembacaan meter via Import LapDataMeter oleh ${userContext?.userName || 'Operator'}.`,
+              }));
+              for (let i = 0; i < auditLogItems.length; i += CHUNK_SIZE) {
+                await tx.insert(caterVerifikasiLog).values(auditLogItems.slice(i, i + CHUNK_SIZE));
+              }
+            }
+
+            results.updated += existingCount;
+            results.created += uniqueBatch.length - existingCount;
+            results.sukses += bulkRecords.length;
+
+            for (const item of uniqueBatch) {
               results.detail.push({ nolg: item.nolg, thbl: item.thbl, status: 'SUCCESS' });
+            }
+          } else {
+            // Mode Default: SKIP_EXISTING
+            for (let i = 0; i < bulkRecords.length; i += CHUNK_SIZE) {
+              const chunk = bulkRecords.slice(i, i + CHUNK_SIZE);
+              await tx
+                .insert(caterBacaMeter)
+                .values(chunk)
+                .onConflictDoNothing({ target: [caterBacaMeter.thbl, caterBacaMeter.nolg] });
+            }
+
+            results.skipped += existingCount;
+            results.created += bulkRecords.length;
+            results.sukses += bulkRecords.length;
+
+            for (const item of uniqueBatch) {
+              if (existingNolgSet.has(item.nolg)) {
+                results.detail.push({
+                  nolg: item.nolg,
+                  thbl: item.thbl,
+                  status: 'SKIPPED',
+                  error: 'Data pembacaan periode ini sudah tersedia di sistem (dilewati)',
+                });
+              } else {
+                results.detail.push({ nolg: item.nolg, thbl: item.thbl, status: 'SUCCESS' });
+              }
             }
           }
         });
