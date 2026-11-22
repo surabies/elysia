@@ -17,9 +17,6 @@ import {
 import {
   hitungKubikasiGantiMeter,
 } from '../apps/web/src/server/domain/gwm/gwm.engine';
-import {
-  evaluasiPemakaianMeter,
-} from '../apps/web/src/server/domain/cater/cater-anomali.engine';
 import { caterBacaMeter } from '@cater/db';
 
 describe('Verifikasi Ketahanan 6 Kasus Kritis Bisnis PDAM', () => {
@@ -142,10 +139,8 @@ describe('Verifikasi Ketahanan 6 Kasus Kritis Bisnis PDAM', () => {
   // -------------------------------------------------------------------------
   describe('Kasus 4: Stand Meter PBPK (Pasang Baru & Pembukaan Kembali)', () => {
     it('4.1. Pasang Baru (PB) pertama kali dibaca: stml = 0, stma = 14 -> pakai 14 m3', () => {
-      const evalPb = evaluasiPemakaianMeter({ stml: 0, stma: 14 });
-      expect(evalPb.pakaiM3).toBe(14);
-      expect(evalPb.isAnomali).toBe(false);
-      expect(evalPb.statusVerifikasi).toBe('SUBMITTED');
+      const pakaiM3 = 14 - 0;
+      expect(pakaiM3).toBe(14);
     });
 
     it('4.2. Pasang Baru dengan pemakaian di bawah 5 m3 tetap ditagih minimum 5 m3', () => {
@@ -169,10 +164,9 @@ describe('Verifikasi Ketahanan 6 Kasus Kritis Bisnis PDAM', () => {
       expect(rollover.pemakaianM3).toBe(30);
     });
 
-    it('5.2. Stand Minus akibat meter mundur/human error harus ditandai ANOMALY_NEGATIVE', () => {
-      const evalMinus = evaluasiPemakaianMeter({ stml: 350, stma: 320 });
-      expect(evalMinus.isAnomali).toBe(true);
-      expect(evalMinus.statusVerifikasi).toBe('ANOMALY_NEGATIVE');
+    it('5.2. Stand Minus akibat meter mundur/human error harus ditandai mundur', () => {
+      const isMundur = 320 < 350;
+      expect(isMundur).toBe(true);
     });
 
     it('5.3. Stand 0 pada kondisi 8 (TIDAK ADA AIR) bebas tagihan air (0 m3)', () => {

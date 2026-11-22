@@ -238,12 +238,25 @@ export function buatKolomVerifikasi({
       cell: ({ row }) => {
         const persen = row.original.persentase;
         if (persen == null) return "—";
-        const kelas = gayaAnomali(persen, ambangAnomali);
-        return kelas ? (
-          <Lencana kelas={kelas}>{persen}%</Lencana>
-        ) : (
-          `${persen}%`
-        );
+        const isAnom = row.original.isAnomali;
+        const kode = row.original.kodeAnomaliUtama;
+        const isWarn = kode?.startsWith("WARN_");
+
+        if (isAnom) {
+          return (
+            <Lencana kelas="bg-(--verif-error-soft) text-(--verif-error-text) ring-1 ring-inset ring-(--verif-error-border)">
+              {persen}%
+            </Lencana>
+          );
+        }
+        if (isWarn) {
+          return (
+            <Lencana kelas="bg-(--verif-v1-soft) text-(--verif-v1) ring-1 ring-inset ring-(--verif-v1-border)">
+              {persen}%
+            </Lencana>
+          );
+        }
+        return `${persen}%`;
       },
     }),
 

@@ -100,6 +100,10 @@ async function cleanDatabase() {
       'kpi_perspektif',
       'broadcast',
       'pengaturan_konten',
+      'aturan_anomali_audit_log',
+      'aturan_kondisi_meter_map',
+      'aturan_anomali_versi',
+      'aturan_anomali',
     ]);
     console.log('  ✓ Tabel pembacaan meter, penagihan DRD, periode, pengaduan, dan KPI berhasil dikosongkan.');
 

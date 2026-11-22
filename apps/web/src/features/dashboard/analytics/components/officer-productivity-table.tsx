@@ -25,8 +25,8 @@ export function OfficerProductivityTable({
   const maxBeban = Math.max(...data.map((d) => d.persentaseBeban), 1);
 
   return (
-    <Card className="overflow-hidden rounded-lg border-border/80 bg-card shadow-none">
-      <CardHeader className="border-b border-border/60 p-5 pb-4">
+    <Card className="overflow-hidden rounded-lg border border-border bg-card shadow-none">
+      <CardHeader className="border-b border-border p-5 pb-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -47,7 +47,7 @@ export function OfficerProductivityTable({
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table className="min-w-[42rem]">
-            <TableHeader className="bg-(--ds-gray-100)/60 border-b border-border/60 dark:bg-(--ds-gray-200)/30">
+            <TableHeader className="bg-(--ds-gray-100)/60 border-b border-border dark:bg-(--ds-gray-200)/30">
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-16 py-2.5 text-center text-label-11 font-medium uppercase tracking-wider text-muted-foreground">
                   Rank

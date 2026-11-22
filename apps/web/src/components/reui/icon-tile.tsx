@@ -27,8 +27,8 @@ import { cn } from "@/lib/utils"
 const iconTileVariants = cva(
   [
     "relative inline-flex shrink-0 items-center justify-center align-middle",
-    "size-(--icon-tile-size) rounded-[var(--icon-tile-radius,min(var(--radius-md),calc(var(--icon-tile-size)/3)))]",
-    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-(--icon-tile-icon-size)",
+    "size-[var(--icon-tile-size)] rounded-[var(--icon-tile-radius,min(var(--radius-md,6px),calc(var(--icon-tile-size)/3)))]",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-[var(--icon-tile-icon-size)]",
   ],
   {
     variants: {
@@ -44,9 +44,9 @@ const iconTileVariants = cva(
          * quiet, colorful sibling of `frame`. Retint with a text color class.
          */
         soft: [
-          "isolate p-(--icon-tile-inset) text-primary bg-current/10",
-          "after:absolute after:-z-10 after:inset-(--icon-tile-inset)",
-          "after:rounded-[calc(var(--icon-tile-radius,min(var(--radius-md),calc(var(--icon-tile-size)/3)))-var(--icon-tile-inset))]",
+          "isolate p-[var(--icon-tile-inset)] text-primary bg-current/10",
+          "after:absolute after:-z-10 after:inset-[var(--icon-tile-inset)]",
+          "after:rounded-[calc(var(--icon-tile-radius,min(var(--radius-md,6px),calc(var(--icon-tile-size)/3)))-var(--icon-tile-inset))]",
           "after:border after:border-current/20 after:bg-current/5",
         ],
         /** Filled tone with a contrasting glyph. Retint with `bg-*` + a text color. */
@@ -55,36 +55,22 @@ const iconTileVariants = cva(
         frame: [
           "isolate border border-border bg-muted/50 p-px",
           "after:absolute after:-z-10 after:inset-px",
-          "after:rounded-[calc(var(--icon-tile-radius,min(var(--radius-md),calc(var(--icon-tile-size)/3)))-1px)]",
+          "after:rounded-[calc(var(--icon-tile-radius,min(var(--radius-md,6px),calc(var(--icon-tile-size)/3)))-1px)]",
           "after:border after:border-border after:bg-card after:shadow-xs",
         ],
       },
       size: {
-        xs: "[--icon-tile-size:--spacing(6)] [--icon-tile-icon-size:--spacing(3.5)] [--icon-tile-inset:--spacing(0.5)]",
-        sm: "[--icon-tile-size:--spacing(8)] [--icon-tile-icon-size:--spacing(4)] [--icon-tile-inset:--spacing(0.5)]",
+        xs: "size-6 [--icon-tile-size:1.5rem] [--icon-tile-icon-size:0.875rem] [--icon-tile-inset:2px]",
+        sm: "size-8 [--icon-tile-size:2rem] [--icon-tile-icon-size:1rem] [--icon-tile-inset:2px]",
         default:
-          "[--icon-tile-size:--spacing(10)] [--icon-tile-icon-size:--spacing(4.5)] [--icon-tile-inset:--spacing(0.75)]",
-        lg: "[--icon-tile-size:--spacing(12)] [--icon-tile-icon-size:--spacing(5.5)] [--icon-tile-inset:--spacing(0.75)]",
-        xl: "[--icon-tile-size:--spacing(14)] [--icon-tile-icon-size:--spacing(7)] [--icon-tile-inset:--spacing(1)]",
+          "size-10 [--icon-tile-size:2.5rem] [--icon-tile-icon-size:1.125rem] [--icon-tile-inset:3px]",
+        lg: "size-12 [--icon-tile-size:3rem] [--icon-tile-icon-size:1.375rem] [--icon-tile-inset:3px]",
+        xl: "size-14 [--icon-tile-size:3.5rem] [--icon-tile-icon-size:1.75rem] [--icon-tile-inset:4px]",
       },
-      /**
-       * `default`: active style radius. `full`: circular.
-       * No bare rung beside the ladder: the registry transform writes the
-       * installed style's rung bare, and a second bare rung would leave class
-       * order to pick the winner. The no-style fallback lives in the var()
-       * that reads the radius instead.
-       *
-       * Each style token is clamped to a fraction of the tile. A flat radius
-       * is a circle once it reaches half the box, so the soft styles used to
-       * render `xs` (24px) and `sm` (32px) as plain circles and swallow the
-       * `full` variant's meaning. Clamping keeps one corner ratio at every
-       * size instead, so a tile still reads as the same shape when it scales.
-       * Luma and Rhea take the gentler quarter ratio; Maia stays at a third.
-       */
       radius: {
         default:
-          "[--icon-tile-radius:min(var(--radius-md),calc(var(--icon-tile-size)/3))]",
-        full: "[--icon-tile-radius:calc(infinity*1px)]",
+          "[--icon-tile-radius:min(var(--radius-md,6px),calc(var(--icon-tile-size)/3))]",
+        full: "[--icon-tile-radius:9999px]",
       },
     },
     defaultVariants: {

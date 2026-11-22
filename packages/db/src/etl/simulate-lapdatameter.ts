@@ -20,7 +20,6 @@ import {
   tentukanBlok,
   type ModeHitungKondisiInput,
 } from "../../../../apps/web/src/server/domain/tagihan/tagihan.engine";
-import { evaluasiPemakaianMeter } from "../../../../apps/web/src/server/domain/cater/cater-anomali.engine";
 import { parseCsvRows } from "../../../../apps/web/src/server/services/import/import-data.service";
 import { sql, eq, and } from "drizzle-orm";
 
@@ -270,7 +269,7 @@ async function main() {
     if (resolvedKondisi.isMismatch) {
       totalMismatchKodeNama++;
     }
-    const mode: ModeHitungKondisiInput = resolvedKondisi.modeHitung;
+    const mode: ModeHitungKondisiInput = resolvedKondisi.modeHitung as ModeHitungKondisiInput;
     const minM3 = minByTarif.get(nr.trf) ?? 5;
 
     // Di CSV lapdatametertes.csv, aplikasi lama sudah menggeser St AWAL pada 370 baris REV.PENCATAT,
@@ -429,19 +428,15 @@ async function main() {
           resolvedKondisi.modeHitung === "SELISIH_FISIK" &&
           nr.stAkhir === nr.stAwal;
 
-        const evaluasi = evaluasiPemakaianMeter({
-          stml: isMb ? 0 : nr.stAwal,
-          stma: nr.stAkhir,
-          pakaiLalu: nr.pakaiLalu,
-        });
-
-        let statusVerif: string = evaluasi.statusVerifikasi;
+        let statusVerif = "SUBMITTED";
         if (nr.pakai < 0 || (!isMb && nr.stAkhir < nr.stAwal)) {
           statusVerif = "ANOMALY_NEGATIVE";
           countAnomalyNegative++;
-        } else if (evaluasi.statusVerifikasi === "ANOMALY_HIGH") {
+        } else if (nr.pakai > 75) {
+          statusVerif = "ANOMALY_HIGH";
           countAnomalyHigh++;
-        } else if (evaluasi.statusVerifikasi === "ANOMALY_LOW") {
+        } else if (nr.pakai === 0) {
+          statusVerif = "ANOMALY_LOW";
           countAnomalyLow++;
         } else if (
           nr.stAwal !== stmlAsli &&
@@ -611,8 +606,11 @@ async function main() {
         carryDecStats,
       );
 
-      // Paksa rollback agar 0 perubahan tersimpan di database utama
-      throw new Error("ROLLBACK_SIMULATION_SUCCESS");
+      if (!process.argv.includes("--commit")) {
+        // Paksa rollback agar 0 perubahan tersimpan di database utama
+        throw new Error("ROLLBACK_SIMULATION_SUCCESS");
+      }
+      console.log("✓ Transaksi berhasil di-COMMIT ke database!");
     });
   } catch (e: any) {
     if (e.message === "ROLLBACK_SIMULATION_SUCCESS") {

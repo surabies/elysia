@@ -8,6 +8,7 @@ import { seedPeriode } from './seeds/modules/06-periode';
 import { seedBroadcast } from './seeds/modules/07-broadcast';
 import { seedPengaturan } from './seeds/modules/08-pengaturan';
 import { seedKpi } from './seeds/modules/09-kpi';
+import { seedAturanAnomali, backfillEvaluasiAnomali } from './seeds/modules/10-anomali';
 import { eq, sql } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import path from 'path';
@@ -85,6 +86,14 @@ async function seed() {
     console.log('4. Syncing Area Layanan...');
     await syncAreaLayanan21Kelurahan();
 
+    // 4b. Rekonsiliasi Kelurahan Pelanggan (Pastikan tidak ada kelurahan_kode null/unmapped)
+    console.log('4b. Rekonsiliasi Kelurahan Pelanggan...');
+    await db.execute(sql`
+      UPDATE pelanggan
+      SET kelurahan_kode = UPPER(SUBSTRING(rute_kode FROM 1 FOR 3))
+      WHERE (kelurahan_kode IS NULL OR trim(kelurahan_kode) = '') AND rute_kode IS NOT NULL
+    `);
+
     // 5. Update Koordinat Pelanggan dari Data Verifikasi Spasial
     console.log('5. Seeding Data Verifikasi Spasial...');
     await seedDataVerifikasi();
@@ -104,6 +113,14 @@ async function seed() {
     // 9. Seed Balanced Scorecard KPI
     console.log('9. Seeding KPI Balanced Scorecard...');
     await seedKpi();
+
+    // 10. Seed Master Aturan Anomali SSOT v1
+    console.log('10. Seeding Master Aturan Anomali SSOT v1...');
+    await seedAturanAnomali.run({});
+
+    // 11. SSOT Evaluasi Anomali pada seluruh pembacaan meter
+    console.log('11. Mengevaluasi Anomali SSOT pada cater_baca_meter...');
+    await backfillEvaluasiAnomali();
 
     console.log('=== DATA SEEDING COMPLETED SUCCESSFULLY! ===');
     console.log('Catatan: Untuk membuat/menyinkronkan akun pengguna login, jalankan: bun run db:seed:accounts');

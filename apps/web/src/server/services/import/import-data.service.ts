@@ -24,6 +24,7 @@ import {
   petugasCater,
   ruteCater,
   golonganTarif,
+  masterKondisiCatat,
 } from '@cater/db';
 import {
   isCloudinaryConfigured,
@@ -31,6 +32,8 @@ import {
   type ModulFoto,
   type JenisFoto,
 } from '../../lib/cloudinary';
+import { evaluasiAnomaliBaris, type ReadingInput } from '../../domain/cater/anomali-evaluator';
+import { aturanAnomaliService } from '../cater/aturan-anomali.service';
 
 export interface ParsedPhotoInfo {
   thbl: string;
@@ -90,7 +93,21 @@ export interface LapDataMeterItem {
   catatan?: string;
 }
 
-export function parseCsvRows(text: string): string[][] {
+export function detectDelimiter(text: string): string {
+  const firstLine =
+    text.split(/\r?\n/).find((line) => line.trim().length > 0) || '';
+  const countSemi = (firstLine.match(/;/g) || []).length;
+  const countComma = (firstLine.match(/,/g) || []).length;
+  const countTab = (firstLine.match(/\t/g) || []).length;
+
+  if (countSemi > countComma && countSemi > countTab) return ';';
+  if (countTab > countComma && countTab > countSemi) return '\t';
+  if (countComma > 0) return ',';
+  return ';';
+}
+
+export function parseCsvRows(text: string, explicitDelimiter?: string): string[][] {
+  const delimiter = explicitDelimiter || detectDelimiter(text);
   const rows: string[][] = [];
   let currentRow: string[] = [];
   let currentField = '';
@@ -107,7 +124,7 @@ export function parseCsvRows(text: string): string[][] {
       } else {
         insideQuotes = !insideQuotes;
       }
-    } else if (!insideQuotes && (char === ',' || char === ';')) {
+    } else if (!insideQuotes && char === delimiter) {
       currentRow.push(currentField.trim());
       currentField = '';
     } else if (!insideQuotes && (char === '\r' || char === '\n')) {
@@ -785,15 +802,19 @@ export class ImportDataService {
 
           for (const item of uniqueBatch) {
             if (!existingCustMap.has(item.nolg)) {
+              const ruteUpper = item.ruteKode ? item.ruteKode.trim().toUpperCase() : null;
+              const kelKode = ruteUpper && ruteUpper.length >= 3 ? ruteUpper.slice(0, 3) : null;
+
               missingCusts.push({
                 nolg: item.nolg,
                 nama: item.nama || `Pelanggan ${item.nolg}`,
                 alamat: item.alamat || 'Alamat Terdata LapDataMeter',
-                ruteKode: item.ruteKode || null,
+                ruteKode: ruteUpper,
+                kelurahanKode: kelKode,
                 tarifKode: item.trf || null,
                 status: 'PELANGGAN AKTIF',
               });
-              existingCustMap.set(item.nolg, { nolg: item.nolg, ruteKode: item.ruteKode || null });
+              existingCustMap.set(item.nolg, { nolg: item.nolg, ruteKode: ruteUpper });
             }
           }
 
@@ -801,12 +822,34 @@ export class ImportDataService {
             await tx.insert(pelanggan).values(missingCusts).onConflictDoNothing();
           }
 
-          // 5. Cek existing cater_baca_meter berdasarkan (thbl, nolg)
+          // 5. Pastikan semua kode TMSS terdaftar di masterKondisiCatat dalam 1 query bulk
+          const uniqueTmss = Array.from(
+            new Set(
+              uniqueBatch
+                .map((b) => b.tmss?.trim())
+                .filter((t): t is string => Boolean(t && t !== '-'))
+            )
+          );
+          if (uniqueTmss.length > 0) {
+            const tmssRecords = uniqueTmss.map((kode) => {
+              const itemMatch = uniqueBatch.find((b) => b.tmss?.trim() === kode);
+              return {
+                kodeTmss: kode,
+                nama: itemMatch?.ketCatat || `Kondisi ${kode}`,
+                kategori: 'TERBACA' as const,
+                modeHitung: 'SELISIH_FISIK' as const,
+              };
+            });
+            await tx
+              .insert(masterKondisiCatat)
+              .values(tmssRecords)
+              .onConflictDoNothing({ target: masterKondisiCatat.kodeTmss });
+          }
+
+          // 6. Cek existing cater_baca_meter berdasarkan (thbl, nolg) untuk statistik created vs updated
           const existingCaterRows = await tx
             .select({
-              id: caterBacaMeter.id,
               nolg: caterBacaMeter.nolg,
-              thbl: caterBacaMeter.thbl,
             })
             .from(caterBacaMeter)
             .where(
@@ -816,85 +859,106 @@ export class ImportDataService {
               )
             );
 
-          const existingCaterMap = new Map(existingCaterRows.map((r) => [r.nolg, r.id]));
+          const existingCount = existingCaterRows.length;
+          results.updated += existingCount;
+          results.created += uniqueBatch.length - existingCount;
 
-          for (const item of uniqueBatch) {
-            // Validasi data dasar
-            if (item.stma < item.stml) {
-              results.gagal++;
-              results.detail.push({
-                nolg: item.nolg,
-                thbl: item.thbl,
-                status: 'FAILED',
-                error: `STMA (${item.stma}) lebih kecil dari STML (${item.stml})`,
-              });
-              continue;
+          // 7a. Ambil aturan anomali terpusat untuk klasifikasi otomatis
+          const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
+
+          // 7b. Siapkan records untuk bulk atomic upsert
+          const bulkRecords = uniqueBatch.map((item) => {
+            let pakaiM3 = item.pakaiM3;
+            if (pakaiM3 === undefined || isNaN(pakaiM3)) {
+              if (item.stma >= item.stml) {
+                pakaiM3 = item.stma - item.stml;
+              } else {
+                pakaiM3 = item.pakaiLalu !== undefined && item.pakaiLalu >= 0 ? item.pakaiLalu : 0;
+              }
             }
-
-            const pakaiM3 = item.pakaiM3 ?? Math.max(0, item.stma - item.stml);
             if (pakaiM3 < 0) {
-              results.gagal++;
-              results.detail.push({
-                nolg: item.nolg,
-                thbl: item.thbl,
-                status: 'FAILED',
-                error: 'Kubikasi pemakaian tidak boleh negatif',
-              });
-              continue;
+              pakaiM3 = 0;
             }
 
-            const existingId = existingCaterMap.get(item.nolg);
+            const tmss = item.tmss?.trim() || '-';
             const tglCatat = item.tglCatat ? new Date(item.tglCatat) : new Date();
-            const tmss = item.tmss || '-';
+            const isStandMundur = item.stma < item.stml;
+            const defaultCatatan = isStandMundur
+              ? `Import LapDataMeter (Anomali Stand: STMA ${item.stma} < STML ${item.stml}, Pakai=${pakaiM3}m³)`
+              : `Import LapDataMeter ${item.thbl}`;
+            const catatan = item.catatan || defaultCatatan;
 
-            if (existingId) {
-              // Update pembacaan meter tanpa menghilangkan data foto jika ada
-              await tx
-                .update(caterBacaMeter)
-                .set({
-                  stml: String(item.stml),
-                  stma: String(item.stma),
-                  pakaiM3: String(pakaiM3),
-                  pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
-                  tmss,
-                  ketCatat: item.ketCatat || 'Normal',
-                  ruteKode: item.ruteKode || null,
-                  petugasId: item.petugasId || null,
-                  sumberCatat: 'LAPDATAMETER',
-                  statusVerifikasi: 'SUBMITTED',
-                  tglCatat,
-                  catatan: item.catatan || `Import LapDataMeter ${item.thbl}`,
-                  updatedAt: new Date(),
-                })
-                .where(eq(caterBacaMeter.id, existingId));
+            const evalRes = evaluasiAnomaliBaris(
+              {
+                stml: Number(item.stml),
+                stma: Number(item.stma),
+                pakaiM3: Number(pakaiM3),
+                pakaiLalu: item.pakaiLalu !== undefined && item.pakaiLalu !== null ? Number(item.pakaiLalu) : null,
+                kodeTmss: tmss,
+              },
+              rules,
+              maps,
+              versi
+            );
 
-              results.updated++;
-            } else {
-              // Insert transaksi baru ke cater_baca_meter
-              await tx.insert(caterBacaMeter).values({
-                thbl: item.thbl,
-                nolg: item.nolg,
-                ruteKode: item.ruteKode || null,
-                petugasId: item.petugasId || null,
-                stml: String(item.stml),
-                stma: String(item.stma),
-                pakaiM3: String(pakaiM3),
-                pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
-                tmss,
-                ketCatat: item.ketCatat || 'Normal',
-                metodeCatat: 'ONSITE',
-                sumberCatat: 'LAPDATAMETER',
-                statusVerifikasi: 'SUBMITTED',
-                tglCatat,
-                catatan: item.catatan || `Import LapDataMeter ${item.thbl}`,
-                createdAt: new Date(),
-                updatedAt: new Date(),
+            return {
+              thbl: item.thbl,
+              nolg: item.nolg,
+              ruteKode: item.ruteKode || null,
+              petugasId: item.petugasId || null,
+              stml: String(item.stml),
+              stma: String(item.stma),
+              pakaiM3: String(pakaiM3),
+              pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
+              tmss,
+              ketCatat: item.ketCatat || 'Normal',
+              metodeCatat: 'ONSITE',
+              sumberCatat: 'LAPDATAMETER',
+              statusVerifikasi: 'SUBMITTED',
+              isAnomali: evalRes.isAnomali,
+              kodeAnomaliUtama: evalRes.kodeUtama,
+              kodeAnomaliList: evalRes.kodeList,
+              aturanVersi: versi,
+              tglCatat,
+              catatan,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+          });
+
+          // 8. Eksekusi atomic upsert dalam chunks 1.000 baris (batas max parameter PostgreSQL)
+          const CHUNK_SIZE = 1000;
+          for (let i = 0; i < bulkRecords.length; i += CHUNK_SIZE) {
+            const chunk = bulkRecords.slice(i, i + CHUNK_SIZE);
+            await tx
+              .insert(caterBacaMeter)
+              .values(chunk)
+              .onConflictDoUpdate({
+                target: [caterBacaMeter.thbl, caterBacaMeter.nolg],
+                set: {
+                  ruteKode: sql`excluded.rute_kode`,
+                  petugasId: sql`excluded.petugas_id`,
+                  stml: sql`excluded.stml`,
+                  stma: sql`excluded.stma`,
+                  pakaiM3: sql`excluded.pakai_m3`,
+                  pakaiLalu: sql`excluded.pakai_lalu`,
+                  tmss: sql`excluded.tmss`,
+                  ketCatat: sql`excluded.ket_catat`,
+                  sumberCatat: sql`excluded.sumber_catat`,
+                  statusVerifikasi: sql`excluded.status_verifikasi`,
+                  isAnomali: sql`excluded.is_anomali`,
+                  kodeAnomaliUtama: sql`excluded.kode_anomali_utama`,
+                  kodeAnomaliList: sql`excluded.kode_anomali_list`,
+                  aturanVersi: sql`excluded.aturan_versi`,
+                  tglCatat: sql`excluded.tgl_catat`,
+                  catatan: sql`excluded.catatan`,
+                  updatedAt: sql`now()`,
+                },
               });
+          }
 
-              results.created++;
-            }
-
-            results.sukses++;
+          results.sukses += bulkRecords.length;
+          for (const item of uniqueBatch) {
             results.detail.push({ nolg: item.nolg, thbl: item.thbl, status: 'SUCCESS' });
           }
         });
@@ -937,6 +1001,8 @@ export class ImportDataService {
       detail: [] as { nolg: string; status: 'SUCCESS' | 'FAILED'; error?: string }[],
     };
 
+    const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
+
     for (const item of items) {
       try {
         const [cust] = await db
@@ -951,6 +1017,19 @@ export class ImportDataService {
         const pakaiM3 = item.pakaiM3 ?? Math.max(0, item.stma - item.stml);
         const ruteKodeFinal = item.ruteKode || cust.ruteKode || null;
         const tglCatat = item.tglCatat ? new Date(item.tglCatat) : new Date();
+
+        const evalRes = evaluasiAnomaliBaris(
+          {
+            stml: Number(item.stml),
+            stma: Number(item.stma),
+            pakaiM3: Number(pakaiM3),
+            pakaiLalu: null,
+            kodeTmss: item.ketCatat || null,
+          },
+          rules,
+          maps,
+          versi
+        );
 
         const [existing] = await db
           .select({ id: caterBacaMeter.id })
@@ -972,6 +1051,10 @@ export class ImportDataService {
               sumberCatat: 'BACKUP_MOBILE',
               tglCatat,
               statusVerifikasi: 'SUBMITTED',
+              isAnomali: evalRes.isAnomali,
+              kodeAnomaliUtama: evalRes.kodeUtama,
+              kodeAnomaliList: evalRes.kodeList,
+              aturanVersi: versi,
               catatan: item.catatan || 'Data stan meter dipulihkan dari mobile backup',
               updatedAt: new Date(),
             })
@@ -990,6 +1073,10 @@ export class ImportDataService {
             sumberCatat: 'BACKUP_MOBILE',
             tglCatat,
             statusVerifikasi: 'SUBMITTED',
+            isAnomali: evalRes.isAnomali,
+            kodeAnomaliUtama: evalRes.kodeUtama,
+            kodeAnomaliList: evalRes.kodeList,
+            aturanVersi: versi,
             catatan: item.catatan || 'Data baru dari mobile backup',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -1054,56 +1141,90 @@ export class ImportDataService {
 
   /**
    * 4. Parser & Import PBPK (Pasang Baru & Pemasangan Kembali)
-   * Berkas acuan: data/raw/PBPK.csv
+   * Berkas acuan: packages/db/docs/PBPK.csv
    */
   parsePbpkCsv(csvText: string): PbpkCsvRow[] {
-    const lines = csvText
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+    const table = parseCsvRows(csvText);
+    if (table.length < 2) return [];
 
-    if (lines.length < 2) return [];
+    const header = table[0].map((h) => h.trim().toLowerCase());
+    const findIndex = (aliases: string[]) => {
+      for (const a of aliases) {
+        const idx = header.indexOf(a);
+        if (idx >= 0) return idx;
+      }
+      for (const a of aliases) {
+        const idx = header.findIndex((h) => h.includes(a));
+        if (idx >= 0) return idx;
+      }
+      return -1;
+    };
 
-    const delimiter = lines[0].includes(';') ? ';' : ',';
-    const header = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
+    const col = {
+      nolg: findIndex(['nolg', 'nolangganan', 'no pel', 'nomor pelanggan', 'nopel']),
+      nama: findIndex(['nama', 'nama pelanggan']),
+      kd_kecamatan: findIndex(['kd_kecamatan', 'kecamatan_kode', 'kecamatan']),
+      kd_kelurahan: findIndex(['kd_kelurahan', 'kelurahan_kode', 'kelurahan']),
+      rt: findIndex(['rt']),
+      rw: findIndex(['rw']),
+      alamat: findIndex(['alamat', 'alamat sambungan', 'alamat pelanggan']),
+      notelp: findIndex(['notelp', 'no_telp', 'no telp', 'telepon', 'hp']),
+      jmlpenghuni: findIndex(['jmlpenghuni', 'jml_penghuni', 'penghuni']),
+      nometer: findIndex(['nometer', 'no_meter', 'no meter', 'meter']),
+      kd_merkmeter: findIndex(['kd_merkmeter', 'merk_meter', 'merkmeter', 'merk']),
+      kd_ukmeter: findIndex(['kd_ukmeter', 'ukuran_meter', 'ukmeter', 'ukuran']),
+      tglaktif: findIndex(['tglaktif', 'tgl_aktif', 'tanggal aktif', 'tgl_pasang']),
+      sta_aktif: findIndex(['sta_aktif', 'status']),
+      wilayah: findIndex(['wilayah']),
+      kd_rute: findIndex(['kd_rute', 'rute_kode', 'rute']),
+      updater: findIndex(['updater']),
+      geo_long: findIndex(['geo_long', 'longitude', 'long']),
+      goe_lat: findIndex(['goe_lat', 'geo_lat', 'latitude', 'lat']),
+      kode_wilayah: findIndex(['kode_wilayah', 'wilayah_kode']),
+      kd_goltarif: findIndex(['kd_goltarif', 'tarif_kode', 'goltarif', 'tarif']),
+      no_urutrute: findIndex(['no_urutrute', 'no_urut_rute', 'urut_rute', 'no_urut', 'urutan']),
+      mutasian: findIndex(['mutasian', 'mutasi', 'tipe_mutasi']),
+    };
 
     const rows: PbpkCsvRow[] = [];
 
-    for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(delimiter).map((p) => p.trim());
-      if (parts.length < 3) continue;
+    for (let i = 1; i < table.length; i++) {
+      const parts = table[i];
+      if (parts.length < 2) continue;
 
-      const obj: any = {};
-      header.forEach((col, idx) => {
-        obj[col] = parts[idx] ?? '';
+      const nolgRaw = col.nolg >= 0 ? parts[col.nolg] : parts[0];
+      const nolg = nolgRaw?.trim()?.replace(/[^\w-]/g, '');
+      if (!nolg) continue;
+
+      const nometerRaw = col.nometer >= 0 && parts[col.nometer] ? parts[col.nometer].trim() : '';
+      const notelpRaw = col.notelp >= 0 && parts[col.notelp] ? parts[col.notelp].trim() : '';
+      const mutasiRaw = (col.mutasian >= 0 && parts[col.mutasian] ? parts[col.mutasian] : '').trim().toUpperCase();
+      const mutasian: 'PB' | 'PK' = mutasiRaw.includes('PK') ? 'PK' : 'PB';
+
+      rows.push({
+        nolg,
+        nolangganan: nolg,
+        nama: (col.nama >= 0 && parts[col.nama] ? parts[col.nama].trim() : '') || 'Pelanggan Baru',
+        kd_kecamatan: col.kd_kecamatan >= 0 && parts[col.kd_kecamatan] ? parts[col.kd_kecamatan].trim() : undefined,
+        kd_kelurahan: col.kd_kelurahan >= 0 && parts[col.kd_kelurahan] ? parts[col.kd_kelurahan].trim() : undefined,
+        rt: col.rt >= 0 && parts[col.rt] ? parts[col.rt].trim() : undefined,
+        rw: col.rw >= 0 && parts[col.rw] ? parts[col.rw].trim() : undefined,
+        alamat: (col.alamat >= 0 && parts[col.alamat] ? parts[col.alamat].trim() : '') || '-',
+        notelp: notelpRaw && notelpRaw !== '-' ? notelpRaw : '',
+        jmlpenghuni: parseInt(col.jmlpenghuni >= 0 && parts[col.jmlpenghuni] ? parts[col.jmlpenghuni] : '0', 10) || 0,
+        nometer: nometerRaw ? nometerRaw : `MTR-${nolg}`,
+        kd_merkmeter: (col.kd_merkmeter >= 0 && parts[col.kd_merkmeter] ? parts[col.kd_merkmeter].trim() : '') || 'ITR',
+        kd_ukmeter: (col.kd_ukmeter >= 0 && parts[col.kd_ukmeter] ? parts[col.kd_ukmeter].trim() : '') || '1/2',
+        tglaktif: col.tglaktif >= 0 && parts[col.tglaktif] ? parts[col.tglaktif].trim() : undefined,
+        sta_aktif: col.sta_aktif >= 0 && parts[col.sta_aktif] ? parts[col.sta_aktif].trim() : '1',
+        wilayah: col.wilayah >= 0 && parts[col.wilayah] ? parts[col.wilayah].trim() : undefined,
+        kd_rute: (col.kd_rute >= 0 && parts[col.kd_rute] ? parts[col.kd_rute].trim() : '') || '99999',
+        updater: col.updater >= 0 && parts[col.updater] ? parts[col.updater].trim() : undefined,
+        kode_wilayah: col.kode_wilayah >= 0 && parts[col.kode_wilayah] ? parts[col.kode_wilayah].trim() : undefined,
+        kd_goltarif: (col.kd_goltarif >= 0 && parts[col.kd_goltarif] ? parts[col.kd_goltarif].trim() : '') || '2A2',
+        no_urutrute: parseInt(col.no_urutrute >= 0 && parts[col.no_urutrute] ? parts[col.no_urutrute] : '0', 10) || 0,
+        mutasian,
       });
-
-      if (obj.nolg) {
-        rows.push({
-          nolg: obj.nolg,
-          nolangganan: obj.nolangganan || obj.nolg,
-          nama: obj.nama || 'Pelanggan Baru',
-          kd_kecamatan: obj.kd_kecamatan,
-          kd_kelurahan: obj.kd_kelurahan,
-          rt: obj.rt,
-          rw: obj.rw,
-          alamat: obj.alamat || '-',
-          notelp: obj.notelp || '',
-          jmlpenghuni: parseInt(obj.jmlpenghuni, 10) || 4,
-          nometer: obj.nometer || `MTR-${obj.nolg}`,
-          kd_merkmeter: obj.kd_merkmeter || 'ITR',
-          kd_ukmeter: obj.kd_ukmeter || '1/2',
-          tglaktif: obj.tglaktif,
-          sta_aktif: obj.sta_aktif,
-          wilayah: obj.wilayah,
-          kd_rute: obj.kd_rute || '99999',
-          updater: obj.updater,
-          kode_wilayah: obj.kode_wilayah,
-          kd_goltarif: obj.kd_goltarif || '2A2',
-          no_urutrute: parseInt(obj.no_urutrute, 10) || 0,
-          mutasian: (obj.mutasian?.toUpperCase() === 'PK' ? 'PK' : 'PB') as 'PB' | 'PK',
-        });
-      }
     }
 
     return rows;
@@ -1130,20 +1251,55 @@ export class ImportDataService {
       try {
         await db.transaction(async (tx) => {
           const noMeter = row.nometer?.trim() || `MTR-${row.nolg}`;
+          const ruteKode = row.kd_rute?.trim() || '99999';
+          const tarifKode = row.kd_goltarif?.trim() || '2A2';
+          const tglPasangMeter = row.tglaktif ? new Date(row.tglaktif) : new Date();
+          const rt = row.rt?.trim() || null;
+          const rw = row.rw?.trim() || null;
+          const noTelp = row.notelp && row.notelp !== '-' ? row.notelp.trim() : null;
+          const jmlPenghuni = typeof row.jmlpenghuni === 'number' ? row.jmlpenghuni : (parseInt(String(row.jmlpenghuni || 0), 10) || 0);
+          const noUrutRute = typeof row.no_urutrute === 'number' ? row.no_urutrute : (parseInt(String(row.no_urutrute || 0), 10) || 0);
+          const kelurahanKode = row.kd_kelurahan?.trim() || null;
 
+          // 1. Water Meter asset (Aset meter air pelanggan)
           await tx
             .insert(waterMeter)
             .values({
               noMeter,
-              merk: row.kd_merkmeter || 'ITR',
-              ukuran: row.kd_ukmeter || '1/2',
-              tglPasang: new Date(),
+              merk: row.kd_merkmeter?.trim() || 'ITR',
+              ukuran: row.kd_ukmeter?.trim() || '1/2',
+              tglPasang: tglPasangMeter,
               umurTahun: 0,
               umurBulan: 0,
               kondisi: 'Normal',
             })
-            .onConflictDoNothing({ target: waterMeter.noMeter });
+            .onConflictDoUpdate({
+              target: waterMeter.noMeter,
+              set: {
+                merk: row.kd_merkmeter?.trim() || 'ITR',
+                ukuran: row.kd_ukmeter?.trim() || '1/2',
+                kondisi: 'Normal',
+              },
+            });
 
+          // 2. Integritas FK: Pastikan ruteCater & golonganTarif tersedia
+          await tx
+            .insert(ruteCater)
+            .values({
+              kode: ruteKode,
+              seksiNama: ruteKode === '99999' ? 'Rute Belum Ditentukan (PBPK)' : `Rute ${ruteKode}`,
+            })
+            .onConflictDoNothing({ target: ruteCater.kode });
+
+          await tx
+            .insert(golonganTarif)
+            .values({
+              kode: tarifKode,
+              nama: `Golongan Tarif ${tarifKode}`,
+            })
+            .onConflictDoNothing({ target: golonganTarif.kode });
+
+          // 3. Mutasi Pelanggan (PB: Pasang Baru, PK: Pemasangan Kembali)
           if (row.mutasian === 'PB') {
             const [cust] = await tx
               .select({ nolg: pelanggan.nolg })
@@ -1155,16 +1311,20 @@ export class ImportDataService {
                 nolg: row.nolg,
                 nama: row.nama,
                 alamat: row.alamat,
-                rt: row.rt || null,
-                rw: row.rw || null,
-                noTelp: row.notelp || null,
-                jmlPenghuni: row.jmlpenghuni || 4,
-                tarifKode: row.kd_goltarif || '2A2',
-                ruteKode: row.kd_rute || '99999',
-                noUrutRute: row.no_urutrute || 0,
+                rt,
+                rw,
+                noTelp,
+                jmlPenghuni,
+                tarifKode,
+                ruteKode,
+                kelurahanKode,
+                noUrutRute,
                 noMeter,
+                merkMeter: row.kd_merkmeter?.trim() || 'ITR',
+                ukuranMeter: row.kd_ukmeter?.trim() || '1/2',
+                tglPasangMeter,
                 status: 'PELANGGAN AKTIF',
-                createdAt: new Date(),
+                createdAt: tglPasangMeter,
                 updatedAt: new Date(),
               });
             } else {
@@ -1173,15 +1333,25 @@ export class ImportDataService {
                 .set({
                   nama: row.nama,
                   alamat: row.alamat,
-                  tarifKode: row.kd_goltarif || '2A2',
-                  status: 'PELANGGAN AKTIF',
+                  rt: rt || undefined,
+                  rw: rw || undefined,
+                  noTelp: noTelp || undefined,
+                  jmlPenghuni: jmlPenghuni || undefined,
+                  tarifKode,
+                  ruteKode,
+                  kelurahanKode: kelurahanKode || undefined,
+                  noUrutRute,
                   noMeter,
+                  merkMeter: row.kd_merkmeter?.trim() || 'ITR',
+                  ukuranMeter: row.kd_ukmeter?.trim() || '1/2',
+                  status: 'PELANGGAN AKTIF',
                   updatedAt: new Date(),
                 })
                 .where(eq(pelanggan.nolg, row.nolg));
             }
             stats.pb++;
           } else {
+            // PK: Pemasangan Kembali (Reaktivasi status pelanggan yang sebelumnya non-aktif)
             const [cust] = await tx
               .select({ nolg: pelanggan.nolg })
               .from(pelanggan)
@@ -1191,9 +1361,20 @@ export class ImportDataService {
               await tx
                 .update(pelanggan)
                 .set({
-                  status: 'PELANGGAN AKTIF',
-                  tarifKode: row.kd_goltarif || '2A2',
+                  nama: row.nama,
+                  alamat: row.alamat,
+                  rt: rt || undefined,
+                  rw: rw || undefined,
+                  noTelp: noTelp || undefined,
+                  jmlPenghuni: jmlPenghuni || undefined,
+                  tarifKode,
+                  ruteKode,
+                  kelurahanKode: kelurahanKode || undefined,
+                  noUrutRute,
                   noMeter,
+                  merkMeter: row.kd_merkmeter?.trim() || 'ITR',
+                  ukuranMeter: row.kd_ukmeter?.trim() || '1/2',
+                  status: 'PELANGGAN AKTIF',
                   updatedAt: new Date(),
                 })
                 .where(eq(pelanggan.nolg, row.nolg));
@@ -1202,32 +1383,50 @@ export class ImportDataService {
                 nolg: row.nolg,
                 nama: row.nama,
                 alamat: row.alamat,
-                tarifKode: row.kd_goltarif || '2A2',
-                ruteKode: row.kd_rute || '99999',
-                noUrutRute: row.no_urutrute || 0,
+                rt,
+                rw,
+                noTelp,
+                jmlPenghuni,
+                tarifKode,
+                ruteKode,
+                kelurahanKode,
+                noUrutRute,
                 noMeter,
+                merkMeter: row.kd_merkmeter?.trim() || 'ITR',
+                ukuranMeter: row.kd_ukmeter?.trim() || '1/2',
+                tglPasangMeter,
                 status: 'PELANGGAN AKTIF',
-                createdAt: new Date(),
+                createdAt: tglPasangMeter,
                 updatedAt: new Date(),
               });
             }
             stats.pk++;
           }
 
+          // 4. Injeksi target pembacaan ke DPM (daftarCatat)
           await tx
             .insert(daftarCatat)
             .values({
               periode: targetPeriode,
               nolg: row.nolg,
-              ruteKode: row.kd_rute || '99999',
-              urutan: row.no_urutrute || 0,
-              sumber: row.mutasian === 'PK' ? 'PK' : 'PBPK',
+              ruteKode,
+              urutan: noUrutRute,
+              standAwal: '0',
+              pakaiLalu: '0',
+              sumber: 'PBPK',
               status: 'BELUM_DICATAT',
               createdAt: new Date(),
               updatedAt: new Date(),
             })
-            .onConflictDoNothing({
+            .onConflictDoUpdate({
               target: [daftarCatat.periode, daftarCatat.nolg],
+              set: {
+                ruteKode,
+                urutan: noUrutRute,
+                sumber: 'PBPK',
+                status: 'BELUM_DICATAT',
+                updatedAt: new Date(),
+              },
             });
         });
 

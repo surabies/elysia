@@ -5,12 +5,16 @@ import { generateMonotoneAreaPath } from "../lib/metric-visual-helpers"
 
 interface MetricVisualSparklineProps {
   data: number[]
+  labels?: string[]
   color?: string
+  unit?: string
 }
 
 export function MetricVisualSparkline({
   data,
+  labels,
   color = "#0070f3",
+  unit,
 }: MetricVisualSparklineProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   const [width, setWidth] = React.useState(320)
@@ -56,12 +60,13 @@ export function MetricVisualSparkline({
       {/* Tooltip ringkas saat hover (tidak mengubah tampilan diam) */}
       {activePoint ? (
         <div
-          className="pointer-events-none absolute top-0 z-10 rounded-md border border-border/80 bg-popover px-1.5 py-0.5 font-mono text-[10.5px] font-medium tabular-nums text-popover-foreground shadow-xs"
+          className="pointer-events-none absolute top-0 z-10 rounded-md border border-border bg-popover px-1.5 py-0.5 font-mono text-[10.5px] font-medium tabular-nums text-popover-foreground shadow-xs whitespace-nowrap"
           style={{
             left: `${Math.min(Math.max(activePoint.x - 28, 0), Math.max(width - 76, 0))}px`,
           }}
         >
-          H-{(hoverIdx ?? 0) + 1}: {Math.round(activePoint.value).toLocaleString("id-ID")}
+          {labels && labels[hoverIdx ?? 0] ? labels[hoverIdx ?? 0] : `Tgl ${(hoverIdx ?? 0) + 1}`}: {Math.round(activePoint.value).toLocaleString("id-ID")}
+          {unit ? ` ${unit}` : ""}
         </div>
       ) : null}
 

@@ -104,6 +104,7 @@ export const PRIMARY_ICONS: Record<string, SidebarIconComponent> = {
   "/laporan/lap-drd": Receipt,
   "/meter/hitung-rata-rata": Calculator,
   "/tools-tutup/monitoring-tutup-bulan": Lock,
+  "/pengaturan/aturan-anomali": Sliders,
   "/pengaturan": Settings,
 };
 
@@ -170,6 +171,9 @@ const ITEM_ICONS: Record<string, SidebarIconComponent> = {
   "audit bukti foto meter": Camera,
   "radar anomali": TrendingUp,
   "radar anomali kubikasi": TrendingUp,
+  "aturan anomali": Sliders,
+  "aturan anomali & deviasi": Sliders,
+  "pengaturan aturan anomali": Sliders,
   "anomali kubikasi": TrendingUp,
   "pemakaian ekstrim & anomali": TrendingUp,
   "ikhtisar pemakaian ekstrim": TrendingUp,

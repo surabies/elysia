@@ -1,22 +1,27 @@
-// apps/web/src/features/dashboard/import/components/foto-backup/ImportPhotoDialog.tsx
-"use client";
-
+// features/dashboard/import/components/foto-backup/ImportPhotoDialog.tsx
 import * as React from "react";
-import { Gauge, ShieldCheck, Home, Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
   DialogDescription,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import {
+  FOTO_JENIS_LIST,
+  getFoto,
+  type FotoJenis,
+} from "../../lib/foto-backup";
+import { TONE_STYLE } from "../../lib/import-ui";
 import type { CustomerPhotoGroup } from "../../types/foto-backup.types";
 
 interface ImportPhotoDialogProps {
   previewCustomer: CustomerPhotoGroup | null;
-  previewActiveTab: "stand" | "segel" | "rumah";
-  setPreviewActiveTab: (tab: "stand" | "segel" | "rumah") => void;
+  previewActiveTab: FotoJenis;
+  setPreviewActiveTab: (tab: FotoJenis) => void;
   onClose: () => void;
   onCopy: (text: string) => void;
 }
@@ -30,118 +35,91 @@ export function ImportPhotoDialog({
 }: ImportPhotoDialogProps) {
   if (!previewCustomer) return null;
 
-  const currentPhoto =
-    previewActiveTab === "stand"
-      ? previewCustomer.fotoStand
-      : previewActiveTab === "segel"
-      ? previewCustomer.fotoSegel
-      : previewCustomer.fotoRumah;
+  const currentPhoto = getFoto(previewCustomer, previewActiveTab);
 
   return (
-    <Dialog open={Boolean(previewCustomer)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden border-border bg-card">
-        {/* Header Dialog */}
-        <div className="p-4 border-b border-border bg-muted/30">
-          <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-title-16 font-semibold flex items-center gap-2">
-                <span>{previewCustomer.nama || `Pelanggan #${previewCustomer.nolg}`}</span>
-                <Badge variant="outline" className="font-mono text-primary text-[11px]">
-                  {previewCustomer.nolg}
-                </Badge>
-              </DialogTitle>
-              <DialogDescription className="text-copy-13 text-muted-foreground mt-0.5">
-                {previewCustomer.alamat
-                  ? `${previewCustomer.alamat} · Periode: ${previewCustomer.thbl}`
-                  : `Pratinjau berkas foto backup mobile lapangan · Periode: ${previewCustomer.thbl}`}
-              </DialogDescription>
-            </div>
-          </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl overflow-hidden border-border bg-card p-0">
+        <div className="border-b border-border bg-muted p-4">
+          <DialogTitle className="flex flex-wrap items-center gap-2 text-heading-16">
+            <span>
+              {previewCustomer.nama || `Pelanggan #${previewCustomer.nolg}`}
+            </span>
+            <Badge variant="pill" className="font-mono">
+              {previewCustomer.nolg}
+            </Badge>
+          </DialogTitle>
+          <DialogDescription className="mt-0.5 text-copy-13 text-muted-foreground">
+            {previewCustomer.alamat
+              ? `${previewCustomer.alamat} · Periode: ${previewCustomer.thbl}`
+              : `Pratinjau berkas foto backup mobile lapangan · Periode: ${previewCustomer.thbl}`}
+          </DialogDescription>
 
-          {/* Segment Tab Dialog */}
-          <div className="flex items-center gap-2 mt-3">
-            <Button
-              type="button"
-              variant={previewActiveTab === "stand" ? "default" : "outline"}
-              size="sm"
-              disabled={!previewCustomer.fotoStand}
-              onClick={() => setPreviewActiveTab("stand")}
-              className="h-7 text-label-12 gap-1.5 cursor-pointer"
-            >
-              <Gauge className="size-3.5 text-sky-400" />
-              Foto Stand {previewCustomer.fotoStand ? "✓" : "(Kosong)"}
-            </Button>
-            <Button
-              type="button"
-              variant={previewActiveTab === "segel" ? "default" : "outline"}
-              size="sm"
-              disabled={!previewCustomer.fotoSegel}
-              onClick={() => setPreviewActiveTab("segel")}
-              className="h-7 text-label-12 gap-1.5 cursor-pointer"
-            >
-              <ShieldCheck className="size-3.5 text-amber-400" />
-              Foto Segel {previewCustomer.fotoSegel ? "✓" : "(Kosong)"}
-            </Button>
-            <Button
-              type="button"
-              variant={previewActiveTab === "rumah" ? "default" : "outline"}
-              size="sm"
-              disabled={!previewCustomer.fotoRumah}
-              onClick={() => setPreviewActiveTab("rumah")}
-              className="h-7 text-label-12 gap-1.5 cursor-pointer"
-            >
-              <Home className="size-3.5 text-indigo-400" />
-              Foto Rumah {previewCustomer.fotoRumah ? "✓" : "(Kosong)"}
-            </Button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {FOTO_JENIS_LIST.map((meta) => {
+              const Icon = meta.icon;
+              const hasPhoto = Boolean(getFoto(previewCustomer, meta.key));
+              const isActive = previewActiveTab === meta.key;
+              return (
+                <Button
+                  key={meta.key}
+                  type="button"
+                  variant={isActive ? "default" : "outline"}
+                  disabled={!hasPhoto}
+                  onClick={() => setPreviewActiveTab(meta.key)}
+                >
+                  <Icon
+                    className={cn(!isActive && TONE_STYLE[meta.tone].icon)}
+                  />
+                  {meta.groupLabel} {hasPhoto ? "✓" : "(Kosong)"}
+                </Button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Konten Gambar High-Res */}
-        <div className="p-4 flex flex-col items-center justify-center bg-black/90 min-h-[300px]">
+        <div className="flex min-h-75 flex-col items-center justify-center bg-muted p-4">
           {currentPhoto ? (
             <img
               src={currentPhoto.url}
               alt={currentPhoto.fileName}
-              className="max-h-[340px] w-auto rounded-lg shadow-lg border border-border/40 object-contain"
+              className="max-h-85 w-auto rounded-lg border border-border object-contain"
             />
           ) : (
-            <div className="text-center text-muted-foreground/60 text-sm">
+            <p className="text-copy-14 text-muted-foreground">
               Berkas foto untuk jenis ini belum diunggah.
-            </div>
+            </p>
           )}
         </div>
 
-        {/* Footer Dialog Metadata */}
         {currentPhoto && (
-          <div className="p-3.5 border-t border-border bg-card flex flex-wrap items-center justify-between gap-3 text-label-12">
-            <div className="flex items-center gap-2 font-mono text-muted-foreground text-[11px]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card p-3.5">
+            <div className="flex items-center gap-2 text-label-12 text-muted-foreground">
               <span>Berkas:</span>
-              <code className="text-foreground bg-muted px-1.5 py-0.5 rounded font-semibold">
+              <code className="rounded-sm bg-muted px-1.5 py-0.5 text-label-12-mono text-foreground">
                 {currentPhoto.fileName}
               </code>
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => onCopy(currentPhoto.fileName)}
-                className="h-6 px-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                aria-label="Salin nama berkas"
                 title="Salin nama berkas"
               >
-                <Copy className="size-3" />
+                <Copy />
               </Button>
             </div>
 
-            <div className="flex items-center gap-2">
-              <a
-                href={currentPhoto.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-              >
-                <ExternalLink className="size-3" />
-                Buka Tab Penuh
-              </a>
-            </div>
+            <a
+              href={currentPhoto.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-label-12 text-ds-blue-700 hover:underline"
+            >
+              <ExternalLink className="size-3.5" aria-hidden />
+              Buka Tab Penuh
+            </a>
           </div>
         )}
       </DialogContent>

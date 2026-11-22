@@ -14,6 +14,7 @@
 // lebih mahal daripada mengulang klik.
 
 import * as React from "react"
+import { cn } from "@/lib/utils"
 import {
   CheckCheck,
   Download,
@@ -53,14 +54,14 @@ const RING_INFO: Record<
     jelas:
       "Menandai baris sudah diperiksa supervisor. Meter tujuan diisi otomatis dari meter aktif pelanggan.",
     kelasTombol:
-      "border-(--verif-v1-border) bg-(--verif-v1-soft) text-(--verif-v1-text) hover:bg-(--verif-v1-hover) hover:text-(--verif-v1-text)",
+      "border-amber-500/30 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-300",
   },
   2: {
     label: "V2 Validasi",
     pintasan: "F2",
     jelas: "Validasi manajemen. Hanya baris yang sudah lolos V1.",
     kelasTombol:
-      "border-(--verif-v2-border) bg-(--verif-v2-soft) text-(--verif-v2-text) hover:bg-(--verif-v2-hover) hover:text-(--verif-v2-text)",
+      "border-blue-500/30 bg-blue-500/10 text-blue-800 hover:bg-blue-500/20 dark:border-blue-400/30 dark:bg-blue-400/15 dark:text-blue-300",
   },
   3: {
     label: "V3 Resmi",
@@ -68,9 +69,9 @@ const RING_INFO: Record<
     jelas:
       "Persetujuan final — MENERBITKAN pembacaan meter resmi. Hanya baris yang sudah lolos V1 dan V2.",
     kelasTombol:
-      "border-(--verif-v3-border) bg-(--verif-v3-soft) text-(--verif-v3-text) hover:bg-(--verif-v3-hover) hover:text-(--verif-v3-text)",
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-300",
   },
-}
+};
 
 export function AksiMassal({
   jumlah,
@@ -116,12 +117,16 @@ export function AksiMassal({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2.5 shadow-xs">
         <Badge
-          variant="secondary"
-          className="h-8 rounded-md border border-border px-2.5 text-label-12 font-medium tabular-nums"
+          variant="pill"
+          size="lg"
+          className="h-8 rounded-md px-3 font-mono text-label-12 font-medium text-foreground border-border"
         >
-          {jumlah.toLocaleString("id-ID")} baris dipilih
+          <span className="font-semibold text-foreground">
+            {jumlah.toLocaleString("id-ID")}
+          </span>{" "}
+          baris dipilih
         </Badge>
 
         {sedangJalan && kemajuan ? (
@@ -139,7 +144,7 @@ export function AksiMassal({
                     <Button
                       size="default"
                       variant="outline"
-                      className={RING_INFO[r].kelasTombol}
+                      className={cn(RING_INFO[r].kelasTombol, "h-8 rounded-md text-label-12")}
                       disabled={!bolehRing(r)}
                       onClick={() => setKonfirmasi(r)}
                     >
@@ -149,7 +154,7 @@ export function AksiMassal({
                         <CheckCheck className="size-3.5" aria-hidden />
                       )}
                       {RING_INFO[r].label}
-                      <kbd className="ml-1 rounded bg-background/70 px-1 text-label-12 text-current opacity-80">
+                      <kbd className="ml-1 rounded border border-border/60 bg-background/80 px-1 py-0.5 text-label-11 font-mono text-current opacity-90">
                         {RING_INFO[r].pintasan}
                       </kbd>
                     </Button>
@@ -166,6 +171,7 @@ export function AksiMassal({
             <Button
               size="default"
               variant="outline"
+              className="h-8 rounded-md gap-1.5 text-label-12 font-medium border-border"
               onClick={onEkspor}
             >
               <Download className="size-3.5" aria-hidden /> Ekspor terpilih
@@ -173,19 +179,27 @@ export function AksiMassal({
             <Button
               size="default"
               variant="ghost"
+              className="h-8 rounded-md gap-1.5 text-label-12 text-muted-foreground hover:text-foreground"
               onClick={onBersihkan}
             >
               <X className="size-3.5" aria-hidden /> Batal pilih
-              <kbd className="ml-1 rounded bg-muted px-1 text-label-12 text-muted-foreground">
+              <kbd className="ml-1 rounded border border-border bg-muted/60 px-1.5 py-0.5 text-label-11 text-muted-foreground font-mono">
                 Esc
               </kbd>
             </Button>
           </>
         )}
 
-        <span className="ml-auto hidden items-center gap-1 text-label-12 text-muted-foreground lg:flex">
-          <Keyboard className="size-3.5" aria-hidden /> Ctrl+A pilih semua ·
-          Shift+klik pilih rentang
+        <span className="ml-auto hidden items-center gap-1.5 text-label-12 text-muted-foreground lg:flex">
+          <Keyboard className="size-3.5" aria-hidden />{" "}
+          <kbd className="rounded border border-border bg-muted/50 px-1.5 py-0.5 text-label-11 font-mono">
+            Ctrl+A
+          </kbd>{" "}
+          pilih semua ·{" "}
+          <kbd className="rounded border border-border bg-muted/50 px-1.5 py-0.5 text-label-11 font-mono">
+            Shift+klik
+          </kbd>{" "}
+          pilih rentang
         </span>
       </div>
 

@@ -1,4 +1,8 @@
 export { MonitoringAnomaliKubikasi } from './components/MonitoringAnomaliKubikasi';
+export { AnomaliKubikasiHeader } from './components/AnomaliKubikasiHeader';
 export { MonitoringKoreksiStand } from './components/MonitoringKoreksiStand';
 export { MonitoringProgresLapangan } from './components/MonitoringProgresLapangan';
 export { MonitoringProgresWilayah } from './components/MonitoringProgresWilayah';
+export { ProgresWilayahHeader } from './components/ProgresWilayahHeader';
+export { AuditAnomaliView } from './components/audit-anomali/AuditAnomaliView';
+export { AuditSplitExplorer } from './components/audit-anomali/AuditSplitExplorer';

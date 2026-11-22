@@ -32,9 +32,9 @@ export function RingkasanCater({
   const wil3 = Math.round(totalPelanggan * 0.2396);
   const wil4 = Math.max(totalPelanggan - wil1 - wil2 - wil3, 0);
 
-  // Komposisi kondisi stand bacaan
-  const totalAnomali = Math.round(totalTercatat * 0.062); // ~6.2% anomali
-  const totalNormal = Math.max(totalTercatat - totalAnomali, 0);
+  // Komposisi kondisi stand bacaan (berbasis SSOT is_anomali)
+  const totalAnomali = stats?.totalAnomali ?? 0;
+  const totalNormal = stats?.totalNormal ?? Math.max(totalTercatat - totalAnomali, 0);
   const belumTerbaca = Math.max(totalPelanggan - totalTercatat, 0);
   const persenCapaian = totalPelanggan > 0 ? ((totalTercatat / totalPelanggan) * 100).toFixed(1) : '100.0';
 

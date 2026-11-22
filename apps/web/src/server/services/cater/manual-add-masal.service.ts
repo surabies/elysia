@@ -15,6 +15,8 @@ import {
   getActivePeriode,
 } from '@cater/db';
 import { PEMAKAIAN_MINIMUM_PERDIR } from '../../domain/taksasi/taksasi.engine';
+import { evaluasiAnomaliBaris } from '../../domain/cater/anomali-evaluator';
+import { aturanAnomaliService } from './aturan-anomali.service';
 
 export interface PetugasOption {
   id: string;
@@ -343,10 +345,24 @@ export class ManualAddMasalService {
 
     const fullCatatan = `[Manual ADD Masal: ${alasanKategori}] ${catatanBeritaAcara.trim()}`.trim();
     const now = new Date();
+    const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
 
     // Batch upsert per pelanggan & sinkronkan status DPM daftar_catat
     for (const item of items) {
       const caterId = `cater-${periode}-${item.nolg}`;
+
+      const evalRes = evaluasiAnomaliBaris(
+        {
+          stml: Number(item.stml),
+          stma: Number(item.stml),
+          pakaiM3: Number(item.pakaiM3),
+          pakaiLalu: null,
+          kodeTmss: null,
+        },
+        rules,
+        maps,
+        versi
+      );
 
       await db
         .insert(caterBacaMeter)
@@ -363,6 +379,10 @@ export class ManualAddMasalService {
           metodeCatat: 'OFFSITE',
           sumberCatat: 'MANUAL',
           statusVerifikasi: 'SUBMITTED',
+          isAnomali: evalRes.isAnomali,
+          kodeAnomaliUtama: evalRes.kodeUtama,
+          kodeAnomaliList: evalRes.kodeList,
+          aturanVersi: versi,
           catatan: fullCatatan,
           tglCatat: now,
           updatedAt: now,
@@ -378,6 +398,10 @@ export class ManualAddMasalService {
             metodeCatat: 'OFFSITE',
             sumberCatat: 'MANUAL',
             statusVerifikasi: 'SUBMITTED',
+            isAnomali: evalRes.isAnomali,
+            kodeAnomaliUtama: evalRes.kodeUtama,
+            kodeAnomaliList: evalRes.kodeList,
+            aturanVersi: versi,
             catatan: fullCatatan,
             updatedAt: now,
           },

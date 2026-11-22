@@ -631,7 +631,7 @@ export async function importProgresCater(
       isMbr: r.ismbr,
       status: statusMaster,
       tarifKode: r.trp,
-      kelurahanKode: r.kdkel,
+      kelurahanKode: r.kdkel?.trim() ? r.kdkel.trim().toUpperCase() : (r.ruteKode && r.ruteKode.length >= 3 ? r.ruteKode.slice(0, 3).toUpperCase() : null),
       ruteKode: r.ruteKode || null,
       noUrutRute: noUrut,
       noMeter: validNoMeter,

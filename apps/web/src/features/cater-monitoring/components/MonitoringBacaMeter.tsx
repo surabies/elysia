@@ -2,8 +2,8 @@
 
 import { PageContainer } from '@/components/layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { BebanRute } from './BebanRute';
+import { CaterMonitoringHeader } from './CaterMonitoringHeader';
 import { PembacaanDitinjau } from './PembacaanDitinjau';
 import { RingkasanCater } from './RingkasanCater';
 import { RiwayatPembacaan } from './RiwayatPembacaan';
@@ -19,33 +19,39 @@ export function MonitoringBacaMeter(props: UseCaterMonitoringOptions = {}) {
 
   return (
     <PageContainer className="space-y-6">
-      <header className="space-y-1 border-b pb-5">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">Operasional</Badge>
-          <span className="text-label-12 text-muted-foreground">Baca meter CHN</span>
-        </div>
-        <h1 className="text-heading-32 tracking-tight">Monitoring Baca Meter</h1>
-        <p className="text-copy-14 text-muted-foreground">
-          Ringkasan pelanggan, produktivitas petugas, dan pembacaan yang perlu ditinjau.
-        </p>
-      </header>
+      {/* 1. Header Panel Konsisten dengan Ringkasan & Analytics (Telemetry + SSOT Period Filter) */}
+      <CaterMonitoringHeader
+        periodThbl={state.periodThbl}
+        periodLabel={periodLabel}
+        availablePeriods={state.availablePeriods}
+        onPeriodChange={state.handlePeriodChange}
+        onRefresh={state.refetchAll}
+        loading={state.periodLoading || state.overviewLoading}
+        stats={state.stats}
+        routesCount={state.routes.length}
+        anomaliTotal={state.anomaliKPI.totalAnomali}
+      />
 
-      <RingkasanCater stats={state.stats} loading={state.overviewLoading} />
+      {/* 2. Kartu Metrik Ringkasan (Menyesuaikan dengan Periode Terpilih) */}
+      <RingkasanCater stats={state.stats} loading={state.overviewLoading || state.periodLoading} />
       {state.overviewError && (
         <Alert variant="destructive">
           <AlertDescription>Gagal memuat ringkasan: {state.overviewError}</AlertDescription>
         </Alert>
       )}
+
+      {/* 3. Riwayat Pembacaan Petugas (Tanpa filter mandiri, terikat penuh ke Master Filter Periode) */}
       <RiwayatPembacaan
         judul="Riwayat Pembacaan Petugas"
         subjudul={`${state.riwayatSesiList.length || 9} pencatat • Periode ${periodLabel}`}
         ruteList={state.riwayatSesiList}
         month={state.month}
-        onMonthChange={state.setMonth}
         loading={state.periodLoading}
         error={state.periodError}
         onRefresh={state.refetchPeriod}
       />
+
+      {/* 4. Grid Analisis Beban Rute & Pembacaan yang Perlu Ditinjau */}
       <div className="grid gap-6 lg:grid-cols-2">
         <BebanRute routes={state.routes} loading={state.overviewLoading} />
         <PembacaanDitinjau

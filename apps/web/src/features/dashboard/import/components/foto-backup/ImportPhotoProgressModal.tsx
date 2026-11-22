@@ -1,140 +1,181 @@
-// apps/web/src/features/dashboard/import/components/foto-backup/ImportPhotoProgressModal.tsx
-"use client";
-
+// features/dashboard/import/components/foto-backup/ImportPhotoProgressModal.tsx
 import * as React from "react";
 import {
-  UploadCloud,
-  FileCheck2,
   AlertCircle,
+  CheckCircle2,
+  FileCheck2,
   FileClock,
   Loader2,
-  CheckCircle2,
+  UploadCloud,
+  type LucideIcon,
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { TONE_STYLE, type ImportTone } from "../../lib/import-ui";
 import type { ImportProgressState } from "../../types/foto-backup.types";
 
 interface ImportPhotoProgressModalProps {
   progress: ImportProgressState | null;
 }
 
-export function ImportPhotoProgressModal({ progress }: ImportPhotoProgressModalProps) {
+interface ProgressCounterProps {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  tone: ImportTone;
+}
+
+function ProgressCounter({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: ProgressCounterProps) {
+  const style = TONE_STYLE[tone];
+  return (
+    <div
+      className={cn(
+        "rounded-lg border p-2 text-center",
+        style.soft,
+        style.border,
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center justify-center gap-1 text-label-11",
+          style.text,
+        )}
+      >
+        <Icon className="size-3" aria-hidden />
+        <span>{label}</span>
+      </div>
+      <div className={cn("mt-1 text-label-14-mono tabular-nums", style.text)}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+export function ImportPhotoProgressModal({
+  progress,
+}: ImportPhotoProgressModalProps) {
   if (!progress || !progress.isActive) return null;
 
   const isCompleted = progress.stage === "completed" || progress.percent >= 100;
   const isReading = progress.stage === "reading";
   const sisa = Math.max(0, progress.total - progress.processed);
 
+  const headerTone: ImportTone = isCompleted
+    ? "green"
+    : isReading
+      ? "amber"
+      : "neutral";
+  const HeaderIcon = isCompleted
+    ? CheckCircle2
+    : isReading
+      ? Loader2
+      : UploadCloud;
+  const title = isCompleted
+    ? "Proses Pemetaan Selesai"
+    : isReading
+      ? "Membaca Berkas dari Perangkat"
+      : "Mengunggah & Memetakan Foto";
+  const description = isCompleted
+    ? "Seluruh berkas telah diproses dan disimpan ke database."
+    : isReading
+      ? "Mempersiapkan data berkas foto sebelum dikirim ke server..."
+      : "Menyimpan ke Cloudinary dan memetakan ke tabel cater_baca_meter...";
+
   return (
-    <Dialog open={progress.isActive} onOpenChange={() => {}}>
+    <Dialog open onOpenChange={() => {}}>
       <DialogContent
-        className="max-w-md p-6 border-border bg-[var(--card)] shadow-2xl focus-visible:outline-none"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        className="max-w-md border-border bg-card p-6"
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onEscapeKeyDown={(event) => event.preventDefault()}
       >
-        <DialogHeader className="space-y-2 text-left">
+        <DialogHeader className="text-left">
           <div className="flex items-center gap-3">
             <div
-              className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
-                isCompleted
-                  ? "bg-[var(--verif-v3-soft)] text-[var(--verif-v3-text)] dark:text-[var(--verif-v3-text)]"
-                  : isReading
-                  ? "bg-[var(--verif-v1-soft)] text-[var(--verif-v1-text)] dark:text-[var(--verif-v1-text)]"
-                  : "bg-[var(--primary)]/15 text-[var(--primary)]"
-              }`}
-            >
-              {isCompleted ? (
-                <CheckCircle2 className="size-5" />
-              ) : isReading ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : (
-                <UploadCloud className="size-5 animate-bounce" />
+              className={cn(
+                "flex size-10 shrink-0 items-center justify-center rounded-full",
+                TONE_STYLE[headerTone].soft,
+                TONE_STYLE[headerTone].text,
               )}
+            >
+              <HeaderIcon
+                className={cn(
+                  "size-5",
+                  isReading && !isCompleted && "animate-spin",
+                  !isReading && !isCompleted && "animate-bounce",
+                )}
+                aria-hidden
+              />
             </div>
             <div>
-              <DialogTitle className="text-heading-16 font-semibold text-[var(--primary-foreground)]">
-                {isCompleted
-                  ? "Proses Pemetaan Selesai"
-                  : isReading
-                  ? "Membaca Berkas dari Perangkat"
-                  : "Mengunggah & Memetakan Foto"}
+              <DialogTitle className="text-heading-16 text-foreground">
+                {title}
               </DialogTitle>
               <DialogDescription className="text-copy-12 text-muted-foreground">
-                {isCompleted
-                  ? "Seluruh berkas telah diproses dan disimpan ke database."
-                  : isReading
-                  ? "Mempersiapkan data berkas foto sebelum dikirim ke server..."
-                  : "Menyimpan ke Cloudinary dan memetakan ke tabel cater_baca_meter..."}
+                {description}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Progress Bar & Persentase */}
-        <div className="space-y-2 py-3">
-          <div className="flex items-center justify-between text-copy-13 font-medium">
-            <span className="text-muted-foreground flex items-center gap-1.5">
-              {!isCompleted && <Loader2 className="size-3.5 animate-spin text-[var(--primary)]" />}
-              {isCompleted ? "Selesai 100%" : `Memproses... (${progress.processed}/${progress.total})`}
+        <div className="space-y-2 py-3" aria-live="polite">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-copy-13 text-muted-foreground">
+              {!isCompleted && (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              )}
+              {isCompleted
+                ? "Selesai 100%"
+                : `Memproses... (${progress.processed}/${progress.total})`}
             </span>
-            <span className="font-mono text-label-14 font-bold text-[var(--primary-foreground)] tabular-nums">
+            <span className="text-label-14-mono tabular-nums text-foreground">
               {progress.percent}%
             </span>
           </div>
-
-          <Progress value={progress.percent} className="h-2.5 w-full rounded-full" />
+          <Progress value={progress.percent} />
         </div>
 
-        {/* Current Active File Info */}
         {progress.currentFileName && (
-          <div className="rounded-md border border-[var(--border)]/70 bg-[var(--muted)]/50 p-2.5 text-copy-12 space-y-1">
-            <span className="text-label-11 uppercase font-semibold text-muted-foreground tracking-wider block">
+          <div className="space-y-1 rounded-md border border-border bg-muted p-2.5">
+            <span className="block text-label-11 uppercase tracking-wider text-muted-foreground">
               Berkas Aktif
             </span>
-            <div className="flex items-center gap-1.5 text-[var(--primary-foreground)] font-mono text-label-12 truncate">
-              <span className="truncate">{progress.currentFileName}</span>
-            </div>
+            <span className="block truncate text-label-12-mono text-foreground">
+              {progress.currentFileName}
+            </span>
           </div>
         )}
 
-        {/* Executive Counters (Sukses / Gagal / Sisa) */}
         <div className="grid grid-cols-3 gap-2 pt-1">
-          <div className="rounded-lg border border-[var(--verif-v3-border)]/20 bg-[var(--verif-v3-soft)] p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-[var(--verif-v3-text)] text-label-11 font-medium">
-              <FileCheck2 className="size-3" />
-              <span>Sukses</span>
-            </div>
-            <div className="mt-1 font-mono text-label-14 font-bold text-[var(--verif-v3-text)] tabular-nums">
-              {progress.sukses}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-[var(--muted)]/30 p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-muted-foreground text-label-11 font-medium">
-              <FileClock className="size-3" />
-              <span>Sisa</span>
-            </div>
-            <div className="mt-1 font-mono text-label-14 font-semibold text-[var(--primary-foreground)] tabular-nums">
-              {sisa}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-[var(--destructive)]/20 bg-[var(--destructive)]/5 p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-[var(--destructive)] text-label-11 font-medium">
-              <AlertCircle className="size-3" />
-              <span>Gagal</span>
-            </div>
-            <div className="mt-1 font-mono text-label-14 font-bold text-[var(--destructive)] tabular-nums">
-              {progress.gagal}
-            </div>
-          </div>
+          <ProgressCounter
+            label="Sukses"
+            value={progress.sukses}
+            icon={FileCheck2}
+            tone="green"
+          />
+          <ProgressCounter
+            label="Sisa"
+            value={sisa}
+            icon={FileClock}
+            tone="neutral"
+          />
+          <ProgressCounter
+            label="Gagal"
+            value={progress.gagal}
+            icon={AlertCircle}
+            tone="red"
+          />
         </div>
       </DialogContent>
     </Dialog>

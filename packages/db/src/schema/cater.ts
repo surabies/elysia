@@ -1,9 +1,10 @@
-import { pgTable, text, varchar, numeric, integer, timestamp, index, unique, geometry } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, numeric, integer, boolean, timestamp, index, unique, geometry } from 'drizzle-orm/pg-core';
 import { pelanggan } from './pelanggan';
 import { ruteCater, petugasCater } from './wilayah';
 import { masterKondisiCatat } from './kondisi';
 import { caterMandiriPelanggan } from './mandiri';
 import { waterMeterMutasi } from './gwm';
+import { aturanAnomaliVersi } from './anomali';
 
 // Transaksi Catat Meter Lapangan (Mobile -> Backend) & Baca Mandiri Terverifikasi
 export const caterBacaMeter = pgTable(
@@ -52,6 +53,13 @@ export const caterBacaMeter = pgTable(
     jarakPelangganMeter: numeric('jarak_pelanggan_meter', { precision: 8, scale: 2 }), // Geofence distance
     statusVerifikasi: varchar('status_verifikasi', { length: 30 }).notNull().default('SUBMITTED'), // DRAFT / SUBMITTED / VERIFIED / ANOMALY
     catatan: text('catatan'),
+
+    // Hasil Klasifikasi Anomali Terpusat (SSOT)
+    isAnomali: boolean('is_anomali').notNull().default(false),
+    kodeAnomaliUtama: varchar('kode_anomali_utama', { length: 50 }),
+    kodeAnomaliList: text('kode_anomali_list').array(),
+    aturanVersi: integer('aturan_versi').references(() => aturanAnomaliVersi.versi),
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -64,6 +72,8 @@ export const caterBacaMeter = pgTable(
     index('cater_status_verifikasi_idx').on(table.statusVerifikasi),
     index('cater_tmss_idx').on(table.tmss),
     index('cater_sumber_catat_idx').on(table.sumberCatat),
+    index('cater_is_anomali_idx').on(table.thbl, table.isAnomali),
+    index('cater_kode_anomali_utama_idx').on(table.thbl, table.kodeAnomaliUtama),
   ]
 );
 

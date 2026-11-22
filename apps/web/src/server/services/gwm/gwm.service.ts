@@ -25,6 +25,8 @@ import {
   hitungNeracaAir,
   type HasilNeracaAir,
 } from "../../domain/gwm/gwm.engine";
+import { evaluasiAnomaliBaris } from "../../domain/cater/anomali-evaluator";
+import { aturanAnomaliService } from "../cater/aturan-anomali.service";
 import {
   isCloudinaryConfigured,
   uploadToCloudinary,
@@ -439,6 +441,20 @@ export class GwmService {
       }
 
       // 2. Simpan / Perbarui transaksi pembacaan meter utama
+      const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
+      const evalRes = evaluasiAnomaliBaris(
+        {
+          stml: Number(standLaluStr),
+          stma: Number(bacaBaru),
+          pakaiM3: Number(kalkulasi.totalPemakaianM3),
+          pakaiLalu: pakaiLaluStr ? Number(pakaiLaluStr) : null,
+          kodeTmss: "4",
+        },
+        rules,
+        maps,
+        versi
+      );
+
       await tx
         .insert(caterBacaMeter)
         .values({
@@ -456,6 +472,10 @@ export class GwmService {
           ketCatat: "MB",
           waterMeterMutasiId: mutasi.id,
           statusVerifikasi: "VERIFIED_L1",
+          isAnomali: evalRes.isAnomali,
+          kodeAnomaliUtama: evalRes.kodeUtama,
+          kodeAnomaliList: evalRes.kodeList,
+          aturanVersi: versi,
           catatan: `[Ganti Meter/MB] Stand Angkat: ${mutasi.standAngkat} | Stand Pasang: ${mutasi.standPasang}`,
         })
         .onConflictDoUpdate({
@@ -465,10 +485,15 @@ export class GwmService {
             stma: String(bacaBaru),
             pakaiM3: String(kalkulasi.totalPemakaianM3),
             pakaiTagih: String(kalkulasi.totalPemakaianM3),
+            pakaiLalu: pakaiLaluStr,
             tmss: "4",
             ketCatat: "MB",
             waterMeterMutasiId: mutasi.id,
             statusVerifikasi: "VERIFIED_L1",
+            isAnomali: evalRes.isAnomali,
+            kodeAnomaliUtama: evalRes.kodeUtama,
+            kodeAnomaliList: evalRes.kodeList,
+            aturanVersi: versi,
             catatan: `[Ganti Meter/MB] Stand Angkat: ${mutasi.standAngkat} | Stand Pasang: ${mutasi.standPasang}`,
             updatedAt: new Date(),
           },

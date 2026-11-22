@@ -2,6 +2,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Glide Data Grid Overlay Editor: Ukuran persis seperti lebar sel & rata kanan */
+#portal .gdg-style {
+  box-sizing: border-box !important;
+  width: var(--d19meir1-2, 100%) !important;
+  max-width: var(--d19meir1-2, 100%) !important;
+  border-radius: 0px !important;
+  padding: 0 8px !important;
+  background-color: var(--card) !important;
+  box-shadow: 0 0 0 1.5px #3b82f6, 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+#portal .gdg-style input,
+#portal .gdg-style input.gdg-input {
+  text-align: right !important;
+  font-family: var(--font-mono, "Geist Mono", monospace) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--foreground) !important;
+}
+
+#portal .gdg-style .gdg-clip-region {
+  justify-content: center !important;
+}
+
 /* Keep frozen and scrolling cells on one opaque row surface during horizontal scroll. */
 .tabel-verifikasi tbody > tr > td {
   background-color: var(--card);
@@ -75,7 +99,7 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --color-table-head: var(--table-head);
-    --color-table-accent: var(--table-accent);
+  --color-table-accent: var(--table-accent);
 
   /* Brand & def color scales (Merged from styles.css) */
   --color-highlight: var(--highlight);
@@ -111,6 +135,9 @@
   --color-chart-marker-badge-foreground: var(--chart-marker-badge-foreground);
   --color-chart-ring-background: var(--chart-ring-background);
   --color-chart-label: var(--chart-label);
+  --color-table-hover: var(--table-hover);
+  --color-table-selected: var(--table-selected);
+  --color-table-selected-hover: var(--table-selected-hover);
 
   /* Geist Official Radii Scale (Subtle, Restrained, Swiss Geometry) */
   --radius-xs: 2px;
@@ -120,7 +147,7 @@
   --radius-xl: 12px; /* Geist Overlays: menus, popovers, modals */
   --radius-2xl: 16px;
   --radius-3xl: 24px;
-    --radius: 6px;
+  --radius: 6px;
 
   /* Brand & def tokens (Light Mode - Merged from styles.css) */
   --highlight: #0070f3;
@@ -295,7 +322,9 @@
   --color-chart-scale-05: var(--chart-scale-05);
   --color-chart-segment-line: var(--chart-segment-line);
   --color-chart-segment-background: var(--chart-segment-background);
-  --color-chart-indicator-secondary-color: var(--chart-indicator-secondary-color);
+  --color-chart-indicator-secondary-color: var(
+    --chart-indicator-secondary-color
+  );
   --color-chart-indicator-color: var(--chart-indicator-color);
   --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
   --color-chart-scale-01: var(--chart-scale-01);
@@ -458,7 +487,8 @@
   --color-dice-blue-light: #24afee;
   --color-dice-purple-light: #a783ff;
   --ease-out-sine: cubic-bezier(0.39, 0.575, 0.565, 1);
-  --animate-swipe-up: swipe-up 250ms var(--ease-out-sine) calc(30ms * var(--index, 0)) forwards;
+  --animate-swipe-up: swipe-up 250ms var(--ease-out-sine)
+    calc(30ms * var(--index, 0)) forwards;
 }
 
 /* ==========================================================================
@@ -730,9 +760,21 @@
   --chart-label: oklch(0.45 0.01 260);
   --chart-scale-mix: oklch(1 0 0);
   --chart-scale-01: oklch(0.922 0 0);
-  --chart-scale-02: color-mix(in oklab, var(--chart-1) 35%, var(--chart-scale-mix));
-  --chart-scale-03: color-mix(in oklab, var(--chart-1) 55%, var(--chart-scale-mix));
-  --chart-scale-04: color-mix(in oklab, var(--chart-1) 78%, var(--chart-scale-mix));
+  --chart-scale-02: color-mix(
+    in oklab,
+    var(--chart-1) 35%,
+    var(--chart-scale-mix)
+  );
+  --chart-scale-03: color-mix(
+    in oklab,
+    var(--chart-1) 55%,
+    var(--chart-scale-mix)
+  );
+  --chart-scale-04: color-mix(
+    in oklab,
+    var(--chart-1) 78%,
+    var(--chart-scale-mix)
+  );
   --chart-scale-05: var(--chart-1);
   --chart-scale-pattern-color: oklch(1 0 0);
   --chart-indicator-color: oklch(0.21 0.006 285);
@@ -1527,8 +1569,13 @@
 
 /* Custom slow pulse animation */
 @keyframes slow-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 .animate-slow-pulse {
   animation: slow-pulse 4s ease-in-out infinite;
@@ -1536,16 +1583,30 @@
 
 /* Floating element animations */
 @keyframes float-1 {
-  0%, 100% { transform: scale(1); opacity: 0.3; }
-  50% { transform: scale(1.2); opacity: 0.6; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.6;
+  }
 }
 .animate-float-1 {
   animation: float-1 4s ease-in-out infinite;
 }
 
 @keyframes float-2 {
-  0%, 100% { transform: scale(1.2); opacity: 0.4; }
-  50% { transform: scale(1); opacity: 0.7; }
+  0%,
+  100% {
+    transform: scale(1.2);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
 }
 .animate-float-2 {
   animation: float-2 3.5s ease-in-out infinite;
@@ -1553,7 +1614,11 @@
 }
 
 @keyframes ping-slow {
-  75%, 100% { transform: scale(1.2); opacity: 0; }
+  75%,
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
 }
 .animate-ping-slow {
   animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -1944,6 +2009,10 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
       "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+      cursor: pointer;
+    }
   }
 
   code,
@@ -2025,7 +2094,6 @@ html:has([data-gesture] .react-grid-item.react-draggable-dragging),
 
 :root {
   --destructive-foreground: var(--color-red-800);
-  --success: var(--color-emerald-500);
   --success-foreground: var(--color-emerald-900);
   --info: var(--color-violet-500);
   --info-foreground: var(--color-violet-900);
@@ -2222,19 +2290,27 @@ aside .sidebar-scroll::-webkit-scrollbar-thumb:active,
 
 /* Micro-Interaction Card dengan Top Accent Glow Halus */
 .motion-card-interactive {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s ease;
   position: relative;
   overflow: hidden;
 }
 
 .motion-card-interactive::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.45), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59, 130, 246, 0.45),
+    transparent
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -2246,7 +2322,9 @@ aside .sidebar-scroll::-webkit-scrollbar-thumb:active,
 
 .motion-card-interactive:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.05), 0 4px 8px -2px rgba(0, 0, 0, 0.03);
+  box-shadow:
+    0 10px 25px -4px rgba(0, 0, 0, 0.05),
+    0 4px 8px -2px rgba(0, 0, 0, 0.03);
   border-color: rgba(59, 130, 246, 0.3);
 }
 
@@ -2266,5 +2344,80 @@ aside .sidebar-scroll::-webkit-scrollbar-thumb:active,
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ==========================================================================
+   Vercel Geist Floating Material: Toast & Close Button
+   Reference: https://vercel.com/geist/materials
+   ========================================================================== */
+[data-sonner-toaster] {
+  --normal-bg: var(--background);
+  --normal-border: var(--border);
+  --normal-text: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  padding: 12px 14px !important;
+}
+
+/* Dark mode Floating Material Toast */
+.dark [data-sonner-toaster] [data-sonner-toast],
+[data-sonner-toaster][data-theme="dark"] [data-sonner-toast] {
+  background: #000000 !important;
+  color: #ededed !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Light mode Floating Material Toast */
+:root:not(.dark) [data-sonner-toaster] [data-sonner-toast],
+[data-sonner-toaster][data-theme="light"] [data-sonner-toast] {
+  background: #ffffff !important;
+  color: #171717 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Minimalist Geist Ghost Close Button (Inline inside top-right, NOT a floating circular bubble) */
+[data-sonner-toaster] [data-close-button] {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  left: auto !important;
+  transform: none !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #888888 !important;
+  opacity: 0.7 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity 150ms ease, background-color 150ms ease, color 150ms ease !important;
+  z-index: 10 !important;
+}
+
+[data-sonner-toaster] [data-close-button]:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ededed !important;
+}
+
+:root:not(.dark) [data-sonner-toaster] [data-close-button]:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #171717 !important;
+}
+
+[data-sonner-toaster] [data-close-button] svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke-width: 1.75 !important;
 }
 

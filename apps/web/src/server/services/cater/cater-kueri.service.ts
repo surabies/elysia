@@ -199,12 +199,13 @@ export class CaterKueriService {
         pakaiLalu: caterBacaMeter.pakaiLalu,
         ketCatat: caterBacaMeter.ketCatat,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
+        isAnomali: caterBacaMeter.isAnomali,
+        kodeAnomaliUtama: caterBacaMeter.kodeAnomaliUtama,
+        kodeAnomaliList: caterBacaMeter.kodeAnomaliList,
       })
       .from(caterBacaMeter)
       .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
-      .where(
-        sql`${caterBacaMeter.ketCatat} != 'Normal' OR ${caterBacaMeter.pakaiM3}::float > 100`
-      )
+      .where(eq(caterBacaMeter.isAnomali, true))
       .limit(limit);
   }
 

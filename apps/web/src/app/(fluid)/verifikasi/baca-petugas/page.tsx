@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { auth } from "@/lib/auth/index";
 import {
   VerifikasiLapangan,
@@ -12,6 +13,14 @@ export const metadata: Metadata = {
 
 export default async function VerifikasiPetugasPage() {
   const session = await auth();
+  const cookieStore = await cookies();
+  const rawWidth = cookieStore.get("verif_panel_width")?.value;
+  const parsedWidth = rawWidth ? parseInt(rawWidth, 10) : 340;
+  const defaultWidth =
+    !isNaN(parsedWidth) && parsedWidth >= 280 && parsedWidth <= 600
+      ? parsedWidth
+      : 340;
+
   return (
     <Suspense
       fallback={
@@ -20,7 +29,10 @@ export default async function VerifikasiPetugasPage() {
         </div>
       }
     >
-      <VerifikasiLapangan role={roleVerifikasi(session?.user?.role)} />
+      <VerifikasiLapangan
+        role={roleVerifikasi(session?.user?.role)}
+        defaultWidth={defaultWidth}
+      />
     </Suspense>
   );
 }

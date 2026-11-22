@@ -75,10 +75,16 @@ export function PembacaanDitinjau({
 
     let kategori: 'ekstrem' | 'nol' | 'turun' = fallbackKategori ?? 'ekstrem';
     if (!fallbackKategori) {
+      const kode = (item.kodeAnomaliUtama ?? '').toUpperCase();
       const jenisRaw = (item.jenisAnomali ?? '').toUpperCase();
-      if (jenisRaw === 'NOL' || pakai === 0) {
+      if (
+        kode === 'ANOM_TIDAK_ADA_AIR_MENDADAK' ||
+        kode === 'ANOM_TIDAK_ADA_AIR_BERKEPANJANGAN' ||
+        jenisRaw === 'NOL' ||
+        pakai === 0
+      ) {
         kategori = 'nol';
-      } else if (jenisRaw === 'TURUN' || (lalu >= 10 && pakai <= lalu * 0.5)) {
+      } else if (kode === 'ANOM_PENURUNAN_DRASTIS' || jenisRaw === 'TURUN') {
         kategori = 'turun';
       } else {
         kategori = 'ekstrem';

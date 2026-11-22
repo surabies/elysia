@@ -146,7 +146,7 @@ export function RingkasanSebaris({ stats }: { stats: StatsVerifikasi | null }) {
         </strong>
       </span>
       <span>
-        Resmi{" "}
+        Terverifikasi{" "}
         <strong className="font-medium text-(--verif-v3)">
           {id(h.diverifikasi)}
         </strong>

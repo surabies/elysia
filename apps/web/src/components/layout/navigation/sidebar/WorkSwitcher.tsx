@@ -14,11 +14,11 @@
 // - Keyboard shortcuts (⌥1 s/d ⌥7 / Alt+1 s/d Alt+7) untuk beralih instan
 // - Checkmark penanda ruang kerja aktif
 
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import * as React from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
   Gauge,
@@ -30,33 +30,33 @@ import {
   Check,
   Settings,
   BarChart3,
-} from "lucide-react"
-import { GeistChevronsUpDown } from "./lib/GeistIcons"
-import { GeistAvatar } from "./lib/GeistAvatar"
+} from "lucide-react";
+import { GeistChevronsUpDown } from "./lib/GeistIcons";
+import { IconTile } from "@/components/reui/icon-tile";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export type OperationalWorkspace = {
-  id: string
-  name: string
-  subtitle: string
-  href: string
-  shortcut: string
-  keyNumber: string
-  tag: string
-  icon: React.ComponentType<{ className?: string }>
-}
+  id: string;
+  name: string;
+  subtitle: string;
+  href: string;
+  shortcut: string;
+  keyNumber: string;
+  tag: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
 
 export const OPERATIONAL_WORKSPACES: OperationalWorkspace[] = [
   {
     id: "pusat-komando",
-    name: "Pusat Komando",
+    name: "Ringkasan",
     subtitle: "Ringkasan 3 Pilar & Telemetri",
     href: "/dashboard",
     shortcut: "⌥1",
@@ -124,26 +124,32 @@ export const OPERATIONAL_WORKSPACES: OperationalWorkspace[] = [
     tag: "Spasial",
     icon: MapPin,
   },
-]
+];
 
 export function WorkSwitcher({ className }: { className?: string } = {}) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const [open, setOpen] = React.useState(false)
+  const pathname = usePathname();
+  const router = useRouter();
+  const [open, setOpen] = React.useState(false);
 
   // Deteksi ruang kerja aktif berdasarkan URL rute saat ini
   const activeWorkspace = React.useMemo(() => {
     if (pathname.startsWith("/verifikasi/baca-petugas")) {
-      return OPERATIONAL_WORKSPACES[2] // Verifikasi Petugas
+      return OPERATIONAL_WORKSPACES[2]; // Verifikasi Petugas
     }
-    if (pathname.startsWith("/verifikasi/baca-pelanggan") || pathname.startsWith("/stand-konsumen")) {
-      return OPERATIONAL_WORKSPACES[3] // Verifikasi Mandiri
+    if (
+      pathname.startsWith("/verifikasi/baca-pelanggan") ||
+      pathname.startsWith("/stand-konsumen")
+    ) {
+      return OPERATIONAL_WORKSPACES[3]; // Verifikasi Mandiri
     }
     if (pathname.startsWith("/verifikasi")) {
-      return OPERATIONAL_WORKSPACES[2] // Verifikasi Petugas fallback
+      return OPERATIONAL_WORKSPACES[2]; // Verifikasi Petugas fallback
     }
-    if (pathname.startsWith("/cater") || pathname.startsWith("/progres/cater")) {
-      return OPERATIONAL_WORKSPACES[1] // Catat Meter Lapangan
+    if (
+      pathname.startsWith("/cater") ||
+      pathname.startsWith("/progres/cater")
+    ) {
+      return OPERATIONAL_WORKSPACES[1]; // Catat Meter Lapangan
     }
     if (
       pathname.startsWith("/progres/ekstrim") ||
@@ -152,48 +158,60 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
       pathname.startsWith("/progres/turun") ||
       pathname.startsWith("/meter")
     ) {
-      return OPERATIONAL_WORKSPACES[2] // Verifikasi Petugas (Anomali & Stand)
+      return OPERATIONAL_WORKSPACES[2]; // Verifikasi Petugas (Anomali & Stand)
     }
-    if (pathname.startsWith("/laporan/lap-drd") || pathname.startsWith("/tools-tutup")) {
-      return OPERATIONAL_WORKSPACES[4] // Billing & Rekening DRD
+    if (
+      pathname.startsWith("/laporan/lap-drd") ||
+      pathname.startsWith("/tools-tutup")
+    ) {
+      return OPERATIONAL_WORKSPACES[4]; // Billing & Rekening DRD
     }
-    if (pathname.startsWith("/pengaduan") || pathname.startsWith("/cater/ganti-meter")) {
-      return OPERATIONAL_WORKSPACES[5] // Pengaduan & GWM
+    if (
+      pathname.startsWith("/pengaduan") ||
+      pathname.startsWith("/cater/ganti-meter")
+    ) {
+      return OPERATIONAL_WORKSPACES[5]; // Pengaduan & GWM
     }
-    if (pathname.startsWith("/pelanggan") || pathname.startsWith("/peta-wilayah") || pathname.startsWith("/master")) {
-      return OPERATIONAL_WORKSPACES[6] // Master Pelanggan & GIS
+    if (
+      pathname.startsWith("/pelanggan") ||
+      pathname.startsWith("/peta-wilayah") ||
+      pathname.startsWith("/master")
+    ) {
+      return OPERATIONAL_WORKSPACES[6]; // Master Pelanggan & GIS
     }
-    // Default Pusat Komando
-    return OPERATIONAL_WORKSPACES[0]
-  }, [pathname])
+    // Default Ringkasan: Pusat Komando
+    return OPERATIONAL_WORKSPACES[0];
+  }, [pathname]);
 
   // Keyboard shortcut listener: Alt+1 s/d Alt+7 (atau Option+1..7 di macOS)
   React.useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      const target = event.target as HTMLElement
+      const target = event.target as HTMLElement;
       if (
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.isContentEditable
       ) {
-        return
+        return;
       }
 
       if (event.altKey && !event.ctrlKey && !event.metaKey) {
-        const found = OPERATIONAL_WORKSPACES.find((ws) => ws.keyNumber === event.key)
+        const found = OPERATIONAL_WORKSPACES.find(
+          (ws) => ws.keyNumber === event.key,
+        );
         if (found) {
-          event.preventDefault()
-          setOpen(false)
-          router.push(found.href)
+          event.preventDefault();
+          setOpen(false);
+          router.push(found.href);
         }
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [router])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router]);
 
-  const ActiveIcon = activeWorkspace.icon
+  const ActiveIcon = activeWorkspace.icon;
 
   return (
     <div className={cn("flex h-10 w-full flex-row items-center", className)}>
@@ -204,12 +222,18 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
             aria-label="Pilih Ruang Kerja Operasional"
             title="Pilih Ruang Kerja Operasional (Pintasan: ⌥1 - ⌥7)"
             className={cn(
-              "group/scope relative flex h-full w-full items-center select-none min-w-0 text-sm rounded-md bg-transparent cursor-pointer pl-2.5 pr-1 transition-colors",
-              "focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+              "group/scope relative flex h-full w-full items-center select-none min-w-0 text-sm rounded-md bg-transparent cursor-pointer pl-2 pr-1 transition-colors hover:bg-sidebar-accent/50",
+              "focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2",
             )}
           >
-            {/* Avatar 20px Geist dengan Icon Ruang Kerja Aktif */}
-            <GeistAvatar size={20} icon={ActiveIcon} alt={activeWorkspace.name} />
+            {/* Avatar IconTile Geist dengan Icon Ruang Kerja Aktif */}
+            <IconTile
+              size="xs"
+              variant="outline"
+              className="border-border bg-background text-foreground shrink-0"
+            >
+              <ActiveIcon className="size-3.5 text-foreground" />
+            </IconTile>
 
             {/* Nama Ruang Kerja + Badge Tag */}
             <span className="flex-1 flex flex-row items-center gap-1.5 min-w-0 text-left ml-2">
@@ -219,36 +243,36 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
               >
                 {activeWorkspace.name}
               </span>
-              <div
+              <span
                 data-testid="scope-switcher/scope-badge"
-                className="inline-flex shrink-0 items-center justify-center rounded-full whitespace-nowrap py-0.5 font-medium tabular-nums text-[10px]/[18px] tracking-[0.2px] h-4.5 px-1.5 bg-muted/70 text-muted-foreground border border-border/60"
+                className="inline-flex shrink-0 items-center justify-center rounded-full whitespace-nowrap py-0.5 font-medium tabular-nums text-[10px] tracking-[0.2px] h-4 px-1.5 bg-muted text-muted-foreground border border-border"
               >
-                <span>{activeWorkspace.tag}</span>
-              </div>
+                {activeWorkspace.tag}
+              </span>
             </span>
 
-            {/* Tombol icon chevron arrow di pojok kanan: HOVER ACTIVE HANYA DI ICON INI */}
-            <span className="grid shrink-0 place-content-center size-7 rounded-md transition-colors text-muted-foreground group-hover/scope:bg-(--ds-gray-200) group-hover/scope:text-foreground">
+            {/* Tombol icon chevron arrow di pojok kanan */}
+            <span className="grid shrink-0 place-content-center size-7 rounded-md transition-colors text-muted-foreground group-hover/scope:bg-accent group-hover/scope:text-accent-foreground">
               <GeistChevronsUpDown size={16} className="size-4" />
             </span>
           </button>
         </DropdownMenuTrigger>
 
-        {/* Dropdown Menu Popup: Lebar 290px elegan dengan Vercel styling */}
+        {/* Dropdown Menu Popup: Lebar 300px elegan dengan Geist tokens */}
         <DropdownMenuContent
           align="start"
           side="bottom"
           sideOffset={6}
-          className="w-[290px] min-w-[290px] max-h-[85vh] overflow-y-auto rounded-xl border border-border bg-popover p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.6)] text-sm"
+          className="w-80 min-w-80 max-h-[85vh] overflow-y-auto rounded-xl border border-border bg-popover p-1.5 shadow-xl text-sm"
         >
           {/* Header Panel Info: Nama Ruang Kerja & Setting */}
-          <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-border/50 pb-2 mb-1">
+          <div className="flex items-center justify-between gap-2 px-2.5 py-2 border-b border-border pb-2 mb-1.5">
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <span className="truncate text-xs font-semibold text-foreground tracking-tight">
                   Ruang Kerja Operasional
                 </span>
-                <span className="text-[10px] px-1 py-0.2 rounded bg-primary/10 text-primary font-mono font-medium">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono font-medium border border-primary/20">
                   7 Modul
                 </span>
               </div>
@@ -261,17 +285,17 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
               onClick={() => setOpen(false)}
               aria-label="Pengaturan Modul"
               title="Pengaturan Modul"
-              className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-(--ds-gray-100) hover:text-foreground dark:hover:bg-(--ds-gray-200) transition-colors"
+              className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <Settings className="size-3.5" />
             </Link>
           </div>
 
           {/* Daftar 7 Ruang Kerja Operasional */}
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             {OPERATIONAL_WORKSPACES.map((ws) => {
-              const Icon = ws.icon
-              const isActive = ws.id === activeWorkspace.id
+              const Icon = ws.icon;
+              const isActive = ws.id === activeWorkspace.id;
 
               return (
                 <DropdownMenuItem
@@ -279,32 +303,41 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
                   asChild
                   onSelect={() => setOpen(false)}
                   className={cn(
-                    "cursor-pointer px-2 py-1.5 rounded-lg transition-colors group/item",
+                    "cursor-pointer p-2 rounded-lg transition-colors group/item focus:bg-accent focus:text-accent-foreground",
                     isActive
-                      ? "bg-(--ds-gray-200) text-foreground font-medium"
-                      : "hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200) text-foreground"
+                      ? "bg-accent/80 text-accent-foreground font-medium"
+                      : "hover:bg-accent/50 text-foreground",
                   )}
                 >
                   <Link
                     href={ws.href}
-                    className="flex w-full items-center justify-between gap-2"
+                    className="flex w-full items-center justify-between gap-2.5"
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div
+                      <IconTile
+                        size="sm"
+                        variant={isActive ? "solid" : "frame"}
                         className={cn(
-                          "size-7 rounded-md flex items-center justify-center shrink-0 border transition-colors",
+                          "transition-colors shrink-0",
                           isActive
-                            ? "bg-foreground text-background border-foreground shadow-xs"
-                            : "bg-muted/60 text-muted-foreground border-border/80 group-hover/item:border-foreground/30 group-hover/item:text-foreground"
+                            ? "bg-primary text-primary-foreground shadow-xs [&_svg]:text-primary-foreground!"
+                            : "text-muted-foreground group-hover/item:text-foreground",
                         )}
                       >
-                        <Icon className="size-3.5" />
-                      </div>
+                        <Icon
+                          className={cn(
+                            "size-4 shrink-0 transition-colors",
+                            isActive
+                              ? "text-primary-foreground!"
+                              : "text-muted-foreground group-hover/item:text-foreground",
+                          )}
+                        />
+                      </IconTile>
                       <div className="flex flex-col min-w-0">
-                        <span className="truncate text-xs text-foreground leading-tight">
+                        <span className="truncate text-xs font-medium text-foreground leading-snug">
                           {ws.name}
                         </span>
-                        <span className="truncate text-[11px] text-muted-foreground leading-tight mt-0.5">
+                        <span className="truncate text-[11px] text-muted-foreground leading-snug">
                           {ws.subtitle}
                         </span>
                       </div>
@@ -312,47 +345,55 @@ export function WorkSwitcher({ className }: { className?: string } = {}) {
 
                     <div className="flex items-center gap-1.5 shrink-0 pl-1">
                       {isActive && (
-                        <Check className="size-3.5 text-foreground shrink-0" />
+                        <Check className="size-3.5 text-primary shrink-0" />
                       )}
-                      <kbd className="inline-flex items-center justify-center h-4.5 px-1.5 rounded border border-border/70 bg-background/80 font-mono text-[10px] text-muted-foreground/90 tabular-nums">
+                      <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded border border-border bg-muted/50 font-mono text-[10px] text-muted-foreground tabular-nums">
                         {ws.shortcut}
                       </kbd>
                     </div>
                   </Link>
                 </DropdownMenuItem>
-              )
+              );
             })}
           </div>
 
-          <DropdownMenuSeparator className="my-1.5" />
+          <DropdownMenuSeparator className="my-1.5 bg-border" />
 
           {/* Pintasan Tambahan: Panel Analitik & Kinerja */}
           <div className="flex flex-col gap-0.5">
             <DropdownMenuItem
               asChild
               onSelect={() => setOpen(false)}
-              className="h-8 cursor-pointer px-2 text-xs text-muted-foreground hover:bg-(--ds-gray-100) hover:text-foreground dark:hover:bg-(--ds-gray-200) rounded-md transition-colors"
+              className="cursor-pointer p-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground rounded-lg transition-colors"
             >
               <Link
                 href="/analytics"
                 className="flex items-center justify-between w-full"
               >
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="size-3.5 text-primary" />
-                  <span>Panel Analitik & Kinerja</span>
+                <div className="flex items-center gap-2.5">
+                  <IconTile size="xs" variant="soft" className="text-primary">
+                    <BarChart3 className="text-primary" />
+                  </IconTile>
+                  <span className="text-xs font-medium text-foreground">
+                    Panel Analitik & Kinerja
+                  </span>
                 </div>
-                <span className="text-[10px] text-muted-foreground/80 font-mono">Buka →</span>
+                <span className="text-[10px] text-muted-foreground/80 font-mono">
+                  Buka →
+                </span>
               </Link>
             </DropdownMenuItem>
           </div>
 
           {/* Footer Petunjuk Cepat */}
-          <div className="mt-1 px-2.5 py-1 rounded bg-muted/40 border border-border/40 text-[10px] text-muted-foreground flex items-center justify-between">
+          <div className="mt-1 px-2.5 py-1.5 rounded-lg bg-muted/30 border border-border text-[10px] text-muted-foreground flex items-center justify-between">
             <span>Pintasan Cepat:</span>
-            <span className="font-mono text-foreground font-medium">Alt + [1 - 7]</span>
+            <span className="font-mono text-foreground font-medium">
+              Alt + [1 - 7]
+            </span>
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  )
+  );
 }

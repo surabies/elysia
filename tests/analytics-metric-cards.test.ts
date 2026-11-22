@@ -80,7 +80,7 @@ describe("Analytics Metric Cards (Vercel Geist Pattern)", () => {
       expect(card1.visual.items).toHaveLength(3);
       expect(card1.visual.items.map((i) => i.id)).toEqual(["normal", "anomali", "sisa"]);
     }
-    expect(card1.footer.href).toBe("#tren-harian");
+    expect(card1.footer?.href).toBe("#tren-harian");
 
     // Kartu 2: Kubikasi Air Terdistribusi (Varian Sparkline)
     expect(card2.id).toBe("volume-kubikasi");
@@ -89,7 +89,7 @@ describe("Analytics Metric Cards (Vercel Geist Pattern)", () => {
     if (card2.visual.type === "sparkline") {
       expect(card2.visual.data).toEqual([22000, 24000, 28000]);
     }
-    expect(card2.footer.href).toBe("#kelompok-konsumsi");
+    expect(card2.footer?.href).toBe("#kelompok-konsumsi");
 
     // Kartu 3: Ritme Laju Harian (Varian Pills)
     expect(card3.id).toBe("laju-harian");
@@ -99,7 +99,7 @@ describe("Analytics Metric Cards (Vercel Geist Pattern)", () => {
       expect(card3.visual.values).toEqual([1200, 1400, 1800]);
       expect(card3.visual.tone).toBe("neutral");
     }
-    expect(card3.footer.href).toBe("#produktivitas-petugas");
+    expect(card3.footer?.href).toBe("#produktivitas-petugas");
 
     // Kartu 4: Temuan & Anomali Lapangan (Varian Pills dengan tone problem)
     expect(card4.id).toBe("anomali-lapangan");
@@ -109,7 +109,7 @@ describe("Analytics Metric Cards (Vercel Geist Pattern)", () => {
       expect(card4.visual.values).toEqual([100, 100, 150]);
       expect(card4.visual.tone).toBe("problem");
     }
-    expect(card4.footer.href).toBe("#status-pembacaan");
+    expect(card4.footer?.href).toBe("#status-pembacaan");
   });
 
   it("kompatibilitas mundur: buildKpis mengembalikan hasil yang identik", () => {

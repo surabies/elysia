@@ -161,8 +161,8 @@ export function DistribusiWilayahTarif({
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-2">
       {/* KARTU 1: Sebaran Wilayah Pelayanan (Vercel Breakdown List) */}
-      <Card className="flex min-w-0 flex-col rounded-lg border-border/80 bg-card shadow-none">
-        <CardHeader className="border-b border-border/60 p-5 pb-4">
+      <Card className="flex min-w-0 flex-col rounded-lg border border-border bg-card shadow-none">
+        <CardHeader className="border-b border-border p-5 pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -282,8 +282,8 @@ export function DistribusiWilayahTarif({
       </Card>
 
       {/* KARTU 2: Golongan Tarif Pelanggan (Vercel Breakdown List) */}
-      <Card className="flex min-w-0 flex-col rounded-lg border-border/80 bg-card shadow-none">
-        <CardHeader className="border-b border-border/60 p-5 pb-4">
+      <Card className="flex min-w-0 flex-col rounded-lg border border-border bg-card shadow-none">
+        <CardHeader className="border-b border-border p-5 pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2">

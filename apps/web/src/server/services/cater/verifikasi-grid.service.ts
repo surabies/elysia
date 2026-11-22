@@ -1,4 +1,16 @@
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  not,
+  notIlike,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   caterBacaMeter,
   caterMandiriPelanggan,
@@ -19,7 +31,7 @@ import {
   wilayahAdministrasi,
   zonaDistribusi,
 } from "@cater/db";
-import { hitungDeviasiPersentase } from "../../domain/cater/cater-anomali.engine";
+import { hitungDeviasiPersentase } from "../../domain/cater/anomali-evaluator";
 
 type GridQuery = {
   id?: string;
@@ -64,19 +76,108 @@ const asNumber = (value: string | number | null | undefined) =>
 
 const toIso = (value: Date | null | undefined) => value?.toISOString() ?? null;
 
+function whereKondisi(value: string) {
+  const norm = value.toUpperCase().trim();
+  switch (norm) {
+    case "NORMAL":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('NORMAL', 'NIHIL')`;
+    case "TIDAK_DIPAKAI":
+    case "TIDAK DIPAKAI":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('TIDAK DIPAKAI', 'TIDAK_DIPAKAI')`;
+    case "RUMAH_KOSONG":
+    case "RUMAH KOSONG":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('RUMAH KOSONG', 'RUMAH_KOSONG', 'RMH/TANAH KSG', 'TANAH KOSONG')`;
+    case "STAND_TEMPEL":
+    case "STAND TEMPEL":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('STAND TEMPEL', 'STAND_TEMPEL')`;
+    case "STAND_KONSUMEN":
+    case "STAND-KONSUMEN":
+    case "STAND KONSUMEN":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('STAND-KONSUMEN', 'STAND KONSUMEN', 'STAND_KONSUMEN')`;
+    case "METER_RUSAK":
+    case "METER RUSAK":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('METER RUSAK', 'METER_RUSAK', 'RUSAK')`;
+    case "METER_MATI_ADA_AIR":
+    case "MATI ADA AIR":
+    case "METER MATI AIR ADA":
+    case "METER MATI":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('MATI ADA AIR', 'METER MATI AIR ADA', 'METER_MATI_ADA_AIR', 'METER MATI')`;
+    case "METER_MUNDUR":
+    case "METER MUNDUR":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('METER MUNDUR', 'METER_MUNDUR')`;
+    case "METER_TERBALIK":
+    case "METER TERBALIK":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('METER TERBALIK', 'METER_TERBALIK')`;
+    case "METER_DALAM_AIR":
+    case "METER DALAM AIR":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('METER DALAM AIR', 'METER_DALAM_AIR')`;
+    case "LOS_METER":
+    case "LOS METER":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('LOS METER', 'LOS_METER')`;
+    case "BMK_BMB":
+    case "BMK/BMB":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('BMK/BMB', 'BMK_BMB', 'BMK', 'BMB')`;
+    case "TTB":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) = 'TTB'`;
+    case "MTA":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) = 'MTA'`;
+    case "TERHALANG":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('TERHALANG', 'TERHALANG ')`;
+    case "TIDAK_ADA_AIR":
+    case "TIDAK ADA AIR":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('TIDAK ADA AIR', 'TIDAK_ADA_AIR')`;
+    case "ADA_ANJING":
+    case "ADA ANJING":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('ADA ANJING', 'ADA_ANJING')`;
+    case "DK":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) = 'DK'`;
+    case "MB":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) = 'MB'`;
+    case "MUDA_KEMBALI":
+    case "MUDA KEMBALI":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('MUDA KEMBALI', 'MUDA_KEMBALI')`;
+    case "REV_PENCATAT":
+    case "REV.PENCATAT":
+    case "REVISI PENCATAT":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('REV.PENCATAT', 'REV_PENCATAT', 'REVISI PENCATAT')`;
+    case "DICABUT":
+    case "DI CABUT":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('DICABUT', 'DI CABUT')`;
+    case "TAKSASI_PERDIR":
+    case "TAKSASI PERDIR":
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('TAKSASI PERDIR', 'TAKSASI_PERDIR')`;
+    default: {
+      const spaceVal = norm.replace(/_/g, " ");
+      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN (${norm}, ${spaceVal})`;
+    }
+  }
+}
+
 function whereStatus(value?: string) {
   switch (value?.toUpperCase()) {
     case "SUBMITTED":
+    case "MENUNGGU":
+    case "WAITING":
+      return inArray(caterBacaMeter.statusVerifikasi, [
+        ...WAITING_STATUSES,
+      ]);
+    case "SUBMITTED_ONLY":
       return inArray(caterBacaMeter.statusVerifikasi, [
         ...MENUNGGU_V1_STATUSES,
       ]);
     case "VERIFIED_L1":
+    case "V1":
       return eq(caterBacaMeter.statusVerifikasi, "VERIFIED_L1");
     case "VERIFIED_L2":
+    case "V2":
       return eq(caterBacaMeter.statusVerifikasi, "VERIFIED_L2");
     case "APPROVED_FINAL":
+    case "DIVERIFIKASI":
+    case "V3":
       return inArray(caterBacaMeter.statusVerifikasi, [...FINAL_STATUSES]);
     case "NEED_RESURVEY":
+    case "DITOLAK":
+    case "CEK_ULANG":
       return eq(caterBacaMeter.statusVerifikasi, "NEED_RESURVEY");
     default:
       return value ? eq(caterBacaMeter.statusVerifikasi, value) : undefined;
@@ -182,17 +283,7 @@ export class VerifikasiGridService {
       .where(
         and(
           period ? eq(caterBacaMeter.thbl, period) : undefined,
-          or(
-            inArray(caterBacaMeter.statusVerifikasi, [
-              "ANOMALY",
-              "ANOMALY_NEGATIVE",
-              "ANOMALY_HIGH",
-              "ANOMALY_LOW",
-            ]),
-            sql`${caterBacaMeter.pakaiM3}::numeric < 0`,
-            sql`(${caterBacaMeter.pakaiLalu}::numeric > 0 AND abs(${caterBacaMeter.pakaiM3}::numeric - ${caterBacaMeter.pakaiLalu}::numeric) / ${caterBacaMeter.pakaiLalu}::numeric > 0.5)`,
-            sql`(${caterBacaMeter.ketCatat} IS NOT NULL AND lower(${caterBacaMeter.ketCatat}) NOT IN ('normal', 'nihil', ''))`,
-          ),
+          eq(caterBacaMeter.isAnomali, true)
         ),
       );
 
@@ -234,23 +325,68 @@ export class VerifikasiGridService {
 
     if (period) conditions.push(eq(caterBacaMeter.thbl, period));
     if (query.id) conditions.push(eq(caterBacaMeter.id, query.id));
-    if (query.pencatatId)
-      conditions.push(eq(caterBacaMeter.petugasId, query.pencatatId));
-    if (query.ruteId || query.ruteKode) {
+    if (query.pencatatId) {
       conditions.push(
-        eq(caterBacaMeter.ruteKode, query.ruteId ?? query.ruteKode!),
+        sql`upper(trim(${caterBacaMeter.petugasId})) = upper(trim(${query.pencatatId}))`,
+      );
+    }
+    if (query.ruteId || query.ruteKode) {
+      const ruteVal = (query.ruteId ?? query.ruteKode!).trim();
+      conditions.push(
+        sql`upper(trim(${caterBacaMeter.ruteKode})) = upper(trim(${ruteVal}))`,
       );
     }
     const statusCondition = whereStatus(query.statusVerif);
     if (statusCondition) conditions.push(statusCondition);
-    if (query.kondisi)
-      conditions.push(eq(caterBacaMeter.ketCatat, query.kondisi));
+    if (query.kondisi) {
+      const kondisiCondition = whereKondisi(query.kondisi);
+      if (kondisiCondition) conditions.push(kondisiCondition);
+    }
     if (query.jenisInput) {
-      conditions.push(
-        query.jenisInput === "KONSUMEN"
-          ? inArray(caterBacaMeter.sumberCatat, ["MANDIRI_WEB", "MANDIRI_APP"])
-          : eq(caterBacaMeter.sumberCatat, "PETUGAS_ONSITE"),
-      );
+      if (query.jenisInput === "KONSUMEN") {
+        conditions.push(
+          or(
+            inArray(caterBacaMeter.sumberCatat, ["MANDIRI_WEB", "MANDIRI_APP"]),
+            isNotNull(caterBacaMeter.caterMandiriId),
+          )!,
+        );
+      } else if (query.jenisInput === "MANUAL_MASSAL") {
+        conditions.push(
+          and(
+            or(
+              eq(caterBacaMeter.sumberCatat, "MANUAL"),
+              eq(caterBacaMeter.sumberCatat, "MANUAL_MASSAL"),
+            ),
+            ilike(caterBacaMeter.catatan, "%Masal%"),
+          )!,
+        );
+      } else if (query.jenisInput === "MANUAL_SATUAN") {
+        conditions.push(
+          and(
+            or(
+              eq(caterBacaMeter.sumberCatat, "MANUAL"),
+              eq(caterBacaMeter.sumberCatat, "MANUAL_SATUAN"),
+            ),
+            notIlike(caterBacaMeter.catatan, "%Masal%"),
+          )!,
+        );
+      } else if (query.jenisInput === "MANUAL") {
+        conditions.push(
+          or(
+            eq(caterBacaMeter.sumberCatat, "MANUAL"),
+            eq(caterBacaMeter.sumberCatat, "MANUAL_SATUAN"),
+            eq(caterBacaMeter.sumberCatat, "MANUAL_MASSAL"),
+          )!,
+        );
+      } else if (query.jenisInput === "PETUGAS") {
+        conditions.push(
+          and(
+            not(inArray(caterBacaMeter.sumberCatat, ["MANDIRI_WEB", "MANDIRI_APP"])),
+            not(inArray(caterBacaMeter.sumberCatat, ["MANUAL", "MANUAL_SATUAN", "MANUAL_MASSAL"])),
+            isNull(caterBacaMeter.caterMandiriId),
+          )!,
+        );
+      }
     }
     if (query.tanggalDari) {
       const tglDariStr = query.tanggalDari.slice(0, 10);
@@ -267,19 +403,9 @@ export class VerifikasiGridService {
       }
     }
     if (query.hanyaAnomali === "true") {
-      conditions.push(
-        or(
-          inArray(caterBacaMeter.statusVerifikasi, [
-            "ANOMALY",
-            "ANOMALY_NEGATIVE",
-            "ANOMALY_HIGH",
-            "ANOMALY_LOW",
-          ]),
-          sql`${caterBacaMeter.pakaiM3}::numeric < 0`,
-          sql`(${caterBacaMeter.pakaiLalu}::numeric > 0 AND abs(${caterBacaMeter.pakaiM3}::numeric - ${caterBacaMeter.pakaiLalu}::numeric) / ${caterBacaMeter.pakaiLalu}::numeric > 0.5)`,
-          sql`(${caterBacaMeter.ketCatat} IS NOT NULL AND lower(${caterBacaMeter.ketCatat}) NOT IN ('normal', 'nihil', ''))`,
-        )!,
-      );
+      conditions.push(eq(caterBacaMeter.isAnomali, true));
+    } else if (query.hanyaAnomali === "false") {
+      conditions.push(eq(caterBacaMeter.isAnomali, false));
     }
     if (query.q) {
       const pattern = `%${query.q}%`;
@@ -322,11 +448,15 @@ export class VerifikasiGridService {
         ketCatat: caterBacaMeter.ketCatat,
         sumberCatat: caterBacaMeter.sumberCatat,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
+        isAnomali: caterBacaMeter.isAnomali,
+        kodeAnomaliUtama: caterBacaMeter.kodeAnomaliUtama,
+        kodeAnomaliList: caterBacaMeter.kodeAnomaliList,
         tglCatat: caterBacaMeter.tglCatat,
         fotoMeterUrl: caterBacaMeter.fotoMeterUrl,
         fotoSegelUrl: caterBacaMeter.fotoSegelUrl,
         fotoRumahUrl: caterBacaMeter.fotoRumahUrl,
         catatan: caterBacaMeter.catatan,
+        caterMandiriId: caterBacaMeter.caterMandiriId,
         petugasNama: petugasCater.nama,
         tarifNama: golonganTarif.nama,
         ruteSeksi: ruteCater.seksiKode,
@@ -419,9 +549,17 @@ export class VerifikasiGridService {
             asNumber(row.pakaiLalu),
           ),
           kondisi: row.ketCatat,
-          jenisInput: row.sumberCatat.startsWith("MANDIRI")
-            ? "KONSUMEN"
-            : "PETUGAS",
+          isAnomali: Boolean(row.isAnomali),
+          kodeAnomaliUtama: row.kodeAnomaliUtama ?? null,
+          kodeAnomaliList: (row.kodeAnomaliList as string[]) ?? [],
+          jenisInput:
+            row.sumberCatat.startsWith("MANDIRI") || Boolean(row.caterMandiriId)
+              ? "KONSUMEN"
+              : row.sumberCatat === "MANUAL" || row.sumberCatat.includes("MANUAL")
+                ? row.catatan?.includes("Masal") || row.sumberCatat === "MANUAL_MASSAL"
+                  ? "MANUAL_MASSAL"
+                  : "MANUAL_SATUAN"
+                : "PETUGAS",
           tanggalCatat: toIso(row.tglCatat),
           status: mapStatus(row.statusVerifikasi),
           isVerified: final,
@@ -477,9 +615,12 @@ export class VerifikasiGridService {
                 blokTarif: 1,
                 kondisi: row.ketCatatRevisi ?? row.ketCatat,
                 fotoBukti: row.fotoMeterUrl,
-                sumberLaporan: row.sumberCatat.startsWith("MANDIRI")
-                  ? "KONSUMEN"
-                  : "PETUGAS",
+                sumberLaporan:
+                  row.sumberCatat.startsWith("MANDIRI") || Boolean(row.caterMandiriId)
+                    ? "KONSUMEN"
+                    : row.sumberCatat.includes("MANUAL")
+                      ? "MANUAL"
+                      : "PETUGAS",
               }
             : null,
         };
@@ -790,6 +931,8 @@ export class VerifikasiGridService {
           pemakaian,
           pemakaianLalu: asNumber(row.caterPakaiLalu),
           kondisi: row.caterKondisi ?? "STAND_KONSUMEN",
+          jenisInput: "KONSUMEN",
+          sumberLaporan: "KONSUMEN",
           tanggalCatat: toIso(row.createdAt),
           createdAt: toIso(row.createdAt),
           verifiedAt: toIso(row.verifiedAt),

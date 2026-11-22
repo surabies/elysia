@@ -3,6 +3,8 @@ export interface CaterStats {
   totalRute: number;
   totalPetugas: number;
   totalTercatat: number;
+  totalAnomali?: number;
+  totalNormal?: number;
   periodeTerakhir: string | null;
   totalPakaiM3?: number;
   totalTagihan?: number;
@@ -41,6 +43,8 @@ export interface ReadingReviewItem {
   ketCatat?: string | null;
   petugasNama?: string | null;
   statusVerifikasi?: string | null;
+  isAnomali?: boolean;
+  kodeAnomaliUtama?: string | null;
   fotoMeterUrl?: string | null;
   fotoRumahUrl?: string | null;
   tglCatat?: string | Date | null;
@@ -58,4 +62,13 @@ export interface AnomaliOverviewData {
   periode: string;
   kpi: AnomaliKPI;
   items: ReadingReviewItem[];
+}
+
+export interface PeriodeOption {
+  thbl: string;
+  label: string;
+  isCurrentMonth: boolean;
+  hasData: boolean;
+  totalCater: number;
+  totalDrd: number;
 }

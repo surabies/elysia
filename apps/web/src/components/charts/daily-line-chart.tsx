@@ -54,9 +54,15 @@ export function DailyLineChart<T extends { hari: string }>({
         <CartesianGrid
           horizontal
           vertical={false}
-          stroke="var(--ds-gray-alpha-300)"
+          stroke="var(--border)"
           strokeDasharray="3 4"
           strokeWidth={1}
+          horizontalCoordinatesGenerator={({ offset }) => [
+            offset.top,
+            offset.top + offset.height * 0.25,
+            offset.top + offset.height * 0.5,
+            offset.top + offset.height * 0.75,
+          ]}
         />
         <XAxis
           dataKey="hari"
@@ -72,7 +78,7 @@ export function DailyLineChart<T extends { hari: string }>({
             />
           }
         />
-        <YAxis width={1} tickLine={false} axisLine={false} tick={false} />
+        <YAxis hide domain={[0, "auto"]} />
         <Tooltip content={tooltip} />
         {series.map((item) => (
           <Line

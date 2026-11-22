@@ -31,9 +31,11 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { PageContainer } from '@/components/layout/page/PageContainer';
-import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
+import { PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import { VerticalProgress } from '@/components/ui/vertical-progress';
 import { cn } from '@/lib/utils';
+import { ProgresWilayahHeader } from './ProgresWilayahHeader';
+import type { PeriodeOption } from '@/server/services/dashboard/dashboard.service';
 import type {
   WilayahProgresItem,
   WilayahProgresResult,
@@ -41,13 +43,36 @@ import type {
 
 const numberFormat = new Intl.NumberFormat('id-ID');
 
-export function MonitoringProgresWilayah() {
+export interface MonitoringProgresWilayahProps {
+  initialPeriode?: string;
+  availablePeriods?: PeriodeOption[];
+}
+
+export function MonitoringProgresWilayah({
+  initialPeriode,
+  availablePeriods = [],
+}: MonitoringProgresWilayahProps = {}) {
   const [data, setData] = React.useState<WilayahProgresResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
+  const [periode, setPeriode] = React.useState(initialPeriode || PERIODE_TERKUNCI_KANTOR);
   const [search, setSearch] = React.useState('');
   const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('table');
   const [sortBy, setSortBy] = React.useState<'persen' | 'target' | 'anomali'>('persen');
+
+  const periodeLabel = React.useMemo(() => {
+    if (availablePeriods && availablePeriods.length > 0) {
+      const match = availablePeriods.find((p) => p.thbl === periode);
+      if (match) return match.label;
+    }
+    if (periode && periode.length === 6) {
+      const y = periode.slice(0, 4);
+      const m = periode.slice(4);
+      return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(
+        new Date(`${y}-${m}-01T00:00:00`)
+      );
+    }
+    return periode;
+  }, [periode, availablePeriods]);
 
   const fetchData = React.useCallback(async () => {
     setLoading(true);
@@ -108,46 +133,16 @@ export function MonitoringProgresWilayah() {
 
   return (
     <PageContainer className="space-y-6">
-      {/* 1. Header Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
-        <div>
-          <h1 className="text-heading-20 text-foreground">
-            Monitoring Progres Wilayah
-          </h1>
-          <p className="text-copy-13 text-muted-foreground mt-1">
-            Persentase capaian pembacaan meter air per kelurahan dan zona distribusi operasional.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Period Selector */}
-          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
-            <span className="text-muted-foreground mr-2">Periode:</span>
-            <NativeSelect
-              value={periode}
-              onChange={(e) => setPeriode(e.target.value)}
-              size="xs"
-              className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
-            >
-              {STANDAR_PERIODE_OPTIONS.map((opt) => (
-                <NativeSelectOption key={opt.value} value={opt.value}>
-                  {opt.label}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchData}
-            disabled={loading}
-          >
-            <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
-            Segarkan
-          </Button>
-        </div>
-      </div>
+      {/* 1. Header Toolbar Telemetri Vercel Geist (Konsisten dengan Ringkasan, Analytics, dan Monitoring Cater) */}
+      <ProgresWilayahHeader
+        periodeThbl={periode}
+        periodeLabel={periodeLabel}
+        availablePeriods={availablePeriods}
+        onPeriodChange={setPeriode}
+        onRefresh={fetchData}
+        loading={loading}
+        kpi={data?.kpi}
+      />
 
       {/* 2. KPI Cards Overview */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -25,7 +26,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import {
   Table,
   TableHeader,
@@ -42,23 +42,65 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { PageContainer } from '@/components/layout/page/PageContainer';
-import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
+import { PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import { cn } from '@/lib/utils';
+import type { PeriodeOption } from '@/server/services/dashboard/dashboard.service';
 import type {
   AnomaliKubikasiItem,
   AnomaliKubikasiResult,
   JenisAnomali,
 } from '@/server/services/cater/cater-progress.service';
+import { AnomaliKubikasiHeader } from './AnomaliKubikasiHeader';
 
 const numberFormat = new Intl.NumberFormat('id-ID');
 
-export function MonitoringAnomaliKubikasi() {
+export interface MonitoringAnomaliKubikasiProps {
+  initialPeriode?: string;
+  availablePeriods?: PeriodeOption[];
+}
+
+export function MonitoringAnomaliKubikasi({
+  initialPeriode,
+  availablePeriods = [],
+}: MonitoringAnomaliKubikasiProps) {
+  const router = useRouter();
   const [data, setData] = React.useState<AnomaliKubikasiResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
+  const [periode, setPeriode] = React.useState(initialPeriode || PERIODE_TERKUNCI_KANTOR);
   const [jenisFilter, setJenisFilter] = React.useState<'all' | 'ekstrim' | 'nol' | 'turun'>('all');
   const [search, setSearch] = React.useState('');
   const [selectedItem, setSelectedItem] = React.useState<AnomaliKubikasiItem | null>(null);
+
+  React.useEffect(() => {
+    if (initialPeriode && initialPeriode !== periode) {
+      setPeriode(initialPeriode);
+    }
+  }, [initialPeriode]);
+
+  const periodeLabel = React.useMemo(() => {
+    const found = availablePeriods.find((p) => p.thbl === periode);
+    if (found) return found.label;
+    if (periode.length === 6) {
+      const yr = periode.substring(0, 4);
+      const mo = parseInt(periode.substring(4, 6), 10);
+      const monthNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+      ];
+      if (mo >= 1 && mo <= 12) {
+        return `${monthNames[mo - 1]} ${yr}`;
+      }
+    }
+    return periode;
+  }, [periode, availablePeriods]);
+
+  const handlePeriodChange = (nextThbl: string) => {
+    if (!nextThbl || nextThbl === periode) return;
+    setPeriode(nextThbl);
+    router.push(`/progres/ekstrim?periode=${encodeURIComponent(nextThbl)}`, {
+      scroll: false,
+    });
+  };
 
   const fetchData = React.useCallback(async () => {
     setLoading(true);
@@ -85,46 +127,16 @@ export function MonitoringAnomaliKubikasi() {
 
   return (
     <PageContainer className="space-y-6">
-      {/* 1. Header Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
-        <div>
-          <h1 className="text-heading-20 text-foreground">
-            Monitoring Anomali Kubikasi
-          </h1>
-          <p className="text-copy-13 text-muted-foreground mt-1">
-            Deteksi dini lonjakan pemakaian ekstrem, penurunan drastis, dan stand meter 0 m³.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Period Selector */}
-          <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
-            <span className="text-muted-foreground mr-2">Periode:</span>
-            <NativeSelect
-              value={periode}
-              onChange={(e) => setPeriode(e.target.value)}
-              size="xs"
-              className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
-            >
-              {STANDAR_PERIODE_OPTIONS.map((opt) => (
-                <NativeSelectOption key={opt.value} value={opt.value}>
-                  {opt.label}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchData}
-            disabled={loading}
-          >
-            <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
-            Segarkan
-          </Button>
-        </div>
-      </div>
+      {/* 1. Header Toolbar Vercel Geist Telemetry */}
+      <AnomaliKubikasiHeader
+        periodeThbl={periode}
+        periodeLabel={periodeLabel}
+        availablePeriods={availablePeriods}
+        onPeriodChange={handlePeriodChange}
+        onRefresh={fetchData}
+        loading={loading}
+        kpi={data?.kpi}
+      />
 
       {/* 2. KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">

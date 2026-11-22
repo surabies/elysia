@@ -220,20 +220,13 @@ export class DashboardService {
         (
           SELECT count(*) FROM cater_baca_meter
           WHERE thbl = ${targetThbl}
-            AND (
-              (upper(trim(coalesce(ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
-                AND (tmss IS NULL OR upper(trim(tmss)) IN ('01', 'Z', '', '-')))
-              OR upper(trim(coalesce(sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
-            )
+            AND is_anomali = false
+            AND (kode_anomali_utama IS NULL OR kode_anomali_utama NOT LIKE 'WARN_%')
         )::int AS total_normal,
         (
           SELECT count(*) FROM cater_baca_meter
           WHERE thbl = ${targetThbl}
-            AND NOT (
-              (upper(trim(coalesce(ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
-                AND (tmss IS NULL OR upper(trim(tmss)) IN ('01', 'Z', '', '-')))
-              OR upper(trim(coalesce(sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
-            )
+            AND is_anomali = true
         )::int AS total_anomali,
         (SELECT coalesce(sum(pakai_m3), 0)::float FROM cater_baca_meter WHERE thbl = ${targetThbl}) AS total_kubikasi,
         (SELECT coalesce(sum(total_tagihan), 0)::float FROM rekening_drd WHERE thbl = ${targetThbl}) AS total_rupiah,
@@ -346,20 +339,18 @@ export class DashboardService {
 
     const raw = await db.execute(sql`
       SELECT
-        (SELECT count(*) FROM cater_baca_meter WHERE thbl = ${targetThbl} AND status_verifikasi = 'SUBMITTED')::int AS verif_menunggu,
+        (
+          SELECT count(*) FROM cater_baca_meter 
+          WHERE thbl = ${targetThbl} 
+            AND status_verifikasi NOT IN ('APPROVED_FINAL', 'CORRECTED_POST_VERIF', 'LOCKED_BILLING', 'NEED_RESURVEY')
+        )::int AS verif_menunggu,
         (
           SELECT count(*) FROM cater_baca_meter
           WHERE thbl = ${targetThbl}
-            AND (
-              status_verifikasi = 'ANOMALY'
-              OR NOT (
-                (upper(trim(coalesce(ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
-                  AND (tmss IS NULL OR upper(trim(tmss)) IN ('01', 'Z', '', '-')))
-                OR upper(trim(coalesce(sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
-              )
-            )
+            AND status_verifikasi NOT IN ('APPROVED_FINAL', 'CORRECTED_POST_VERIF', 'LOCKED_BILLING')
+            AND is_anomali = true
         )::int AS verif_anomali,
-        (SELECT count(*) FROM cater_mandiri_pelanggan WHERE upper(trim(status_verifikasi)) IN ('PENDING', 'MENUNGGU'))::int AS mandiri_menunggu,
+        (SELECT count(*) FROM cater_mandiri_pelanggan WHERE (thbl = ${targetThbl} OR thbl IS NULL) AND upper(trim(status_verifikasi)) IN ('PENDING', 'MENUNGGU'))::int AS mandiri_menunggu,
         (SELECT count(*) FROM pengaduan WHERE status NOT IN ('SELESAI', 'DITUTUP', 'DITOLAK'))::int AS pengaduan_terbuka,
         (SELECT count(*) FROM pengaduan WHERE status NOT IN ('SELESAI', 'DITUTUP', 'DITOLAK') AND prioritas IN ('TINGGI', 'DARURAT'))::int AS pengaduan_darurat
     `);

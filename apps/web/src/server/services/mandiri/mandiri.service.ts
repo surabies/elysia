@@ -24,6 +24,8 @@ import {
   periksaJendelaLaporMandiri,
   evaluasiGeofenceMandiri,
 } from "../../domain/mandiri/mandiri.engine";
+import { evaluasiAnomaliBaris } from "../../domain/cater/anomali-evaluator";
+import { aturanAnomaliService } from "../cater/aturan-anomali.service";
 import { isCloudinaryConfigured, uploadToCloudinary } from "../../lib/cloudinary";
 
 export interface SubmitLaporanMandiriInput {
@@ -350,7 +352,8 @@ export class MandiriService {
     }
 
     // Aksi: APPROVE -> Integrasikan ke cater_baca_meter
-    const caterId = `cater-${mandiri.thbl}-${mandiri.nolg}`;
+    const defaultCaterId = `cater-${mandiri.thbl}-${mandiri.nolg}`;
+    let finalCaterId = defaultCaterId;
 
     await db.transaction(async (tx) => {
       // 1. Ambil data pembacaan eksisting bila ada untuk mendapatkan stand meter lalu (stml)
@@ -387,7 +390,7 @@ export class MandiriService {
       }
 
       const pakaiM3 = stmaMandiri >= stml ? stmaMandiri - stml : 0;
-      const targetCaterId = existingCater?.id ?? caterId;
+      finalCaterId = existingCater?.id ?? defaultCaterId;
 
       // 2. Update status laporan mandiri beserta stand yang diverifikasi & kalkulasi pemakaian m3
       await tx
@@ -404,10 +407,24 @@ export class MandiriService {
         .where(eq(caterMandiriPelanggan.id, mandiriId));
 
       // 3. Simpan / Perbarui transaksi utama baca meter (Override DK -> Stand Konsumen)
+      const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
+      const evalRes = evaluasiAnomaliBaris(
+        {
+          stml: Number(stml),
+          stma: Number(stmaMandiri),
+          pakaiM3: Number(pakaiM3),
+          pakaiLalu: null,
+          kodeTmss: "Z",
+        },
+        rules,
+        maps,
+        versi
+      );
+
       await tx
         .insert(caterBacaMeter)
         .values({
-          id: targetCaterId,
+          id: finalCaterId,
           thbl: mandiri.thbl,
           nolg: mandiri.nolg,
           stml: String(stml),
@@ -423,6 +440,10 @@ export class MandiriService {
           fotoMeterUrl: mandiri.fotoMeterUrl,
           fotoRumahUrl: mandiri.fotoRumahUrl,
           statusVerifikasi: "VERIFIED_L1",
+          isAnomali: evalRes.isAnomali,
+          kodeAnomaliUtama: evalRes.kodeUtama,
+          kodeAnomaliList: evalRes.kodeList,
+          aturanVersi: versi,
           catatan:
             "[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan",
         })
@@ -440,6 +461,10 @@ export class MandiriService {
             caterMandiriId: mandiri.id,
             fotoMeterUrl: mandiri.fotoMeterUrl,
             statusVerifikasi: "VERIFIED_L1",
+            isAnomali: evalRes.isAnomali,
+            kodeAnomaliUtama: evalRes.kodeUtama,
+            kodeAnomaliList: evalRes.kodeList,
+            aturanVersi: versi,
             catatan:
               "[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan",
             updatedAt: new Date(),
@@ -448,7 +473,7 @@ export class MandiriService {
 
       // 4. Catat ke audit trail verifikasi
       await tx.insert(caterVerifikasiLog).values({
-        caterId,
+        caterId: finalCaterId,
         userId,
         stage: "V1",
         action: "APPROVE",
@@ -463,7 +488,7 @@ export class MandiriService {
 
     return {
       mandiriId,
-      caterId,
+      caterId: finalCaterId,
       statusVerifikasi: "APPROVED",
       stma: mandiri.stma,
       tmss: "Z",

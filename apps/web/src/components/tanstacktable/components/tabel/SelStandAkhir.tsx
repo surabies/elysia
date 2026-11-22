@@ -17,17 +17,25 @@ import { formatAngka } from "../../lib/format-tabel";
 import type { BarisTurunan } from "../../lib/turunan-baris";
 
 function sumberInput(jenis: string | null | undefined) {
-  if (jenis === "KONSUMEN") {
+  if (jenis === "KONSUMEN" || jenis?.startsWith("MANDIRI")) {
     return {
       ikon: UserCircleIcon,
       label: "Laporan Mandiri konsumen",
       warna: "text-(--verif-info)",
     };
   }
-  if (jenis === "MANUAL_SATUAN" || jenis === "MANUAL_MASSAL") {
+  if (
+    jenis === "MANUAL_SATUAN" ||
+    jenis === "MANUAL_MASSAL" ||
+    jenis === "MANUAL" ||
+    jenis?.includes("MANUAL")
+  ) {
     return {
       ikon: PencilEdit01Icon,
-      label: "Laporan Manual Add",
+      label:
+        jenis === "MANUAL_MASSAL"
+          ? "Laporan Manual Add Masal"
+          : "Laporan Manual Add",
       warna: "text-(--verif-v1)",
     };
   }
@@ -35,7 +43,9 @@ function sumberInput(jenis: string | null | undefined) {
 }
 
 export function SelStandAkhir({ baris }: { baris: BarisTurunan }) {
-  const sumber = sumberInput(baris.row.jenisInput);
+  const sumber = sumberInput(
+    baris.row.jenisInput ?? (baris.row as any).sumberLaporan,
+  );
   const standMeterBaru = baris.row.standMeterBaru ?? baris.standAkhir;
 
   return (

@@ -4,221 +4,230 @@
 import * as React from "react";
 import { toast } from "sonner";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  FileSpreadsheet,
+  CalendarDays,
   CheckCircle2,
-  RefreshCw,
   Database,
-  Upload,
-  Sparkles,
-  Search,
-  Layers,
+  FileSpreadsheet,
   Gauge,
-  Users,
+  Layers,
+  RotateCcw,
+  Upload,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { readFileAsText } from "../lib/file-reader";
+import { getErrorMessage, postImport } from "../lib/import-api";
+import { IMPORT_API, IMPORT_LIMITS } from "../lib/import-config";
+import {
+  isKondisiNormal,
+  parseLapDataMeterCsv,
+  validateLapDataMeterRows,
+} from "../lib/import-parsers";
+import { TONE_STYLE, formatAngka } from "../lib/import-ui";
+import { broadcastDataUpdated } from "@/features/dashboard/shared/lib/data-sync";
+import type {
+  ImportProgressState,
+  LapDataMeterImportResponse,
+  LapDataMeterResultStats,
+  LapDataMeterRow,
+} from "../types/import.types";
+import { ImportDataTable, type ImportColumn } from "./shared/ImportDataTable";
+import { ImportEmptyState } from "./shared/ImportEmptyState";
+import { ImportFileButton } from "./shared/ImportFileButton";
+import {
+  ImportControlPanel,
+  ImportTablePanel,
+} from "./shared/ImportPanels";
+import { ImportProgressModal } from "./shared/ImportProgressModal";
+import { ImportResultBanner } from "./shared/ImportResultBanner";
+import { ImportStatCard, ImportStatGrid } from "./shared/ImportStatCard";
 
-export interface LapDataMeterRow {
-  thbl: string;
-  nolg: string;
-  nama?: string;
-  stml: number;
-  stma: number;
-  pakaiM3: number;
-  pakaiLalu?: number;
-  tmss?: string;
-  ketCatat: string;
-  petugasId?: string;
-  namaPetugas?: string;
-  ruteKode?: string;
-  tglCatat: string;
-  catatan?: string;
-}
+export type { LapDataMeterRow } from "../types/import.types";
+
+const COLUMNS: ImportColumn<LapDataMeterRow>[] = [
+  {
+    id: "thbl",
+    header: "Periode",
+    cell: (r) => r.thbl,
+    cellClassName: "text-label-13-mono text-foreground",
+  },
+  {
+    id: "nolg",
+    header: "No. Pelanggan (NOLG)",
+    cell: (r) => r.nolg,
+    cellClassName: "text-label-13-mono text-foreground",
+  },
+  {
+    id: "nama",
+    header: "Nama Pelanggan",
+    cell: (r) => (
+      <span className="block max-w-40 truncate">{r.nama || "-"}</span>
+    ),
+    cellClassName: "text-label-13",
+  },
+  {
+    id: "rute",
+    header: "Rute",
+    cell: (r) => <Badge variant="gray-subtle">{r.ruteKode || "-"}</Badge>,
+  },
+  {
+    id: "stml",
+    header: "Stand Awal (STML)",
+    cell: (r) => formatAngka(r.stml),
+    className: "text-right",
+    cellClassName: "text-copy-13-mono",
+  },
+  {
+    id: "stma",
+    header: "Stand Akhir (STMA)",
+    cell: (r) => formatAngka(r.stma),
+    className: "text-right",
+    cellClassName: "text-label-13-mono text-foreground",
+  },
+  {
+    id: "pakai",
+    header: "Pakai (m³)",
+    cell: (r) => formatAngka(r.pakaiM3),
+    className: "text-right",
+    cellClassName: "text-label-13-mono text-ds-blue-900",
+  },
+  {
+    id: "pakaiLalu",
+    header: "Pakai Lalu",
+    cell: (r) => (r.pakaiLalu !== undefined ? formatAngka(r.pakaiLalu) : "-"),
+    className: "text-right",
+    cellClassName: "text-copy-13-mono text-muted-foreground",
+  },
+  {
+    id: "kondisi",
+    header: "Kondisi / TMSS",
+    cell: (r) => (
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          className={cn(
+            "size-1.5 shrink-0 rounded-full",
+            TONE_STYLE[isKondisiNormal(r.ketCatat, r.tmss) ? "green" : "amber"]
+              .dot,
+          )}
+          aria-hidden
+        />
+        <span className="max-w-32 truncate">{r.ketCatat}</span>
+      </span>
+    ),
+    cellClassName: "text-copy-13",
+  },
+  {
+    id: "petugas",
+    header: "Petugas",
+    cell: (r) => r.petugasId || r.namaPetugas || "-",
+    cellClassName: "text-copy-13 text-muted-foreground",
+  },
+  {
+    id: "tgl",
+    header: "Tgl Catat",
+    cell: (r) => r.tglCatat?.slice(0, 10) || "-",
+    cellClassName: "text-copy-13 text-muted-foreground",
+  },
+];
 
 export function ImportLapDataMeterView() {
   const [items, setItems] = React.useState<LapDataMeterRow[]>([]);
-  const [csvRaw, setCsvRaw] = React.useState<string>("");
-  const [fileName, setFileName] = React.useState<string>("");
-  const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [isLoadingSample, setIsLoadingSample] = React.useState(false);
+  const [fileName, setFileName] = React.useState("");
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [resultStats, setResultStats] = React.useState<{
-    total: number;
-    sukses: number;
-    gagal: number;
-    created?: number;
-    updated?: number;
-  } | null>(null);
+  const [resultStats, setResultStats] =
+    React.useState<LapDataMeterResultStats | null>(null);
+  const [progressState, setProgressState] =
+    React.useState<ImportProgressState | null>(null);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
-  // Parse CSV standar RFC-4180
-  const parseLapDataMeterText = (text: string): LapDataMeterRow[] => {
-    const rows: string[][] = [];
-    let currentRow: string[] = [];
-    let currentField = "";
-    let insideQuotes = false;
-
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const nextChar = text[i + 1];
-
-      if (char === '"') {
-        if (insideQuotes && nextChar === '"') {
-          currentField += '"';
-          i++;
-        } else {
-          insideQuotes = !insideQuotes;
-        }
-      } else if (!insideQuotes && (char === "," || char === ";")) {
-        currentRow.push(currentField.trim());
-        currentField = "";
-      } else if (!insideQuotes && (char === "\r" || char === "\n")) {
-        if (char === "\r" && nextChar === "\n") {
-          i++;
-        }
-        currentRow.push(currentField.trim());
-        if (currentRow.some((f) => f.length > 0)) {
-          rows.push(currentRow);
-        }
-        currentRow = [];
-        currentField = "";
-      } else {
-        currentField += char;
-      }
-    }
-
-    if (currentField.length > 0 || currentRow.length > 0) {
-      currentRow.push(currentField.trim());
-      if (currentRow.some((f) => f.length > 0)) {
-        rows.push(currentRow);
-      }
-    }
-
-    if (rows.length < 2) return [];
-
-    const header = rows[0].map((h) => h.replace(/^["']|["']$/g, "").trim().toLowerCase());
-    const findIdx = (aliases: string[]) =>
-      header.findIndex((h) => aliases.some((a) => h === a || h.includes(a)));
-
-    const nolgIdx = findIdx(["no pel", "nolg", "nomor pelanggan", "nopel"]);
-    const namaIdx = findIdx(["nama", "nama pelanggan"]);
-    const thblIdx = findIdx(["periode", "thbl"]);
-    const stmlIdx = findIdx(["st awal", "stml", "stand awal"]);
-    const stmaIdx = findIdx(["st akhir", "stma", "stand akhir"]);
-    const pakaiIdx = findIdx(["pakai", "pakai_m3", "kubikasi"]);
-    const pakaiLaluIdx = findIdx(["pakai lau", "pakai lalu", "pakai_lalu"]);
-    const tmssIdx = findIdx(["kd_kel", "tmss", "kode_kondisi"]);
-    const ketCatatIdx = findIdx(["nm_kel", "kondisi", "ket_catat", "keterangan"]);
-    const petugasIdx = findIdx(["kd_petugas", "petugas_id"]);
-    const namaPetugasIdx = findIdx(["nama petugas"]);
-    const ruteIdx = findIdx(["rute", "rute_kode", "kd_rute"]);
-    const tglCatatIdx = findIdx(["tgl_catat", "tanggal catat"]);
-
-    const parsed: LapDataMeterRow[] = [];
-    for (let i = 1; i < rows.length; i++) {
-      const parts = rows[i];
-      if (parts.length < 3) continue;
-
-      const rawNolg = (nolgIdx >= 0 ? parts[nolgIdx] : "")?.replace(/[^\w-]/g, "").trim();
-      const rawThbl = (thblIdx >= 0 ? parts[thblIdx] : "")?.replace(/[^\w]/g, "").trim();
-      if (!rawNolg || !rawThbl) continue;
-
-      const stml = stmlIdx >= 0 && parts[stmlIdx] ? parseFloat(parts[stmlIdx].replace(",", ".")) || 0 : 0;
-      const stma = stmaIdx >= 0 && parts[stmaIdx] ? parseFloat(parts[stmaIdx].replace(",", ".")) || 0 : 0;
-      const pakaiM3 =
-        pakaiIdx >= 0 && parts[pakaiIdx] !== "" && parts[pakaiIdx] !== undefined
-          ? parseFloat(parts[pakaiIdx].replace(",", ".")) || 0
-          : Math.max(0, stma - stml);
-      const pakaiLalu =
-        pakaiLaluIdx >= 0 && parts[pakaiLaluIdx] !== "" && parts[pakaiLaluIdx] !== undefined
-          ? parseFloat(parts[pakaiLaluIdx].replace(",", ".")) || 0
-          : undefined;
-
-      const nama = namaIdx >= 0 ? parts[namaIdx]?.trim() : undefined;
-      const tmssRaw = tmssIdx >= 0 ? parts[tmssIdx]?.trim() : "-";
-      const tmss = tmssRaw === "" ? "-" : tmssRaw;
-      const ketCatat = ketCatatIdx >= 0 && parts[ketCatatIdx]?.trim() ? parts[ketCatatIdx].trim() : "Normal";
-      const petugasId =
-        (petugasIdx >= 0 && parts[petugasIdx]?.trim()) ||
-        (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) ||
-        undefined;
-      const namaPetugas = (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) || petugasId;
-      const ruteKode = ruteIdx >= 0 ? parts[ruteIdx]?.trim() : undefined;
-      const tglCatat =
-        tglCatatIdx >= 0 && parts[tglCatatIdx]?.trim()
-          ? parts[tglCatatIdx].trim()
-          : new Date().toISOString();
-
-      parsed.push({
-        thbl: rawThbl,
-        nolg: rawNolg,
-        nama,
-        stml,
-        stma,
-        pakaiM3,
-        pakaiLalu,
-        tmss,
-        ketCatat,
-        petugasId,
-        namaPetugas,
-        ruteKode,
-        tglCatat,
-        catatan: "Import Laporan Data Meter",
-      });
-    }
-
-    return parsed;
-  };
-
-  // Muat sample default dari server
-  const handleLoadSample = async () => {
-    setIsLoadingSample(true);
-    try {
-      const res = await fetch("/api/import/sample/lapdatameter");
-      const json = await res.json();
-      if (json.success && json.rows && json.rows.length > 0) {
-        setItems(json.rows);
-        setCsvRaw(json.csvText || "");
-        setFileName("lapdatametertes.csv (Sample Resmi)");
-        setResultStats(null);
-        toast.success(`Berhasil memuat ${json.rows.length} baris sample resmi LapDataMeter!`);
-      } else {
-        toast.info(json.message || "File sample lapdatameter tidak ditemukan.");
-      }
-    } catch {
-      toast.error("Gagal memuat sample LapDataMeter dari server.");
-    } finally {
-      setIsLoadingSample(false);
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     setFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (text) {
-        setCsvRaw(text);
-        const parsed = parseLapDataMeterText(text);
-        setItems(parsed);
-        setResultStats(null);
-        if (parsed.length > 0) {
-          toast.success(`Berhasil membaca ${parsed.length} baris data dari ${file.name}!`);
-        } else {
-          toast.warning("Format CSV tidak dikenali atau tidak ada baris data valid.");
-        }
+    setProgressState({
+      isActive: true,
+      stage: "reading",
+      total: 100,
+      processed: 30,
+      sukses: 0,
+      gagal: 0,
+      percent: 30,
+      currentLabel: `Membaca berkas ${file.name}...`,
+      customTitle: "Membaca Berkas CSV",
+      customDescription: "Mempersiapkan dan mem-parsing data LapDataMeter...",
+    });
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const text = await readFileAsText(file);
+      setProgressState((prev) =>
+        prev
+          ? {
+              ...prev,
+              percent: 75,
+              processed: 75,
+              currentLabel: "Mem-parsing baris CSV...",
+            }
+          : null,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      const parsed = parseLapDataMeterCsv(text);
+      setItems(parsed);
+      setResultStats(null);
+
+      setProgressState((prev) =>
+        prev
+          ? {
+              ...prev,
+              stage: "completed",
+              percent: 100,
+              processed: 100,
+              currentLabel: `Selesai membaca ${parsed.length.toLocaleString("id-ID")} baris data.`,
+            }
+          : null,
+      );
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, IMPORT_LIMITS.progressSettleMs),
+      );
+
+      if (parsed.length > 0) {
+        toast.success(
+          `Berhasil membaca ${parsed.length.toLocaleString("id-ID")} baris data dari ${file.name}!`,
+        );
+      } else {
+        toast.warning(
+          "Format CSV tidak dikenali atau tidak ada baris data valid.",
+        );
       }
-    };
-    reader.readAsText(file);
+    } catch (err) {
+      toast.error(
+        getErrorMessage(err, "Gagal membaca berkas CSV LapDataMeter."),
+      );
+    } finally {
+      setProgressState(null);
+    }
+  };
+
+  const handleCancelImport = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setProgressState((prev) =>
+        prev
+          ? {
+              ...prev,
+              isCancelling: true,
+              currentLabel: "Membatalkan proses impor...",
+            }
+          : null,
+      );
+      toast.info("Proses impor dibatalkan...");
+    }
   };
 
   const handleImport = async () => {
@@ -227,371 +236,342 @@ export function ImportLapDataMeterView() {
       return;
     }
 
-    // Pre-validasi duplikat NOLG dalam periode yang sama
-    const seen = new Set<string>();
-    for (const item of items) {
-      const key = `${item.thbl}|${item.nolg}`;
-      if (seen.has(key)) {
-        toast.error(
-          `Duplikat NOLG ${item.nolg} pada periode ${item.thbl}. Hapus baris duplikat sebelum mengimpor.`
-        );
-        return;
-      }
-      seen.add(key);
-
-      if (item.stma < item.stml) {
-        toast.error(
-          `STMA (${item.stma}) lebih kecil dari STML (${item.stml}) pada NOLG ${item.nolg}.`
-        );
-        return;
-      }
-
-      const pakaiM3 = item.pakaiM3 ?? Math.max(0, item.stma - item.stml);
-      if (pakaiM3 < 0) {
-        toast.error(
-          `Kubikasi pemakaian tidak boleh negatif pada NOLG ${item.nolg}.`
-        );
-        return;
-      }
+    const validationError = validateLapDataMeterRows(items);
+    if (validationError) {
+      toast.error(validationError);
+      return;
     }
 
     setIsSubmitting(true);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120_000);
+    abortControllerRef.current = controller;
+
+    let totalSukses = 0;
+    let totalGagal = 0;
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let wasAborted = false;
+
+    const totalRows = items.length;
+    const batchSize = IMPORT_LIMITS.lapDataMeterBatchSize;
+    const totalBatches = Math.ceil(totalRows / batchSize);
+
+    setProgressState({
+      isActive: true,
+      stage: "uploading",
+      total: totalRows,
+      processed: 0,
+      sukses: 0,
+      gagal: 0,
+      percent: 0,
+      currentLabel: `Batch 1 / ${totalBatches} (0 / ${totalRows.toLocaleString("id-ID")} baris)`,
+      customTitle: "Mengimpor & Memetakan Data Meter",
+      customDescription:
+        "Menyimpan data pembacaan meter ke tabel cater_baca_meter secara bertahap...",
+      isCancelling: false,
+    });
 
     try {
-      const res = await fetch("/api/import/lapdatameter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
-        signal: controller.signal,
-      });
+      for (let i = 0; i < totalRows; i += batchSize) {
+        if (controller.signal.aborted) {
+          wasAborted = true;
+          break;
+        }
 
-      clearTimeout(timeoutId);
+        const batchIdx = Math.floor(i / batchSize) + 1;
+        const chunk = items.slice(i, i + batchSize);
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Gagal mengimpor data LapDataMeter.");
+        setProgressState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentLabel: `Batch ${batchIdx} / ${totalBatches} (${i.toLocaleString("id-ID")} / ${totalRows.toLocaleString("id-ID")} baris)`,
+              }
+            : null,
+        );
+
+        // Per-batch abort controller dengan timeout mandiri
+        const batchController = new AbortController();
+        const batchTimeoutId = setTimeout(
+          () => batchController.abort(),
+          IMPORT_LIMITS.lapDataMeterBatchTimeoutMs,
+        );
+
+        const onParentAbort = () => batchController.abort();
+        controller.signal.addEventListener("abort", onParentAbort, {
+          once: true,
+        });
+
+        try {
+          const json = await postImport<LapDataMeterImportResponse>(
+            IMPORT_API.lapDataMeter,
+            { items: chunk },
+            {
+              signal: batchController.signal,
+              fallbackError: `Gagal mengimpor batch ${batchIdx}.`,
+            },
+          );
+
+          totalSukses += json.sukses ?? chunk.length;
+          totalGagal += json.gagal ?? 0;
+          totalCreated += json.created ?? 0;
+          totalUpdated += json.updated ?? 0;
+        } catch (batchError) {
+          if (controller.signal.aborted || batchController.signal.aborted) {
+            wasAborted = true;
+            break;
+          }
+          console.warn(`Gagal pada batch ${batchIdx}:`, batchError);
+          totalGagal += chunk.length;
+        } finally {
+          clearTimeout(batchTimeoutId);
+          controller.signal.removeEventListener("abort", onParentAbort);
+        }
+
+        const processed = Math.min(i + chunk.length, totalRows);
+        const percent = Math.round((processed / totalRows) * 100);
+
+        setProgressState((prev) =>
+          prev
+            ? {
+                ...prev,
+                processed,
+                sukses: totalSukses,
+                gagal: totalGagal,
+                percent,
+                currentLabel: `Batch ${batchIdx} / ${totalBatches} selesai (${processed.toLocaleString("id-ID")} / ${totalRows.toLocaleString("id-ID")} baris)`,
+              }
+            : null,
+        );
       }
 
-      setResultStats({
-        total: items.length,
-        sukses: json.sukses ?? items.length,
-        gagal: json.gagal ?? 0,
-        created: json.created ?? 0,
-        updated: json.updated ?? 0,
-      });
-
-      toast.success(
-        `Sukses! Berhasil memetakan ${json.sukses ?? items.length} baris data meter ke tabel cater_baca_meter.`
-      );
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      if (err.name === "AbortError") {
-        toast.error("Impor dibatalkan karena melebihi batas waktu 120 detik.");
+      if (wasAborted) {
+        toast.warning(
+          `Impor dibatalkan oleh pengguna. ${totalSukses.toLocaleString("id-ID")} baris telah tersimpan.`,
+        );
       } else {
-        toast.error(err.message || "Terjadi kesalahan saat mengimpor data LapDataMeter.");
+        setProgressState((prev) =>
+          prev
+            ? {
+                ...prev,
+                stage: "completed",
+                percent: 100,
+                processed: totalRows,
+                sukses: totalSukses,
+                gagal: totalGagal,
+                currentLabel: "Seluruh baris data berhasil diproses!",
+              }
+            : null,
+        );
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, IMPORT_LIMITS.progressSettleMs),
+        );
+
+        toast.success(
+          `Sukses! Berhasil memetakan ${totalSukses.toLocaleString("id-ID")} baris data meter ke tabel cater_baca_meter.`,
+        );
+      }
+
+      const stats: LapDataMeterResultStats = {
+        total: totalSukses + totalGagal,
+        sukses: totalSukses,
+        gagal: totalGagal,
+        created: totalCreated,
+        updated: totalUpdated,
+      };
+      setResultStats(stats);
+      if (totalSukses > 0) {
+        broadcastDataUpdated();
+      }
+    } catch (error) {
+      if (controller.signal.aborted) {
+        toast.warning("Impor dibatalkan oleh pengguna.");
+      } else {
+        toast.error(
+          getErrorMessage(
+            error,
+            "Terjadi kesalahan saat mengimpor data LapDataMeter.",
+          ),
+        );
       }
     } finally {
+      abortControllerRef.current = null;
       setIsSubmitting(false);
+      setProgressState(null);
     }
   };
 
-  const handleReset = () => {
+  const handleClear = () => {
     setItems([]);
-    setCsvRaw("");
     setFileName("");
     setResultStats(null);
     setSearchQuery("");
     toast.info("Tampilan data import telah dibersihkan.");
   };
 
-  // Metrik Statistik
-  const totalKubikasi = React.useMemo(() => {
-    return items.reduce((sum, item) => sum + (item.pakaiM3 || 0), 0);
-  }, [items]);
+  const totalKubikasi = React.useMemo(
+    () => items.reduce((sum, item) => sum + item.pakaiM3, 0),
+    [items],
+  );
+  const normalCount = React.useMemo(
+    () =>
+      items.filter((item) => isKondisiNormal(item.ketCatat, item.tmss)).length,
+    [items],
+  );
 
-  const terbacaNormalCount = React.useMemo(() => {
-    return items.filter((i) => i.ketCatat.toLowerCase().includes("normal") || i.tmss === "-" || i.tmss === " ").length;
-  }, [items]);
-
-  const kendalaCount = items.length - terbacaNormalCount;
-  const activePeriode = items[0]?.thbl || "-";
-
-  // Filter Baris Preview
   const filteredItems = React.useMemo(() => {
-    if (!searchQuery.trim()) return items.slice(0, 50);
-    const q = searchQuery.toLowerCase().trim();
-    return items
-      .filter(
-        (i) =>
-          i.nolg.toLowerCase().includes(q) ||
-          (i.nama && i.nama.toLowerCase().includes(q)) ||
-          (i.ruteKode && i.ruteKode.toLowerCase().includes(q)) ||
-          (i.petugasId && i.petugasId.toLowerCase().includes(q)) ||
-          i.ketCatat.toLowerCase().includes(q)
-      )
-      .slice(0, 50);
+    const q = searchQuery.trim().toLowerCase();
+    const matched = q
+      ? items.filter((item) =>
+          [
+            item.nolg,
+            item.nama,
+            item.ruteKode,
+            item.petugasId,
+            item.ketCatat,
+          ].some((field) => field?.toLowerCase().includes(q)),
+        )
+      : items;
+    return matched.slice(0, IMPORT_LIMITS.lapDataMeterPreviewRows);
   }, [items, searchQuery]);
 
   return (
     <div className="space-y-4">
-      {/* 1. Kartu Statistik / Ringkasan */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-11 font-medium tracking-wide uppercase">Total Baris Meter</span>
-              <Layers className="size-4 text-[var(--primary)]" />
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-[var(--primary-foreground)] font-mono">
-                {items.length.toLocaleString("id-ID")}
-              </span>
-              <span className="text-label-11 text-muted-foreground">Baris</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)]" />
-              <span>{fileName || "Belum ada berkas dimuat"}</span>
-            </div>
-          </CardContent>
-        </Card>
+      <ImportStatGrid columns={4}>
+        <ImportStatCard
+          label="Total Baris Meter"
+          value={formatAngka(items.length)}
+          unit="Baris"
+          caption={fileName || "Belum ada berkas dimuat"}
+          icon={Layers}
+        />
+        <ImportStatCard
+          label="Total Pemakaian"
+          value={formatAngka(totalKubikasi)}
+          unit="m³"
+          caption="Akumulasi volume air terbaca"
+          icon={Gauge}
+          tone="blue"
+        />
+        <ImportStatCard
+          label="Status Kondisi"
+          value={formatAngka(normalCount)}
+          unit="Normal"
+          caption={`${items.length - normalCount} kendala/akses`}
+          icon={CheckCircle2}
+          tone="green"
+        />
+        <ImportStatCard
+          label="Periode Pembacaan"
+          value={items[0]?.thbl || "-"}
+          unit="THBL"
+          caption="Format baku YYYYMM"
+          icon={CalendarDays}
+          tone="blue"
+        />
+      </ImportStatGrid>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v2-border)]/30">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-11 font-medium tracking-wide uppercase">Total Pemakaian</span>
-              <Gauge className="size-4 text-[var(--verif-v2)]" />
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v2-text)] font-mono">
-                {totalKubikasi.toLocaleString("id-ID")}
-              </span>
-              <span className="text-label-11 text-muted-foreground">m³</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v2)]" />
-              <span>Akumulasi volume air terbaca</span>
-            </div>
-          </CardContent>
-        </Card>
+      <ImportControlPanel
+        title="Import LapDataMeter (Laporan Bacaan Meter)"
+        badge={<Badge variant="pill">Format: CSV / TXT</Badge>}
+        description="Import dan perbarui pembacaan meter bulanan petugas (lapdatameter) ke tabel cater_baca_meter."
+        hasData={items.length > 0}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Cari No Pel / Nama / Rute..."
+        actions={
+          <>
+            {items.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleClear}
+                disabled={isSubmitting}
+                title="Kosongkan daftar data"
+              >
+                <RotateCcw />
+                Kosongkan
+              </Button>
+            )}
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v3-border)]/30">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-11 font-medium tracking-wide uppercase">Status Kondisi</span>
-              <CheckCircle2 className="size-4 text-[var(--verif-v3)]" />
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v3-text)] font-mono">
-                {terbacaNormalCount.toLocaleString("id-ID")}
-              </span>
-              <span className="text-label-11 text-muted-foreground">Normal</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v3)]" />
-              <span>{kendalaCount} kendala/akses</span>
-            </div>
-          </CardContent>
-        </Card>
+            <ImportFileButton
+              accept=".csv,.txt"
+              onChange={handleFileUpload}
+              icon={Upload}
+              disabled={isSubmitting}
+            >
+              Unggah CSV LapDataMeter
+            </ImportFileButton>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v2-border)]/30 col-span-2 sm:col-span-1">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-11 font-medium tracking-wide uppercase">Periode Pembacaan</span>
-              <Users className="size-4 text-[var(--verif-v2)]" />
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v2-text)] font-mono">
-                {activePeriode}
-              </span>
-              <span className="text-label-11 text-muted-foreground">THBL</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v2)]" />
-              <span>Format baku YYYYMM</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 2. Bilah Kontrol, Filter, dan Aksi */}
-      <div className="rounded-lg border border-border bg-card p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLoadSample}
-            disabled={isSubmitting || isLoadingSample}
-            className="h-8 text-label-12 cursor-pointer"
-          >
-            <Sparkles className="mr-1.5 size-3.5 text-[var(--verif-v1)]" />
-            {isLoadingSample ? "Memuat..." : "Muat Contoh LapDataMeter"}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting} className="h-8 text-label-12 cursor-pointer">
-            <RefreshCw className="mr-1.5 size-3.5" />
-            Reset
-          </Button>
-          <label className="cursor-pointer">
-            <input type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
-            <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
-              <span>
-                <Upload className="mr-1.5 size-3.5 text-[var(--primary)]" />
-                Unggah CSV LapDataMeter
-              </span>
+            <Button
+              onClick={handleImport}
+              disabled={isSubmitting || items.length === 0}
+            >
+              <Database />
+              {isSubmitting
+                ? "Memproses..."
+                : `Import ${items.length} Data ke cater_baca_meter`}
             </Button>
-          </label>
-          <Button size="sm" onClick={handleImport} disabled={isSubmitting || items.length === 0} className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90 cursor-pointer">
-            <Database className="mr-1.5 size-3.5" />
-            {isSubmitting ? "Memproses..." : `Import ${items.length} Data ke cater_baca_meter`}
-          </Button>
-        </div>
+          </>
+        }
+      />
 
-        <div className="flex items-center gap-2">
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Cari No Pel / Nama / Rute..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 pl-8 text-copy-13"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Notifikasi Hasil Import */}
       {resultStats && (
-        <div className="flex flex-col gap-3 rounded-lg border-[var(--verif-v3-border)]/30 bg-[var(--verif-v3-soft)] p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-5 shrink-0 text-[var(--verif-v3-text)] mt-0.5" />
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[var(--verif-v3-text)]">
-                  Proses Import Selesai dengan Sukses!
-                </span>
-                <Badge className="bg-[var(--success)] text-[var(--success-foreground)] font-mono text-[10px]">
-                  Batch Selesai
-                </Badge>
-              </div>
-              <p className="text-xs text-[var(--verif-v3-text)]">
-                Total {resultStats.total} baris data diproses &bull; {resultStats.sukses} berhasil &bull;{" "}
-                {resultStats.created ?? 0} transaksi baru dibuat &bull; {resultStats.updated ?? 0} data stand
-                diperbarui &bull; {resultStats.gagal} gagal.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <Badge variant="outline" className="border-[var(--verif-v3-border)] text-[var(--verif-v3-text)] font-mono text-xs w-fit">
-              cater_baca_meter: SYNC OK
-            </Badge>
-          </div>
-        </div>
+        <ImportResultBanner
+          tone="green"
+          title="Proses Import Selesai dengan Sukses!"
+          description={`Total ${resultStats.total} baris data diproses • ${resultStats.sukses} berhasil • ${resultStats.created} transaksi baru dibuat • ${resultStats.updated} data stand diperbarui • ${resultStats.gagal} gagal.`}
+          actions={<Badge variant="pill">cater_baca_meter: SYNC OK</Badge>}
+        />
       )}
 
-      {/* 4. Area Pratinjau Tabel / Empty State */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 text-label-12">
-          <div className="flex items-center gap-3">
-            <span className="text-muted-foreground">
+      {items.length === 0 ? (
+        <ImportEmptyState
+          icon={Layers}
+          title="Belum Ada Berkas LapDataMeter Dipilih"
+          description="Pilih berkas CSV laporan data pembacaan meter bulanan dari sistem untuk dipetakan ke database cater_baca_meter."
+          badges={
+            <>
+              <Badge variant="pill" className="font-mono">
+                NO PEL;NAMA;PERIODE;ST AWAL;ST AKHIR;PAKAI;KONDISI;RUTE
+              </Badge>
+            </>
+          }
+          onFileSelect={handleFileUpload}
+          accept=".csv,.txt"
+          buttonLabel="Pilih Berkas LapDataMeter"
+          infoNote="Sistem otomatis memvalidasi duplikasi NOLG dan konsistensi stand meter sebelum penyimpanan."
+        />
+      ) : (
+        <ImportTablePanel
+          summary={[
+            <>
               Menampilkan{" "}
-              <strong className="font-mono text-[var(--primary-foreground)] font-semibold">
-                {Math.min(filteredItems.length, 50)}
+              <strong className="text-label-12-mono text-foreground">
+                {filteredItems.length}
               </strong>{" "}
               / {items.length} baris
-            </span>
-            <span>·</span>
-            <span className="text-muted-foreground">
-              Hasil parsing CSV
-            </span>
-          </div>
-        </div>
+            </>,
+            "Hasil parsing berkas CSV",
+          ]}
+        >
+          <ImportDataTable
+            columns={COLUMNS}
+            rows={filteredItems}
+            getRowKey={(row, index) => `${row.thbl}-${row.nolg}-${index}`}
+            empty={{
+              icon: FileSpreadsheet,
+              title: "Tidak ada hasil",
+              description: `Tidak ada data yang sesuai dengan pencarian "${searchQuery}".`,
+            }}
+          />
+        </ImportTablePanel>
+      )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/50 text-muted-foreground border-b font-medium">
-              <tr>
-                <th className="py-2.5 px-3">Periode</th>
-                <th className="py-2.5 px-3">No. Pelanggan (NOLG)</th>
-                <th className="py-2.5 px-3">Nama Pelanggan</th>
-                <th className="py-2.5 px-3">Rute</th>
-                <th className="py-2.5 px-3 text-right">Stand Awal (STML)</th>
-                <th className="py-2.5 px-3 text-right">Stand Akhir (STMA)</th>
-                <th className="py-2.5 px-3 text-right">Pakai (m³)</th>
-                <th className="py-2.5 px-3 text-right">Pakai Lalu</th>
-                <th className="py-2.5 px-3">Kondisi / TMSS</th>
-                <th className="py-2.5 px-3">Petugas</th>
-                <th className="py-2.5 px-3">Tgl Catat</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="py-12 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <FileSpreadsheet className="size-8 text-muted-foreground/40" />
-                      <p className="font-medium text-[var(--primary-foreground)]">Belum ada data LapDataMeter yang dimuat</p>
-                      <p className="text-xs">
-                        Klik <strong>&ldquo;Muat Contoh LapDataMeter&rdquo;</strong> atau unggah berkas CSV Anda.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredItems.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="py-8 text-center text-muted-foreground">
-                    Tidak ada data yang sesuai dengan pencarian &ldquo;{searchQuery}&rdquo;.
-                  </td>
-                </tr>
-              ) : (
-                filteredItems.map((row, idx) => (
-                  <tr key={`${row.nolg}-${idx}`} className="transition-colors hover:bg-[var(--table-hover)] font-mono">
-                    <td className="py-2 px-3 text-[var(--primary-foreground)] font-semibold">{row.thbl}</td>
-                    <td className="py-2 px-3 text-[var(--primary)] font-semibold">{row.nolg}</td>
-                    <td className="py-2 px-3 font-sans truncate max-w-[160px] text-[var(--primary-foreground)] font-medium">
-                      {row.nama || "-"}
-                    </td>
-                    <td className="py-2 px-3">
-                      <Badge variant="secondary" className="text-[10px] px-1 py-0 font-mono">
-                        {row.ruteKode || "-"}
-                      </Badge>
-                    </td>
-                    <td className="py-2 px-3 text-right">{row.stml.toLocaleString("id-ID")}</td>
-                    <td className="py-2 px-3 text-right font-semibold text-[var(--primary-foreground)]">
-                      {row.stma.toLocaleString("id-ID")}
-                    </td>
-                    <td className="py-2 px-3 text-right font-semibold text-[var(--verif-v2-text)]">
-                      {row.pakaiM3.toLocaleString("id-ID")}
-                    </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
-                      {row.pakaiLalu !== undefined ? row.pakaiLalu.toLocaleString("id-ID") : "-"}
-                    </td>
-                    <td className="py-2 px-3 font-sans">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span
-                          className={`size-1.5 rounded-full ${
-                            row.ketCatat.toLowerCase().includes("normal")
-                              ? "bg-[var(--verif-v3)]"
-                              : "bg-[var(--verif-v1)]"
-                          }`}
-                        />
-                        <span className="truncate max-w-[120px] text-[11px]">{row.ketCatat}</span>
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 font-sans text-[11px] text-muted-foreground">
-                      {row.petugasId || row.namaPetugas || "-"}
-                    </td>
-                    <td className="py-2 px-3 text-[10px] text-muted-foreground truncate max-w-[100px]">
-                      {row.tglCatat?.slice(0, 10) || "-"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <ImportProgressModal
+        progress={progressState}
+        onCancel={handleCancelImport}
+      />
     </div>
   );
 }

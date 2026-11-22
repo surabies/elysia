@@ -19,4 +19,5 @@ export * from './broadcast';
 export * from './pengaturan';
 export * from './jaringan';
 export * from './riwayat';
+export * from './anomali';
 

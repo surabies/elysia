@@ -732,4 +732,23 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
         return { success: false, error: err.message };
       }
     }
+  )
+  // 28. Progress - Audit & Rekonsiliasi Anomali SSOT
+  .get(
+    '/progress/audit-anomali',
+    async ({ query, set }) => {
+      try {
+        const thbl = (query as any)?.thbl || (await getActivePeriode());
+        const kode = (query as any)?.kode;
+        const kategori = (query as any)?.kategori;
+        const limit = Number((query as any)?.limit ?? 50);
+        const offset = Number((query as any)?.offset ?? 0);
+        const search = (query as any)?.search;
+        const result = await caterProgressService.getAuditAnomali(thbl, kode, kategori, limit, offset, search);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    }
   );

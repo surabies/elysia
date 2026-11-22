@@ -24,6 +24,8 @@ import {
   apakahKondisiTaksasiOtomatis,
   PEMAKAIAN_MINIMUM_PERDIR,
 } from "../domain/taksasi/taksasi.engine";
+import { evaluasiAnomaliBaris } from "../domain/cater/anomali-evaluator";
+import { aturanAnomaliService } from "../services/cater/aturan-anomali.service";
 
 const READ_ROLES: AppRole[] = [
   "STAFF_ADMIN_BILLING",
@@ -1148,13 +1150,34 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
           pakaiSesudah: String(pakaiM3),
           alasan: "Koreksi data pembacaan dari halaman verifikasi.",
         });
+        const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
+        const evalRes = evaluasiAnomaliBaris(
+          {
+            stml: Number(stml),
+            stma: Number(stma),
+            pakaiM3: Number(pakaiM3),
+            pakaiLalu: row.pakaiLalu !== null ? Number(row.pakaiLalu) : null,
+            kodeTmss: kondisiRevisi || row.tmss,
+          },
+          rules,
+          maps,
+          versi
+        );
+
         await tx
           .update(caterBacaMeter)
           .set({
+            stml: String(stml),
+            stma: String(stma),
+            pakaiM3: String(pakaiM3),
             stmlRevisi: stmlRevisi == null ? null : String(stmlRevisi),
             stmaRevisi: stmaRevisi == null ? null : String(stmaRevisi),
             pakaiM3Revisi,
             ketCatatRevisi: kondisiRevisi,
+            isAnomali: evalRes.isAnomali,
+            kodeAnomaliUtama: evalRes.kodeUtama,
+            kodeAnomaliList: evalRes.kodeList,
+            aturanVersi: versi,
             standAngkatRevisi:
               body.standAngkatLama == null
                 ? null
@@ -1170,6 +1193,9 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
             updatedAt: new Date(),
           })
           .where(eq(caterBacaMeter.id, row.id));
+
+        // Pemicu evaluasi ulang baris dependen periode N jika periode N-1 dikoreksi
+        await aturanAnomaliService.evaluasiUlangBarisDependen(row.nolg, row.thbl, tx);
       });
       return { success: true, data: { id: row.id, stml, stma, pakaiM3 } };
     },

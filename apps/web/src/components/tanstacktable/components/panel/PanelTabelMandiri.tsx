@@ -33,16 +33,24 @@ import {
   kirimJson,
   ApiError,
 } from "@/features/dashboard/shared/api/api-dashboard";
-import { OPSI_STATUS_LAPORAN_MANDIRI } from "../../lib/label-laporan-mandiri";
-import { KotakCari, FilterPilihan } from "@/features/dashboard/shared/data-grid";
-import { PILIHAN_UKURAN, TombolIkonVerifikasi } from "../BilahVerifikasi";
-import { KontrolKolomVerifikasi, TabelVerifikasi } from "../TabelVerifikasi";
-import type { BarisVerifikasi, Kerapatan } from "../../types";
+import { KotakCari } from "@/features/dashboard/shared/data-grid";
+import { PILIHAN_UKURAN } from "../toolbar/ToolbarVerifikasi";
+import { CanvasTabelVerifikasi } from "../canvas/CanvasTabelVerifikasi";
+import { cn } from "@/lib/utils";
+import type { BarisVerifikasi } from "../../types";
 import { usePreferensiKolom } from "../../hooks/use-preferensi-kolom";
-import { KontrolTampilan } from "../KontrolTampilan";
+import { KontrolTampilanTabel } from "../toolbar/KontrolTampilanTabel";
 import { RingkasanSebaris } from "../RingkasanVerifikasi";
 import type { StatsVerifikasi } from "../../types";
 import { toast } from "sonner";
+import { Filters } from "@/components/reui/filters/filters";
+import type { FilterQuery } from "@/components/reui/filters/filters-types";
+import {
+  buatSkemaFilterMandiri,
+  filterMandiriToQuery,
+  queryToFilterMandiri,
+} from "../toolbar/skema-filter";
+import { TEMA_TAB_AKTIF } from "../../lib/tema-verifikasi";
 
 export type StatusMandiri =
   | "MENUNGGU"
@@ -57,6 +65,7 @@ export type BarisMandiriTabel = BarisVerifikasi & {
   verifiedByRole?: string | null;
   sudahTahapPetugas?: boolean;
   sudahDitagih?: boolean;
+  sumberLaporan?: string | null;
 };
 
 /// Bentuk baris mentah /laporan-mandiri yang dibaca tabel.
@@ -118,6 +127,8 @@ function petaBaris(r: BarisApi): BarisMandiriTabel {
     pemakaianLalu: r.pemakaianLalu ?? r.pembacaan?.pemakaianLalu ?? null,
     persentase: null,
     kondisi: r.kondisi ?? r.pembacaan?.kondisi ?? "STAND_KONSUMEN",
+    jenisInput: "KONSUMEN",
+    sumberLaporan: "KONSUMEN",
     tanggalCatat: r.tanggalCatat ?? r.createdAt ?? null,
     verif3At: resmi ? (r.verifiedAt ?? r.tanggalCatat ?? r.createdAt ?? "ok") : null,
     laporanMandiriTerverifikasi: terverifikasi && !resmi,
@@ -186,11 +197,10 @@ export function PanelTabelMandiri({
     pageSize: 100,
   });
   const [cari, setCari] = React.useState("");
-  const [kerapatan, setKerapatan] = React.useState<Kerapatan>("normal");
   const preferensiKolom = usePreferensiKolom();
   const [rows, setRows] = React.useState<BarisMandiriTabel[]>([]);
   const [total, setTotal] = React.useState(0);
-  const [memuat, setMemuat] = React.useState(false);
+  const [memuat, setMemuat] = React.useState(true);
   const sedangMemuatRef = React.useRef(false);
   const [terpilih, setTerpilih] = React.useState<Set<string>>(new Set());
   const jangkarRef = React.useRef<number | null>(null);
@@ -338,142 +348,173 @@ export function PanelTabelMandiri({
     URL.revokeObjectURL(a.href);
   }
 
-  const adaFilter = filter.q !== "" || filter.status !== "";
+  const filterSchema = React.useMemo(() => buatSkemaFilterMandiri(), []);
+  const [filterQuery, setFilterQuery] = React.useState<FilterQuery>(() =>
+    filterMandiriToQuery(filter),
+  );
+
+  React.useEffect(() => {
+    setFilterQuery(filterMandiriToQuery(filter));
+  }, [filter.status]);
 
   const toolbarContent = (
-    <div className="flex items-center justify-end gap-1.5 min-w-0 overflow-visible py-1">
-      {/* 1. Kotak Pencarian */}
-      <KotakCari
-        nilai={cari}
-        onUbah={setCari}
-        placeholder="Cari no. langganan / nama"
-        className="w-36 sm:w-44 shrink-0"
-      />
-
-      {/* 2. Filter Periode */}
-      <FilterPilihan
-        filter={{
-          param: "periode",
-          label: "Periode",
-          opsi: periodes.map((p) => ({
-            value: String(p),
-            label: formatPeriode(p),
-          })),
-        }}
-        nilai={periode == null ? "" : String(periode)}
-        onUbah={(v) => onPeriode(v === "" ? null : Number(v))}
-        ikon={
-          <HugeiconsIcon
-            icon={CalendarDaysIcon}
-            strokeWidth={2}
-            className="size-3.5"
-            aria-hidden
-          />
-        }
-        labelIkonSaja
-      />
-
-      {/* 3. Filter Status */}
-      <FilterPilihan
-        filter={{
-          param: "status",
-          label: "Status",
-          opsi: OPSI_STATUS_LAPORAN_MANDIRI,
-        }}
-        nilai={filter.status}
-        onUbah={(v) => setFilter((f) => ({ ...f, status: v }))}
-        ikon={
-          <HugeiconsIcon
-            icon={Task01Icon}
-            strokeWidth={2}
-            className="size-3.5"
-            aria-hidden
-          />
-        }
-        ringkas
-      />
-
-      {/* 4. Reset Filter */}
-      {adaFilter && (
-        <TombolIkonVerifikasi
-          label="Bersihkan filter"
-          onClick={() => {
-            setCari("");
-            setFilter((f) => ({ ...f, q: "", status: "" }));
-          }}
-          ikon={
+    <div className="flex items-center justify-between w-full min-w-0 overflow-visible py-1 gap-2">
+      {/* Sisi Kiri: Filter Periode & REUI Filters Status */}
+      <div className="flex items-center gap-1.5 min-w-0 overflow-visible">
+        {/* Periode Kerja */}
+        <Select
+          value={
+            periode === null || periode === undefined ? "all" : String(periode)
+          }
+          onValueChange={(v) => onPeriode(v === "all" ? null : Number(v))}
+        >
+          <SelectTrigger
+            size="sm"
+            aria-label="Pilih Periode Kerja"
+            className="h-8 gap-1.5 px-2.5 text-xs font-normal border-border/60 bg-background hover:bg-muted/60 text-foreground transition-colors cursor-pointer shrink-0"
+          >
             <HugeiconsIcon
-              icon={Cancel01Icon}
+              icon={CalendarDaysIcon}
               strokeWidth={2}
-              className="size-3.5"
+              className="size-3.5 text-muted-foreground"
               aria-hidden
             />
-          }
-        />
-      )}
+            <SelectValue placeholder="Pilih Periode">
+              {periode ? formatPeriode(periode) : "Semua Periode"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent position="popper" align="start" className="z-50">
+            <SelectItem value="all">Semua Periode</SelectItem>
+            {periodes.map((p) => (
+              <SelectItem key={p} value={String(p)}>
+                {formatPeriode(p)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      {/* Separator Antar Saringan & Paginasi */}
-      <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" aria-hidden="true" />
-
-      {/* 5. Status Baris */}
-      <span className="text-label-12 text-muted-foreground tabular-nums whitespace-nowrap">
-        {memuat
-          ? "Memuat…"
-          : `${rows.length.toLocaleString("id-ID")} dari ${total.toLocaleString("id-ID")}`}
-      </span>
-
-      {/* 6. Ukuran Baris per Halaman */}
-      <Select
-        value={String(filter.pageSize)}
-        onValueChange={(v) =>
-          setFilter((f) => ({ ...f, pageSize: Number(v) }))
-        }
-      >
-        <SelectTrigger
-          size="sm"
-          aria-label="Baris per halaman"
-          className="w-auto h-8 text-xs shrink-0"
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent position="popper" align="end" className="z-50">
-          {PILIHAN_UKURAN.map((n) => (
-            <SelectItem key={n} value={String(n)}>
-              {n.toLocaleString("id-ID")} baris
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Separator Antar Paginasi & Kontrol Tampilan */}
-      <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" aria-hidden="true" />
-
-      {/* 7. Kontrol Tampilan */}
-      <KontrolTampilan
-        ringkasanTerbuka={ringkasanTerbuka}
-        onRingkasan={onRingkasan}
-        padat={kerapatan === "padat"}
-        onPadat={(p) => setKerapatan(p ? "padat" : "normal")}
-        aksiTambahan={
-          <KontrolKolomVerifikasi
-            preferensi={preferensiKolom.preferensiKolom}
-            onVisibilitas={preferensiKolom.ubahVisibilitasKolom}
-            onPindah={preferensiKolom.pindahKolom}
-            onReset={preferensiKolom.resetKolom}
+        {/* REUI Filters Bar (Status Laporan Mandiri) */}
+        <div className="flex items-center">
+          <Filters
+            fields={filterSchema}
+            query={filterQuery}
+            onQueryChange={(nextQuery) => {
+              setFilterQuery(nextQuery);
+              const updated = queryToFilterMandiri(nextQuery, filter);
+              setFilter((f) => ({ ...f, status: updated.status }));
+            }}
+            showClear
+            size="sm"
           />
-        }
-      />
+        </div>
+      </div>
+
+      {/* Sisi Kanan: Kontrol Tampilan (Collapse Ringkasan) & Paginasi Baris */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <KontrolTampilanTabel
+          ringkasanTerbuka={ringkasanTerbuka}
+          onRingkasan={onRingkasan}
+          preferensiKolom={{
+            preferensi: preferensiKolom.preferensiKolom,
+            onVisibilitas: preferensiKolom.ubahVisibilitasKolom,
+            onPindah: preferensiKolom.pindahKolom,
+            onReset: preferensiKolom.resetKolom,
+          }}
+        />
+
+        {/* Separator Antar Kontrol Tampilan & Paginasi Baris */}
+        <div
+          className="h-4 w-px bg-border/60 shrink-0 mx-0.5"
+          aria-hidden="true"
+        />
+
+        {/* Status Baris Premium dengan Indicator Dot Permanen */}
+        <div
+          className="flex items-center gap-1.5 px-2.5 h-8 rounded-md bg-muted/40 border border-border/50 text-[11px] font-mono tabular-nums text-muted-foreground shrink-0 select-none transition-colors"
+          title={
+            memuat
+              ? "Sedang menyinkronkan data..."
+              : `Data siap: ${rows.length.toLocaleString("id-ID")} dari ${total.toLocaleString("id-ID")} baris`
+          }
+        >
+          <span
+            className={cn(
+              "size-1.5 rounded-full shrink-0 transition-colors duration-300",
+              memuat
+                ? "bg-amber-500 animate-pulse ring-2 ring-amber-500/20"
+                : "bg-emerald-500 ring-2 ring-emerald-500/20",
+            )}
+          />
+          <span className="font-medium text-foreground">
+            {rows.length.toLocaleString("id-ID")}
+          </span>
+          <span className="text-muted-foreground/40">/</span>
+          <span>{total.toLocaleString("id-ID")}</span>
+        </div>
+
+        {/* Pilihan Ukuran Baris per Halaman */}
+        <Select
+          value={String(filter.pageSize)}
+          onValueChange={(v) =>
+            setFilter((f) => ({ ...f, pageSize: Number(v) }))
+          }
+        >
+          <SelectTrigger
+            size="sm"
+            aria-label="Baris per halaman"
+            className="w-auto h-8 text-xs shrink-0 cursor-pointer border-border/60 bg-background hover:bg-muted/60 transition-colors"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" align="end" className="z-50">
+            {PILIHAN_UKURAN.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n.toLocaleString("id-ID")} baris
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
+      {/* Baris Atas: Kotak Cari Cepat, Tab Laporan Mandiri, dan Ringkasan Sebaris */}
+      <div className="flex shrink-0 items-center gap-2">
+        <KotakCari
+          nilai={cari}
+          onUbah={setCari}
+          placeholder="Cari no. langganan / nama..."
+          className="w-48 sm:w-60 h-8 text-xs shrink-0"
+        />
+
+        <Button
+          size="default"
+          variant="ghost"
+          className={cn("transition-all", TEMA_TAB_AKTIF)}
+        >
+          <HugeiconsIcon
+            icon={Task01Icon}
+            strokeWidth={2}
+            className="size-3.5"
+            aria-hidden
+          />{" "}
+          Laporan Mandiri
+        </Button>
+
+        <div className="ml-auto flex items-center gap-3">
+          {/* Terlipat = angka ringkasan KPI pindah ke sini, tidak hilang */}
+          {!ringkasanTerbuka && <RingkasanSebaris stats={stats} />}
+        </div>
+      </div>
+
       {targetPortal ? createPortal(toolbarContent, targetPortal) : (
         <div className="shrink-0">{toolbarContent}</div>
       )}
 
       <div className="min-h-0 flex-1">
-        <TabelVerifikasi
+        <CanvasTabelVerifikasi
           rows={rows}
           terpilih={terpilih}
           onToggle={toggle}
@@ -486,10 +527,11 @@ export function PanelTabelMandiri({
           ambangAnomali={50}
           modeRing="tunggal"
           memuat={memuat}
-          kerapatan={kerapatan}
           preferensiKolom={preferensiKolom.preferensiKolom}
           onLebarKolom={preferensiKolom.ubahLebarKolom}
           onPindahKolom={preferensiKolom.pindahKolom}
+          onUbahVisibilitasKolom={preferensiKolom.ubahVisibilitasKolom}
+          onResetKolom={preferensiKolom.resetKolom}
           bolehEdit={(row) => {
             const m = row as BarisMandiriTabel;
             return (
@@ -548,16 +590,21 @@ export function PanelTabelMandiri({
       </div>
 
       {terpilih.size > 0 && (
-        <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2.5 shadow-xs">
           <Badge
-            variant="secondary"
-            className="h-8 rounded-md border border-border px-2.5 text-label-12 font-medium tabular-nums"
+            variant="pill"
+            size="lg"
+            className="h-8 rounded-md px-3 font-mono text-label-12 font-medium text-foreground border-border"
           >
-            {terpilih.size.toLocaleString("id-ID")} baris dipilih
+            <span className="font-semibold text-foreground">
+              {terpilih.size.toLocaleString("id-ID")}
+            </span>{" "}
+            baris dipilih
           </Badge>
           <Button
             size="default"
             variant="outline"
+            className="h-8 rounded-md gap-1.5 text-label-12 font-medium border-border"
             onClick={ekspor}
           >
             <HugeiconsIcon
@@ -569,8 +616,9 @@ export function PanelTabelMandiri({
             Ekspor terpilih
           </Button>
           <Button
-            size="sm"
+            size="default"
             variant="ghost"
+            className="h-8 rounded-md gap-1.5 text-label-12 text-muted-foreground hover:text-foreground"
             onClick={() => setTerpilih(new Set())}
           >
             <HugeiconsIcon
@@ -580,7 +628,7 @@ export function PanelTabelMandiri({
               aria-hidden
             />
             Batal pilih
-            <kbd className="ml-1 rounded bg-muted px-1 text-label-12 text-muted-foreground">
+            <kbd className="ml-1 rounded border border-border bg-muted/60 px-1.5 py-0.5 text-label-11 text-muted-foreground font-mono">
               Esc
             </kbd>
           </Button>

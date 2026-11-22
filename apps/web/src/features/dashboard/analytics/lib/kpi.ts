@@ -39,7 +39,7 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
     0
   );
   const totalAnomaliList = (data.anomalies || [])
-    .filter((a) => a.kode !== "01" && a.kode !== "Z")
+    .filter((a) => a.kode !== "NORMAL" && !a.kode.startsWith("WARN_"))
     .reduce((sum, a) => sum + (a.jumlah || 0), 0);
   const totalAnomali =
     (data.dailyTrends || []).length > 0 ? totalAnomaliTrends : totalAnomaliList;
@@ -50,20 +50,13 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
   const persentaseAnomali =
     totalBaca > 0 ? ((totalAnomali / totalBaca) * 100).toFixed(1) : "0.0";
 
-  // Data sparkline kubikasi (ambil tren harian m3)
-  const sparklineKubikasi =
-    data.dailyTrends && data.dailyTrends.length > 0
-      ? data.dailyTrends.map((d) => d.kubikasi || 0)
-      : [0, 0, 0, 0, 0];
+  // Data tren harian lengkap (mengikuti seluruh tanggal transaksi aktual pada periode ini tanpa dipotong)
+  const trendDays = data.dailyTrends && data.dailyTrends.length > 0 ? data.dailyTrends : [];
+  const trendLabels = trendDays.map((d) => d.label || `Tgl ${parseInt(d.hari, 10)}`);
 
-  // Data 14 pil ritme harian
-  const recentDays = (data.dailyTrends || []).slice(-14);
-  const pillsLajuHarian =
-    recentDays.length > 0 ? recentDays.map((d) => d.total || 0) : [0];
-
-  // Data 14 pil temuan anomali harian
-  const pillsAnomaliHarian =
-    recentDays.length > 0 ? recentDays.map((d) => d.anomali || 0) : [0];
+  const sparklineKubikasi = trendDays.map((d) => d.kubikasi || 0);
+  const pillsLajuHarian = trendDays.map((d) => d.total || 0);
+  const pillsAnomaliHarian = trendDays.map((d) => d.anomali || 0);
 
   return [
     // Kartu 1: Keterbacaan Meter (Varian A: Segments)
@@ -89,10 +82,6 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
           { id: "sisa", label: "Belum", value: belumTerbaca, color: "#94a3b8" },
         ],
       },
-      footer: {
-        label: "Lihat Tren Harian",
-        href: "#tren-harian",
-      },
     },
 
     // Kartu 2: Kubikasi Air Terdistribusi (Varian B: Smooth Monotone Sparkline)
@@ -112,15 +101,13 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
       visual: {
         type: "sparkline",
         data: sparklineKubikasi,
+        labels: trendLabels,
         color: "#06b6d4",
-      },
-      footer: {
-        label: "Analisis Kelompok Konsumsi",
-        href: "#kelompok-konsumsi",
+        unit: "m³",
       },
     },
 
-    // Kartu 3: Ritme Laju Harian (Varian C: 14 Pil Intensitas Harian)
+    // Kartu 3: Ritme Laju Harian (Varian C: Bar Kotak Intensitas Harian)
     {
       id: "laju-harian",
       title: "Ritme Laju Harian",
@@ -129,7 +116,7 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
       value: formatNumber(data.rataRataHarian || 0),
       unit: "SL/hari",
       delta: {
-        text: `Puncak ${formatNumber(data.puncakHarian?.total || 0)} SL (H-${data.puncakHarian?.hari || "0"})`,
+        text: `Puncak ${formatNumber(data.puncakHarian?.total || 0)} SL (Tgl ${parseInt(data.puncakHarian?.hari || "0", 10)})`,
         direction: "up",
         tone: "positive",
       },
@@ -137,15 +124,13 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
       visual: {
         type: "pills",
         values: pillsLajuHarian,
+        labels: trendLabels,
         tone: "neutral",
-      },
-      footer: {
-        label: "Pantau Produktivitas Petugas",
-        href: "#produktivitas-petugas",
+        unit: "SL",
       },
     },
 
-    // Kartu 4: Temuan & Anomali Lapangan (Varian C: 14 Pil Problem Tone)
+    // Kartu 4: Temuan & Anomali Lapangan (Varian C: Bar Kotak Problem Tone)
     {
       id: "anomali-lapangan",
       title: "Temuan & Anomali Lapangan",
@@ -162,11 +147,9 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
       visual: {
         type: "pills",
         values: pillsAnomaliHarian,
+        labels: trendLabels,
         tone: "problem",
-      },
-      footer: {
-        label: "Rincian Status & Anomali",
-        href: "#status-pembacaan",
+        unit: "Kasus",
       },
     },
   ];

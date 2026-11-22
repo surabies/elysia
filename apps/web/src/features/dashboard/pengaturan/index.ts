@@ -5,6 +5,7 @@ export { PengaturanPageHeader } from './components/PengaturanPageHeader';
 export { PengaturanAkunView } from './components/PengaturanAkunView';
 export { PengaturanCaterView } from './components/PengaturanCaterView';
 export { PengaturanVerifikasiView } from './components/PengaturanVerifikasiView';
+export { PengaturanAturanAnomaliView } from './components/PengaturanAturanAnomaliView';
 export { PengaturanBillingView } from './components/PengaturanBillingView';
 export { PengaturanPengaduanView } from './components/PengaturanPengaduanView';
 export { PengaturanSistemView } from './components/PengaturanSistemView';

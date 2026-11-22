@@ -136,16 +136,8 @@ export class AnalyticsService {
         to_char(tgl_catat, 'YYYY-MM-DD') as tanggal,
         to_char(tgl_catat, 'DD') as hari,
         count(*)::int as total,
-        count(CASE WHEN (
-          (upper(trim(coalesce(ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
-            AND (tmss IS NULL OR upper(trim(tmss)) IN ('01', 'Z', '', '-')))
-          OR upper(trim(coalesce(sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
-        ) THEN 1 END)::int as normal,
-        count(CASE WHEN NOT (
-          (upper(trim(coalesce(ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
-            AND (tmss IS NULL OR upper(trim(tmss)) IN ('01', 'Z', '', '-')))
-          OR upper(trim(coalesce(sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
-        ) THEN 1 END)::int as anomali,
+        count(CASE WHEN is_anomali = false AND (kode_anomali_utama IS NULL OR kode_anomali_utama NOT LIKE 'WARN_%') THEN 1 END)::int as normal,
+        count(CASE WHEN is_anomali = true THEN 1 END)::int as anomali,
         coalesce(sum(pakai_m3), 0)::float as kubikasi
       FROM cater_baca_meter
       WHERE thbl = ${thbl} AND tgl_catat IS NOT NULL
@@ -253,11 +245,7 @@ export class AnalyticsService {
         p.nama,
         count(c.nolg)::int as total_baca,
         coalesce(sum(c.pakai_m3), 0)::float as total_kubikasi,
-        count(CASE WHEN c.nolg IS NOT NULL AND NOT (
-          (upper(trim(coalesce(c.ket_catat, 'NORMAL'))) IN ('NORMAL', 'STAND-KONSUMEN', 'STAND KONSUMEN')
-            AND (c.tmss IS NULL OR upper(trim(c.tmss)) IN ('01', 'Z', '', '-')))
-          OR upper(trim(coalesce(c.sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
-        ) THEN 1 END)::int as anomali_count
+        count(CASE WHEN c.nolg IS NOT NULL AND c.is_anomali = true THEN 1 END)::int as anomali_count
       FROM petugas_cater p
       LEFT JOIN cater_baca_meter c
         ON c.petugas_id = p.id
@@ -446,55 +434,16 @@ export class AnalyticsService {
    */
   async getAnomalyBreakdown(thbl: string): Promise<AnomalyCategory[]> {
     const raw = await db.execute(sql`
-      WITH reading_status AS (
-        SELECT
-          CASE
-            WHEN upper(trim(coalesce(c.sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
-              OR upper(trim(coalesce(c.tmss, ''))) = 'Z'
-              OR upper(trim(coalesce(c.ket_catat, ''))) IN ('STAND-KONSUMEN', 'STAND KONSUMEN')
-              THEN 'Z'
-            WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
-              AND upper(trim(coalesce(c.ket_catat, 'NORMAL'))) <> 'NORMAL'
-              THEN 'CATATAN:' || upper(trim(c.ket_catat))
-            WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
-              THEN '01'
-            ELSE trim(c.tmss)
-          END AS kode,
-          CASE
-            WHEN upper(trim(coalesce(c.sumber_catat, ''))) IN ('MANDIRI_WEB', 'MANDIRI_APP')
-              OR upper(trim(coalesce(c.tmss, ''))) = 'Z'
-              OR upper(trim(coalesce(c.ket_catat, ''))) IN ('STAND-KONSUMEN', 'STAND KONSUMEN')
-              THEN 'Stand Konsumen (Lapor Mandiri)'
-            WHEN coalesce(nullif(trim(c.tmss), ''), '01') IN ('01', '-')
-              AND upper(trim(coalesce(c.ket_catat, 'NORMAL'))) <> 'NORMAL'
-              THEN trim(c.ket_catat)
-            ELSE NULL
-          END AS keterangan_catatan,
-          count(*)::int AS jumlah
-        FROM cater_baca_meter AS c
-        WHERE c.thbl = ${thbl}
-        GROUP BY 1, 2
-      )
       SELECT
-        status.kode,
-        coalesce(
-          kondisi.nama,
-          status.keterangan_catatan,
-          CASE status.kode
-            WHEN '01' THEN 'Normal'
-            WHEN '02' THEN 'Pagar Dikunci (DK / Stand Taksir)'
-            WHEN '03' THEN 'Rumah Kosong (RK)'
-            WHEN '07' THEN 'Meter Mati / Rusak (GWM)'
-            WHEN '08' THEN 'Air Mati / Tidak Mengalir'
-            WHEN 'ANOMALY_NEGATIVE' THEN 'Stand Minus / Rollover'
-            ELSE 'Kode ' || status.kode
-          END
-        ) AS keterangan,
-        status.jumlah
-      FROM reading_status AS status
-      LEFT JOIN master_kondisi_catat AS kondisi
-        ON trim(kondisi.kode_tmss) = status.kode
-      ORDER BY status.jumlah DESC, status.kode
+        coalesce(c.kode_anomali_utama, 'NORMAL') AS kode,
+        coalesce(a.nama, 'Normal (Terbaca Wajar)') AS keterangan,
+        count(*)::int AS jumlah
+      FROM cater_baca_meter AS c
+      LEFT JOIN aturan_anomali AS a
+        ON c.kode_anomali_utama = a.kode
+      WHERE c.thbl = ${thbl}
+      GROUP BY c.kode_anomali_utama, a.nama, a.urutan
+      ORDER BY coalesce(a.urutan, 999) ASC, count(*) DESC
     `);
 
     const rows = raw as any[];

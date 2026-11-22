@@ -145,7 +145,7 @@ export class PbpkService {
         alamat,
         tarifKode,
         ruteKode,
-        kelurahanKode: null, // Disesuaikan pada tahap sinkronisasi zonasi jika kode kelurahan ada di master
+        kelurahanKode: kelurahanKode ? kelurahanKode.toUpperCase() : null,
         noUrutRute: urutanBerikutnya,
         noMeter,
         noTelp: noTelp ?? null,

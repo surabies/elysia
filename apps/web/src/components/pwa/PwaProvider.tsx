@@ -60,19 +60,46 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
 
   // Inisialisasi Service Worker & Deteksi Lingkungan PWA
   React.useEffect(() => {
-    // 1. Registrasi Service Worker segera (jangan hanya menunggu event 'load' yang mungkin sudah lewat di Next.js)
+    // 0. DI LINGKUNGAN DEVELOPMENT / LOCALHOST:
+    // Hapus seluruh Service Worker dan CacheStorage secara otomatis agar tidak pernah ada
+    // aset JavaScript, HTML, atau API kadaluarsa yang dicegat dan disajikan secara offline.
+    const isLocalhost =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '0.0.0.0');
+
+    if (process.env.NODE_ENV !== 'production' || isLocalhost) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const reg of registrations) {
+            reg.unregister();
+          }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          for (const key of keys) {
+            caches.delete(key);
+          }
+        });
+      }
+      return;
+    }
+
+    // 1. Registrasi Service Worker HANYA di lingkungan PRODUCTION
     const registerSw = () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
-          console.warn('[PWA] Gagal meregistrasi Service Worker:', error)
-        })
+          console.warn('[PWA] Gagal meregistrasi Service Worker:', error);
+        });
       }
-    }
+    };
 
     if (document.readyState === 'complete') {
-      registerSw()
+      registerSw();
     } else {
-      window.addEventListener('load', registerSw, { once: true })
+      window.addEventListener('load', registerSw, { once: true });
     }
 
     // 2. Deteksi apakah sudah berjalan di mode standalone (benar-benar terpasang & dibuka sebagai app)

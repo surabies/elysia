@@ -8,6 +8,7 @@ import {
   Smartphone,
   type LucideIcon,
 } from "lucide-react";
+import { IconTile } from "@/components/reui/icon-tile";
 import {
   Card,
   CardContent,
@@ -60,7 +61,6 @@ export function AntreanTindakanCard({
 }: AntreanTindakanCardProps) {
   const totalTindakan =
     antrean.verifikasiMenunggu.total +
-    antrean.verifikasiMenunggu.anomaliKritis +
     antrean.laporanMandiri.total +
     antrean.pengaduanTerbuka.total;
 
@@ -118,7 +118,7 @@ export function AntreanTindakanCard({
   ];
 
   return (
-    <Card className="flex flex-col rounded-lg border-border/80 bg-card shadow-none">
+    <Card className="flex flex-col rounded-lg border border-border bg-card shadow-none">
       <CardHeader className="p-5 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -152,12 +152,16 @@ export function AntreanTindakanCard({
             <Link
               key={item.id}
               href={item.href}
-              className="group flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3.5 py-2.5 transition-colors hover:border-foreground/25 hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group flex items-center justify-between gap-3 rounded-md border border-border bg-muted/20 px-3.5 py-2.5 transition-colors hover:border-foreground/25 hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground transition-colors group-hover:text-foreground">
+                <IconTile
+                  size="sm"
+                  variant="frame"
+                  className="text-muted-foreground transition-colors group-hover:text-foreground shrink-0"
+                >
                   <Icon className="size-4 stroke-[1.5]" />
-                </div>
+                </IconTile>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span

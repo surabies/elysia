@@ -1,4 +1,5 @@
 export { MonitoringBacaMeter } from './components/MonitoringBacaMeter';
+export { CaterMonitoringHeader } from './components/CaterMonitoringHeader';
 export { BebanRute } from './components/BebanRute';
 export { PembacaanDitinjau } from './components/PembacaanDitinjau';
 export { ProduktivitasPetugas } from './components/ProduktivitasPetugas';

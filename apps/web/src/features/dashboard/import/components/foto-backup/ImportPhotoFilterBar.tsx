@@ -1,39 +1,43 @@
-// apps/web/src/features/dashboard/import/components/foto-backup/ImportPhotoFilterBar.tsx
-"use client";
-
+// features/dashboard/import/components/foto-backup/ImportPhotoFilterBar.tsx
 import * as React from "react";
-import {
-  Layers,
-  Gauge,
-  ShieldCheck,
-  Home,
-  FolderArchive,
-  UploadCloud,
-  RotateCcw,
-  Search,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FolderArchive, Layers, RotateCcw, UploadCloud } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { FOTO_FILENAME_TEMPLATE } from "../../lib/import-config";
+import {
+  FOTO_JENIS_LIST,
+  getExecuteLabel,
+  type FotoJenis,
+} from "../../lib/foto-backup";
+import { TONE_STYLE } from "../../lib/import-ui";
 import type { ModeImportFilter } from "../../types/foto-backup.types";
+import { ImportFileButton } from "../shared/ImportFileButton";
+import { ImportSearchInput } from "../shared/ImportSearchInput";
 
 interface ImportPhotoFilterBarProps {
   modeFilter: ModeImportFilter;
-  setModeFilter: (m: ModeImportFilter) => void;
+  setModeFilter: (mode: ModeImportFilter) => void;
   searchQuery: string;
-  setSearchQuery: (q: string) => void;
+  setSearchQuery: (query: string) => void;
   totalBerkas: number;
-  countStand: number;
-  countSegel: number;
-  countRumah: number;
+  counts: Record<FotoJenis, number>;
   selectedNolgsCount: number;
   activeProcessCount: number;
   isSubmitting: boolean;
-  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onExecuteImport: () => void;
   onClear: () => void;
   hasData: boolean;
+}
+
+interface SegmentOption {
+  mode: ModeImportFilter;
+  label: string;
+  count: number;
+  icon: React.ComponentType<{ className?: string }>;
+  iconClassName: string;
+  activeClassName: string;
 }
 
 export function ImportPhotoFilterBar({
@@ -42,9 +46,7 @@ export function ImportPhotoFilterBar({
   searchQuery,
   setSearchQuery,
   totalBerkas,
-  countStand,
-  countSegel,
-  countRumah,
+  counts,
   selectedNolgsCount,
   activeProcessCount,
   isSubmitting,
@@ -53,165 +55,133 @@ export function ImportPhotoFilterBar({
   onClear,
   hasData,
 }: ImportPhotoFilterBarProps) {
+  const options: SegmentOption[] = [
+    {
+      mode: "all",
+      label: "Semua Foto (Sekaligus)",
+      count: totalBerkas,
+      icon: Layers,
+      iconClassName: TONE_STYLE.neutral.icon,
+      activeClassName: "border-border bg-background text-foreground",
+    },
+    ...FOTO_JENIS_LIST.map((meta) => {
+      const tone = TONE_STYLE[meta.tone];
+      return {
+        mode: meta.key,
+        label: meta.filterLabel,
+        count: counts[meta.key],
+        icon: meta.icon,
+        iconClassName: tone.icon,
+        activeClassName: cn(tone.soft, tone.border, tone.text),
+      };
+    }),
+  ];
+
   return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-      {/* Baris Judul & Aksi Utama */}
+    <div className="space-y-4 rounded-lg border border-border bg-card p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <h2 className="text-title-16 font-semibold tracking-tight text-[var(--primary-foreground)]">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-heading-16 text-foreground">
               Import Foto Backup (Mobile Recovery)
             </h2>
-            <Badge variant="outline" className="border-[var(--primary)]/30 text-[var(--primary)] text-[10px] font-mono">
-              Pola: {"{THBL}_{JENIS}_{NOLG}.jpg"}
+            <Badge variant="pill" className="font-mono">
+              Pola: {FOTO_FILENAME_TEMPLATE}
             </Badge>
           </div>
           <p className="text-copy-13 text-muted-foreground">
-            Pemulihan foto lapangan saat gagal sinkronisasi jaringan mobile. Sistem dinamis memetakan foto ke database secara otomatis.
+            Pemulihan foto lapangan saat gagal sinkronisasi jaringan mobile.
+            Sistem dinamis memetakan foto ke database secara otomatis.
           </p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           {hasData && (
             <Button
               variant="outline"
-              size="sm"
               onClick={onClear}
               disabled={isSubmitting}
-              className="h-8 text-label-12 cursor-pointer"
               title="Kosongkan daftar berkas"
             >
-              <RotateCcw className="mr-1.5 size-3.5" />
+              <RotateCcw />
               Kosongkan
             </Button>
           )}
 
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={onFileSelect}
-              className="hidden"
-            />
-            <Button variant="outline" size="sm" asChild className="h-8 text-label-12 cursor-pointer">
-              <span>
-                <FolderArchive className="mr-1.5 size-3.5 text-[var(--primary)]" />
-                Pilih Berkas dari HP
-              </span>
-            </Button>
-          </label>
+          <ImportFileButton
+            accept="image/*"
+            multiple
+            onChange={onFileSelect}
+            icon={FolderArchive}
+            disabled={isSubmitting}
+          >
+            Pilih Berkas dari HP
+          </ImportFileButton>
 
           <Button
-            size="sm"
             onClick={onExecuteImport}
-            disabled={isSubmitting || selectedNolgsCount === 0 || activeProcessCount === 0}
-            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90 cursor-pointer"
+            disabled={
+              isSubmitting ||
+              selectedNolgsCount === 0 ||
+              activeProcessCount === 0
+            }
           >
-            <UploadCloud className="size-3.5" />
+            <UploadCloud />
             {isSubmitting
               ? "Memproses..."
-              : modeFilter === "stand"
-              ? `Petakan Foto Stand (${activeProcessCount} Berkas)`
-              : modeFilter === "segel"
-              ? `Petakan Foto Segel (${activeProcessCount} Berkas)`
-              : modeFilter === "rumah"
-              ? `Petakan Foto Rumah (${activeProcessCount} Berkas)`
-              : `Petakan ke Database (${activeProcessCount} Berkas · ${selectedNolgsCount} SL)`}
+              : getExecuteLabel(
+                  modeFilter,
+                  activeProcessCount,
+                  selectedNolgsCount,
+                )}
           </Button>
         </div>
       </div>
 
-      {/* Segmented Filter Control & Search Input (Hanya jika ada data yang diunggah) */}
       {hasData && (
-        <div className="flex flex-col gap-3 pt-2 border-t border-border sm:flex-row sm:items-center sm:justify-between">
-          {/* Segmented Control Pengelompokan Foto Aktif */}
-          <div className="flex flex-wrap items-center gap-1 rounded-md bg-[var(--muted)]/60 p-1 border border-[var(--border)]/50 select-none">
-            {/* Opsi 1: Semua Foto (Sekaligus) */}
-            <button
-              type="button"
-              onClick={() => setModeFilter("all")}
-              className={cn(
-                "flex items-center gap-1.5 rounded px-2.5 py-1 text-label-12 font-medium transition-all cursor-pointer",
-                modeFilter === "all"
-                  ? "bg-background text-[var(--primary-foreground)] shadow-xs border border-[var(--border)]/70 font-semibold text-[var(--primary)]"
-                  : "text-muted-foreground hover:text-[var(--primary-foreground)] hover:bg-background/50"
-              )}
-            >
-              <Layers className="size-3.5 text-[var(--primary)]" />
-              <span>Semua Foto (Sekaligus)</span>
-              <span className="font-mono text-[10px] text-muted-foreground">({totalBerkas})</span>
-            </button>
-
-            {/* Opsi 2: Stand Meter Saja */}
-            <button
-              type="button"
-              onClick={() => setModeFilter("stand")}
-              className={cn(
-                "flex items-center gap-1.5 rounded px-2.5 py-1 text-label-12 font-medium transition-all cursor-pointer",
-                modeFilter === "stand"
-                  ? "bg-[var(--verif-v2-soft)] text-[var(--verif-v2-text)] shadow-xs border border-[var(--verif-v2-border)]/50 font-semibold"
-                  : "text-muted-foreground hover:text-[var(--primary-foreground)] hover:bg-background/50"
-              )}
-            >
-              <Gauge className="size-3.5 text-[var(--verif-v2)]" />
-              <span>Stand Meter</span>
-              <span className="font-mono text-[10px] text-[var(--verif-v2-text)] dark:text-[var(--verif-v2-text)] font-semibold">({countStand})</span>
-            </button>
-
-            {/* Opsi 3: Segel Meter Saja */}
-            <button
-              type="button"
-              onClick={() => setModeFilter("segel")}
-              className={cn(
-                "flex items-center gap-1.5 rounded px-2.5 py-1 text-label-12 font-medium transition-all cursor-pointer",
-                modeFilter === "segel"
-                  ? "bg-[var(--verif-v1-soft)] text-[var(--verif-v1-text)] shadow-xs border border-[var(--verif-v1-border)]/50 font-semibold"
-                  : "text-muted-foreground hover:text-[var(--primary-foreground)] hover:bg-background/50"
-              )}
-            >
-              <ShieldCheck className="size-3.5 text-[var(--verif-v1)]" />
-              <span>Segel Meter</span>
-              <span className="font-mono text-[10px] text-[var(--verif-v1-text)] dark:text-[var(--verif-v1-text)] font-semibold">({countSegel})</span>
-            </button>
-
-            {/* Opsi 4: Fasad Rumah Saja */}
-            <button
-              type="button"
-              onClick={() => setModeFilter("rumah")}
-              className={cn(
-                "flex items-center gap-1.5 rounded px-2.5 py-1 text-label-12 font-medium transition-all cursor-pointer",
-                modeFilter === "rumah"
-                  ? "bg-[var(--verif-v2-soft)] text-[var(--verif-v2-text)] shadow-xs border border-[var(--verif-v2-border)]/50 font-semibold"
-                  : "text-muted-foreground hover:text-[var(--primary-foreground)] hover:bg-background/50"
-              )}
-            >
-              <Home className="size-3.5 text-[var(--verif-v2)]" />
-              <span>Fasad Rumah</span>
-              <span className="font-mono text-[10px] text-[var(--verif-v2-text)] dark:text-[var(--verif-v2-text)] font-semibold">({countRumah})</span>
-            </button>
-          </div>
-
-          {/* Search Input Filter */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari No. Langganan / Berkas..."
-              className="h-8 pl-8 text-copy-13"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-[var(--primary-foreground)] text-xs cursor-pointer"
-              >
-                ×
-              </button>
+        <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <div
+            role="group"
+            aria-label="Filter jenis foto"
+            className="flex flex-wrap items-center gap-1 rounded-md border border-border bg-muted p-1 select-none"
+          >
+            {options.map(
+              ({
+                mode,
+                label,
+                count,
+                icon: Icon,
+                iconClassName,
+                activeClassName,
+              }) => {
+                const isActive = modeFilter === mode;
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setModeFilter(mode)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-label-12 transition-colors",
+                      isActive
+                        ? activeClassName
+                        : "border-transparent text-muted-foreground hover:bg-background/50 hover:text-foreground",
+                    )}
+                  >
+                    <Icon className={cn("size-3.5", iconClassName)} />
+                    <span>{label}</span>
+                    <span className="text-label-11">({count})</span>
+                  </button>
+                );
+              },
             )}
           </div>
+
+          <ImportSearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Cari No. Langganan / Berkas..."
+          />
         </div>
       )}
     </div>

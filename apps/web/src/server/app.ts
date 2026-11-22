@@ -18,6 +18,7 @@ import { kpiModule } from "./modules/kpi";
 import { mediaRouter } from "./modules/media";
 import { broadcastModule } from "./modules/broadcast";
 import { importModule } from "./modules/import";
+import { aturanAnomaliRouter } from "./modules/cater/aturan-anomali.router";
 
 export const app = new Elysia({ prefix: "/api" })
   .use(corsPlugin)
@@ -47,6 +48,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(mediaRouter)
   .use(broadcastModule)
   .use(importModule)
+  .use(aturanAnomaliRouter)
   .use(verifikasiLegacyRouter);
 
 export type App = typeof app;

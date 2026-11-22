@@ -230,20 +230,8 @@ export function RiwayatPembacaan({
             </p>
           </div>
 
-          {/* Kontrol Kanan: Pemilih Periode Bulan, Filter dropdown, Refresh, Settings, More */}
+          {/* Kontrol Kanan: Filter dropdown, Refresh, Settings, More */}
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            {month !== undefined && onMonthChange && (
-              <div className="flex items-center gap-1.5">
-                <Input
-                  id="cater-riwayat-period"
-                  type="month"
-                  value={month}
-                  onChange={(e) => onMonthChange(e.target.value)}
-                  className="h-8 text-copy-12 font-medium w-36"
-                />
-              </div>
-            )}
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 gap-1.5 text-copy-12 font-medium">

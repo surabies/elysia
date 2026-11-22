@@ -45,6 +45,9 @@ export interface BarisVerifikasi {
     pemakaianLalu?: number | null
   } | null
   persentase?: number | null
+  isAnomali?: boolean | null
+  kodeAnomaliUtama?: string | null
+  kodeAnomaliList?: string[] | null
   kondisi?: string | null
   tanggalCatat?: string | null
   verif1At?: string | null
@@ -130,7 +133,7 @@ export interface LaporanHarianDetail {
   persentase?: number | null
   kondisi: string
   kategori: string
-  jenisInput?: "PETUGAS" | "KONSUMEN" | "MANUAL_SATUAN" | "MANUAL_MASSAL"
+  jenisInput?: "PETUGAS" | "KONSUMEN" | "MANUAL_SATUAN" | "MANUAL_MASSAL" | "MANUAL" | string
   alasanManual?: string | null
   manualProvenance?: {
     metode:

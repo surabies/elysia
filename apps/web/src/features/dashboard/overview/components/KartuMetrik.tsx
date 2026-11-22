@@ -269,7 +269,7 @@ export function KartuMetrik({ periode, summary }: KartuMetrikProps) {
           <Link
             key={card.id}
             href={card.href}
-            className="group flex flex-col justify-between rounded-lg border border-border/80 bg-card p-4 transition-colors hover:border-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group flex flex-col justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:border-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {/* 1. Header: Ikon + Judul + Panah Navigasi */}
             <div className="flex items-center justify-between gap-2">

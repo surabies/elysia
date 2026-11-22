@@ -1,36 +1,5 @@
-Keputusan saya:
+Tiga hal, tetap di branch, jangan menyentuh database utama. Laporkan singkat dengan hasil query langsung.
 
-## 1. Alur MB → Setuju diterapkan, dengan syarat
-
-- Enum DATA_METER_BELUM_LENGKAP dan kolom nullable seperti usulan. no_meter_baru dan stand_angkat wajib terisi saat status naik ke APPROVED. stand_pasang default 0 tetapi bisa diubah oleh teknik.
-- Pratinjau closing menampilkan jumlah mutasi DATA_METER_BELUM_LENGKAP beserta umurnya sebagai peringatan (tidak memblokir).
-- Pemakaian meter lama (stand_angkat − stml) yang baru diketahui setelah periode closed TIDAK boleh ditambahkan ke pemakaian bulan berikutnya. Hitung sebagai koreksi atas bulan kejadian: tagihan seharusnya (pemakaian gabungan bulan itu) dikurangi yang sudah terbit, lalu terbitkan selisihnya. Cek apakah DRD sudah punya mekanisme koreksi/tagihan susulan. Jika belum, jelaskan usulan dan tunggu persetujuan sebelum implementasi bagian ini.
-- Tes: MB dengan stand angkat menyusul sebelum closing dan sesudah closing.
-
-## 2. tagihan_saat_kelebihan
-
-Biarkan MINIMUM sementara. Dokumentasikan sebagai keputusan yang menunggu Penagihan. Satu baris data M tidak cukup membedakan MINIMUM dari pakai_lalu.
-
-## 3. Verifikasi dan penyempurnaan
-
-- Baris MB "pakai negatif −1449" berbeda dari −86 (00704300190) di laporan sebelumnya. Jelaskan apakah baris yang sama dan dari mana angkanya.
-- Selaraskan jumlah assertion tes (113 vs 102) dan tampilkan output tes terakhir.
-- Pastikan wajib_ganti_password benar-benar ditegakkan: pengguna dialihkan ke halaman ganti password dan tidak bisa membuka halaman lain sebelum selesai. Jika belum, implementasikan.
-- Pastikan operator dapat memasukkan nilai taksasi sendiri (bukan hanya pakai_lalu) dengan alasan wajib dan log audit, karena sekitar 2% bacaan data lama adalah taksasi manual.
-- Pelanggan dengan akumulasi_perlu_verifikasi (8.733): sediakan antrean verifikasi terpisah yang bisa disaring dan diurutkan berdasarkan risiko (mis. selisih netto terhadap pemakaian bulan lalu), supaya tidak menumpuk di antrean biasa. Laporkan berapa tanda yang turun setelah file infolang diimpor.
-- Uji ETL infolang dengan file sintetis berformat berbeda (delimiter dan nama header) untuk membuktikan pemetaan konfigurasi bekerja.
-
-## 4. Jangan tambah fitur di luar daftar ini
-
-Setelah poin 1–3 selesai, laporkan ringkas dan berhenti. Tidak ada aturan baru yang ditambahkan sebelum ada data nyata (ekspor infolang dan progrescater November hasil closing).
-
-Perbaiki dua tes yang gagal dan perjelas status infolang. Tidak ada fitur baru.
-
-1. **Infolang bukan sumber impor.** Infolang adalah halaman terpisah untuk melihat riwayat pemakaian pelanggan (dipakai verifikator memeriksa pemakaian tidak wajar). Tidak ada ekspor atau integrasi. Ubah komentar, dokumen (termasuk docs/SEED-DAN-GO-LIVE.md), dan teks UI yang menyiratkan impor dari infolang. Jelaskan bahwa ETL riwayat bersifat generik untuk file riwayat apa pun (mis. progrescater bulan-bulan sebelumnya). Jangan hapus atau ganti nama file/tabel sekarang.
-2. **Alur flag akumulasi_perlu_verifikasi.** Pastikan verifikator dapat melihat kredit taksasi pelanggan dan mengoreksinya dengan alasan wajib, tercatat di log audit, dari antrean verifikasi terpisah. Laporkan apakah sudah ada atau belum. Jangan menambahkan integrasi ke infolang.
-3. **Tes 8 dan 9 gagal karena timeout 5000ms.** Set timeout eksplisit (mis. 120_000 ms) pada keduanya dan ukur durasi tiap tahap (seed, import, carryForward) pada tes 8.
-4. **Bukti rollback.** Jelaskan apakah importProgresCater dan ETL riwayat di tes 8 dan 9 memakai koneksi transaksi tes atau koneksi global. Jika global, tes ini menulis ke database sungguhan: ubah agar memakai transaksi tes atau database tes terpisah. Log menunjukkan periode 202611 dikunci dengan snapshot 2 SL dan 202612 dibuka.
-5. **Penjaga kebersihan.** Snapshot jumlah baris tabel kunci (pelanggan, water_meter, periode_penagihan, daftar_catat, cater_baca_meter, rekening_drd, riwayat_pemakaian_historis) sebelum dan sesudah suite. Beda = tes gagal.
-6. Hapus .tmp-test-progrescater-202611.csv di blok finally.
-7. Tes hanya boleh berjalan di database yang ada di allowlist tes (mis. env TEST_DATABASE_URL).
-8. Jalankan ulang suite di database tes terpisah dan tampilkan output lengkap: 10 tes harus hijau. Laporkan jumlah expect() akhir dan hasil snapshot jumlah baris. Jangan menyebut selesai sebelum semua hijau.
+1. Angka dasar periode 202611 berubah antar-laporan: anomali 1.692 menjadi 1.694, ANOM_METER_MUNDUR 16 menjadi 24, ANOM_DEVIASI_RING2 665 menjadi 660, ANOM_KERUSAKAN_METER 588 menjadi 587. Cari penyebabnya dengan bukti (bukan dugaan): apakah ada uji atau skrip (mis. uji catch-up, uji gerbang C, skrip reproduksi) yang menulis ke cater_baca_meter atau tabel aturan di branch? Tunjukkan baris yang klasifikasinya berubah (nolg, kode lama, kode baru) dan apa yang mengubahnya. Uji yang menulis data harus berjalan dalam transaksi yang di-rollback, atau memakai database terpisah, dan tidak boleh meninggalkan perubahan. Buktikan: jalankan seluruh suite, lalu bandingkan hitungan per kode utama sebelum dan sesudah, harus identik.
+2. Dry-run di modal Edit Parameter untuk ANOM_LONJAKAN_M3 dengan Ambang Bawah 75 diganti 50 melaporkan anomali +121 dan 146 baris berubah, sedangkan hanya 116 baris dengan pakai 50-75 m³ yang belum anomali (batas atas jika hanya ambang yang berubah). Form saat itu juga menampilkan Acuan Pembanding "Rata-rata Historis (SNI)" padahal database menyimpan PAKAI_LALU. Jelaskan: (a) rincian perpindahan kategori dry-run (dari-ke) per kode, (b) apakah aturan LONJAKAN_ABSOLUT dipengaruhi acuan pembanding, (c) bahwa dry-run dan simpan memakai evaluasi yang sama persis dan input form yang sama, (d) mengapa dropdown Acuan kosong saat modal dibuka dan menampilkan opsi yang tidak sesuai nilai database. Perbaiki agar nilai awal form dibaca dari data aturan.
+3. Syarat Ring 3 (ANOM_DEVIASI_RING3) memakai syarat_pakai_lalu_min_m3 = 5. Laporan menyebut 16 baris dengan pakai lalu 5 m³ dan sekarang 0 m³ (turun 100%) menjadi normal. Jelaskan operator yang dipakai (>= atau >) dan mengapa baris itu tidak memicu Ring 3 atau Ring 2. Tambahkan uji di nilai batas 4, 5, dan 6 m³ untuk pakai lalu. Jika perilakunya memang sengaja, tulis alasannya.

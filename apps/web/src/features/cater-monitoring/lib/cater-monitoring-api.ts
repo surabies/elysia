@@ -23,18 +23,20 @@ async function fetchData<T>(url: string): Promise<T> {
   return result.data;
 }
 
-export async function fetchCaterOverviewData(): Promise<{
+export async function fetchCaterOverviewData(period?: string): Promise<{
   stats: CaterStats;
   routes: RouteSummary[];
 }> {
+  const statsUrl = period ? `/api/cater/stats?thbl=${period}` : '/api/cater/stats';
   const [stats, routes] = await Promise.all([
-    fetchData<CaterStats>('/api/cater/stats'),
+    fetchData<CaterStats>(statsUrl),
     fetchData<RouteSummary[]>('/api/cater/routes?limit=500'),
   ]);
   return { stats, routes };
 }
 
 export async function fetchCaterPeriodData(period: string): Promise<{
+  stats?: CaterStats;
   petugasProgress: PetugasProgress[];
   extremeReadings: ReadingReviewItem[];
   zeroReadings: ReadingReviewItem[];
@@ -44,6 +46,7 @@ export async function fetchCaterPeriodData(period: string): Promise<{
   riwayatSesi: ItemRuteBaca[];
 }> {
   const [
+    statsRes,
     petugasProgress,
     anomaliRes,
     extremeRes,
@@ -51,6 +54,7 @@ export async function fetchCaterPeriodData(period: string): Promise<{
     downRes,
     riwayatSesi,
   ] = await Promise.all([
+    fetchData<CaterStats>(`/api/cater/stats?thbl=${period}`).catch(() => null),
     fetchData<PetugasProgress[]>(`/api/cater/progress/cater/${period}`).catch(() => []),
     fetchData<AnomaliOverviewData>(`/api/cater/progress/anomali?thbl=${period}&limit=1`).catch(() => null),
     fetchData<ReadingReviewItem[]>(`/api/cater/progress/ekstrim/${period}?limit=100`).catch(() => []),
@@ -82,6 +86,7 @@ export async function fetchCaterPeriodData(period: string): Promise<{
   }
 
   return {
+    stats: statsRes ?? undefined,
     petugasProgress,
     extremeReadings,
     zeroReadings,

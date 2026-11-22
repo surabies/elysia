@@ -1,65 +1,59 @@
-// apps/web/src/features/dashboard/import/components/foto-backup/ImportPhotoEmptyState.tsx
-"use client";
-
+// features/dashboard/import/components/foto-backup/ImportPhotoEmptyState.tsx
 import * as React from "react";
-import { FolderArchive, UploadCloud, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FolderArchive, Info, UploadCloud } from "lucide-react";
+import { PERIODE_BERJALAN_AKTIF } from "@/config/periode";
+import { Badge } from "@/components/ui/badge";
+import { FOTO_JENIS_LIST } from "../../lib/foto-backup";
+import { FOTO_EXAMPLE_NOLG } from "../../lib/import-config";
+import { ImportFileButton } from "../shared/ImportFileButton";
 
 interface ImportPhotoEmptyStateProps {
-  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function ImportPhotoEmptyState({ onFileSelect }: ImportPhotoEmptyStateProps) {
+export function ImportPhotoEmptyState({
+  onFileSelect,
+}: ImportPhotoEmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-[var(--card)]/60 p-12 text-center">
-      <div className="flex size-14 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)] mb-4">
-        <FolderArchive className="size-7" />
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12 text-center">
+      <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-muted text-foreground">
+        <FolderArchive className="size-7" strokeWidth={1.5} aria-hidden />
       </div>
 
-      <h3 className="text-title-16 font-semibold text-[var(--primary-foreground)]">
+      <h3 className="text-heading-16 text-foreground">
         Belum Ada Berkas Foto Dipilih
       </h3>
-      <p className="text-copy-13 text-muted-foreground mt-1 max-w-lg">
-        Pilih berkas foto backup dari penyimpanan HP petugas atau gunakan berkas uji yang tersedia di folder{" "}
-        <code className="font-mono text-xs bg-[var(--muted)] px-1.5 py-0.5 rounded text-[var(--primary-foreground)]">
-          packages/db/data/mock-photos/
-        </code>
+      <p className="mt-1 max-w-lg text-copy-13 text-muted-foreground">
+        Pilih berkas foto backup (.jpg / .jpeg / .png) dari penyimpanan HP petugas
+        atau galeri perangkat untuk diproses ke database.
       </p>
 
-      {/* Standar Penamaan Format */}
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground font-mono">
-        <span className="bg-[var(--muted)] px-2 py-1 rounded border border-[var(--border)]/50">
-          202601_stand_00703600750.jpg
-        </span>
-        <span className="bg-[var(--muted)] px-2 py-1 rounded border border-[var(--border)]/50">
-          202601_segel_00703600750.jpg
-        </span>
-        <span className="bg-[var(--muted)] px-2 py-1 rounded border border-[var(--border)]/50">
-          202601_rumah_00703600750.jpg
-        </span>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        {FOTO_JENIS_LIST.map((meta) => (
+          <Badge key={meta.key} variant="pill" className="font-mono">
+            {`${PERIODE_BERJALAN_AKTIF}_${meta.key}_${FOTO_EXAMPLE_NOLG}.jpg`}
+          </Badge>
+        ))}
       </div>
 
-      <div className="mt-6 flex items-center gap-3">
-        <label className="cursor-pointer">
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={onFileSelect}
-            className="hidden"
-          />
-          <Button size="sm" asChild className="gap-2 cursor-pointer">
-            <span>
-              <UploadCloud className="size-4" />
-              Pilih Berkas dari HP
-            </span>
-          </Button>
-        </label>
+      <div className="mt-6">
+        <ImportFileButton
+          accept="image/*"
+          multiple
+          onChange={onFileSelect}
+          icon={UploadCloud}
+          variant="default"
+        >
+          Pilih Berkas dari HP
+        </ImportFileButton>
       </div>
 
-      <div className="mt-6 flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
-        <Info className="size-3.5" />
-        <span>Modul dinamis: Mendukung upload foto Stand saja, Segel saja, Rumah saja, atau sekaligus.</span>
+      <div className="mt-6 flex items-center gap-1.5 text-label-11 text-muted-foreground">
+        <Info className="size-3.5" aria-hidden />
+        <span>
+          Modul dinamis: Mendukung upload foto Stand saja, Segel saja, Rumah
+          saja, atau sekaligus.
+        </span>
       </div>
     </div>
   );

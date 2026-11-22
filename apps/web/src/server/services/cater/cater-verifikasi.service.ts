@@ -9,7 +9,8 @@ import {
   masterKondisiCatat,
   waterMeterMutasi,
 } from "@cater/db";
-import { evaluasiPemakaianMeter } from "../../domain/cater/cater-anomali.engine";
+import { evaluasiAnomaliBaris } from "../../domain/cater/anomali-evaluator";
+import { aturanAnomaliService } from "./aturan-anomali.service";
 import {
   hitungPemakaianDanRekonsiliasiTaksasi,
   type ModeHitungKondisiInput,
@@ -225,13 +226,7 @@ export class CaterVerifikasiService {
     }
 
     const stmaEfektif = hasilMode.stmaEfektif;
-
-    // 3. Evaluasi anomali bacaan meter (untuk METER_BARU, stand awal evaluasi adalah 0 / stand pasang, bukan stml meter lama)
-    const evaluasi = evaluasiPemakaianMeter({
-      stml: modeHitung === "METER_BARU" ? 0 : stml,
-      stma: stmaEfektif,
-      pakaiLalu: pakaiLaluEfektif ?? undefined,
-    });
+    const isMundur = (modeHitung === "METER_BARU" ? 0 : stml) > stmaEfektif;
 
     const pakaiM3Fisik = Math.max(0, hasilMode.selisihFisikM3);
     const pakaiTagihFinal =
@@ -241,7 +236,9 @@ export class CaterVerifikasiService {
       ? "ANOMALY"
       : hasilMode.isStandTetap
         ? "SUBMITTED"
-        : evaluasi.statusVerifikasi;
+        : isMundur
+          ? "ANOMALY_NEGATIVE"
+          : "SUBMITTED";
 
     const id = `cater-${thbl}-${nolg}`;
     const lokasiGps =
@@ -259,9 +256,6 @@ export class CaterVerifikasiService {
           : null,
         hasilMode.pesanAnomali
           ? `[Anomali Kredit Taksasi] ${hasilMode.pesanAnomali}`
-          : null,
-        evaluasi.isAnomali && evaluasi.pesan
-          ? `[Anomali] ${evaluasi.pesan}`
           : null,
       ]
         .filter(Boolean)
@@ -305,6 +299,21 @@ export class CaterVerifikasiService {
 
     const isDicabut = kodeTmssFinal === "D" || namaKondisiFinal === "DICABUT";
 
+    // Evaluasi anomali terpusat (SSOT)
+    const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
+    const evalRes = evaluasiAnomaliBaris(
+      {
+        stml: Number(stml),
+        stma: Number(stmaEfektif),
+        pakaiM3: Number(pakaiM3Fisik),
+        pakaiLalu: pakaiLaluEfektif === null ? null : Number(pakaiLaluEfektif),
+        kodeTmss: kodeTmssFinal,
+      },
+      rules,
+      maps,
+      versi
+    );
+
     await db.transaction(async (tx) => {
       await tx
         .insert(caterBacaMeter)
@@ -329,6 +338,10 @@ export class CaterVerifikasiService {
           fotoRumahUrl: processedFotoRumah,
           durasiDetik: durasiDetik || 0,
           statusVerifikasi: statusVerifikasiFinal,
+          isAnomali: evalRes.isAnomali,
+          kodeAnomaliUtama: evalRes.kodeUtama,
+          kodeAnomaliList: evalRes.kodeList,
+          aturanVersi: versi,
           catatan: catatanBaca,
           lokasiGps,
         })
@@ -353,6 +366,10 @@ export class CaterVerifikasiService {
             lokasiGps,
             durasiDetik: durasiDetik || 0,
             statusVerifikasi: statusVerifikasiFinal,
+            isAnomali: evalRes.isAnomali,
+            kodeAnomaliUtama: evalRes.kodeUtama,
+            kodeAnomaliList: evalRes.kodeList,
+            aturanVersi: versi,
             catatan: catatanBaca,
             updatedAt: new Date(),
           },
@@ -433,7 +450,7 @@ export class CaterVerifikasiService {
       pakaiM3: pakaiTagihFinal,
       pakaiM3Fisik,
       akumulasiTaksasiDikurangkan: hasilMode.akumulasiTaksasiDikurangkan,
-      isAnomali: evaluasi.isAnomali || hasilMode.isAnomaliKreditTaksasi,
+      isAnomali: evalRes.isAnomali || Boolean(hasilMode.isAnomaliKreditTaksasi),
       statusVerifikasi: statusVerifikasiFinal,
     };
   }
@@ -521,6 +538,29 @@ export class CaterVerifikasiService {
       pakaiSesudah = String(stmaKoreksi - stmlNum);
     }
 
+    let evalUpdates: any = {};
+    if (action === "ADJUST_STAND") {
+      const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();
+      const evalRes = evaluasiAnomaliBaris(
+        {
+          stml: Number(cater.stml),
+          stma: Number(stmaSesudah),
+          pakaiM3: Number(pakaiSesudah),
+          pakaiLalu: cater.pakaiLalu !== null ? Number(cater.pakaiLalu) : null,
+          kodeTmss: cater.tmss,
+        },
+        rules,
+        maps,
+        versi
+      );
+      evalUpdates = {
+        isAnomali: evalRes.isAnomali,
+        kodeAnomaliUtama: evalRes.kodeUtama,
+        kodeAnomaliList: evalRes.kodeList,
+        aturanVersi: versi,
+      };
+    }
+
     await db.transaction(async (tx) => {
       await tx.insert(caterVerifikasiLog).values({
         caterId,
@@ -541,9 +581,14 @@ export class CaterVerifikasiService {
           pakaiM3: pakaiSesudah,
           statusVerifikasi: nextStatus,
           catatan: catatan ? `[V2] ${catatan}` : cater.catatan,
+          ...evalUpdates,
           updatedAt: new Date(),
         })
         .where(eq(caterBacaMeter.id, caterId));
+
+      if (action === "ADJUST_STAND") {
+        await aturanAnomaliService.evaluasiUlangBarisDependen(cater.nolg, cater.thbl, tx);
+      }
     });
 
     return {

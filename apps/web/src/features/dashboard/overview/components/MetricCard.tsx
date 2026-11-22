@@ -1,6 +1,5 @@
 import * as React from "react"
-import Link from "next/link"
-import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react"
+import { ArrowDown, ArrowUp } from "lucide-react"
 import type { MetricCardData } from "../types/MetricCardTypes"
 import { MetricVisualSegments } from "./MetricVisualSegments"
 import { MetricVisualSparkline } from "./MetricVisualSparkline"
@@ -43,14 +42,18 @@ export function MetricCard({ data }: MetricCardProps) {
         return (
           <MetricVisualSparkline
             data={data.visual.data}
+            labels={data.visual.labels}
             color={data.visual.color}
+            unit={data.visual.unit || data.unit}
           />
         )
       case "pills":
         return (
           <MetricVisualPills
             values={data.visual.values}
+            labels={data.visual.labels}
             tone={data.visual.tone}
+            unit={data.visual.unit || (data.id === "laju-harian" ? "SL" : data.unit)}
           />
         )
       default:
@@ -59,9 +62,9 @@ export function MetricCard({ data }: MetricCardProps) {
   }
 
   return (
-    <div className="flex h-[220px] w-full flex-col justify-between overflow-hidden rounded-lg border border-border/80 bg-card shadow-none select-none transition-all hover:border-foreground/20 hover:shadow-xs">
+    <div className="flex h-[196px] w-full flex-col justify-between overflow-hidden rounded-lg border border-border bg-card p-4 shadow-none select-none transition-all hover:border-foreground/20 hover:shadow-xs">
       {/* Bagian Atas: Header, Nilai, Teks Bantu, dan Visual */}
-      <div className="flex flex-1 flex-col px-4 pt-3.5 pb-2">
+      <div className="flex flex-1 flex-col">
         {/* 1. Baris Judul (Ikon 16px di kiri + Judul 15px/500 + Label Kanan 12.5px) */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -101,19 +104,8 @@ export function MetricCard({ data }: MetricCardProps) {
         </p>
 
         {/* 4. Zona Visual (y≈108 - 184) */}
-        <div className="mt-auto pt-1">{renderVisual()}</div>
+        <div className="mt-auto pt-3">{renderVisual()}</div>
       </div>
-
-      {/* 5. Footer Link Aksi (Tinggi 36px, latar #fafafa, border-t 1px) */}
-      <Link
-        href={data.footer.href}
-        className="group flex h-[36px] w-full items-center justify-between border-t border-border bg-[#fafafa] dark:bg-muted/30 px-4 text-[13.5px] text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <span className="font-normal group-hover:text-foreground transition-colors">
-          {data.footer.label}
-        </span>
-        <ArrowRight className="size-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-      </Link>
     </div>
   )
 }

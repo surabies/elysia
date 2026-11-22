@@ -45,7 +45,7 @@ const systemStatuses = [
 
 export function StatusSistem() {
   return (
-    <Card className="rounded-lg border-border/80 bg-card shadow-none">
+    <Card className="rounded-lg border border-border bg-card shadow-none">
       <CardHeader className="p-5 pb-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

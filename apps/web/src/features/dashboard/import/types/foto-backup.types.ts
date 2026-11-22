@@ -31,6 +31,9 @@ export interface ImportProgressState {
   sukses: number;
   gagal: number;
   percent: number;
-  currentFileName: string;
+  currentFileName?: string;
+  currentLabel?: string;
   stage: "reading" | "uploading" | "completed";
+  customTitle?: string;
+  customDescription?: string;
 }

@@ -1,3 +1,3 @@
-// Pintu masuk tunggal — impor lama
-// "@/features/dashboard/pengaduan/components/papan-pengaduan" tetap berfungsi.
-export { PapanPengaduan } from "./PapanPengaduan"
+// Pintu masuk tunggal papan pengaduan
+export { PapanPengaduan } from "./PapanPengaduan";
+export { TabelPengaduanGlide } from "./TabelPengaduanGlide";

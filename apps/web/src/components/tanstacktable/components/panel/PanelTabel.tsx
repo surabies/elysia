@@ -40,16 +40,16 @@ import {
   TabelVerifikasi,
   type HasilKoreksiInline,
 } from "../TabelVerifikasi";
+import { CanvasTabelVerifikasi } from "../canvas/CanvasTabelVerifikasi";
 import { tentukanHasilPembacaan } from "../../lib/hasil-pembacaan";
 import type { BarisVerifikasi, Kerapatan } from "../../types";
 import { usePreferensiKolom } from "../../hooks/use-preferensi-kolom";
 import { AksiMassal, type Ring } from "../AksiMassal";
 import { usePeriodeKerja } from "@/features/dashboard/shared/hooks/use-periode-kerja";
 import { formatPeriode } from "@/features/public";
-import { KontrolTampilan } from "../KontrolTampilan";
+import { KotakCari } from "@/features/dashboard/shared/data-grid";
 import { RingkasanSebaris } from "../RingkasanVerifikasi";
 import type { StatsVerifikasi } from "../../types";
-import type { OpsiPencarian, KriteriaPencarian } from "../modal/ModalPencarian";
 import type { PenugasanFilter } from "../../lib/penyaringan-relasi";
 
 /// Batas per permintaan verifikasi massal — sama dengan yang diterima server.
@@ -92,7 +92,7 @@ export function PanelTabel({
   pencatats: { id: string; namaLapangan: string }[];
   rutes: { id: string; kode: string }[];
   penugasanRute: PenugasanFilter[];
-  opsiPencarian: OpsiPencarian;
+  opsiPencarian?: any;
   ambangAnomali: number;
   bolehRing: (r: Ring) => boolean;
   idTerpilih: string | null;
@@ -119,7 +119,6 @@ export function PanelTabel({
   onDetailBerubah?: () => void;
 }) {
   const [tab, setTab] = React.useState<"laporan" | "belum">("laporan");
-  const [kerapatan, setKerapatan] = React.useState<Kerapatan>("normal");
   const searchParams = useSearchParams();
   const urlQuery = searchParams?.get("nolg") || searchParams?.get("q") || "";
   const preferensiKolom = usePreferensiKolom();
@@ -127,6 +126,18 @@ export function PanelTabel({
     ...FILTER_AWAL,
     q: urlQuery,
   }));
+  const [cari, setCari] = React.useState(filter.q);
+
+  React.useEffect(() => {
+    const t = setTimeout(() => {
+      if (cari !== filter.q) setFilter((f) => ({ ...f, q: cari }));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [cari, filter.q]);
+
+  React.useEffect(() => {
+    setCari(filter.q);
+  }, [filter.q]);
 
   React.useEffect(() => {
     const qParam = searchParams?.get("nolg") || searchParams?.get("q");
@@ -136,7 +147,7 @@ export function PanelTabel({
   }, [searchParams]);
   const [rows, setRows] = React.useState<BarisVerifikasi[]>([]);
   const [total, setTotal] = React.useState(0);
-  const [memuat, setMemuat] = React.useState(false);
+  const [memuat, setMemuat] = React.useState(true);
   const sedangMemuatRef = React.useRef(false);
   const [terpilih, setTerpilih] = React.useState<Set<string>>(new Set());
   const [sedangJalan, setSedangJalan] = React.useState(false);
@@ -198,10 +209,16 @@ export function PanelTabel({
       params.statusVerif = filter.statusVerif || undefined;
       params.tanggalDari = filter.tanggalDari || undefined;
       params.tanggalSampai = filter.tanggalSampai || undefined;
-      params.hanyaAnomali = filter.hanyaAnomali ? "true" : undefined;
+      params.hanyaAnomali =
+        filter.hanyaAnomali === "ANOMALI" ||
+        filter.hanyaAnomali === true ||
+        filter.hanyaAnomali === "true"
+          ? "true"
+          : filter.hanyaAnomali === "NORMAL" || filter.hanyaAnomali === "false"
+            ? "false"
+            : undefined;
       params.kondisi = filter.kondisi || undefined;
       params.jenisInput = filter.jenisInput || undefined;
-      Object.assign(params, filter.kriteriaLanjutan);
     }
     const jalur =
       tab === "laporan" ? "/laporan-harian" : "/laporan-harian/belum-dibaca";
@@ -211,7 +228,14 @@ export function PanelTabel({
         if (batal) return;
         setRows(r);
         setTotal(t);
-        setTerpilih(new Set());
+        setTerpilih((prev) => {
+          if (prev.size === 0) return prev;
+          const next = new Set<string>();
+          for (const id of prev) {
+            if (r.some((row) => row.id === id)) next.add(id);
+          }
+          return next;
+        });
         if (tab === "laporan") onRowsLoaded(r.length > 0);
       })
       .catch((e) => {
@@ -439,18 +463,35 @@ export function PanelTabel({
     filter.tanggalSampai === "" &&
     !filter.hanyaAnomali;
   const pesanKosong =
-    tab === "laporan" && filter.periode !== null && tanpaSaringan ? (
-      <>
-        Belum ada setoran pencatatan untuk {formatPeriode(filter.periode)}.
-        Daftar kerjanya sudah terbit — lihat tab <strong>Belum dibaca</strong>,
-        atau unggah setoran petugas lewat{" "}
-        <strong>Impor Data → Berkas sumber</strong>.
-      </>
+    tab === "laporan" && tanpaSaringan ? (
+      filter.periode !== null ? (
+        <>
+          Belum ada setoran pencatatan untuk {formatPeriode(filter.periode)}.
+          Daftar kerjanya sudah terbit — lihat tab <strong>Belum dibaca</strong>,
+          atau unggah setoran petugas lewat{" "}
+          <strong>Impor Data → Berkas sumber</strong>.
+        </>
+      ) : (
+        <>
+          Belum ada setoran laporan yang masuk ke database.
+          Silakan pilih periode atau unggah setoran petugas lewat{" "}
+          <strong>Impor Data → Berkas sumber</strong>.
+        </>
+      )
     ) : undefined;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-2">
+        {/* 1. Kotak Cari Cepat */}
+        <KotakCari
+          nilai={cari}
+          onUbah={setCari}
+          placeholder="Cari no. langganan / nama..."
+          className="w-48 sm:w-60 h-8 text-xs shrink-0"
+        />
+
+        {/* 2 & 3. Tab Laporan Masuk & Belum Dibaca */}
         {(
           [
             ["laporan", "Laporan masuk", Task01Icon],
@@ -515,34 +556,22 @@ export function PanelTabel({
             pencatats={pencatats}
             rutes={rutes}
             penugasanRute={penugasanRute}
-            opsiPencarian={opsiPencarian}
             jumlahTampil={rows.length}
             jumlahTotal={total}
             memuat={memuat}
             modeBelumDibaca={tab === "belum"}
             anomali={anomali ?? 0}
             ambang={ambangAnomali}
-            aksiKanan={
-              <div className="flex items-center gap-1">
-                <KontrolTampilan
-                  ringkasanTerbuka={ringkasanTerbuka}
-                  onRingkasan={onRingkasan}
-                  padat={kerapatan === "padat"}
-                  onPadat={(p) => setKerapatan(p ? "padat" : "normal")}
-                  aksiTambahan={
-                    <KontrolKolomVerifikasi
-                      preferensi={preferensiKolom.preferensiKolom}
-                      onVisibilitas={preferensiKolom.ubahVisibilitasKolom}
-                      onPindah={preferensiKolom.pindahKolom}
-                      onReset={preferensiKolom.resetKolom}
-                    />
-                  }
-                />
-              </div>
-            }
-            onPencarianLanjutan={(kriteria: KriteriaPencarian) =>
-              setFilter((f) => ({ ...f, kriteriaLanjutan: kriteria }))
-            }
+            kontrolTampilan={{
+              ringkasanTerbuka,
+              onRingkasan,
+              preferensiKolom: {
+                preferensi: preferensiKolom.preferensiKolom,
+                onVisibilitas: preferensiKolom.ubahVisibilitasKolom,
+                onPindah: preferensiKolom.pindahKolom,
+                onReset: preferensiKolom.resetKolom,
+              },
+            }}
           />
         );
 
@@ -554,7 +583,7 @@ export function PanelTabel({
       })()}
 
       <div className="min-h-0 flex-1">
-        <TabelVerifikasi
+        <CanvasTabelVerifikasi
           rows={rows}
           terpilih={terpilih}
           onToggle={toggle}
@@ -569,16 +598,16 @@ export function PanelTabel({
           ambangAnomali={ambangAnomali}
           modeBelumDibaca={tab === "belum"}
           memuat={memuat}
-          kerapatan={kerapatan}
           pesanKosong={pesanKosong}
           preferensiKolom={preferensiKolom.preferensiKolom}
           onLebarKolom={preferensiKolom.ubahLebarKolom}
           onPindahKolom={preferensiKolom.pindahKolom}
+          onUbahVisibilitasKolom={preferensiKolom.ubahVisibilitasKolom}
+          onResetKolom={preferensiKolom.resetKolom}
           bolehEdit={bolehEdit}
           bolehEditTagihan={bolehEditTagihan}
           onSimpanKoreksi={async (row, hasil) => {
             const snapshotLama = row;
-            // 1. Optimistic update (0ms latency — langsung tampil di sel tabel)
             setRows((lama) =>
               lama.map((item) => {
                 if (item.id !== row.id) return item;
@@ -618,7 +647,6 @@ export function PanelTabel({
               }),
             );
 
-            // 2. Sinkronisasi ke server di latar belakang; rollback jika gagal
             try {
               await kirimJson(
                 `/laporan-harian/${row.id}/koreksi`,

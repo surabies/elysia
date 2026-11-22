@@ -11,17 +11,40 @@ function Popover({
 }
 
 function PopoverTrigger({
+  render,
+  children,
+  asChild,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+}: React.ComponentProps<typeof PopoverPrimitive.Trigger> & {
+  render?: React.ReactElement;
+}) {
+  if (render) {
+    return (
+      <PopoverPrimitive.Trigger data-slot="popover-trigger" asChild {...props}>
+        {children ? React.cloneElement(render, {}, children) : render}
+      </PopoverPrimitive.Trigger>
+    );
+  }
+  return (
+    <PopoverPrimitive.Trigger
+      data-slot="popover-trigger"
+      asChild={asChild}
+      {...props}
+    >
+      {children}
+    </PopoverPrimitive.Trigger>
+  );
 }
 
 function PopoverContent({
   className,
   align = "center",
   sideOffset = 4,
+  finalFocus,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+}: React.ComponentProps<typeof PopoverPrimitive.Content> & {
+  finalFocus?: any;
+}) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content

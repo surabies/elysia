@@ -8,6 +8,7 @@ import {
 import type {
   AnomaliKPI,
   CaterStats,
+  PeriodeOption,
   PetugasProgress,
   ReadingReviewItem,
   RouteSummary,
@@ -22,6 +23,7 @@ export interface UseCaterMonitoringOptions {
   initialZeroReadings?: ReadingReviewItem[];
   initialDownReadings?: ReadingReviewItem[];
   initialMonth?: string;
+  availablePeriods?: PeriodeOption[];
 }
 
 export function useCaterMonitoring(options: UseCaterMonitoringOptions = {}) {
@@ -30,6 +32,7 @@ export function useCaterMonitoring(options: UseCaterMonitoringOptions = {}) {
   const [overviewLoading, setOverviewLoading] = useState(!options.initialStats);
   const [overviewError, setOverviewError] = useState<string | null>(null);
   const [month, setMonth] = useState(options.initialMonth || '2026-11');
+  const [availablePeriods] = useState<PeriodeOption[]>(options.availablePeriods ?? []);
   const [petugasProgress, setPetugasProgress] = useState<PetugasProgress[]>([]);
   const [riwayatSesiList, setRiwayatSesiList] = useState<ItemRuteBaca[]>(
     options.initialRiwayatSesi ?? []
@@ -89,6 +92,7 @@ export function useCaterMonitoring(options: UseCaterMonitoringOptions = {}) {
     fetchCaterPeriodData(period)
       .then(
         ({
+          stats: nextStats,
           petugasProgress: progress,
           extremeReadings: extreme,
           zeroReadings: zero,
@@ -97,6 +101,9 @@ export function useCaterMonitoring(options: UseCaterMonitoringOptions = {}) {
           allAnomaliItems: allItems,
           riwayatSesi,
         }) => {
+          if (nextStats) {
+            setStats(nextStats);
+          }
           if (progress && progress.length > 0) setPetugasProgress(progress);
           setExtremeReadings(extreme ?? []);
           setZeroReadings(zero ?? []);
@@ -122,13 +129,22 @@ export function useCaterMonitoring(options: UseCaterMonitoringOptions = {}) {
     loadPeriodData(month);
   }, [month, loadPeriodData]);
 
+  const handlePeriodChange = useCallback((nextThbl: string) => {
+    if (!nextThbl) return;
+    const nextMonth = `${nextThbl.slice(0, 4)}-${nextThbl.slice(4)}`;
+    setMonth(nextMonth);
+  }, []);
+
   return {
     stats,
     routes,
     overviewLoading,
     overviewError,
     month,
+    periodThbl: month.replace('-', ''),
     setMonth,
+    handlePeriodChange,
+    availablePeriods,
     petugasProgress,
     riwayatSesiList,
     extremeReadings,
@@ -139,5 +155,14 @@ export function useCaterMonitoring(options: UseCaterMonitoringOptions = {}) {
     periodLoading,
     periodError,
     refetchPeriod: () => loadPeriodData(month),
+    refetchAll: () => {
+      loadPeriodData(month);
+      fetchCaterOverviewData(month.replace('-', ''))
+        .then(({ stats: nextStats, routes: nextRoutes }) => {
+          if (nextStats) setStats(nextStats);
+          if (nextRoutes) setRoutes(nextRoutes);
+        })
+        .catch(() => {});
+    },
   };
 }

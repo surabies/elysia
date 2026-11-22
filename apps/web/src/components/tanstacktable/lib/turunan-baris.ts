@@ -27,6 +27,9 @@ export interface BarisTurunan {
   pemakaianTagih: number | null
   hasilTagihan: number | null
   persentase: number | null
+  isAnomali: boolean
+  kodeAnomaliUtama: string | null
+  kodeAnomaliList: string[]
 
   rute: string | null
   kondisiLabel: string | null
@@ -86,6 +89,9 @@ export function turunkanBaris(row: BarisVerifikasi): BarisTurunan {
     pemakaianTagih,
     hasilTagihan,
     persentase: row.persentase ?? null,
+    isAnomali: Boolean(row.isAnomali),
+    kodeAnomaliUtama: row.kodeAnomaliUtama ?? null,
+    kodeAnomaliList: row.kodeAnomaliList ?? [],
 
     rute: row.pelanggan?.rute?.kode ?? null,
     kondisiLabel: kondisiAktif

@@ -88,20 +88,17 @@ export function PengaturanHeader({
         </div>
       </div>
 
-      {/* 2. Subnavigasi Tab Bergaris Bawah (Persis Gaya Vercel & Laporan DRD) */}
+      {/* 2. Subnavigasi Tab Bergaris Bawah (Gaya Vercel Line Variant) */}
       <div className="border-b border-border overflow-x-auto no-scrollbar">
         <TabsList
-          className="flex h-10 w-full min-w-max justify-start gap-1 sm:gap-2 bg-transparent p-0 border-0 rounded-none -mb-px"
+          variant="line"
+          className="flex h-10 w-full min-w-max justify-start gap-1 sm:gap-2 bg-transparent p-0 border-0 rounded-none"
         >
           {DAFTAR_TAB_PENGATURAN.map(({ value, label, icon: Icon }) => (
             <TabsTrigger
               key={value}
               value={value}
-              className={cn(
-                "inline-flex items-center gap-2 border-b-2 px-3.5 h-10 text-xs sm:text-sm font-medium transition-colors rounded-none bg-transparent shadow-none cursor-pointer select-none",
-                "data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold",
-                "data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground hover:border-border hover:text-foreground"
-              )}
+              className="gap-2 px-3.5 h-10 text-xs sm:text-sm font-medium"
             >
               <Icon className="size-3.5 shrink-0" />
               <span>{label}</span>

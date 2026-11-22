@@ -14,9 +14,15 @@ import type {
 export function tentukanStatusPemakaian(
   totalM3: number | null,
   batasWajar: number = 30,
-  median: number = 20
+  median: number = 20,
+  isAnomali?: boolean
 ): StatusPemakaian {
   if (totalM3 === null) return "Tidak Terbaca";
+  if (isAnomali !== undefined) {
+    if (isAnomali) return "Anomali";
+    if (totalM3 > batasWajar) return "Melewati Batas";
+    return "Normal";
+  }
   if (totalM3 <= 0 || totalM3 > 2 * median) return "Anomali";
   if (totalM3 > batasWajar) return "Melewati Batas";
   return "Normal";

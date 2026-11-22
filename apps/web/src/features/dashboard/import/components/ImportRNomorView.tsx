@@ -4,312 +4,316 @@
 import * as React from "react";
 import { toast } from "sonner";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  UserMinus,
-  CheckCircle2,
-  RefreshCw,
   AlertTriangle,
-  ShieldAlert,
   FileText,
+  RotateCcw,
+  ShieldAlert,
+  Upload,
+  UserMinus,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { readFileAsText } from "../lib/file-reader";
+import { getErrorMessage, postImport } from "../lib/import-api";
+import { IMPORT_API } from "../lib/import-config";
+import { parseRNomorCsv } from "../lib/import-parsers";
+import { formatAngka } from "../lib/import-ui";
+import type {
+  BatchImportResponse,
+  ImportBatchStats,
+  RNomorRow,
+} from "../types/import.types";
+import { ImportDataTable, type ImportColumn } from "./shared/ImportDataTable";
+import { ImportEmptyState } from "./shared/ImportEmptyState";
+import { ImportFileButton } from "./shared/ImportFileButton";
+import {
+  ImportControlPanel,
+  ImportTablePanel,
+} from "./shared/ImportPanels";
+import { ImportResultBanner } from "./shared/ImportResultBanner";
+import { ImportStatCard, ImportStatGrid } from "./shared/ImportStatCard";
 
-interface RNomorRow {
-  nolg: string;
-  nama: string;
-  alamat: string;
-  tglPutus: string;
-  nomorBa: string;
-  standCabut: number;
-  alasan: string;
-}
-
-const SAMPLE_R_NOMOR: RNomorRow[] = [
+const COLUMNS: ImportColumn<RNomorRow>[] = [
   {
-    nolg: "101900821",
-    nama: "YUYUN YUNINGSIH",
-    alamat: "JL.PURNAWARMAN NO 4A RT.02/05",
-    tglPutus: "2026-01-20",
-    nomorBa: "BA-PUTUS/2026/01/014",
-    standCabut: 138,
-    alasan: "Permintaan Pelanggan (Rumah Kosong / Dijual)",
+    id: "nolg",
+    header: "No. Langganan",
+    cell: (row) => row.nolg,
+    cellClassName: "text-label-13-mono text-foreground",
   },
   {
-    nolg: "403100658",
-    nama: "WAHYUDIN",
-    alamat: "GG.MOCH.RAMDHAN II 47/97 RT.03/09",
-    tglPutus: "2026-01-22",
-    nomorBa: "BA-PUTUS/2026/01/089",
-    standCabut: 62,
-    alasan: "Tunggakan Rekening Air > 3 Bulan (Penyegelan Resmi)",
+    id: "nama",
+    header: "Nama Pelanggan",
+    cell: (row) => row.nama,
+    cellClassName: "text-label-13",
   },
   {
-    nolg: "800800844",
-    nama: "PAUD TAMAN CERIA",
-    alamat: "GG. BANCEUY NO 51 RT.04/07",
-    tglPutus: "2026-01-25",
-    nomorBa: "BA-PUTUS/2026/01/102",
-    standCabut: 94,
-    alasan: "Pindah Lokasi Bangunan / Renovasi Total",
+    id: "alamat",
+    header: "Alamat Sambungan",
+    cell: (row) => row.alamat,
+    cellClassName: "text-copy-13 text-muted-foreground",
+  },
+  {
+    id: "tglPutus",
+    header: "Tanggal Putus",
+    cell: (row) => row.tglPutus,
+    cellClassName: "text-copy-13-mono",
+  },
+  {
+    id: "nomorBa",
+    header: "Nomor BA",
+    cell: (row) => row.nomorBa,
+    cellClassName: "text-copy-13-mono",
+  },
+  {
+    id: "standCabut",
+    header: "Stand Cabut",
+    cell: (row) => `${row.standCabut} m³`,
+    cellClassName: "text-label-13-mono text-ds-red-900",
+  },
+  {
+    id: "alasan",
+    header: "Alasan Pemutusan",
+    cell: (row) => (
+      <span className="block max-w-65 truncate" title={row.alasan}>
+        {row.alasan}
+      </span>
+    ),
+    cellClassName: "text-copy-13 text-muted-foreground",
   },
 ];
 
 export function ImportRNomorView() {
-  const [items, setItems] = React.useState<RNomorRow[]>(SAMPLE_R_NOMOR);
+  const [items, setItems] = React.useState<RNomorRow[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [resultStats, setResultStats] = React.useState<{
-    total: number;
-    sukses: number;
-    gagal: number;
-  } | null>(null);
+  const [resultStats, setResultStats] = React.useState<ImportBatchStats | null>(
+    null,
+  );
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const parsed = parseRNomorCsv(await readFileAsText(file));
+    setItems(parsed);
+    setResultStats(null);
+    if (parsed.length > 0) {
+      toast.success(
+        `Berhasil membaca ${parsed.length} baris data dari berkas ${file.name}!`,
+      );
+    } else {
+      toast.warning(
+        "Format CSV tidak dikenali atau tidak ada baris data valid.",
+      );
+    }
+  };
 
   const handleImport = async () => {
+    if (items.length === 0) {
+      toast.error("Tidak ada rekening R-Nomor untuk diproses.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/import/r-nomor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((i) => ({
-            nolg: i.nolg,
-            tglPutus: i.tglPutus,
-            nomorBa: i.nomorBa,
-            standCabut: i.standCabut,
-            alasan: i.alasan,
-          })),
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Gagal memproses pemutusan R-Nomor.");
-      }
-
-      setResultStats({
-        total: json.data?.total ?? items.length,
-        sukses: json.data?.sukses ?? items.length,
-        gagal: json.data?.gagal ?? 0,
-      });
-
-      toast.success(
-        `Berhasil memproses pemutusan untuk ${json.data?.sukses ?? items.length} rekening R-Nomor!`,
+      const { data } = await postImport<BatchImportResponse>(
+        IMPORT_API.rNomor,
+        {
+          items: items.map(
+            ({ nolg, tglPutus, nomorBa, standCabut, alasan }) => ({
+              nolg,
+              tglPutus,
+              nomorBa,
+              standCabut,
+              alasan,
+            }),
+          ),
+        },
+        { fallbackError: "Gagal memproses pemutusan R-Nomor." },
       );
-    } catch (err: any) {
+
+      const stats: ImportBatchStats = {
+        total: data?.total ?? items.length,
+        sukses: data?.sukses ?? items.length,
+        gagal: data?.gagal ?? 0,
+      };
+      setResultStats(stats);
+      toast.success(
+        `Berhasil memproses pemutusan untuk ${stats.sukses} rekening R-Nomor!`,
+      );
+    } catch (error) {
       toast.error(
-        err.message || "Terjadi kesalahan saat memproses pemutusan R-Nomor.",
+        getErrorMessage(
+          error,
+          "Terjadi kesalahan saat memproses pemutusan R-Nomor.",
+        ),
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleReset = () => {
-    setItems(SAMPLE_R_NOMOR);
+  const handleClear = () => {
+    setItems([]);
+    setSearchQuery("");
     setResultStats(null);
-    toast.info("Daftar simulasi pemutusan R-Nomor dimuat ulang.");
+    toast.info("Daftar rekening pemutusan R-Nomor telah dikosongkan.");
   };
+
+  const tanggalTerdekat = React.useMemo(() => {
+    if (items.length === 0) return "-";
+    const dates = items.map((item) => item.tglPutus).filter(Boolean);
+    return dates.length > 0 ? dates.sort()[0] : "-";
+  }, [items]);
+
+  const totalStandCabut = React.useMemo(
+    () => items.reduce((sum, item) => sum + (item.standCabut || 0), 0),
+    [items],
+  );
+
+  const filteredItems = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) =>
+      [item.nolg, item.nama, item.alamat, item.nomorBa, item.alasan].some(
+        (field) => field?.toLowerCase().includes(q),
+      ),
+    );
+  }, [items, searchQuery]);
 
   return (
     <div className="space-y-4">
-      {/* 1. Kartu Statistik / Ringkasan */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-11 font-medium tracking-wide uppercase">Total Rekening</span>
-              <FileText className="size-4 text-[var(--primary)]" />
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-[var(--primary-foreground)] font-mono">
-                {items.length.toLocaleString("id-ID")}
-              </span>
-              <span className="text-label-11 text-muted-foreground">Rekening</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)]" />
-              <span>Rekening siap diproses</span>
-            </div>
-          </CardContent>
-        </Card>
+      <ImportStatGrid columns={4}>
+        <ImportStatCard
+          label="Total Rekening"
+          value={formatAngka(items.length)}
+          unit="Rekening"
+          caption="Rekening siap diproses"
+          icon={FileText}
+        />
+        <ImportStatCard
+          label="Status Diajukan"
+          value={formatAngka(items.length)}
+          unit="Diajukan"
+          caption="Pemutusan sambungan"
+          icon={UserMinus}
+        />
+        <ImportStatCard
+          label="Tanggal Awal"
+          value={tanggalTerdekat}
+          unit="Terdekat"
+          caption="Pemutusan terdekat"
+          icon={AlertTriangle}
+          tone="amber"
+        />
+        <ImportStatCard
+          label="Stand Cabut"
+          value={formatAngka(totalStandCabut)}
+          unit="m³"
+          caption="Total stand akhir pengangkatan"
+          icon={ShieldAlert}
+          tone="red"
+        />
+      </ImportStatGrid>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-border/80">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-11 font-medium tracking-wide uppercase">Status Aktif</span>
-              <UserMinus className="size-4 text-[var(--primary)]" />
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-[var(--primary-foreground)] font-mono">
-                {items.length.toLocaleString("id-ID")}
-              </span>
-              <span className="text-label-11 text-muted-foreground">Diajukan</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)]" />
-              <span>Pemutusan</span>
-            </div>
-          </CardContent>
-        </Card>
+      <ImportControlPanel
+        title="Import R-Nomor (Pemutusan Pelanggan)"
+        badge={<Badge variant="pill">Format: CSV / TXT</Badge>}
+        description="Pemrosesan pemutusan sambungan pelanggan (status R) dan pencatatan stand meter cabut."
+        hasData={items.length > 0}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Cari No. Langganan / Nama / Alamat..."
+        actions={
+          <>
+            {items.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleClear}
+                disabled={isSubmitting}
+                title="Kosongkan daftar data"
+              >
+                <RotateCcw />
+                Kosongkan
+              </Button>
+            )}
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-v1-border)]/30">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-11 font-medium tracking-wide uppercase">Tanggal Awal</span>
-              <AlertTriangle className="size-4 text-[var(--verif-v1)]" />
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-[var(--verif-v1-text)] font-mono">
-                {items[0]?.tglPutus || "-"}
-              </span>
-              <span className="text-label-11 text-muted-foreground">Terdekat</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-v1)]" />
-              <span>Pemutusan</span>
-            </div>
-          </CardContent>
-        </Card>
+            <ImportFileButton
+              accept=".csv,.txt"
+              onChange={handleFileUpload}
+              icon={Upload}
+              disabled={isSubmitting}
+            >
+              Unggah CSV R-Nomor
+            </ImportFileButton>
 
-        <Card className="border-border bg-card p-3.5 transition-colors hover:border-[var(--verif-error-border)]/30 col-span-2 sm:col-span-1">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-11 font-medium tracking-wide uppercase">Stand Cabut</span>
-              <ShieldAlert className="size-4 text-[var(--verif-error)]" />
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-[var(--verif-error-text)] font-mono">
-                {items.reduce((sum, i) => sum + i.standCabut, 0).toLocaleString("id-ID")}
-              </span>
-              <span className="text-label-11 text-muted-foreground">m³</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-label-11 text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--verif-error)]" />
-              <span>Total stand akhir pengangkatan</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Button
+              variant="destructive"
+              onClick={handleImport}
+              disabled={isSubmitting || items.length === 0}
+            >
+              <ShieldAlert />
+              {isSubmitting
+                ? "Memproses..."
+                : `Eksekusi Pemutusan (R) (${items.length})`}
+            </Button>
+          </>
+        }
+      />
 
-      {/* 2. Bilah Kontrol dan Aksi */}
-      <div className="rounded-lg border border-border bg-card p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleReset}
-            disabled={isSubmitting}
-            className="h-8 text-label-12 cursor-pointer"
-          >
-            <RefreshCw className="mr-1.5 size-3.5" />
-            Reset Contoh
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleImport}
-            disabled={isSubmitting || items.length === 0}
-            className="h-8 px-3 text-label-12 font-semibold gap-1.5 bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)]/90 cursor-pointer"
-          >
-            <ShieldAlert className="mr-1.5 size-4" />
-            {isSubmitting ? "Memproses..." : "Eksekusi Pemutusan (R)"}
-          </Button>
-        </div>
-      </div>
-
-      {/* 3. Notifikasi Hasil Pemrosesan */}
       {resultStats && (
-        <div className="flex flex-col gap-3 rounded-lg border-[var(--verif-error-border)]/30 bg-[var(--verif-error-soft)] p-4 text-copy-13 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-5 shrink-0 text-[var(--verif-error-text)] mt-0.5" />
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[var(--verif-error-text)]">
-                  Pemutusan R-Nomor Selesai Diproses
-                </span>
-                <Badge className="bg-[var(--destructive)] text-[var(--destructive-foreground)] font-mono text-[10px]">
-                  Batch Selesai
-                </Badge>
-              </div>
-              <p className="text-xs text-[var(--verif-error-text)]">
-                Total {resultStats.total} pelanggan: {resultStats.sukses}{" "}
-                status diubah menjadi NON AKTIF (R), {resultStats.gagal}{" "}
-                gagal.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <Badge className="bg-[var(--destructive)] text-[var(--destructive-foreground)]">Status: Diputus</Badge>
-          </div>
-        </div>
+        <ImportResultBanner
+          tone="red"
+          title="Pemutusan R-Nomor Selesai Diproses"
+          description={`Total ${resultStats.total} pelanggan: ${resultStats.sukses} status diubah menjadi NON AKTIF (R), ${resultStats.gagal} gagal.`}
+          actions={<Badge variant="red">Status: Diputus</Badge>}
+        />
       )}
 
-      {/* 4. Area Tabel Daftar Rekening */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 text-label-12">
-          <div className="flex items-center gap-3">
-            <span className="text-muted-foreground">
-              {items.length} Rekening Siap Cabut
-            </span>
-            <span>·</span>
-            <span className="text-muted-foreground">
-              Verifikasi nomor Berita Acara (BA)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-[var(--verif-error)] font-medium">
-            <AlertTriangle className="size-4" />
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/50 text-muted-foreground border-b font-medium">
-              <tr>
-                <th className="py-2.5 px-3">No. Langganan</th>
-                <th className="py-2.5 px-3">Nama Pelanggan</th>
-                <th className="py-2.5 px-3">Alamat Sambungan</th>
-                <th className="py-2.5 px-3">Tanggal Putus</th>
-                <th className="py-2.5 px-3">Nomor BA</th>
-                <th className="py-2.5 px-3">Stand Cabut</th>
-                <th className="py-2.5 px-3">Alasan Pemutusan</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {items.map((row) => (
-                <tr key={row.nolg} className="transition-colors hover:bg-[var(--table-hover)] font-mono">
-                  <td className="py-2 px-3 font-medium text-[var(--primary-foreground)]">
-                    {row.nolg}
-                  </td>
-                  <td className="py-2 px-3 font-medium">{row.nama}</td>
-                  <td className="py-2 px-3 text-muted-foreground">
-                    {row.alamat}
-                  </td>
-                  <td className="py-2 px-3">{row.tglPutus}</td>
-                  <td className="py-2 px-3 font-mono text-xs">
-                    {row.nomorBa}
-                  </td>
-                  <td className="py-2 px-3 font-semibold text-[var(--verif-error-text)]">
-                    {row.standCabut} m³
-                  </td>
-                  <td
-                    className="max-w-65 truncate px-3 py-2 text-muted-foreground"
-                    title={row.alasan}
-                  >
-                    {row.alasan}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {items.length === 0 ? (
+        <ImportEmptyState
+          icon={ShieldAlert}
+          title="Belum Ada Berkas R-Nomor Dipilih"
+          description="Unggah berkas CSV daftar rekening pemutusan pelanggan untuk mengubah status sambungan menjadi Non Aktif (R)."
+          badges={
+            <>
+              <Badge variant="pill" className="font-mono">
+                nolg,nama,alamat,tgl_putus,nomor_ba,stand_cabut,alasan
+              </Badge>
+            </>
+          }
+          onFileSelect={handleFileUpload}
+          accept=".csv,.txt"
+          buttonLabel="Pilih Berkas CSV R-Nomor"
+          infoNote="Pemutusan akan mengubah status rekening menjadi NON AKTIF (R) dan mencatat stand meter pengangkatan."
+        />
+      ) : (
+        <ImportTablePanel
+          summary={[
+            `${items.length} Rekening Siap Cabut`,
+            "Verifikasi nomor Berita Acara (BA)",
+          ]}
+          aside={
+            <AlertTriangle
+              className="geist-icon text-ds-red-700"
+              aria-label="Peringatan pemutusan"
+            />
+          }
+        >
+          <ImportDataTable
+            columns={COLUMNS}
+            rows={filteredItems}
+            getRowKey={(row) => row.nolg}
+            empty={{
+              icon: FileText,
+              title: "Tidak ada data cocok",
+              description: `Tidak ditemukan rekening yang cocok dengan kata kunci "${searchQuery}".`,
+            }}
+          />
+        </ImportTablePanel>
+      )}
     </div>
   );
 }

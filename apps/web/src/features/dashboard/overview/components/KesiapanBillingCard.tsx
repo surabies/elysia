@@ -48,29 +48,29 @@ export function KesiapanBillingCard({
       id: "final",
       label: "Disahkan Final (V3 / Koreksi)",
       count: kesiapan.approvedFinal,
-      dotClass: "bg-emerald-400",
-      barClass: "bg-emerald-400",
+      dotClass: "bg-emerald-500",
+      barClass: "bg-emerald-500",
     },
     {
       id: "v2",
       label: "Disetujui Manager (V2)",
       count: kesiapan.verifiedL2,
-      dotClass: "bg-sky-500",
-      barClass: "bg-sky-500",
+      dotClass: "bg-blue-500",
+      barClass: "bg-blue-500",
     },
     {
       id: "v1",
       label: "Disetujui Supervisor (V1)",
       count: kesiapan.verifiedL1,
-      dotClass: "bg-blue-400",
-      barClass: "bg-blue-400",
+      dotClass: "bg-amber-500",
+      barClass: "bg-amber-500",
     },
     {
       id: "submitted",
       label: "Menunggu Screening (Submitted)",
       count: kesiapan.submitted,
-      dotClass: "bg-amber-500",
-      barClass: "bg-amber-500",
+      dotClass: "bg-slate-400 dark:bg-slate-500",
+      barClass: "bg-slate-400 dark:bg-slate-500",
     },
     {
       id: "resurvey",
@@ -99,7 +99,7 @@ export function KesiapanBillingCard({
   }
 
   return (
-    <Card className="flex flex-col rounded-lg border-border/80 bg-card shadow-none">
+    <Card className="flex flex-col rounded-lg border border-border bg-card shadow-none">
       <CardHeader className="p-5 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -131,7 +131,7 @@ export function KesiapanBillingCard({
 
           <Link
             href="/tools-tutup/monitoring-tutup-bulan"
-            className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-border/70 bg-muted/30 px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:bg-muted/60 hover:text-foreground"
+            className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-muted/30 px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:bg-muted/60 hover:text-foreground"
           >
             <span>Tutup Bulan</span>
             <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -183,7 +183,7 @@ export function KesiapanBillingCard({
             return (
               <div
                 key={stage.id}
-                className="flex items-center justify-between gap-2 border-b border-border/50 py-1.5 text-[12.5px] last:border-b-0 sm:nth-last-2:border-b-0"
+                className="flex items-center justify-between gap-2 border-b border-border py-1.5 text-[12.5px] last:border-b-0 sm:nth-last-2:border-b-0"
               >
                 <dt className="flex min-w-0 items-center gap-2 text-muted-foreground">
                   <span

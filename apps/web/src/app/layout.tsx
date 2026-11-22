@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/PenyediaTema';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingShell } from '@/components/layout/LandingShell';
 import { PwaProvider } from '@/components/pwa/PwaProvider';
+import '@glideapps/glide-data-grid/dist/index.css';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -57,7 +58,8 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var m=document.cookie.match(/(?:^|; )sidebar_width=(\\d+)/);var w=m?m[1]:localStorage.getItem("elysia-sidebar-width");if(w){var n=parseInt(w,10);if(n>=256&&n<=420){document.documentElement.style.setProperty("--sidebar-width",n+"px");}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}catch(e){}`,
+            __html: `try{var m=document.cookie.match(/(?:^|; )sidebar_width=(\\d+)/);var w=m?m[1]:localStorage.getItem("elysia-sidebar-width");if(w){var n=parseInt(w,10);if(n>=256&&n<=420){document.documentElement.style.setProperty("--sidebar-width",n+"px");}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}catch(e){}
+try{if(location.hostname==="localhost"||location.hostname==="127.0.0.1"){if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(r){for(var i=0;i<r.length;i++){r[i].unregister();}});}if("caches" in window){caches.keys().then(function(k){for(var i=0;i<k.length;i++){caches.delete(k[i]);}});}}}catch(e){}`,
           }}
         />
       </head>
@@ -71,8 +73,9 @@ export default function RootLayout({
           <PwaProvider>
             <LandingShell>{children}</LandingShell>
           </PwaProvider>
-          <Toaster richColors position="top-right" />
+          <Toaster position="bottom-right" closeButton />
         </ThemeProvider>
+        <div id="portal" />
       </body>
     </html>
   );

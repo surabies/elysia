@@ -23,14 +23,18 @@ export interface MetricSegmentsVisual {
 
 export interface MetricSparklineVisual {
   type: "sparkline"
-  data: number[] // 14 titik volume
+  data: number[] // titik volume
+  labels?: string[] // label tanggal (e.g. "Tgl 1", "Tgl 23")
   color?: string
+  unit?: string
 }
 
 export interface MetricPillsVisual {
   type: "pills"
-  values: number[] // 14 titik harian
+  values: number[] // titik harian
+  labels?: string[] // label tanggal (e.g. "Tgl 1", "Tgl 23")
   tone?: "problem" | "neutral"
+  unit?: string
 }
 
 export type MetricVisualConfig =
@@ -49,7 +53,7 @@ export interface MetricCardData {
   delta?: MetricDelta
   helperText: string
   visual: MetricVisualConfig
-  footer: {
+  footer?: {
     label: string
     href: string
   }

@@ -28,16 +28,16 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "sonner"
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable"
+import { cn } from "@/lib/utils"
 import {
   ambilSatu,
   kirimJson,
   ApiError,
 } from "@/features/dashboard/shared/api/api-dashboard"
+import {
+  broadcastDataUpdated,
+  subscribeDataUpdated,
+} from "@/features/dashboard/shared/lib/data-sync"
 import type { StatsVerifikasi } from "../types"
 import { RingkasanVerifikasi } from "./RingkasanVerifikasi"
 import { PanelKosong, PanelMemuat } from "./panel/KomponenPanel"
@@ -75,15 +75,23 @@ function bobotRole(role: string | null | undefined): number {
   }
 }
 
+const MIN_PANEL_WIDTH = 280
+const MAX_PANEL_WIDTH = 600
+const DEFAULT_PANEL_WIDTH = 340
+const PANEL_WIDTH_COOKIE = "verif_panel_width"
+const PANEL_WIDTH_STORAGE_KEY = "elysia-verif-panel-width"
+
 export function VerifikasiMandiri({
   bisaAksi,
   role = "",
   profilMenu = "penilai",
+  defaultWidth = DEFAULT_PANEL_WIDTH,
 }: {
   bisaAksi: boolean
   role?: string
   /** "chn" = menu CHN / Batal Baca Ulang / Unverifikasi mati. */
   profilMenu?: ProfilMenu
+  defaultWidth?: number
 }) {
   // undefined = belum init; diisi periode terbaru yang punya data.
   const [periode, setPeriode] = React.useState<number | null | undefined>(
@@ -106,6 +114,68 @@ export function VerifikasiMandiri({
     setDetailMemuat(memuat)
   }, [])
 
+  // State lebar panel kiri (diadopsi persis dari SidebarContext & DashboardShell)
+  const [panelWidth, setPanelWidth] = React.useState<number>(defaultWidth)
+  const [isResizing, setIsResizing] = React.useState(false)
+
+  // Pastikan sinkronisasi cookie & localStorage saat mount
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem(PANEL_WIDTH_STORAGE_KEY)
+      if (saved) {
+        const n = parseInt(saved, 10)
+        if (!isNaN(n) && n >= MIN_PANEL_WIDTH && n <= MAX_PANEL_WIDTH) {
+          setPanelWidth(n)
+          document.cookie = `${PANEL_WIDTH_COOKIE}=${n}; path=/; max-age=31536000; SameSite=Lax`
+        }
+      }
+    } catch {}
+  }, [])
+
+  // Drag handler mousemove/mouseup pada window (persis seperti di sidebar DashboardShell.tsx)
+  const handleMouseDown = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (e.button !== 0) return // Hanya klik kiri
+      e.preventDefault()
+
+      setIsResizing(true)
+      document.body.style.cursor = "col-resize"
+      document.body.style.userSelect = "none"
+
+      const startX = e.clientX
+      const startWidth = panelWidth
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const delta = moveEvent.clientX - startX
+        const newWidth = Math.max(
+          MIN_PANEL_WIDTH,
+          Math.min(MAX_PANEL_WIDTH, Math.round(startWidth + delta))
+        )
+        setPanelWidth(newWidth)
+      }
+
+      const onMouseUp = () => {
+        setIsResizing(false)
+        document.body.style.cursor = ""
+        document.body.style.userSelect = ""
+        window.removeEventListener("mousemove", onMouseMove)
+        window.removeEventListener("mouseup", onMouseUp)
+
+        setPanelWidth((finalWidth) => {
+          try {
+            document.cookie = `${PANEL_WIDTH_COOKIE}=${finalWidth}; path=/; max-age=31536000; SameSite=Lax`
+            localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(finalWidth))
+          } catch {}
+          return finalWidth
+        })
+      }
+
+      window.addEventListener("mousemove", onMouseMove)
+      window.addEventListener("mouseup", onMouseUp)
+    },
+    [panelWidth]
+  )
+
   const [menu, setMenu] = React.useState<{
     posisi: { x: number; y: number }
     baris: BarisMandiriTabel
@@ -119,10 +189,10 @@ export function VerifikasiMandiri({
   const [mengirim, setMengirim] = React.useState(false)
 
   React.useEffect(() => {
-    const muatUlang = () => setRefreshKey((k) => k + 1)
-    window.addEventListener("focus", muatUlang)
-    return () => window.removeEventListener("focus", muatUlang)
+    return subscribeDataUpdated(() => setRefreshKey((k) => k + 1))
   }, [])
+
+
 
   React.useEffect(() => {
     let batal = false
@@ -273,91 +343,90 @@ export function VerifikasiMandiri({
     // ukuran paling kecil (defaultSize = minSize) supaya tabel langsung mendapat
     // lebar maksimal. Mengisi ruang layar penuh secara fluid tanpa container/breadcrumb.
     <>
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col p-3">
-        <ResizablePanelGroup
-          orientation="horizontal"
-          className="h-full min-h-0 items-stretch"
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-row gap-3 p-3 overflow-hidden">
+        {/* Panel Kiri: Detail Laporan (resizable persis seperti sidebar) */}
+        <aside
+          style={{ width: `${panelWidth}px`, minWidth: `${panelWidth}px` }}
+          className={cn(
+            KELAS_PANEL_DETAIL,
+            "relative shrink-0",
+            isResizing
+              ? "transition-none select-none"
+              : "transition-[width] duration-150 ease-out"
+          )}
         >
-          <ResizablePanel
-            defaultSize="18"
-            minSize="18"
-            maxSize="45"
-            collapsible
-            className="flex min-w-0 flex-col"
-          >
-            {/* Judul DI LUAR wadah bergulir supaya garis atasnya tidak terpotong. */}
-            <aside className={KELAS_PANEL_DETAIL}>
-              <div className="relative shrink-0 border-b border-border px-4 py-2.5">
-                <h2 className={`text-center ${KELAS_JUDUL_PANEL}`}>
-                  Detail laporan
-                </h2>
-                {detailMemuat && (
-                  <Spinner
-                    className="absolute top-1/2 right-3 size-3.5 -translate-y-1/2 text-muted-foreground"
-                    aria-label="Memuat detail laporan"
-                  />
-                )}
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                {!barisDimuat ? (
-                  <PanelMemuat />
-                ) : !adaBaris ? (
-                  <PanelKosong
-                    icon={ViewOffIcon}
-                    pesan="Tidak ada laporan yang cocok dengan filter saat ini."
-                  />
-                ) : idTerpilih ? (
-                  <PanelMandiri
-                    id={idTerpilih}
-                    refreshKey={refreshKey + detailRefreshKey}
-                    onLoadingChange={onDetailMemuat}
-                    aksi={aksi}
-                    onTutupAksi={() => setAksi(null)}
-                    onSelesai={() => setRefreshKey((k) => k + 1)}
-                  />
-                ) : (
-                  <PanelMemuat />
-                )}
-              </div>
-            </aside>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel
-            defaultSize="82"
-            minSize="50"
-            className="flex min-w-0 flex-col"
-          >
-            <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 pl-3">
-              <RingkasanVerifikasi
-                stats={stats}
-                periode={periode ?? null}
-                terbuka={ringkasanTerbuka}
+          {/* Judul DI LUAR wadah bergulir supaya garis atasnya tidak terpotong. */}
+          <div className="relative shrink-0 border-b border-border px-4 py-2.5">
+            <h2 className={`text-center ${KELAS_JUDUL_PANEL}`}>
+              Detail laporan
+            </h2>
+            {detailMemuat && (
+              <Spinner
+                className="absolute top-1/2 right-3 size-3.5 -translate-y-1/2 text-muted-foreground"
+                aria-label="Memuat detail laporan"
               />
+            )}
+          </div>
+          <div className="sidebar-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            {!barisDimuat ? (
+              <PanelMemuat />
+            ) : !adaBaris ? (
+              <PanelKosong
+                icon={ViewOffIcon}
+                pesan="Tidak ada laporan yang cocok dengan filter saat ini."
+              />
+            ) : idTerpilih ? (
+              <PanelMandiri
+                id={idTerpilih}
+                refreshKey={refreshKey + detailRefreshKey}
+                onLoadingChange={onDetailMemuat}
+                aksi={aksi}
+                onTutupAksi={() => setAksi(null)}
+                onSelesai={() => setRefreshKey((k) => k + 1)}
+              />
+            ) : (
+              <PanelMemuat />
+            )}
+          </div>
 
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <PanelTabelMandiri
-                  periodes={stats?.periodes ?? []}
-                  periode={periode}
-                  onPeriode={setPeriode}
-                  refreshKey={refreshKey}
-                  idTerpilih={idTerpilih}
-                  onRowsLoaded={onBarisDimuat}
-                  onKlikBaris={(row) => setIdTerpilih(row.id)}
-                  onKlikKanan={(row, posisi) => {
-                    setIdTerpilih(row.id)
-                    setAksi(null)
-                    setMenu({ posisi, baris: row })
-                  }}
-                  ringkasanTerbuka={ringkasanTerbuka}
-                  onRingkasan={setRingkasanTerbuka}
-                  stats={stats}
-                  bisaAksi={bisaAksi}
-                  onBerubah={() => setDetailRefreshKey((k) => k + 1)}
-                />
-              </div>
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          {/* Resize Handle di border kanan persis seperti sidebar di DashboardShell.tsx */}
+          <div
+            aria-hidden="true"
+            onMouseDown={handleMouseDown}
+            className="hidden lg:block absolute top-0 -right-2 h-full w-4 cursor-col-resize z-50 select-none"
+          />
+        </aside>
+
+        {/* Panel Kanan: Tabel Laporan & Ringkasan */}
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+          <RingkasanVerifikasi
+            stats={stats}
+            periode={periode ?? null}
+            terbuka={ringkasanTerbuka}
+          />
+
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <PanelTabelMandiri
+              periodes={stats?.periodes ?? []}
+              periode={periode}
+              onPeriode={setPeriode}
+              refreshKey={refreshKey}
+              idTerpilih={idTerpilih}
+              onRowsLoaded={onBarisDimuat}
+              onKlikBaris={(row) => setIdTerpilih(row.id)}
+              onKlikKanan={(row, posisi) => {
+                setIdTerpilih(row.id)
+                setAksi(null)
+                setMenu({ posisi, baris: row })
+              }}
+              ringkasanTerbuka={ringkasanTerbuka}
+              onRingkasan={setRingkasanTerbuka}
+              stats={stats}
+              bisaAksi={bisaAksi}
+              onBerubah={() => setDetailRefreshKey((k) => k + 1)}
+            />
+          </div>
+        </div>
       </div>
 
       {menu && (

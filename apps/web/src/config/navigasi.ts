@@ -223,6 +223,20 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
+        title: "Audit Anomali",
+        href: "/progres/audit",
+        description: "Rekonsiliasi 2 pilar: anomali validasi meter vs kendala akses lapangan.",
+        keywords: ["audit", "anomali", "rekonsiliasi", "kategori", "ssot", "konfirmasi"],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
+      },
+      {
         title: "Progres Petugas",
         href: "/progres/cater",
         description: "Produktivitas harian, kecepatan baca, dan sisa target per petugas.",
@@ -586,9 +600,15 @@ export const navGroups: NavGroup[] = [
       {
         title: "Verifikasi & Anomali",
         href: "/pengaturan/verifikasi",
-        description: "Metode taksasi default, cut-off closing, dan ambang batas deviasi.",
-        keywords: ["verifikasi", "anomali", "taksasi", "ambang deviasi"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        description: "Pengaturan terpusat 12 aturan anomali SSOT, deviasi, metode taksasi, dan pemetaan TMSS.",
+        keywords: ["verifikasi", "anomali", "aturan anomali", "ssot", "taksasi", "ambang deviasi"],
+        roles: [
+          "SUPERADMIN",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
       },
       {
         title: "Billing & Denda",

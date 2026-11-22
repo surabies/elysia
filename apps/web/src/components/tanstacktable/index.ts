@@ -1,4 +1,5 @@
 export { TabelVerifikasi, KontrolKolomVerifikasi } from "./components/TabelVerifikasi";
+export { CanvasTabelVerifikasi } from "./components/canvas/CanvasTabelVerifikasi";
 export { VerifikasiLapangan } from "./components/VerifikasiLapangan";
 export { VerifikasiMandiri } from "./components/VerifikasiMandiri";
 export { StatCard, StatGrid } from "./components/StatKartu";
