@@ -3,7 +3,7 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM, Domain Engine, & Transaksi DB)
  */
 
-import { eq, desc, and, like, sql, inArray, ilike, or, count } from 'drizzle-orm';
+import { eq, desc, and, like, sql, inArray, ilike, or, count, ne, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import {
   db,
@@ -24,6 +24,7 @@ import {
   KODE_JENIS_PENGADUAN,
   LABEL_JENIS_PENGADUAN,
 } from '../../domain/pengaduan/alur-pengaduan.engine';
+import { JENIS_PENGADUAN_PETA_PUBLIK } from '../../domain/pengaduan/pengaduan.config';
 import { isCloudinaryConfigured, uploadToCloudinary } from '../../lib/cloudinary';
 import type {
   JenisPengaduan,
@@ -400,44 +401,33 @@ export class PengaduanService {
 
   /**
    * 6. Data Pengaduan Peta Spasial Publik (Max 300 tiket terbaru)
+   * Sanitasi data privasi (B1, B2):
+   * - Koordinat dibulatkan ke 3 desimal (~110m) untuk privasi warga.
+   * - HANYA tiket dengan koordinat nyata yang ditampilkan (tanpa fallback koordinat fiktif).
+   * - Tiket DITOLAK tidak ditampilkan.
+   * - Dibatasi hanya jenis gangguan area fisik (JENIS_PENGADUAN_PETA_PUBLIK).
+   * - Data pribadi (pelapor, kontakPelapor, deskripsi bebas, alamat kejadian mentah, fotoUrl, nama petugas) TIDAK disertakan.
    */
   async getPengaduanPetaPublik() {
-    const TITIK_BANDUNG: [number, number][] = [
-      [107.6098, -6.9147],
-      [107.6111, -6.8905],
-      [107.6082, -6.9021],
-      [107.6207, -6.8724],
-      [107.6239, -6.9111],
-      [107.6291, -6.9385],
-      [107.5950, -6.9200],
-      [107.6400, -6.9100],
-      [107.6150, -6.9350],
-      [107.5800, -6.8950],
-      [107.6350, -6.8850],
-      [107.6050, -6.9400],
-    ];
-
     try {
       const rows = await db
         .select({
           id: pengaduan.id,
           nomorTiket: pengaduan.nomorTiket,
           jenis: pengaduan.jenis,
-          judul: pengaduan.judul,
-          deskripsi: pengaduan.deskripsi,
           status: pengaduan.status,
           prioritas: pengaduan.prioritas,
-          alamatKejadian: pengaduan.alamatKejadian,
-          fotoUrl: pengaduan.fotoUrl,
-          pelapor: pengaduan.pelapor,
-          kontakPelapor: pengaduan.kontakPelapor,
-          targetSelesaiAt: pengaduan.targetSelesaiAt,
           koordinat: pengaduan.koordinat,
-          petugasNama: user.name,
           createdAt: pengaduan.createdAt,
         })
         .from(pengaduan)
-        .leftJoin(user, eq(pengaduan.ditugaskanKeId, user.id))
+        .where(
+          and(
+            isNotNull(pengaduan.koordinat),
+            ne(pengaduan.status, 'DITOLAK'),
+            inArray(pengaduan.jenis, [...JENIS_PENGADUAN_PETA_PUBLIK])
+          )
+        )
         .orderBy(desc(pengaduan.createdAt))
         .limit(300);
 
@@ -451,7 +441,6 @@ export class PengaduanService {
           statusDari: string | null;
           catatan: string | null;
           createdAt: Date;
-          olehNama: string | null;
         }>
       >();
 
@@ -465,10 +454,8 @@ export class PengaduanService {
             statusDari: riwayatPengaduan.statusDari,
             catatan: riwayatPengaduan.catatan,
             createdAt: riwayatPengaduan.createdAt,
-            olehNama: user.name,
           })
           .from(riwayatPengaduan)
-          .leftJoin(user, eq(riwayatPengaduan.petugasId, user.id))
           .where(
             and(
               inArray(riwayatPengaduan.pengaduanId, pengaduanIds),
@@ -484,36 +471,53 @@ export class PengaduanService {
         }
       }
 
-      return rows.map((r, idx) => {
-        const geo = r.koordinat as { x: number; y: number } | null;
-        const [fallbackLng, fallbackLat] =
-          TITIK_BANDUNG[idx % TITIK_BANDUNG.length];
-        const lng = typeof geo?.x === 'number' ? geo.x : fallbackLng;
-        const lat = typeof geo?.y === 'number' ? geo.y : fallbackLat;
+      const hasil: Array<{
+        id: string;
+        nomorTiket: string;
+        jenis: string;
+        judul: string;
+        status: string;
+        prioritas: string;
+        lng: number;
+        lat: number;
+        createdAt: Date;
+        riwayat: Array<{
+          id: string;
+          aksi: string;
+          statusKe: string | null;
+          statusDari: string | null;
+          catatan: string | null;
+          createdAt: Date;
+        }>;
+      }> = [];
 
-        return {
+      for (const r of rows) {
+        const geo = r.koordinat as { x: number; y: number } | null;
+        if (!geo || typeof geo.x !== 'number' || typeof geo.y !== 'number') {
+          continue;
+        }
+
+        // Pembulatan ke 3 desimal (~110m) untuk menjaga privasi lokasi
+        const lng = Math.round(geo.x * 1000) / 1000;
+        const lat = Math.round(geo.y * 1000) / 1000;
+
+        hasil.push({
           id: r.id,
           nomorTiket: r.nomorTiket,
           jenis: r.jenis,
-          judul: r.judul,
-          deskripsi: r.deskripsi,
+          judul: LABEL_JENIS_PENGADUAN[r.jenis] ?? r.jenis,
           status: r.status,
           prioritas: r.prioritas,
-          alamatKejadian: r.alamatKejadian,
-          fotoUrl: r.fotoUrl,
-          pelapor: r.pelapor,
-          kontakPelapor: r.kontakPelapor,
-          targetSelesaiAt: r.targetSelesaiAt,
-          petugasNama: r.petugasNama,
-          ditugaskanKe: r.petugasNama ? { name: r.petugasNama } : null,
           lng,
           lat,
           createdAt: r.createdAt,
           riwayat: riwayatMap.get(r.id) ?? [],
-        };
-      });
+        });
+      }
+
+      return hasil;
     } catch (err) {
-      console.warn('[GET_PENGADUAN_PETA_PUBLIK_FALLBACK]', err);
+      console.warn('[GET_PENGADUAN_PETA_PUBLIK_ERR]', err);
       return [];
     }
   }
