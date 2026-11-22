@@ -31,6 +31,7 @@ import {
   User,
   UserCheck,
 } from "@/components/ui/hugeicons-compat"
+import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { BingkaiFoto } from "@/components/BingkaiFoto"
 import { formatWaktu } from "@/features/public/lib/format"
 import { statusPengaduanStaf } from "@/features/dashboard/lib/LabelPengaduan"
@@ -129,122 +130,151 @@ export function PengalihModeRiwayat({
 }
 
 // =======================================================================
-// 2. TAMPILAN GAYA CHAT BUBBLE (TIK-TOK-KAN: KIRI PETUGAS, KANAN PELANGGAN)
+// 2. TAMPILAN GAYA CHAT BUBBLE ENTERPRISE (@/components/ui/bubble)
 // =======================================================================
 
-/** Sisi KIRI: Pesan Petugas / Tim Lapangan / Operator */
+/** Sisi KANAN: Pesan Petugas / Tim Lapangan / Operator (align="end") */
 function GelembungPesanPetugas({ e }: { e: EntriRiwayat }) {
   const inisial = (e.olehNama || "P").slice(0, 2).toUpperCase()
 
   return (
-    <div className="flex items-start gap-2.5 justify-start my-1.5">
-      {/* Avatar Petugas di Kiri */}
-      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-[10.5px] font-bold text-slate-700 dark:text-slate-200 shadow-2xs border border-border/60">
-        {inisial}
-      </div>
-
-      {/* Bubble Chat Petugas (Sisi Kiri) */}
-      <div className="relative max-w-[84%] sm:max-w-[72%] rounded-2xl rounded-tl-xs border border-border/80 bg-muted/65 p-3.5 text-xs text-foreground shadow-2xs">
-        <div className="mb-1 flex items-center justify-between gap-3 text-[11px]">
+    <div className="flex items-start gap-2.5 justify-end my-2">
+      <div className="flex flex-col items-end gap-1 max-w-[85%] sm:max-w-[75%]">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <span className="font-semibold text-foreground">{e.olehNama}</span>
-          <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[9.5px] font-medium text-primary">
+          <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[9.5px] font-semibold text-primary uppercase">
             {e.oleh?.role ?? "PETUGAS"}
           </span>
         </div>
 
-        <p className="leading-relaxed whitespace-pre-wrap">{e.catatan}</p>
+        <Bubble variant="default" align="end" className="w-full">
+          <BubbleContent className="p-3 text-xs leading-relaxed whitespace-pre-wrap shadow-2xs">
+            <p>{e.catatan}</p>
 
-        {e.fotoUrl && (
-          <div className="mt-2">
-            <BingkaiFoto
-              src={e.fotoUrl}
-              alt="Lampiran chat petugas"
-              className="max-w-56 rounded-xl border border-border/60"
-            />
-          </div>
-        )}
+            {e.fotoUrl && (
+              <div className="mt-2.5">
+                <BingkaiFoto
+                  src={e.fotoUrl}
+                  alt="Lampiran chat petugas"
+                  className="max-w-56 rounded-lg border border-primary-foreground/20"
+                />
+              </div>
+            )}
 
-        <div className="mt-1.5 flex justify-end text-[10px] text-muted-foreground">
-          {formatWaktu(e.createdAt)} WIB
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/** Sisi KANAN: Pesan Pelanggan / Warga / Pelapor */
-function GelembungPesanPelapor({ e }: { e: EntriRiwayat }) {
-  const inisial = (e.olehNama || "W").slice(0, 2).toUpperCase()
-
-  return (
-    <div className="flex items-start gap-2.5 justify-end my-1.5">
-      {/* Bubble Chat Pelanggan (Sisi Kanan ala WhatsApp / iMessage) */}
-      <div className="relative max-w-[84%] sm:max-w-[72%] rounded-2xl rounded-tr-xs bg-sky-600 text-white dark:bg-sky-600 p-3.5 text-xs shadow-xs">
-        <div className="mb-1 flex items-center justify-between gap-3 text-[11px] text-sky-100">
-          <span className="font-semibold">{e.olehNama || "Pelapor"}</span>
-          <span className="flex items-center gap-1 text-[10px] text-sky-200">
-            <Eye className="size-2.5" />
-            Warga
-          </span>
-        </div>
-
-        <p className="leading-relaxed whitespace-pre-wrap text-white">
-          {e.catatan}
-        </p>
-
-        {e.fotoUrl && (
-          <div className="mt-2">
-            <BingkaiFoto
-              src={e.fotoUrl}
-              alt="Lampiran chat pelapor"
-              className="max-w-56 rounded-xl border border-white/20"
-            />
-          </div>
-        )}
-
-        <div className="mt-1.5 flex items-center justify-end gap-1 text-[10px] text-sky-100/80">
-          <span>{formatWaktu(e.createdAt)} WIB</span>
-          <CheckCheck className="size-3 text-sky-200" />
-        </div>
+            <div className="mt-1.5 flex items-center justify-end gap-1 text-[10px] opacity-80">
+              <span>{formatWaktu(e.createdAt)} WIB</span>
+              <CheckCheck className="size-3 text-primary-foreground/90" />
+            </div>
+          </BubbleContent>
+        </Bubble>
       </div>
 
-      {/* Avatar Pelanggan di Kanan */}
-      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-sky-700 text-[10.5px] font-bold text-white shadow-2xs">
+      {/* Avatar Petugas di Kanan */}
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[10.5px] font-bold text-primary-foreground shadow-2xs">
         {inisial}
       </div>
     </div>
   )
 }
 
-/** Memo Catatan Internal Staf (Terpusat) */
-function GelembungMemoInternal({ e }: { e: EntriRiwayat }) {
+/** Sisi KIRI: Pesan Pelanggan / Warga / Pelapor (align="start") */
+function GelembungPesanPelapor({ e }: { e: EntriRiwayat }) {
+  const inisial = (e.olehNama || "W").slice(0, 2).toUpperCase()
+
   return (
-    <div className="my-2 max-w-[92%] sm:max-w-[82%] mx-auto rounded-xl border border-amber-500/30 bg-amber-500/[0.04] p-3 text-xs shadow-2xs dark:bg-amber-500/[0.06]">
-      <div className="mb-2 flex items-center justify-between gap-2 border-b border-amber-500/20 pb-1.5">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
-          <Lock className="size-3 text-amber-600 dark:text-amber-400" />
-          <span>Catatan Internal Tim</span>
-        </div>
-        <span className="text-[10.5px] text-muted-foreground">
-          {e.olehNama}
-          {e.oleh?.role ? ` (${e.oleh.role})` : ""} · {formatWaktu(e.createdAt)}{" "}
-          WIB
-        </span>
+    <div className="flex items-start gap-2.5 justify-start my-2">
+      {/* Avatar Pelanggan di Kiri */}
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted border border-border/80 text-[10.5px] font-bold text-foreground shadow-2xs">
+        {inisial}
       </div>
 
-      <p className="leading-relaxed text-foreground whitespace-pre-wrap">
-        {e.catatan}
-      </p>
-
-      {e.fotoUrl && (
-        <div className="mt-2">
-          <BingkaiFoto
-            src={e.fotoUrl}
-            alt="Foto internal"
-            className="max-w-56 rounded-lg border border-amber-500/20"
-          />
+      <div className="flex flex-col items-start gap-1 max-w-[85%] sm:max-w-[75%]">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="font-semibold text-foreground">{e.olehNama || "Pelapor"}</span>
+          <span className="inline-flex items-center gap-1 rounded border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.2 text-[9.5px] font-medium text-sky-700 dark:text-sky-300">
+            <Eye className="size-2.5" />
+            Warga Publik
+          </span>
         </div>
-      )}
+
+        <Bubble variant="secondary" align="start" className="w-full">
+          <BubbleContent className="p-3 text-xs leading-relaxed whitespace-pre-wrap border border-border/70 shadow-2xs">
+            <p className="text-foreground">{e.catatan}</p>
+
+            {e.fotoUrl && (
+              <div className="mt-2.5">
+                <BingkaiFoto
+                  src={e.fotoUrl}
+                  alt="Lampiran chat pelapor"
+                  className="max-w-56 rounded-lg border border-border/60"
+                />
+              </div>
+            )}
+
+            <div className="mt-1.5 flex justify-end text-[10px] text-muted-foreground">
+              {formatWaktu(e.createdAt)} WIB
+            </div>
+          </BubbleContent>
+        </Bubble>
+      </div>
+    </div>
+  )
+}
+
+/** Memo Catatan Internal Staf (Gembok Amber Proteksi Terpusat) */
+function GelembungMemoInternal({ e }: { e: EntriRiwayat }) {
+  return (
+    <div className="my-2.5 max-w-[94%] sm:max-w-[84%] mx-auto">
+      <Bubble variant="outline" align="start" className="w-full">
+        <BubbleContent className="p-3 text-xs leading-relaxed border-amber-500/30 bg-amber-500/[0.04] dark:bg-amber-500/[0.07] shadow-2xs">
+          <div className="mb-2 flex items-center justify-between gap-2 border-b border-amber-500/20 pb-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+              <Lock className="size-3 text-amber-600 dark:text-amber-400" />
+              <span>Catatan Koordinasi Internal (Hanya Tim PDAM)</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground">
+              {e.olehNama}
+              {e.oleh?.role ? ` (${e.oleh.role})` : ""} · {formatWaktu(e.createdAt)} WIB
+            </span>
+          </div>
+
+          <p className="leading-relaxed text-foreground whitespace-pre-wrap">
+            {e.catatan}
+          </p>
+
+          {e.fotoUrl && (
+            <div className="mt-2">
+              <BingkaiFoto
+                src={e.fotoUrl}
+                alt="Foto internal"
+                className="max-w-56 rounded-lg border border-amber-500/20"
+              />
+            </div>
+          )}
+        </BubbleContent>
+      </Bubble>
+    </div>
+  )
+}
+
+/** Gelembung Eskalasi Darurat (Varian Destructive) */
+function GelembungEskalasi({ e }: { e: EntriRiwayat }) {
+  return (
+    <div className="my-2.5 max-w-[94%] sm:max-w-[84%] mx-auto">
+      <Bubble variant="destructive" align="start" className="w-full">
+        <BubbleContent className="p-3 text-xs leading-relaxed border border-destructive/25 shadow-2xs">
+          <div className="mb-1.5 flex items-center justify-between gap-2 border-b border-destructive/20 pb-1 text-[11px] font-semibold">
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="size-3 text-destructive" />
+              Eskalasi Penanganan ke Manajemen
+            </span>
+            <span className="text-[10px] font-normal opacity-80">
+              {formatWaktu(e.createdAt)} WIB
+            </span>
+          </div>
+          <p className="whitespace-pre-wrap leading-relaxed">{e.catatan}</p>
+        </BubbleContent>
+      </Bubble>
     </div>
   )
 }
@@ -563,12 +593,17 @@ export function LinimasaStaf({
               )
             }
 
-            // 2. Catatan Internal Staf
+            // 2. Eskalasi Manajemen (Varian Destructive)
+            if (e.aksi === "ESKALASI") {
+              return <GelembungEskalasi key={e.id} e={e} />
+            }
+
+            // 3. Catatan Internal Staf
             if (e.aksi === "CATATAN" || !e.isPublik) {
               return <GelembungMemoInternal key={e.id} e={e} />
             }
 
-            // 3. Peristiwa Sistem / Transisi Status
+            // 4. Peristiwa Sistem / Transisi Status
             return <KapsulPeristiwaSistem key={e.id} e={e} />
           })}
         </div>

@@ -20,7 +20,7 @@ const METRICS = {
     label: "Total m³",
     rowLabel: "Kubikasi",
     unit: "m³",
-    color: "var(--ds-teal-700)",
+    color: "var(--ds-green-700)",
   },
 } as const;
 

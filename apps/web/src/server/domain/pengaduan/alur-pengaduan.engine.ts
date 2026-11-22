@@ -11,6 +11,7 @@ import type {
   KlasifikasiPengaduan,
   AksiPengaduan,
   AppRole,
+  KebijakanConfig,
 } from '@cater/types';
 import {
   KLASIFIKASI_PER_JENIS,
@@ -21,6 +22,7 @@ import {
   MAKS_BUKA_KEMBALI,
   MIN_PANJANG_ALASAN_TOLAK,
   MATRIKS_IZIN_PENGADUAN,
+  DEFAULT_KEBIJAKAN_CONFIG,
   type AksiPengaduanRole,
 } from './pengaduan.config';
 
@@ -157,8 +159,12 @@ export function parseNomorTiket(nomorTiket: string): {
 /**
  * Menurunkan Klasifikasi Pengaduan (Tagihan vs Non-Tagihan) dari Jenis Pengaduan
  */
-export function tentukanKlasifikasi(jenis: JenisPengaduan): KlasifikasiPengaduan {
-  return KLASIFIKASI_PER_JENIS[jenis] ?? 'BUKAN_NILAI_TAGIHAN_REKENING';
+export function tentukanKlasifikasi(
+  jenis: JenisPengaduan,
+  kebijakan?: KebijakanConfig
+): KlasifikasiPengaduan {
+  const map = kebijakan?.klasifikasiPerJenis ?? KLASIFIKASI_PER_JENIS;
+  return map[jenis] ?? 'BUKAN_NILAI_TAGIHAN_REKENING';
 }
 
 /**
@@ -166,10 +172,12 @@ export function tentukanKlasifikasi(jenis: JenisPengaduan): KlasifikasiPengaduan
  */
 export function tentukanPrioritasAwal(
   jenis: JenisPengaduan,
-  prioritasInput?: PrioritasPengaduan
+  prioritasInput?: PrioritasPengaduan,
+  kebijakan?: KebijakanConfig
 ): PrioritasPengaduan {
   if (prioritasInput) return prioritasInput;
-  return PRIORITAS_DEFAULT_PER_JENIS[jenis] ?? 'NORMAL';
+  const map = kebijakan?.prioritasDefaultPerJenis ?? PRIORITAS_DEFAULT_PER_JENIS;
+  return map[jenis] ?? 'NORMAL';
 }
 
 /**
@@ -195,7 +203,7 @@ export const TRANSISI_PENGADUAN: Record<StatusPengaduan, readonly StatusPengadua
 export function isTransisiSah(
   dari: StatusPengaduan,
   ke: StatusPengaduan,
-  opsi?: { klasifikasi?: KlasifikasiPengaduan }
+  opsi?: { klasifikasi?: KlasifikasiPengaduan; kebijakan?: KebijakanConfig }
 ): boolean {
   const targetSah = TRANSISI_PENGADUAN[dari];
   if (!targetSah || !targetSah.includes(ke)) {
@@ -203,9 +211,10 @@ export function isTransisiSah(
   }
 
   // K1: Pengaduan NILAI_TAGIHAN_REKENING wajib lewat TERVERIFIKASI, tidak boleh langsung BARU -> DITUGASKAN
+  const wajibVerif = opsi?.kebijakan?.wajibVerifikasiTagihan ?? WAJIB_VERIFIKASI_TAGIHAN;
   if (
     opsi?.klasifikasi === 'NILAI_TAGIHAN_REKENING' &&
-    WAJIB_VERIFIKASI_TAGIHAN &&
+    wajibVerif &&
     dari === 'BARU' &&
     ke === 'DITUGASKAN'
   ) {
@@ -232,15 +241,16 @@ export const SLA_PRIORITAS: Record<PrioritasPengaduan, DurasiSla> = {
 
 /**
  * Menghitung Target Waktu SLA Tiket
- * Mendukung override per jenis pengaduan (opsi.jenis)
+ * Mendukung override per jenis pengaduan dan konfigurasi kebijakan berversi
  */
 export function hitungTargetSla(
   prioritas: PrioritasPengaduan,
   mulai: Date = new Date(),
-  opsi?: { jenis?: JenisPengaduan }
+  opsi?: { jenis?: JenisPengaduan; kebijakan?: KebijakanConfig }
 ): { targetResponsAt: Date; targetSelesaiAt: Date } {
-  const override = opsi?.jenis ? SLA_OVERRIDE_PER_JENIS[opsi.jenis] : undefined;
-  const sla = override ?? SLA_PRIORITAS[prioritas] ?? SLA_PRIORITAS.NORMAL;
+  const kebijakan = opsi?.kebijakan ?? DEFAULT_KEBIJAKAN_CONFIG;
+  const override = opsi?.jenis ? kebijakan.slaOverridePerJenis[opsi.jenis] : undefined;
+  const sla = override ?? kebijakan.slaPrioritas[prioritas] ?? kebijakan.slaPrioritas.NORMAL;
 
   const targetResponsAt = new Date(mulai.getTime() + sla.responsJam * 60 * 60 * 1000);
   const targetSelesaiAt = new Date(mulai.getTime() + sla.selesaiJam * 60 * 60 * 1000);
@@ -411,6 +421,7 @@ export interface HitungPerubahanTransisiInput {
   fotoUrl?: string | null;
   sumberAksi?: 'STAF' | 'PELAPOR' | 'OTOMATIS';
   sekarang?: Date;
+  kebijakan?: KebijakanConfig;
 }
 
 export interface HasilPerubahanTransisi {
@@ -437,12 +448,13 @@ export interface HasilPerubahanTransisi {
 export function hitungPerubahanTransisi(
   input: HitungPerubahanTransisiInput
 ): HasilPerubahanTransisi {
+  const kebijakan = input.kebijakan ?? DEFAULT_KEBIJAKAN_CONFIG;
   const { statusDari, statusKe, prioritas, jenis } = input;
-  const klasifikasi = input.klasifikasi ?? tentukanKlasifikasi(jenis);
+  const klasifikasi = input.klasifikasi ?? tentukanKlasifikasi(jenis, kebijakan);
   const now = input.sekarang ?? new Date();
 
   // 1. Validasi sahnya transisi
-  if (!isTransisiSah(statusDari, statusKe, { klasifikasi })) {
+  if (!isTransisiSah(statusDari, statusKe, { klasifikasi, kebijakan })) {
     throw new Error(
       `Transisi status tidak diizinkan: dari '${statusDari}' ke '${statusKe}'${
         klasifikasi === 'NILAI_TAGIHAN_REKENING' ? ' (Wajib Verifikasi Tagihan)' : ''
@@ -504,8 +516,9 @@ export function hitungPerubahanTransisi(
           'Penyelesaian tiket wajib menyertakan foto bukti atau catatan hasil pekerjaan.'
         );
       }
+      const batasJam = kebijakan.batasKonfirmasiJam ?? BATAS_KONFIRMASI_JAM;
       patch.selesaiAt = now;
-      patch.konfirmasiBatasAt = new Date(now.getTime() + BATAS_KONFIRMASI_JAM * 60 * 60 * 1000);
+      patch.konfirmasiBatasAt = new Date(now.getTime() + batasJam * 60 * 60 * 1000);
       aksiRiwayat = 'STATUS_DIUBAH';
       pesanRiwayat = input.catatan?.trim() || 'Pekerjaan perbaikan telah selesai dilaksanakan.';
       break;
@@ -541,9 +554,10 @@ export function hitungPerubahanTransisi(
 
       // Validasi batas maksimal pembukaan kembali
       const jumlahSekarang = input.jumlahDibukaKembali ?? 0;
-      if (jumlahSekarang >= MAKS_BUKA_KEMBALI) {
+      const maksBuka = kebijakan.maksBukaKembali ?? MAKS_BUKA_KEMBALI;
+      if (jumlahSekarang >= maksBuka) {
         throw new Error(
-          `Pengaduan tidak dapat dibuka kembali karena telah mencapai batas maksimal (${MAKS_BUKA_KEMBALI} kali).`
+          `Pengaduan tidak dapat dibuka kembali karena telah mencapai batas maksimal (${maksBuka} kali).`
         );
       }
 
@@ -553,7 +567,7 @@ export function hitungPerubahanTransisi(
       patch.jedaMulaiAt = null;
 
       // Reset siklus SLA baru
-      const targetBaru = hitungTargetSla(prioritas, now, { jenis });
+      const targetBaru = hitungTargetSla(prioritas, now, { jenis, kebijakan });
       patch.targetSelesaiAt = targetBaru.targetSelesaiAt;
 
       aksiRiwayat = 'DIBUKA_KEMBALI';
@@ -562,10 +576,11 @@ export function hitungPerubahanTransisi(
     }
 
     case 'DITOLAK': {
-      // K8: Penolakan tiket wajib menyertakan alasan minimal MIN_PANJANG_ALASAN_TOLAK karakter
-      if (!input.catatan || input.catatan.trim().length < MIN_PANJANG_ALASAN_TOLAK) {
+      // K8: Penolakan tiket wajib menyertakan alasan minimal minPanjangAlasanTolak karakter
+      const minPanjangTolak = kebijakan.minPanjangAlasanTolak ?? MIN_PANJANG_ALASAN_TOLAK;
+      if (!input.catatan || input.catatan.trim().length < minPanjangTolak) {
         throw new Error(
-          `Penolakan pengaduan wajib menyertakan alasan penolakan minimal ${MIN_PANJANG_ALASAN_TOLAK} karakter.`
+          `Penolakan pengaduan wajib menyertakan alasan penolakan minimal ${minPanjangTolak} karakter.`
         );
       }
       aksiRiwayat = 'STATUS_DIUBAH';
@@ -626,7 +641,7 @@ export function bolehMelakukan(
   }
 
   // Khusus staf billing pada verifikasi: hanya jika klasifikasi tagihan
-  if (aksi === 'VERIFIKASI' && role === 'STAFF_ADMIN_BILLING') {
+  if (aksi === 'VERIFIKASI' && (role === 'STAFF_ADMIN_BILLING' || role === 'STAFF')) {
     if (konteks?.klasifikasi && konteks.klasifikasi !== 'NILAI_TAGIHAN_REKENING') {
       return false;
     }

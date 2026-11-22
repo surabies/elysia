@@ -245,7 +245,7 @@ export const masterRouter = new Elysia({ prefix: '/master' })
       return { success: true, data };
     },
     {
-      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3'],
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3', 'DIREKSI', 'SENIOR_MANAGER'],
     }
   )
 
@@ -265,7 +265,7 @@ export const masterRouter = new Elysia({ prefix: '/master' })
       }
     },
     {
-      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3'],
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3', 'DIREKSI', 'SENIOR_MANAGER'],
       body: t.Object({
         items: t.Array(
           t.Object({
@@ -276,15 +276,88 @@ export const masterRouter = new Elysia({ prefix: '/master' })
             kategori: t.Optional(t.String()),
             deskripsi: t.Optional(t.String()),
             urutan: t.Optional(t.Number()),
-            superadmin: t.Boolean(),
-            staffBilling: t.Boolean(),
-            verifikator1: t.Boolean(),
-            verifikator2: t.Boolean(),
-            verifikator3: t.Boolean(),
-            executive: t.Boolean(),
-            pelaksana: t.Boolean(),
+            superadmin: t.Optional(t.Boolean()),
+            direksi: t.Optional(t.Boolean()),
+            seniorManager: t.Optional(t.Boolean()),
+            manager: t.Optional(t.Boolean()),
+            supervisor: t.Optional(t.Boolean()),
+            staff: t.Optional(t.Boolean()),
+            pelaksana: t.Optional(t.Boolean()),
+            // Legacy perizinan
+            staffBilling: t.Optional(t.Boolean()),
+            verifikator1: t.Optional(t.Boolean()),
+            verifikator2: t.Optional(t.Boolean()),
+            verifikator3: t.Optional(t.Boolean()),
+            executive: t.Optional(t.Boolean()),
           })
         ),
       }),
+    }
+  )
+
+  // 14. Ambil Izin Efektif Pengguna (Termasuk Custom Override Si A)
+  .get(
+    '/users/:id/hak-akses',
+    async ({ params, set }: any) => {
+      try {
+        const data = await masterExtendedService.getUserEffectivePermissions(params.id);
+        return { success: true, data };
+      } catch (err: any) {
+        set.status = 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3', 'DIREKSI', 'SENIOR_MANAGER'],
+    }
+  )
+
+  // 15. Simpan / Perbarui Override Hak Akses Pengguna (Kustomisasi Si A)
+  .put(
+    '/users/:id/hak-akses',
+    async ({ params, body, user, set }: any) => {
+      try {
+        const result = await masterExtendedService.setUserPermissionOverrides(
+          params.id,
+          body.overrides,
+          user?.id
+        );
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3', 'DIREKSI', 'SENIOR_MANAGER'],
+      body: t.Object({
+        overrides: t.Array(
+          t.Object({
+            modulKey: t.String(),
+            granted: t.Boolean(),
+            catatan: t.Optional(t.String()),
+          })
+        ),
+      }),
+    }
+  )
+
+  // 16. Reset Override Hak Akses Pengguna ke Bawaan Role
+  .delete(
+    '/users/:id/hak-akses/:modulKey',
+    async ({ params, set }: any) => {
+      try {
+        const result = await masterExtendedService.resetUserPermissionOverride(
+          params.id,
+          params.modulKey
+        );
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3', 'DIREKSI', 'SENIOR_MANAGER'],
     }
   );

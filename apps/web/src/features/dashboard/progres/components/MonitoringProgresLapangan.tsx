@@ -5,33 +5,34 @@ import Link from 'next/link';
 import {
   Activity,
   AlertTriangle,
-  ArrowRight,
   ArrowUpRight,
   Calendar,
   CheckCheck,
-  CheckCircle2,
-  Clock,
+  ChevronDown,
   Droplets,
   Eye,
-  FileCheck2,
+  Filter,
   Gauge,
-  HelpCircle,
   LayoutGrid,
-  MapPin,
   RefreshCw,
+  RotateCcw,
   Search,
+  SlidersHorizontal,
   Table as TableIcon,
-  TrendingDown,
-  TrendingUp,
-  User,
-  UserCheck,
   Users,
+  X,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -47,8 +48,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { PageContainer } from '@/components/layout/page/PageContainer';
-import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
+import { PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
 import { VerticalProgress } from '@/components/ui/vertical-progress';
+import { MetricCard } from '@/features/dashboard/overview/components/MetricCard';
+import type { MetricCardData } from '@/features/dashboard/overview/types/MetricCardTypes';
+import { ProgresLapanganHeader } from './ProgresLapanganHeader';
+import type { PeriodeOption } from '@/server/services/dashboard/dashboard.service';
 import { cn } from '@/lib/utils';
 import type { PetugasProgresItem, MonitoringProgresResult } from '@/server/services/cater/cater-progres.service';
 
@@ -56,14 +61,51 @@ function formatNumber(value: number) {
   return value.toLocaleString('id-ID');
 }
 
-export function MonitoringProgresLapangan() {
+export type StatusKerjaFilter = 'semua' | 'selesai' | 'aktif';
+export type AnomaliFilter = 'semua' | 'beranomali' | 'bebas';
+export type SortFilter = 'capaian_desc' | 'capaian_asc' | 'target_desc' | 'volume_desc' | 'anomali_desc';
+
+export interface MonitoringProgresLapanganProps {
+  initialThbl?: string;
+  availablePeriods?: PeriodeOption[];
+}
+
+export function MonitoringProgresLapangan({
+  initialThbl,
+  availablePeriods = [],
+}: MonitoringProgresLapanganProps) {
   const [data, setData] = React.useState<MonitoringProgresResult | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
+  const [periode, setPeriode] = React.useState(initialThbl || PERIODE_TERKUNCI_KANTOR);
   const [search, setSearch] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<StatusKerjaFilter>('semua');
+  const [anomaliFilter, setAnomaliFilter] = React.useState<AnomaliFilter>('semua');
+  const [sortBy, setSortBy] = React.useState<SortFilter>('capaian_desc');
   const [viewMode, setViewMode] = React.useState<'table' | 'grid'>('table');
   const [autoRefreshInterval, setAutoRefreshInterval] = React.useState<number>(0);
   const [selectedPetugas, setSelectedPetugas] = React.useState<PetugasProgresItem | null>(null);
+
+  // Sinkronisasi bila initialThbl dari Server Component berubah
+  React.useEffect(() => {
+    if (initialThbl && initialThbl !== periode) {
+      setPeriode(initialThbl);
+    }
+  }, [initialThbl]);
+
+  const periodeLabel = React.useMemo(() => {
+    if (availablePeriods && availablePeriods.length > 0) {
+      const match = availablePeriods.find((p) => p.thbl === periode);
+      if (match) return match.label;
+    }
+    if (periode && periode.length === 6) {
+      const y = periode.slice(0, 4);
+      const m = periode.slice(4);
+      return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(
+        new Date(Number(y), Number(m) - 1, 1)
+      );
+    }
+    return periode;
+  }, [periode, availablePeriods]);
 
   const fetchData = React.useCallback(async () => {
     setLoading(true);
@@ -93,546 +135,626 @@ export function MonitoringProgresLapangan() {
     return () => clearInterval(interval);
   }, [autoRefreshInterval, fetchData]);
 
-  // Filter petugas berdasarkan pencarian
+  // Filter & Pengurutan petugas berdasarkan kombinasi kriteria
   const filteredPetugas = React.useMemo(() => {
     if (!data?.petugas) return [];
-    if (!search.trim()) return data.petugas;
-    const q = search.toLowerCase();
-    return data.petugas.filter(
-      (p) =>
-        p.nama.toLowerCase().includes(q) ||
-        p.petugasId.toLowerCase().includes(q) ||
-        p.ruteList.some((r) => r.toLowerCase().includes(q))
-    );
-  }, [data, search]);
+
+    let list = [...data.petugas];
+
+    // 1. Text Search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.nama.toLowerCase().includes(q) ||
+          p.petugasId.toLowerCase().includes(q) ||
+          p.ruteList.some((r) => r.toLowerCase().includes(q))
+      );
+    }
+
+    // 2. Status Kerja
+    if (statusFilter === 'selesai') {
+      list = list.filter((p) => p.statusKerja === 'SELESAI' || p.persentase >= 100);
+    } else if (statusFilter === 'aktif') {
+      list = list.filter((p) => p.statusKerja !== 'SELESAI' && p.persentase < 100);
+    }
+
+    // 3. Anomali
+    if (anomaliFilter === 'beranomali') {
+      list = list.filter((p) => p.anomali > 0);
+    } else if (anomaliFilter === 'bebas') {
+      list = list.filter((p) => p.anomali === 0);
+    }
+
+    // 4. Pengurutan (Sorting)
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'capaian_desc':
+          return b.persentase - a.persentase;
+        case 'capaian_asc':
+          return a.persentase - b.persentase;
+        case 'target_desc':
+          return b.target - a.target;
+        case 'volume_desc':
+          return b.totalM3 - a.totalM3;
+        case 'anomali_desc':
+          return b.anomali - a.anomali;
+        default:
+          return 0;
+      }
+    });
+
+    return list;
+  }, [data, search, statusFilter, anomaliFilter, sortBy]);
+
+  const hasActiveFilters = Boolean(
+    search.trim() || statusFilter !== 'semua' || anomaliFilter !== 'semua' || sortBy !== 'capaian_desc'
+  );
+
+  const resetFilters = () => {
+    setSearch('');
+    setStatusFilter('semua');
+    setAnomaliFilter('semua');
+    setSortBy('capaian_desc');
+  };
+
+  // =========================================================================
+  // 4 KARTU KPI STANDAR OVERVIEW / ANALYTICS DENGAN PALET WARNA VERCEL
+  // (Biru, Amber, Merah, Hijau, Pink) & DATA HARIAN RIIL BACKEND
+  // =========================================================================
+  const kpiCards: MetricCardData[] = React.useMemo(() => {
+    const totalTerbaca = data?.kpi.totalTerbaca ?? 0;
+    const totalTarget = Math.max(data?.kpi.totalTarget ?? 1, 1);
+    const totalM3 = data?.kpi.totalM3 ?? 0;
+    const totalPetugas = data?.kpi.totalPetugas ?? 0;
+    const totalAnomali = data?.kpi.totalAnomali ?? 0;
+    const totalEkstrim = data?.kpi.totalEkstrim ?? 0;
+    const totalNol = data?.kpi.totalNol ?? 0;
+    const totalTurun = data?.kpi.totalTurun ?? 0;
+
+    const readRate = data?.kpi.readRatePersen ?? (totalTarget > 0 ? Number(((totalTerbaca / totalTarget) * 100).toFixed(1)) : 100);
+    const sisaBelum = Math.max(totalTarget - totalTerbaca, 0);
+    const normalBaca = Math.max(totalTerbaca - totalAnomali, 0);
+    const persenAnomali = totalTerbaca > 0 ? ((totalAnomali / totalTerbaca) * 100).toFixed(1) : '0.0';
+
+    // Ekstraksi data harian aktual dari backend (mencakup seluruh tanggal transaksi riil)
+    const dailyTrends = data?.dailyTrends && data.dailyTrends.length > 0 ? data.dailyTrends : [];
+    const dailyLabels = dailyTrends.map((d) => d.label || `Tgl ${parseInt(d.hari, 10)}`);
+    const sparklineKubikasi = dailyTrends.map((d) => d.kubikasi);
+    const pillsLajuHarian = dailyTrends.map((d) => d.total);
+    const totalHariCatat = dailyTrends.length;
+    const rataRataLajuHarian = Math.round(totalTerbaca / Math.max(totalHariCatat, 1));
+
+    return [
+      // 1. Capaian Target Catat (Varian Segments: Hijau Normal, Amber Anomali, Abu Belum)
+      {
+        id: 'kpi-capaian-catat',
+        title: 'Capaian Target Catat',
+        icon: Gauge,
+        rightLabel: `Periode ${periode}`,
+        value: formatNumber(totalTerbaca),
+        denominator: `/${formatNumber(totalTarget)}`,
+        unit: 'SL',
+        delta: {
+          text: `${readRate}%`,
+          direction: 'up',
+          tone: 'positive',
+        },
+        helperText: `${readRate}% selesai tercatat dari target kota`,
+        visual: {
+          type: 'segments',
+          items: [
+            { id: 'normal', label: 'Normal', value: normalBaca, color: '#10b981' }, // Hijau Vercel
+            { id: 'anomali', label: 'Anomali', value: totalAnomali, color: '#f5a623' }, // Amber Vercel
+            { id: 'belum', label: 'Sisa Belum', value: sisaBelum, color: '#94a3b8' }, // Netral
+          ],
+        },
+      },
+
+      // 2. Volume Kubikasi Air Terdistribusi (Varian Sparkline: Area kurva halus Biru Vercel)
+      {
+        id: 'kpi-volume-m3',
+        title: 'Volume Air Terbaca',
+        icon: Droplets,
+        rightLabel: totalHariCatat > 0 ? `${totalHariCatat} Hari Catat` : 'Siklus Berjalan',
+        value: formatNumber(totalM3),
+        unit: 'm³',
+        delta: {
+          text: `~${(totalM3 / Math.max(totalTerbaca, 1)).toFixed(1)} m³/SL`,
+          direction: 'neutral',
+          tone: 'neutral',
+        },
+        helperText: `Total volume air terdistribusi pelanggan`,
+        visual: {
+          type: 'sparkline',
+          data: sparklineKubikasi.length > 0 ? sparklineKubikasi : [0],
+          labels: dailyLabels,
+          color: '#0070f3', // Biru Vercel signature
+          unit: 'm³',
+        },
+      },
+
+      // 3. Temuan Anomali Lapangan (Varian Segments: Merah Ekstrem, Amber Nol, Biru Turun)
+      {
+        id: 'kpi-anomali-lapangan',
+        title: 'Temuan Anomali Lapangan',
+        icon: AlertTriangle,
+        rightLabel: `${persenAnomali}% dari Bacaan`,
+        value: formatNumber(totalAnomali),
+        unit: 'Kasus',
+        delta: {
+          text: `${persenAnomali}% dari total baca`,
+          direction: totalAnomali > 0 ? 'up' : 'neutral',
+          tone: totalAnomali > 0 ? 'negative' : 'positive',
+        },
+        helperText: 'Lonjakan ekstrem, stand 0 m³, dan penurunan drastis',
+        visual: {
+          type: 'segments',
+          items: [
+            { id: 'ekstrim', label: 'Ekstrem', value: totalEkstrim, color: '#e5202e' }, // Merah Vercel
+            { id: 'nol', label: 'Stand 0', value: totalNol, color: '#f5a623' }, // Amber Vercel
+            { id: 'turun', label: 'Turun', value: totalTurun, color: '#0070f3' }, // Biru Vercel
+          ],
+        },
+      },
+
+      // 4. Ritme Laju Harian Petugas (Varian Pills: Bar Kotak Biru Vercel)
+      {
+        id: 'kpi-laju-harian',
+        title: 'Ritme Laju Harian',
+        icon: Users,
+        rightLabel: `${totalPetugas} Petugas Aktif`,
+        value: formatNumber(rataRataLajuHarian),
+        denominator: ' SL/hari',
+        delta: {
+          text: 'Aktif',
+          direction: 'up',
+          tone: 'positive',
+        },
+        helperText: `Rata-rata laju pencatatan per hari kerja`,
+        visual: {
+          type: 'pills',
+          values: pillsLajuHarian.length > 0 ? pillsLajuHarian : [0],
+          labels: dailyLabels,
+          tone: 'neutral', // Otomatis Biru Vercel di MetricVisualPills
+          unit: 'SL',
+        },
+      },
+    ];
+  }, [data, periode]);
 
   return (
     <TooltipProvider delayDuration={150}>
       <PageContainer className="space-y-6">
         {/* ========================================================= */}
-        {/* 1. PAGE HEADER & CONTROL TOOLBAR                          */}
+        {/* 1. PAGE HEADER COCKPIT (Konsisten dengan Seluruh Sistem)   */}
         {/* ========================================================= */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-heading-20 text-foreground font-bold tracking-tight">
-                Monitoring Progres Petugas Lapangan
-              </h1>
-              <Badge
-                variant="green-subtle"
-                size="sm"
-                className="gap-1.5 font-medium"
-              >
-                <span className="size-1.5 rounded-full bg-(--ds-green-700) animate-pulse" />
-                Live Database
-              </Badge>
-            </div>
-            <p className="text-copy-13 text-muted-foreground mt-1">
-              Pemantauan real-time laju pembacaan meter, volume kubikasi, dan temuan anomali per petugas
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Periode Selector */}
-            <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
-              <span className="text-muted-foreground mr-2 font-medium">Periode:</span>
-              <NativeSelect
-                value={periode}
-                onChange={(e) => setPeriode(e.target.value)}
-                size="xs"
-                className="border-none shadow-none font-semibold text-foreground focus-visible:ring-0 p-0 pr-6"
-              >
-                {STANDAR_PERIODE_OPTIONS.map((opt) => (
-                  <NativeSelectOption key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </div>
-
-            {/* Auto Refresh Toggle */}
-            <div className="inline-flex rounded-md border border-border bg-[var(--ds-background-100)] p-0.5">
-              <Button
-                size="xs"
-                variant={autoRefreshInterval === 0 ? 'secondary' : 'ghost'}
-                onClick={() => setAutoRefreshInterval(0)}
-                className="text-[11px] h-6 px-2"
-              >
-                Manual
-              </Button>
-              <Button
-                size="xs"
-                variant={autoRefreshInterval === 30 ? 'secondary' : 'ghost'}
-                onClick={() => setAutoRefreshInterval(30)}
-                className="text-[11px] h-6 px-2"
-              >
-                30s
-              </Button>
-              <Button
-                size="xs"
-                variant={autoRefreshInterval === 60 ? 'secondary' : 'ghost'}
-                onClick={() => setAutoRefreshInterval(60)}
-                className="text-[11px] h-6 px-2"
-              >
-                60s
-              </Button>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchData}
-              disabled={loading}
-              className="h-8 gap-1.5 text-[12px] font-medium"
-            >
-              <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
-              <span>Segarkan</span>
-            </Button>
-          </div>
-        </div>
+        <ProgresLapanganHeader
+          periodeThbl={periode}
+          periodeLabel={periodeLabel}
+          availablePeriods={availablePeriods}
+          onPeriodChange={(next) => setPeriode(next)}
+          onRefresh={fetchData}
+          loading={loading}
+          autoRefreshInterval={autoRefreshInterval}
+          onAutoRefreshChange={setAutoRefreshInterval}
+          kpi={data?.kpi}
+        />
 
         {/* ========================================================= */}
-        {/* 2. KPI METRIC CARDS (Vercel Style, Sinkron Database)      */}
+        {/* 2. KPI METRIC CARDS (Format Standar MetricCard Vercel)     */}
         {/* ========================================================= */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Card 1: Target Catat & Capaian Progres */}
-          <Card className="p-4 border-border bg-card">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-12 font-medium">Target Catat &amp; Capaian</span>
-              <CheckCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-heading-24 font-mono font-bold tabular-nums text-foreground">
-                {data ? formatNumber(data.kpi.totalTerbaca) : '...'}
-              </span>
-              <span className="text-[11px] text-muted-foreground font-mono">
-                / {data ? formatNumber(data.kpi.totalTarget) : '...'} SL (Target)
-              </span>
-            </div>
-            {/* Gaya ||| Bar Vertikal */}
-            <VerticalProgress
-              value={data?.kpi.readRatePersen ?? 100}
-              ticks={28}
-              variant="emerald"
-              heightClass="h-2.5"
-              gapClass="gap-[3px]"
-              className="mt-2.5 mb-1.5"
-              ariaLabel="Capaian Terhadap Target Catat"
-            />
-            <p className="mt-1 text-copy-12 text-emerald-600 dark:text-emerald-400 font-medium">
-              {data?.kpi.readRatePersen ?? 100}% Tercatat dari Target Pembanding
-            </p>
-          </Card>
-
-          {/* Card 2: Total Volume Kubikasi */}
-          <Card className="p-4 border-border bg-card">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-12 font-medium">Volume Kubikasi Air</span>
-              <Droplets className="size-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-heading-24 font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
-                {data ? formatNumber(data.kpi.totalM3) : '...'}
-              </span>
-              <span className="text-label-12 text-muted-foreground font-sans">m³</span>
-            </div>
-            <p className="mt-1.5 text-copy-12 text-muted-foreground">
-              Rata-rata {data ? formatNumber(Math.round(data.kpi.totalM3 / (data.kpi.totalPetugas || 1))) : 0} m³ / petugas
-            </p>
-          </Card>
-
-          {/* Card 3: Total Anomali Riil (Sinkron 100%) */}
-          <Card className="p-4 border-border bg-card">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-12 font-medium">Anomali Terdeteksi</span>
-              <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-heading-24 font-mono font-bold tabular-nums text-foreground">
-                {data ? formatNumber(data.kpi.totalAnomali) : '...'}
-              </span>
-              <span className="text-label-12 text-muted-foreground font-sans">Kasus</span>
-            </div>
-            <p className="mt-1.5 text-copy-12 text-muted-foreground font-mono text-[11px]">
-              Ekstrem: {data?.kpi.totalEkstrim ?? 0} · Nol: {data?.kpi.totalNol ?? 0} · Turun: {data?.kpi.totalTurun ?? 0}
-            </p>
-          </Card>
-
-          {/* Card 4: Petugas Aktif & Rute */}
-          <Card className="p-4 border-border bg-card">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-label-12 font-medium">Petugas &amp; Rute Binaan</span>
-              <Users className="size-4 text-foreground/80" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-heading-24 font-mono font-bold tabular-nums text-foreground">
-                {data?.kpi.totalPetugas ?? 0}
-              </span>
-              <span className="text-label-12 text-muted-foreground font-sans">Petugas Aktif</span>
-            </div>
-            <p className="mt-1.5 text-copy-12 text-muted-foreground">
-              Mencakup {data?.kpi.totalRute ?? 0} rute pembacaan
-            </p>
-          </Card>
-        </div>
-
-        {/* ========================================================= */}
-        {/* 3. TOOLBAR PENCARIAN & LAYOUT SWITCHER                    */}
-        {/* ========================================================= */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Cari nama petugas, ID, atau kode rute…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-8 text-[12px] bg-card border-border"
-            />
-          </div>
-
-          <div className="flex items-center gap-1 border border-border rounded-md p-0.5 bg-[var(--ds-background-100)] w-fit">
-            <Button
-              size="xs"
-              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-              onClick={() => setViewMode('table')}
-              className="h-7 px-2.5 text-[11px] gap-1.5 font-medium"
-            >
-              <TableIcon className="size-3.5" />
-              <span>Tabel Vercel</span>
-            </Button>
-            <Button
-              size="xs"
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              onClick={() => setViewMode('grid')}
-              className="h-7 px-2.5 text-[11px] gap-1.5 font-medium"
-            >
-              <LayoutGrid className="size-3.5" />
-              <span>Grid Kartu</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* ========================================================= */}
-        {/* 4. VIEW MODE: TABEL BERGAYA VERCEL (Rapi & Elegan)        */}
-        {/* ========================================================= */}
-        {viewMode === 'table' ? (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-[var(--ds-background-100)] border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider select-none">
-                  <tr>
-                    <th className="py-2.5 px-4 font-medium">Petugas Cater</th>
-                    <th className="py-2.5 px-3 font-medium text-center">Rute Binaan</th>
-                    <th className="py-2.5 px-4 font-medium text-right">Target Catat (SL)</th>
-                    <th className="py-2.5 px-4 font-medium text-right">Volume (m³)</th>
-                    <th className="py-2.5 px-4 font-medium text-center">Anomali</th>
-                    <th className="py-2.5 px-4 font-medium">Siklus Pengerjaan</th>
-                    <th className="py-2.5 px-3 font-medium text-center">Status</th>
-                    <th className="py-2.5 px-4 font-medium text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60 text-[12px]">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-muted-foreground animate-pulse">
-                        Memuat data progres petugas riil…
-                      </td>
-                    </tr>
-                  ) : filteredPetugas.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-10 text-center text-muted-foreground">
-                        Tidak ada petugas yang cocok dengan kata kunci pencarian.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredPetugas.map((petugas) => (
-                      <tr
-                        key={petugas.petugasId}
-                        onClick={() => setSelectedPetugas(petugas)}
-                        className="hover:bg-muted/40 transition-colors h-11 cursor-pointer group"
-                      >
-                        {/* Kolom 1: Petugas */}
-                        <td className="py-2 px-4">
-                          <div className="flex items-center gap-2.5">
-                            <div className="size-7 rounded-full border border-border bg-[var(--ds-background-200)] text-foreground flex items-center justify-center text-[11px] font-semibold shrink-0">
-                              {petugas.nama.slice(0, 2).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <span className="font-semibold text-foreground block group-hover:text-primary transition-colors">
-                                {petugas.nama}
-                              </span>
-                              <span className="font-mono text-[10px] text-muted-foreground">
-                                ID: {petugas.petugasId}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Kolom 2: Rute Binaan */}
-                        <td className="py-2 px-3 text-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Badge variant="gray-subtle" size="sm" className="font-mono cursor-help">
-                                {petugas.totalRute} Rute
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              <p className="font-mono text-[11px]">
-                                {petugas.ruteList.join(', ')}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </td>
-
-                        {/* Kolom 3: Realisasi Beban SL */}
-                        <td className="py-2 px-4 text-right">
-                          <div className="flex flex-col items-end w-28 ml-auto">
-                            <div className="flex items-baseline justify-between w-full">
-                              <span className="font-mono font-bold text-foreground tabular-nums text-label-12">
-                                {petugas.persentase}%
-                              </span>
-                              <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
-                                {formatNumber(petugas.terbaca)}/{formatNumber(petugas.target)}
-                              </span>
-                            </div>
-                            <VerticalProgress
-                              value={petugas.persentase}
-                              ticks={14}
-                              variant={petugas.persentase >= 100 ? "emerald" : "blue"}
-                              heightClass="h-2"
-                              gapClass="gap-[2px]"
-                              className="mt-1"
-                              ariaLabel={`Capaian ${petugas.nama}`}
-                            />
-                          </div>
-                        </td>
-
-                        {/* Kolom 4: Total Volume Kubikasi */}
-                        <td className="py-2 px-4 text-right font-mono font-semibold text-foreground tabular-nums whitespace-nowrap">
-                          {formatNumber(petugas.totalM3)} <span className="text-[10px] font-normal text-muted-foreground">m³</span>
-                        </td>
-
-                        {/* Kolom 5: Temuan Anomali */}
-                        <td className="py-2 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1 font-mono text-[10px]">
-                            {petugas.totalEkstrim > 0 ? (
-                              <Badge variant="red-subtle" size="sm" className="font-mono font-semibold px-1.5 py-0 min-w-5 justify-center" title="Lonjakan Ekstrem">
-                                {petugas.totalEkstrim}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground/40 font-mono text-[11px] px-1">-</span>
-                            )}
-                            {petugas.totalNol > 0 && (
-                              <Badge variant="amber-subtle" size="sm" className="font-mono font-semibold px-1.5 py-0 min-w-5 justify-center" title="Stand 0 m³">
-                                {petugas.totalNol}
-                              </Badge>
-                            )}
-                            {petugas.totalTurun > 0 && (
-                              <Badge variant="blue-subtle" size="sm" className="font-mono font-semibold px-1.5 py-0 min-w-5 justify-center" title="Turun Drastis">
-                                {petugas.totalTurun}
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Kolom 6: Siklus Pengerjaan */}
-                        <td className="py-2 px-4 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
-                          {petugas.mulaiCatat && petugas.selesaiCatat ? (
-                            <span>
-                              {petugas.mulaiCatat.slice(5, 10)} → {petugas.selesaiCatat.slice(5, 10)}
-                            </span>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-
-                        {/* Kolom 7: Status */}
-                        <td className="py-2 px-3 text-center">
-                          <Badge
-                            variant={petugas.statusKerja === 'SELESAI' ? 'green-subtle' : 'blue-subtle'}
-                            size="sm"
-                            className="font-mono"
-                          >
-                            {petugas.statusKerja === 'SELESAI' ? '100% Selesai' : 'Aktif'}
-                          </Badge>
-                        </td>
-
-                        {/* Kolom 8: Aksi */}
-                        <td className="py-2 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-7 hover:bg-muted font-medium cursor-pointer"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPetugas(petugas);
-                                  }}
-                                >
-                                  <Eye className="size-3.5 text-muted-foreground group-hover:text-foreground" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p>Tinjau detail kinerja {petugas.nama}</p>
-                              </TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-7 hover:bg-muted font-medium cursor-pointer"
-                                  asChild
-                                >
-                                  <Link
-                                    href={`/verifikasi/baca-petugas?q=${encodeURIComponent(petugas.nama)}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <ArrowUpRight className="size-3.5 text-blue-600 dark:text-blue-400" />
-                                  </Link>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="left">
-                                <p>Buka verifikasi bacaan {petugas.nama}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {filteredPetugas.map((petugas) => (
-              <Card
-                key={petugas.petugasId}
-                onClick={() => setSelectedPetugas(petugas)}
-                className="p-4 border-border bg-card transition-all hover:border-[var(--ds-gray-500)] flex flex-col justify-between space-y-4 cursor-pointer group"
-              >
-                <div>
-                  {/* Card Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="size-9 rounded-full border border-border bg-[var(--ds-background-200)] text-foreground flex items-center justify-center text-label-12 font-semibold shrink-0">
-                        {petugas.nama.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="text-label-14 font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {petugas.nama}
-                        </h3>
-                        <p className="text-label-11 text-muted-foreground font-mono mt-0.5">
-                          ID: {petugas.petugasId} · {petugas.totalRute} Rute Binaan
-                        </p>
-                      </div>
-                    </div>
-                    <Badge
-                      variant={petugas.statusKerja === 'SELESAI' ? 'green-subtle' : 'blue-subtle'}
-                      size="sm"
-                      className="font-mono"
-                    >
-                      {petugas.statusKerja === 'SELESAI' ? '100% Selesai' : `${petugas.persentase}% Aktif`}
-                    </Badge>
-                  </div>
-
-                  {/* Realisasi Beban & Volume Bar Gaya ||| Vertikal */}
-                  <div className="mt-4 space-y-1.5">
-                    <div className="flex justify-between items-baseline text-label-12">
-                      <span className="text-muted-foreground">Progres Catat &amp; Volume:</span>
-                      <span className="font-mono tabular-nums font-bold text-foreground">
-                        {petugas.persentase}% · {formatNumber(petugas.totalM3)} m³
-                      </span>
-                    </div>
-                    <VerticalProgress
-                      value={petugas.persentase}
-                      ticks={24}
-                      variant={petugas.persentase >= 100 ? "emerald" : "blue"}
-                      heightClass="h-2.5"
-                      gapClass="gap-[3px]"
-                      ariaLabel={`Progres ${petugas.nama}`}
-                    />
-                  </div>
-
-                  {/* 3 Metric Columns: Target Catat | Terbaca | Sisa */}
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-center rounded-md bg-[var(--ds-background-100)] p-2.5 border border-border/70">
-                    <div>
-                      <span className="text-[10px] text-muted-foreground block font-medium uppercase">Target Catat</span>
-                      <span className="font-mono tabular-nums text-label-12 font-bold text-foreground">
-                        {formatNumber(petugas.target)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-muted-foreground block font-medium uppercase">Terbaca</span>
-                      <span className="font-mono tabular-nums text-label-12 font-bold text-emerald-600 dark:text-emerald-400">
-                        {formatNumber(petugas.terbaca)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-muted-foreground block font-medium uppercase">Sisa</span>
-                      <span className="font-mono tabular-nums text-label-12 font-bold text-muted-foreground">
-                        {formatNumber(petugas.sisa)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Rute Binaan Chips */}
-                  <div className="mt-3">
-                    <span className="text-[10px] text-muted-foreground block mb-1 font-medium uppercase">
-                      Rute Penugasan ({petugas.ruteList.length}):
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {petugas.ruteList.slice(0, 7).map((rute) => (
-                        <span
-                          key={rute}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted/60 text-muted-foreground border border-border/60"
-                        >
-                          {rute}
-                        </span>
-                      ))}
-                      {petugas.ruteList.length > 7 && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted text-muted-foreground">
-                          +{petugas.ruteList.length - 7} lagi
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Footer: Siklus & Aksi */}
-                <div className="pt-3 border-t border-border flex items-center justify-between text-label-12 text-muted-foreground">
-                  <div className="flex items-center gap-1 font-mono text-[11px]">
-                    <Calendar className="size-3 text-muted-foreground" />
-                    <span>{petugas.selesaiCatat?.slice(0, 10) ?? '—'}</span>
-                  </div>
-                  <Link
-                    href={`/verifikasi/baca-petugas?q=${encodeURIComponent(petugas.nama)}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline text-[11px] font-medium"
-                  >
-                    Verifikasi Laporan
-                    <ArrowUpRight className="size-3" />
-                  </Link>
-                </div>
-              </Card>
+        <section aria-label="Indikator Kinerja Progres Lapangan">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+            {kpiCards.map((card) => (
+              <MetricCard key={card.id} data={card} />
             ))}
           </div>
-        )}
+        </section>
 
         {/* ========================================================= */}
-        {/* 6. MODAL DRILLDOWN PETUGAS                                */}
+        {/* 3. PANEL DAFTAR PETUGAS (Standar Container Geist Vercel)  */}
+        {/* ========================================================= */}
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none space-y-4">
+          {/* Header Panel Toolbar dengan Fitur Filter Lengkap & Konsisten */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-border/60">
+            <div>
+              <div className="flex items-center gap-2">
+                <Users className="size-4 text-blue-600 dark:text-blue-400" />
+                <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                  Daftar Produktivitas &amp; Beban Kerja Petugas Lapangan
+                </h2>
+                <Badge variant="pill" size="sm" className="font-mono">
+                  {filteredPetugas.length} / {data?.petugas?.length ?? 0} Petugas
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Evaluasi capaian rute harian, volume terdistribusi, dan kepatuhan pencatatan periode {periodeLabel}.
+              </p>
+            </div>
+
+            {/* Filter Controls Row */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Search Box */}
+              <div className="relative min-w-[200px] sm:min-w-[240px]">
+                <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Cari nama, ID, atau kode rute…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-8 pl-8 pr-7 text-xs bg-background border-border shadow-none"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    aria-label="Bersihkan pencarian"
+                    className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status Petugas Filter */}
+              <Select
+                value={statusFilter}
+                onValueChange={(val) => setStatusFilter(val as StatusKerjaFilter)}
+              >
+                <SelectTrigger size="sm" className="h-8 min-w-[130px] text-xs bg-background border-border shadow-none">
+                  <SelectValue placeholder="Status Kerja" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="semua">Semua Status</SelectItem>
+                  <SelectItem value="selesai">100% Selesai</SelectItem>
+                  <SelectItem value="aktif">Aktif Berjalan</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Filter Temuan Anomali */}
+              <Select
+                value={anomaliFilter}
+                onValueChange={(val) => setAnomaliFilter(val as AnomaliFilter)}
+              >
+                <SelectTrigger size="sm" className="h-8 min-w-[130px] text-xs bg-background border-border shadow-none">
+                  <SelectValue placeholder="Anomali" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="semua">Semua Kasus</SelectItem>
+                  <SelectItem value="beranomali">Ada Anomali</SelectItem>
+                  <SelectItem value="bebas">Bebas Anomali</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Urutan (Sorting) */}
+              <Select
+                value={sortBy}
+                onValueChange={(val) => setSortBy(val as SortFilter)}
+              >
+                <SelectTrigger size="sm" className="h-8 min-w-[145px] text-xs bg-background border-border shadow-none">
+                  <SelectValue placeholder="Urutkan" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="capaian_desc">Capaian Tertinggi (%)</SelectItem>
+                  <SelectItem value="capaian_asc">Capaian Terendah (%)</SelectItem>
+                  <SelectItem value="target_desc">Target SL Terbanyak</SelectItem>
+                  <SelectItem value="volume_desc">Volume m³ Terbanyak</SelectItem>
+                  <SelectItem value="anomali_desc">Anomali Terbanyak</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Reset Filter Button */}
+              {hasActiveFilters && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                  title="Reset semua filter"
+                >
+                  <RotateCcw className="size-3.5" />
+                  <span className="hidden sm:inline">Reset</span>
+                </Button>
+              )}
+
+              {/* View Switcher: Table vs Grid */}
+              <div className="flex items-center gap-1 border border-border rounded-md p-0.5 bg-muted/40">
+                <Button
+                  size="xs"
+                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                  onClick={() => setViewMode('table')}
+                  className="h-6.5 px-2.5 text-[11px] gap-1.5 font-medium"
+                  title="Tampilan Tabel"
+                >
+                  <TableIcon className="size-3.5" />
+                  <span className="hidden sm:inline">Tabel</span>
+                </Button>
+                <Button
+                  size="xs"
+                  variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                  onClick={() => setViewMode('grid')}
+                  className="h-6.5 px-2.5 text-[11px] gap-1.5 font-medium"
+                  title="Tampilan Grid Kartu"
+                >
+                  <LayoutGrid className="size-3.5" />
+                  <span className="hidden sm:inline">Grid</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* VIEW MODE: TABEL BERGAYA VERCEL */}
+          {viewMode === 'table' ? (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-muted/40 border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <tr>
+                      <th className="py-2.5 px-4 font-medium">Petugas Cater</th>
+                      <th className="py-2.5 px-3 font-medium text-center">Rute Binaan</th>
+                      <th className="py-2.5 px-4 font-medium text-right">Target Catat (SL)</th>
+                      <th className="py-2.5 px-4 font-medium text-right">Volume (m³)</th>
+                      <th className="py-2.5 px-4 font-medium text-center">Anomali</th>
+                      <th className="py-2.5 px-4 font-medium">Siklus Pengerjaan</th>
+                      <th className="py-2.5 px-3 font-medium text-center">Status</th>
+                      <th className="py-2.5 px-4 font-medium text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60 text-xs">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={8} className="py-12 text-center text-muted-foreground animate-pulse text-xs">
+                          Memuat data progres petugas riil…
+                        </td>
+                      </tr>
+                    ) : filteredPetugas.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-10 text-center text-muted-foreground text-xs">
+                          Tidak ada petugas yang cocok dengan kriteria filter saat ini.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPetugas.map((petugas) => (
+                        <tr
+                          key={petugas.petugasId}
+                          onClick={() => setSelectedPetugas(petugas)}
+                          className="hover:bg-muted/40 transition-colors h-11 cursor-pointer group"
+                        >
+                          {/* Kolom 1: Petugas */}
+                          <td className="py-2 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="size-7 rounded-full border border-border bg-muted text-foreground flex items-center justify-center text-[11px] font-semibold shrink-0 shadow-2xs">
+                                {petugas.nama.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="font-semibold text-foreground block group-hover:text-primary transition-colors truncate">
+                                  {petugas.nama}
+                                </span>
+                                <span className="font-mono text-[10px] text-muted-foreground">
+                                  ID: {petugas.petugasId}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Kolom 2: Rute Binaan (Badge Geist: variant="pill") */}
+                          <td className="py-2 px-3 text-center">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-block">
+                                  <Badge variant="pill" size="sm" className="font-mono cursor-help">
+                                    {petugas.totalRute} Rute
+                                  </Badge>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="font-mono text-[11px]">
+                                  {petugas.ruteList.join(', ')}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </td>
+
+                          {/* Kolom 3: Realisasi Beban SL */}
+                          <td className="py-2 px-4 text-right">
+                            <div className="font-mono font-semibold text-foreground">
+                              {formatNumber(petugas.terbaca)}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground font-mono">
+                              / {formatNumber(petugas.target)} SL
+                            </div>
+                          </td>
+
+                          {/* Kolom 4: Volume Kubikasi */}
+                          <td className="py-2 px-4 text-right">
+                            <div className="font-mono font-bold text-sky-600 dark:text-sky-400">
+                              {formatNumber(petugas.totalM3)}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              m³ air
+                            </div>
+                          </td>
+
+                          {/* Kolom 5: Anomali Lapangan (Badge Geist: variant="amber-subtle") */}
+                          <td className="py-2 px-4 text-center">
+                            {petugas.anomali > 0 ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-block">
+                                    <Badge
+                                      variant="amber-subtle"
+                                      size="sm"
+                                      className="font-mono gap-1 cursor-help"
+                                    >
+                                      <AlertTriangle className="size-3" />
+                                      <span>{petugas.anomali}</span>
+                                    </Badge>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs space-y-1">
+                                  <p className="font-semibold text-foreground">Detail Anomali Petugas:</p>
+                                  <p className="text-rose-500">• Lonjakan Ekstrem: {petugas.totalEkstrim}</p>
+                                  <p className="text-amber-500">• Stand 0 m³: {petugas.totalNol}</p>
+                                  <p className="text-sky-500">• Turun Drastis: {petugas.totalTurun}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span className="font-mono text-muted-foreground text-xs">—</span>
+                            )}
+                          </td>
+
+                          {/* Kolom 6: Siklus Pengerjaan (VerticalProgress |||) */}
+                          <td className="py-2 px-4 min-w-[150px]">
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="font-mono font-medium text-foreground">
+                                  {petugas.persentase}%
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  Target Catat
+                                </span>
+                              </div>
+                              <VerticalProgress
+                                value={petugas.persentase}
+                                ticks={20}
+                                variant={petugas.persentase >= 100 ? 'emerald' : 'blue'}
+                                heightClass="h-2"
+                                gapClass="gap-[2px]"
+                                ariaLabel={`Progres ${petugas.nama}`}
+                              />
+                            </div>
+                          </td>
+
+                          {/* Kolom 7: Status (Badge Geist: green-subtle / blue-subtle) */}
+                          <td className="py-2 px-3 text-center">
+                            <Badge
+                              variant={petugas.statusKerja === 'SELESAI' ? 'green-subtle' : 'blue-subtle'}
+                              size="sm"
+                              className="font-mono uppercase"
+                            >
+                              {petugas.statusKerja === 'SELESAI' ? '100% Selesai' : 'Aktif'}
+                            </Badge>
+                          </td>
+
+                          {/* Kolom 8: Aksi */}
+                          <td className="py-2 px-4 text-right">
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPetugas(petugas);
+                              }}
+                              className="h-7 px-2 text-muted-foreground hover:text-foreground text-[11px] gap-1"
+                            >
+                              <Eye className="size-3.5" />
+                              <span className="hidden sm:inline">Rincian</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* VIEW MODE: GRID KARTU */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {loading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-44 rounded-xl border border-border bg-muted/20 animate-pulse" />
+                ))
+              ) : filteredPetugas.length === 0 ? (
+                <div className="col-span-full py-12 text-center text-muted-foreground text-xs">
+                  Tidak ada petugas yang cocok dengan kriteria filter saat ini.
+                </div>
+              ) : (
+                filteredPetugas.map((petugas) => (
+                  <div
+                    key={petugas.petugasId}
+                    onClick={() => setSelectedPetugas(petugas)}
+                    className="group relative rounded-xl border border-border bg-card p-4 transition-all hover:border-foreground/30 hover:shadow-sm cursor-pointer space-y-3"
+                  >
+                    {/* Header Kartu */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-8 rounded-full border border-border bg-muted text-foreground flex items-center justify-center text-xs font-semibold shrink-0">
+                          {petugas.nama.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground text-xs truncate group-hover:text-primary transition-colors">
+                            {petugas.nama}
+                          </h3>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            ID: {petugas.petugasId} • {petugas.totalRute} Rute
+                          </span>
+                        </div>
+                      </div>
+                      <Badge
+                        variant={petugas.statusKerja === 'SELESAI' ? 'green-subtle' : 'blue-subtle'}
+                        size="sm"
+                        className="font-mono uppercase"
+                      >
+                        {petugas.statusKerja === 'SELESAI' ? '100% Selesai' : 'Aktif'}
+                      </Badge>
+                    </div>
+
+                    {/* Progress Bar Vertikal */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground text-[11px]">Capaian Catat</span>
+                        <span className="font-mono font-bold text-foreground">
+                          {petugas.persentase}%
+                        </span>
+                      </div>
+                      <VerticalProgress
+                        value={petugas.persentase}
+                        ticks={24}
+                        variant={petugas.persentase >= 100 ? 'emerald' : 'blue'}
+                        heightClass="h-2"
+                        gapClass="gap-[2px]"
+                      />
+                    </div>
+
+                    {/* Metrik Mini Grid */}
+                    <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-border/60 text-center">
+                      <div className="p-1 rounded bg-muted/20">
+                        <span className="text-[10px] text-muted-foreground block">Tercatat</span>
+                        <span className="font-mono text-xs font-semibold text-foreground">
+                          {formatNumber(petugas.terbaca)}
+                        </span>
+                      </div>
+                      <div className="p-1 rounded bg-muted/20">
+                        <span className="text-[10px] text-muted-foreground block">Volume</span>
+                        <span className="font-mono text-xs font-semibold text-sky-600 dark:text-sky-400">
+                          {formatNumber(petugas.totalM3)}
+                        </span>
+                      </div>
+                      <div className="p-1 rounded bg-muted/20">
+                        <span className="text-[10px] text-muted-foreground block">Anomali</span>
+                        <span className={cn("font-mono text-xs font-semibold", petugas.anomali > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+                          {petugas.anomali}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ========================================================= */}
+        {/* MODAL / DIALOG DETAIL PROFIL KINERJA PETUGAS              */}
         {/* ========================================================= */}
         {selectedPetugas && (
           <Dialog open={Boolean(selectedPetugas)} onOpenChange={(open) => !open && setSelectedPetugas(null)}>
             <DialogContent className="max-w-lg font-sans">
               <DialogHeader>
-                <DialogTitle className="text-heading-18 font-bold flex items-center gap-2">
+                <DialogTitle className="text-base font-bold flex items-center gap-2">
                   <span>Profil Kinerja: {selectedPetugas.nama}</span>
                   <Badge
                     variant={selectedPetugas.statusKerja === 'SELESAI' ? 'green-subtle' : 'blue-subtle'}
@@ -642,32 +764,32 @@ export function MonitoringProgresLapangan() {
                     {selectedPetugas.statusKerja === 'SELESAI' ? '100% Selesai' : `${selectedPetugas.persentase}% Aktif`}
                   </Badge>
                 </DialogTitle>
-                <DialogDescription>
-                  Ringkasan beban kerja pencatatan dan rincian anomali lapangan periode {periode}
+                <DialogDescription className="text-xs">
+                  Ringkasan beban kerja pencatatan dan rincian anomali lapangan periode {periodeLabel}
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 py-2 text-copy-13">
+              <div className="space-y-4 py-2 text-xs">
                 {/* Ringkasan Beban & Kubikasi */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-md border border-border p-2.5 bg-muted/20">
+                  <div className="rounded-lg border border-border p-2.5 bg-muted/20">
                     <span className="text-[11px] text-muted-foreground block">Total Pelanggan Dicatat</span>
-                    <span className="font-mono text-copy-16 font-bold text-foreground">
+                    <span className="font-mono text-sm font-bold text-foreground">
                       {formatNumber(selectedPetugas.terbaca)} SL
                     </span>
                   </div>
-                  <div className="rounded-md border border-border p-2.5 bg-muted/20">
+                  <div className="rounded-lg border border-border p-2.5 bg-muted/20">
                     <span className="text-[11px] text-muted-foreground block">Total Kubikasi Air</span>
-                    <span className="font-mono text-copy-16 font-bold text-blue-600 dark:text-blue-400">
+                    <span className="font-mono text-sm font-bold text-sky-600 dark:text-sky-400">
                       {formatNumber(selectedPetugas.totalM3)} m³
                     </span>
                   </div>
                 </div>
 
                 {/* Gaya ||| Bar Vertikal di Modal */}
-                <div className="space-y-1.5 rounded-md border border-border p-2.5 bg-muted/10">
-                  <div className="flex items-center justify-between text-label-12">
-                    <span className="text-muted-foreground font-medium">Progres Terhadap Target Catat Bulan Lalu ({selectedPetugas.persentase}%)</span>
+                <div className="space-y-1.5 rounded-lg border border-border p-2.5 bg-muted/10">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground font-medium">Progres Terhadap Target Catat ({selectedPetugas.persentase}%)</span>
                     <span className="font-mono text-foreground font-bold tabular-nums">
                       {formatNumber(selectedPetugas.terbaca)} / {formatNumber(selectedPetugas.target)} Target
                     </span>
@@ -682,27 +804,27 @@ export function MonitoringProgresLapangan() {
                   />
                 </div>
 
-                {/* 3 Pilar Temuan Anomali Petugas */}
-                <div className="rounded-md border border-border p-3 space-y-2 bg-muted/30">
+                {/* 3 Pilar Temuan Anomali Petugas - Palet Vercel */}
+                <div className="rounded-lg border border-border p-3 space-y-2 bg-muted/30">
                   <span className="text-[11px] font-semibold text-foreground uppercase tracking-wider block">
                     Temuan Anomali Petugas ({selectedPetugas.anomali} Kasus)
                   </span>
                   <div className="grid grid-cols-3 gap-2 pt-1">
-                    <div className="rounded p-2 border border-red-500/20 bg-red-500/5 text-center">
+                    <div className="rounded-md p-2 border border-rose-500/20 bg-rose-500/5 text-center">
                       <span className="text-[10px] text-muted-foreground block">Lonjakan Ekstrem</span>
-                      <span className="font-mono text-copy-14 font-bold text-red-600 dark:text-red-400">
+                      <span className="font-mono text-xs font-bold text-rose-600 dark:text-rose-400">
                         {selectedPetugas.totalEkstrim}
                       </span>
                     </div>
-                    <div className="rounded p-2 border border-amber-500/20 bg-amber-500/5 text-center">
+                    <div className="rounded-md p-2 border border-amber-500/20 bg-amber-500/5 text-center">
                       <span className="text-[10px] text-muted-foreground block">Stand 0 m³</span>
-                      <span className="font-mono text-copy-14 font-bold text-amber-600 dark:text-amber-400">
+                      <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
                         {selectedPetugas.totalNol}
                       </span>
                     </div>
-                    <div className="rounded p-2 border border-blue-500/20 bg-blue-500/5 text-center">
+                    <div className="rounded-md p-2 border border-sky-500/20 bg-sky-500/5 text-center">
                       <span className="text-[10px] text-muted-foreground block">Turun Drastis</span>
-                      <span className="font-mono text-copy-14 font-bold text-blue-600 dark:text-blue-400">
+                      <span className="font-mono text-xs font-bold text-sky-600 dark:text-sky-400">
                         {selectedPetugas.totalTurun}
                       </span>
                     </div>
@@ -710,24 +832,26 @@ export function MonitoringProgresLapangan() {
                 </div>
 
                 {/* Seluruh Rute Binaan */}
-                <div className="rounded-md border border-border p-3 space-y-1.5">
+                <div className="rounded-lg border border-border p-3 space-y-1.5">
                   <span className="text-[11px] font-semibold text-foreground uppercase tracking-wider block">
                     Daftar {selectedPetugas.totalRute} Rute Binaan:
                   </span>
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {selectedPetugas.ruteList.map((rute) => (
-                      <span
+                      <Badge
                         key={rute}
-                        className="px-2 py-0.5 rounded font-mono text-[11px] bg-muted text-foreground border border-border"
+                        variant="pill"
+                        size="sm"
+                        className="font-mono"
                       >
                         {rute}
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                 </div>
 
                 {/* Siklus Tanggal Kerja */}
-                <div className="flex items-center justify-between text-label-12 text-muted-foreground px-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
                   <span>Siklus Mulai: <strong className="font-mono text-foreground">{selectedPetugas.mulaiCatat ?? '—'}</strong></span>
                   <span>Siklus Selesai: <strong className="font-mono text-foreground">{selectedPetugas.selesaiCatat ?? '—'}</strong></span>
                 </div>

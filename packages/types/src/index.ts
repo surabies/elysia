@@ -81,7 +81,12 @@ export type AppRole =
   | 'STAFF_ADMIN_BILLING'
   | 'PENCATAT'
   | 'PELAKSANA'
-  | 'USER';
+  | 'USER'
+  | 'DIREKSI'
+  | 'SENIOR_MANAGER'
+  | 'MANAGER'
+  | 'SUPERVISOR'
+  | 'STAFF';
 
 // Status Siklus Verifikasi Baca Meter (3-Tier + Staff Correction)
 export type CaterVerificationStatus =
@@ -153,6 +158,29 @@ export interface CaterVerifikasiLog {
   nomorTiketKomplain?: string | null;
   alasan: string;
   createdAt: Date | string;
+}
+
+export interface UserPermissionOverride {
+  id: string;
+  userId: string;
+  modulKey: string;
+  granted: boolean;
+  catatan?: string | null;
+  updatedBy?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface UserEffectivePermission {
+  modulKey: string;
+  modulNama: string;
+  kategori: string;
+  deskripsi: string;
+  urutan: number;
+  roleDefault: boolean;
+  isOverridden: boolean;
+  effectiveGranted: boolean;
+  overrideCatatan?: string | null;
 }
 
 // --- Domain Models ---
@@ -546,5 +574,37 @@ export interface RiwayatPengaduan {
   isPublik: boolean;
   createdAt: Date | string;
 }
+
+// --- Kebijakan & Regulasi SOP Pengaduan Berversi (Policy as Data) ---
+export type StatusKebijakan = 'DRAFT' | 'AKTIF' | 'ARSIP';
+
+export interface KebijakanConfig {
+  slaPrioritas: Record<PrioritasPengaduan, { responsJam: number; selesaiJam: number }>;
+  slaOverridePerJenis: Partial<Record<JenisPengaduan, { responsJam: number; selesaiJam: number }>>;
+  klasifikasiPerJenis: Record<JenisPengaduan, KlasifikasiPengaduan>;
+  prioritasDefaultPerJenis: Record<JenisPengaduan, PrioritasPengaduan>;
+  jenisPengaduanPetaPublik: readonly JenisPengaduan[];
+  wajibVerifikasiTagihan: boolean;
+  batasKonfirmasiJam: number;
+  maksBukaKembali: number;
+  minPanjangAlasanTolak: number;
+  duplikatRadiusMeter: number;
+  duplikatJendelaJam: number;
+}
+
+export interface KebijakanPengaduan {
+  id: string;
+  versi: number;
+  status: StatusKebijakan;
+  nomorSk?: string | null;
+  alasanPerubahan?: string | null;
+  tanggalBerlaku: Date | string;
+  config: KebijakanConfig;
+  dibuatOleh?: string | null;
+  disetujuiOleh?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
 
 

@@ -323,11 +323,11 @@ export function PembacaanDitinjau({
                     ? 'text-blue-600 dark:text-blue-400'
                     : 'text-amber-600 dark:text-amber-400';
 
-                  const badgeStyle = isEkstrem
-                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/25'
+                  const deviasiBadgeVariant = isEkstrem
+                    ? ('red-subtle' as const)
                     : isTurun
-                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25'
-                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25';
+                    ? ('blue-subtle' as const)
+                    : ('amber-subtle' as const);
 
                   return (
                     <tr
@@ -365,14 +365,14 @@ export function PembacaanDitinjau({
                         <strong className={volumeColor}>{pakaiKini} m³</strong>
                       </td>
 
-                      {/* Kolom 5: Badge Deviasi */}
+                      {/* Kolom 5: Badge Deviasi (Vercel Geist Resmi) */}
                       <td className="py-1.5 px-3 text-center">
                         {isVerified ? (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 bg-teal-500/10 text-teal-600 border-teal-500/30 gap-1 font-mono">
+                          <Badge variant="green-subtle" size="sm" className="gap-1 font-mono">
                             <Check className="size-3" /> Verif
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className={`text-[10px] font-mono py-0 px-1.5 ${badgeStyle}`}>
+                          <Badge variant={deviasiBadgeVariant} size="sm" className="font-mono">
                             {isEkstrem
                               ? deviasi > 0 ? `+${deviasi}%` : 'Ekstrem'
                               : isTurun

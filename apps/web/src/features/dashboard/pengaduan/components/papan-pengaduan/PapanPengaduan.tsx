@@ -5,6 +5,7 @@
 
 import { KartuStatistik } from "./KartuStatistik"
 import { TabelPengaduanGlide } from "./TabelPengaduanGlide"
+import { NavigasiTabPengaduan } from "../NavigasiTabPengaduan"
 import { useStatistikPengaduan } from "../../hooks/UseStatistikPengaduan"
 
 export function PapanPengaduan({ initialQ }: { initialQ?: string }) {
@@ -12,6 +13,8 @@ export function PapanPengaduan({ initialQ }: { initialQ?: string }) {
 
   return (
     <div className="flex h-full min-h-[600px] flex-col gap-4">
+      <NavigasiTabPengaduan />
+
       {stat && <KartuStatistik stat={stat} />}
 
       <div className="min-h-[500px] min-w-0 flex-1">

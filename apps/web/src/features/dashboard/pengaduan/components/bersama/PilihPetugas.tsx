@@ -29,8 +29,8 @@ export function PilihPetugas({
       className="min-w-0 flex-1"
     >
       <option value="">{placeholder}</option>
-      {petugas.map((p) => (
-        <option key={p.id} value={p.id}>
+      {petugas.map((p, idx) => (
+        <option key={`${p.id}-${idx}`} value={p.id}>
           {p.name ?? p.id} · {p.role}
         </option>
       ))}

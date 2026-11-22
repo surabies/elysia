@@ -84,11 +84,11 @@ const sendList = (
   },
 });
 
-function hasRole(roles: string[], role: string) {
+function hasRole(roles: readonly string[] | string[], role: string) {
   return roles.includes("SUPERADMIN") || roles.includes(role);
 }
 
-function maxRing(roles: string[]): 1 | 2 | 3 | null {
+function maxRing(roles: readonly string[] | string[]): 1 | 2 | 3 | null {
   if (
     roles.includes("SUPERADMIN") ||
     roles.includes("EXECUTIVE") ||

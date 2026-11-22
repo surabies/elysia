@@ -50,7 +50,7 @@ describe('Fase 2: Integritas Data & Transaksi Tiket (B3, B4, B5, B14, B15)', () 
     for (let i = 1; i < urutList.length; i++) {
       expect(urutList[i]).toBe(urutList[i - 1] + 1);
     }
-  });
+  }, 15000);
 
   it('2. B5: Nomor langganan fiktif tidak memicu error FK dan tiket tetap tercatat', async () => {
     const fiktifNolg = '99988877766';

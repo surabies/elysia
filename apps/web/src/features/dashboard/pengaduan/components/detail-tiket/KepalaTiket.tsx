@@ -96,6 +96,15 @@ export function KepalaTiket({
             <Badge variant="outline" className={status.badgeClass}>
               {status.label}
             </Badge>
+            {detail.kebijakanVersi && (
+              <Badge
+                variant="outline"
+                className="border-primary/30 bg-primary/10 text-primary font-mono text-[11px]"
+                title={`Tiket ini terikat pada Regulasi Kebijakan Dinamis SOP Versi ${detail.kebijakanVersi}`}
+              >
+                SOP v{detail.kebijakanVersi}
+              </Badge>
+            )}
             <Badge variant="outline" className="gap-1.5">
               <span
                 aria-hidden

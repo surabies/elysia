@@ -14,9 +14,11 @@ import {
   pegawai,
   daftarCatat,
   rolePermissions,
+  userPermissionOverrides,
   getActivePeriode,
   type AppRole,
 } from '@cater/db';
+import type { UserEffectivePermission } from '@cater/types';
 
 export interface PelangganUrutanItem {
   nolg: string;
@@ -61,12 +63,18 @@ export interface MatriksHakAksesItem {
   deskripsi: string;
   urutan?: number;
   superadmin: boolean;
-  staffBilling: boolean;
-  verifikator1: boolean;
-  verifikator2: boolean;
-  verifikator3: boolean;
-  executive: boolean;
+  direksi: boolean;
+  seniorManager: boolean;
+  manager: boolean;
+  supervisor: boolean;
+  staff: boolean;
   pelaksana: boolean;
+  // Legacy perizinan (backward-compatibility)
+  staffBilling?: boolean;
+  verifikator1?: boolean;
+  verifikator2?: boolean;
+  verifikator3?: boolean;
+  executive?: boolean;
   updatedAt?: string | null;
 }
 
@@ -78,12 +86,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Live tracking & progres rute',
     urutan: 1,
     superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: true,
     staffBilling: true,
     verifikator1: true,
     verifikator2: true,
     verifikator3: true,
     executive: true,
-    pelaksana: true,
   },
   {
     modulKey: 'verif_ring1',
@@ -92,12 +105,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Screening anomali & survei ulang',
     urutan: 2,
     superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
     staffBilling: true,
     verifikator1: true,
     verifikator2: true,
     verifikator3: true,
     executive: false,
-    pelaksana: false,
   },
   {
     modulKey: 'verif_ring2',
@@ -106,12 +124,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Approval deviasi cabang wilayah',
     urutan: 3,
     superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: false,
+    staff: false,
+    pelaksana: false,
     staffBilling: false,
     verifikator1: false,
     verifikator2: true,
     verifikator3: true,
     executive: false,
-    pelaksana: false,
   },
   {
     modulKey: 'verif_ring3',
@@ -120,12 +143,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Pengesahan final billing DRD',
     urutan: 4,
     superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: false,
+    supervisor: false,
+    staff: false,
+    pelaksana: false,
     staffBilling: false,
     verifikator1: false,
     verifikator2: false,
     verifikator3: true,
     executive: true,
-    pelaksana: false,
   },
   {
     modulKey: 'verif_mandiri',
@@ -134,12 +162,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Validasi lapor meter warga',
     urutan: 5,
     superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
     staffBilling: true,
     verifikator1: true,
     verifikator2: true,
     verifikator3: true,
     executive: false,
-    pelaksana: false,
   },
   {
     modulKey: 'manual_add',
@@ -148,12 +181,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Input darurat & taksasi rute',
     urutan: 6,
     superadmin: true,
+    direksi: false,
+    seniorManager: false,
+    manager: false,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
     staffBilling: true,
     verifikator1: true,
     verifikator2: false,
     verifikator3: false,
     executive: false,
-    pelaksana: false,
   },
   {
     modulKey: 'koreksi_stand',
@@ -162,12 +200,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Revisi angka stand & audit trail',
     urutan: 7,
     superadmin: true,
+    direksi: false,
+    seniorManager: true,
+    manager: true,
+    supervisor: false,
+    staff: true,
+    pelaksana: false,
     staffBilling: true,
     verifikator1: false,
     verifikator2: true,
     verifikator3: true,
     executive: false,
-    pelaksana: false,
   },
   {
     modulKey: 'closing_drd',
@@ -176,12 +219,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Kunci periode & buat DRD',
     urutan: 8,
     superadmin: true,
+    direksi: false,
+    seniorManager: true,
+    manager: false,
+    supervisor: false,
+    staff: true,
+    pelaksana: false,
     staffBilling: true,
     verifikator1: false,
     verifikator2: false,
     verifikator3: true,
     executive: false,
-    pelaksana: false,
   },
   {
     modulKey: 'laporan_drd',
@@ -190,12 +238,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Rekapitulasi rekening & analitik',
     urutan: 9,
     superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
     staffBilling: true,
     verifikator1: true,
     verifikator2: true,
     verifikator3: true,
     executive: true,
-    pelaksana: false,
   },
   {
     modulKey: 'pengaduan_air',
@@ -204,12 +257,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Keluhan pelanggan & tindak lanjut',
     urutan: 10,
     superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: true,
     staffBilling: true,
     verifikator1: true,
     verifikator2: true,
     verifikator3: true,
     executive: true,
-    pelaksana: true,
   },
   {
     modulKey: 'master_konfigurasi',
@@ -218,12 +276,17 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     deskripsi: 'Kelola user, rute & tarif',
     urutan: 11,
     superadmin: true,
+    direksi: true,
+    seniorManager: false,
+    manager: false,
+    supervisor: false,
+    staff: true,
+    pelaksana: false,
     staffBilling: true,
     verifikator1: false,
     verifikator2: false,
     verifikator3: false,
     executive: false,
-    pelaksana: false,
   },
 ];
 
@@ -468,7 +531,7 @@ export class MasterExtendedService {
   }
 
   /**
-   * Helper: Pastikan tabel role_permissions tersedia di Postgres
+   * Helper: Pastikan tabel role_permissions & user_permission_overrides tersedia di Postgres
    */
   private async ensureRolePermissionsTable() {
     await db.execute(sql`
@@ -480,15 +543,49 @@ export class MasterExtendedService {
         "deskripsi" text,
         "urutan" numeric(4, 0) NOT NULL DEFAULT '0',
         "superadmin" boolean NOT NULL DEFAULT true,
+        "direksi" boolean NOT NULL DEFAULT false,
+        "senior_manager" boolean NOT NULL DEFAULT false,
+        "manager" boolean NOT NULL DEFAULT false,
+        "supervisor" boolean NOT NULL DEFAULT false,
+        "staff" boolean NOT NULL DEFAULT false,
+        "pelaksana" boolean NOT NULL DEFAULT false,
         "staff_billing" boolean NOT NULL DEFAULT false,
         "verifikator_1" boolean NOT NULL DEFAULT false,
         "verifikator_2" boolean NOT NULL DEFAULT false,
         "verifikator_3" boolean NOT NULL DEFAULT false,
         "executive" boolean NOT NULL DEFAULT false,
-        "pelaksana" boolean NOT NULL DEFAULT false,
         "updated_by" text,
         "updated_at" timestamp NOT NULL DEFAULT now()
       );
+
+      ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "direksi" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "senior_manager" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "manager" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "supervisor" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "staff" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "pelaksana" boolean NOT NULL DEFAULT false;
+
+      -- Sinkronkan data awal dari kolom legacy jika kolom baru masih bernilai false semua
+      UPDATE "role_permissions" SET
+        "direksi" = "executive",
+        "senior_manager" = "verifikator_3",
+        "manager" = "verifikator_2",
+        "supervisor" = "verifikator_1",
+        "staff" = "staff_billing"
+      WHERE "direksi" = false AND "senior_manager" = false AND "manager" = false AND "supervisor" = false;
+
+      CREATE TABLE IF NOT EXISTS "user_permission_overrides" (
+        "id" text PRIMARY KEY,
+        "user_id" text NOT NULL,
+        "modul_key" varchar(50) NOT NULL,
+        "granted" boolean NOT NULL,
+        "catatan" text,
+        "updated_by" text,
+        "created_at" timestamp NOT NULL DEFAULT now(),
+        "updated_at" timestamp NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS "user_permission_overrides_user_id_idx" ON "user_permission_overrides" ("user_id");
+      CREATE INDEX IF NOT EXISTS "user_permission_overrides_modul_key_idx" ON "user_permission_overrides" ("modul_key");
     `);
   }
 
@@ -516,12 +613,17 @@ export class MasterExtendedService {
             deskripsi: item.deskripsi,
             urutan: String(item.urutan),
             superadmin: item.superadmin,
-            staffBilling: item.staffBilling,
-            verifikator1: item.verifikator1,
-            verifikator2: item.verifikator2,
-            verifikator3: item.verifikator3,
-            executive: item.executive,
+            direksi: item.direksi,
+            seniorManager: item.seniorManager,
+            manager: item.manager,
+            supervisor: item.supervisor,
+            staff: item.staff,
             pelaksana: item.pelaksana,
+            staffBilling: item.staffBilling ?? item.staff,
+            verifikator1: item.verifikator1 ?? item.supervisor,
+            verifikator2: item.verifikator2 ?? item.manager,
+            verifikator3: item.verifikator3 ?? item.seniorManager,
+            executive: item.executive ?? item.direksi,
           })
           .onConflictDoNothing();
       }
@@ -532,27 +634,41 @@ export class MasterExtendedService {
         .orderBy(asc(rolePermissions.urutan));
     }
 
-    return rows.map((r) => ({
-      id: r.id,
-      modulKey: r.modulKey,
-      modulNama: r.modulNama,
-      modul: r.modulNama,
-      kategori: r.kategori,
-      deskripsi: r.deskripsi ?? '',
-      urutan: Number(r.urutan),
-      superadmin: r.superadmin,
-      staffBilling: r.staffBilling,
-      verifikator1: r.verifikator1,
-      verifikator2: r.verifikator2,
-      verifikator3: r.verifikator3,
-      executive: r.executive,
-      pelaksana: r.pelaksana,
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toISOString() : null,
-    }));
+    return rows.map((r) => {
+      const direksi = r.direksi ?? r.executive ?? false;
+      const seniorManager = r.seniorManager ?? r.verifikator3 ?? false;
+      const manager = r.manager ?? r.verifikator2 ?? false;
+      const supervisor = r.supervisor ?? r.verifikator1 ?? false;
+      const staff = r.staff ?? r.staffBilling ?? false;
+      const pelaksana = r.pelaksana ?? false;
+
+      return {
+        id: r.id,
+        modulKey: r.modulKey,
+        modulNama: r.modulNama,
+        modul: r.modulNama,
+        kategori: r.kategori,
+        deskripsi: r.deskripsi ?? '',
+        urutan: Number(r.urutan),
+        superadmin: r.superadmin,
+        direksi,
+        seniorManager,
+        manager,
+        supervisor,
+        staff,
+        pelaksana,
+        staffBilling: staff,
+        verifikator1: supervisor,
+        verifikator2: manager,
+        verifikator3: seniorManager,
+        executive: direksi,
+        updatedAt: r.updatedAt ? new Date(r.updatedAt).toISOString() : null,
+      };
+    });
   }
 
   /**
-   * 7. Simpan Modifikasi Matriks Otorisasi RBAC
+   * 7. Simpan Modifikasi Matriks Otorisasi RBAC (6 Tingkatan Jabatan)
    */
   async updateMatriksOtorisasi(
     items: MatriksHakAksesItem[],
@@ -560,7 +676,45 @@ export class MasterExtendedService {
   ): Promise<{ success: boolean; count: number }> {
     await this.ensureRolePermissionsTable();
 
+    // Validasi apakah userId benar-benar ada di tabel user untuk mencegah FK constraint violation
+    let validUserId: string | null = null;
+    if (userId) {
+      const [u] = await db
+        .select({ id: user.id })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1);
+      if (u) validUserId = u.id;
+    }
+
     for (const item of items) {
+      let direksi = item.direksi ?? item.executive ?? false;
+      if (item.executive !== undefined && item.direksi !== undefined && item.executive !== item.direksi) {
+        direksi = item.executive;
+      }
+
+      let seniorManager = item.seniorManager ?? item.verifikator3 ?? false;
+      if (item.verifikator3 !== undefined && item.seniorManager !== undefined && item.verifikator3 !== item.seniorManager) {
+        seniorManager = item.verifikator3;
+      }
+
+      let manager = item.manager ?? item.verifikator2 ?? false;
+      if (item.verifikator2 !== undefined && item.manager !== undefined && item.verifikator2 !== item.manager) {
+        manager = item.verifikator2;
+      }
+
+      let supervisor = item.supervisor ?? item.verifikator1 ?? false;
+      if (item.verifikator1 !== undefined && item.supervisor !== undefined && item.verifikator1 !== item.supervisor) {
+        supervisor = item.verifikator1;
+      }
+
+      let staff = item.staff ?? item.staffBilling ?? false;
+      if (item.staffBilling !== undefined && item.staff !== undefined && item.staffBilling !== item.staff) {
+        staff = item.staffBilling;
+      }
+
+      const pelaksana = item.pelaksana ?? false;
+
       await db
         .insert(rolePermissions)
         .values({
@@ -570,33 +724,209 @@ export class MasterExtendedService {
           kategori: item.kategori || 'OPERASIONAL',
           deskripsi: item.deskripsi,
           urutan: String(item.urutan ?? 0),
-          superadmin: item.superadmin,
-          staffBilling: item.staffBilling,
-          verifikator1: item.verifikator1,
-          verifikator2: item.verifikator2,
-          verifikator3: item.verifikator3,
-          executive: item.executive,
-          pelaksana: item.pelaksana,
-          updatedBy: userId ?? null,
+          superadmin: item.superadmin ?? true,
+          direksi,
+          seniorManager,
+          manager,
+          supervisor,
+          staff,
+          pelaksana,
+          staffBilling: staff,
+          verifikator1: supervisor,
+          verifikator2: manager,
+          verifikator3: seniorManager,
+          executive: direksi,
+          updatedBy: validUserId,
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: rolePermissions.modulKey,
           set: {
-            superadmin: item.superadmin,
-            staffBilling: item.staffBilling,
-            verifikator1: item.verifikator1,
-            verifikator2: item.verifikator2,
-            verifikator3: item.verifikator3,
-            executive: item.executive,
-            pelaksana: item.pelaksana,
-            updatedBy: userId ?? null,
+            superadmin: item.superadmin ?? true,
+            direksi,
+            seniorManager,
+            manager,
+            supervisor,
+            staff,
+            pelaksana,
+            staffBilling: staff,
+            verifikator1: supervisor,
+            verifikator2: manager,
+            verifikator3: seniorManager,
+            executive: direksi,
+            updatedBy: validUserId,
             updatedAt: new Date(),
           },
         });
     }
 
     return { success: true, count: items.length };
+  }
+
+  /**
+   * 8. Ambil Riwayat Override Izin Khusus Pengguna (Si A)
+   */
+  async getUserPermissionOverrides(userId: string) {
+    await this.ensureRolePermissionsTable();
+    return await db
+      .select()
+      .from(userPermissionOverrides)
+      .where(eq(userPermissionOverrides.userId, userId));
+  }
+
+  /**
+   * 9. Simpan / Perbarui Override Izin Khusus Pengguna (Si A)
+   */
+  async setUserPermissionOverrides(
+    userId: string,
+    overrides: { modulKey: string; granted: boolean; catatan?: string }[],
+    updatedBy?: string
+  ): Promise<{ success: boolean; count: number }> {
+    await this.ensureRolePermissionsTable();
+
+    let validUpdatedBy: string | null = null;
+    if (updatedBy) {
+      const [u] = await db
+        .select({ id: user.id })
+        .from(user)
+        .where(eq(user.id, updatedBy))
+        .limit(1);
+      if (u) validUpdatedBy = u.id;
+    }
+
+    for (const ov of overrides) {
+      // Hapus override lama jika ada untuk pasangan user_id & modul_key
+      await db
+        .delete(userPermissionOverrides)
+        .where(
+          and(
+            eq(userPermissionOverrides.userId, userId),
+            eq(userPermissionOverrides.modulKey, ov.modulKey)
+          )
+        );
+
+      await db.insert(userPermissionOverrides).values({
+        userId,
+        modulKey: ov.modulKey,
+        granted: ov.granted,
+        catatan: ov.catatan ?? null,
+        updatedBy: validUpdatedBy,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    return { success: true, count: overrides.length };
+  }
+
+  /**
+   * 10. Hapus Override Izin Khusus Pengguna (Kembalikan ke Default Role)
+   */
+  async resetUserPermissionOverride(userId: string, modulKey: string) {
+    await this.ensureRolePermissionsTable();
+    await db
+      .delete(userPermissionOverrides)
+      .where(
+        and(
+          eq(userPermissionOverrides.userId, userId),
+          eq(userPermissionOverrides.modulKey, modulKey)
+        )
+      );
+    return { success: true };
+  }
+
+  /**
+   * 11. Dapatkan Daftar Izin Efektif Lengkap untuk Pengguna Tertentu (Si A)
+   * Menggabungkan wewenang bawaan jabatannya dengan custom override perorangan
+   */
+  async getUserEffectivePermissions(userId: string): Promise<UserEffectivePermission[]> {
+    await this.ensureRolePermissionsTable();
+
+    // 1. Ambil seluruh modul perizinan master
+    const matrix = await this.getMatriksOtorisasi();
+
+    // 2. Ambil peran/role user
+    const uRoles = await db
+      .select({ role: userRoles.role })
+      .from(userRoles)
+      .where(eq(userRoles.userId, userId));
+    const roleSet = new Set(uRoles.map((r) => r.role));
+
+    // 3. Ambil profil pegawai untuk level struktural
+    const [peg] = await db
+      .select({ level: pegawai.level })
+      .from(pegawai)
+      .where(eq(pegawai.userId, userId))
+      .limit(1);
+    const level = peg?.level;
+
+    const isSuperadmin = roleSet.has('SUPERADMIN');
+    const isDireksi = roleSet.has('DIREKSI') || roleSet.has('EXECUTIVE') || level === 'DIREKSI';
+    const isSeniorManager =
+      roleSet.has('SENIOR_MANAGER') || roleSet.has('VERIFIKATOR_3') || level === 'SENIOR_MANAGER';
+    const isManager =
+      roleSet.has('MANAGER') || roleSet.has('VERIFIKATOR_2') || level === 'MANAGER';
+    const isSupervisor =
+      roleSet.has('SUPERVISOR') || roleSet.has('VERIFIKATOR_1') || level === 'SUPERVISOR';
+    const isStaff =
+      roleSet.has('STAFF') ||
+      roleSet.has('STAFF_ADMIN_BILLING') ||
+      level === 'STAFF_PENYELIA';
+    const isPelaksana =
+      roleSet.has('PELAKSANA') || roleSet.has('PENCATAT') || level === 'PELAKSANA';
+
+    // 4. Ambil override izin khusus untuk user ini
+    const overrides = await db
+      .select()
+      .from(userPermissionOverrides)
+      .where(eq(userPermissionOverrides.userId, userId));
+    const overrideMap = new Map(overrides.map((o) => [o.modulKey, o]));
+
+    return matrix.map((m) => {
+      // Hitung izin default berdasarkan role / level
+      let roleDefault = false;
+      if (isSuperadmin) {
+        roleDefault = true;
+      } else if (isDireksi && m.direksi) {
+        roleDefault = true;
+      } else if (isSeniorManager && m.seniorManager) {
+        roleDefault = true;
+      } else if (isManager && m.manager) {
+        roleDefault = true;
+      } else if (isSupervisor && m.supervisor) {
+        roleDefault = true;
+      } else if (isStaff && m.staff) {
+        roleDefault = true;
+      } else if (isPelaksana && m.pelaksana) {
+        roleDefault = true;
+      }
+
+      // Evaluasi apakah ada custom override khusus untuk Si A
+      const override = overrideMap.get(m.modulKey);
+      const isOverridden = !!override;
+      const effectiveGranted = isSuperadmin ? true : isOverridden ? override.granted : roleDefault;
+
+      return {
+        modulKey: m.modulKey,
+        modulNama: m.modulNama,
+        kategori: m.kategori,
+        deskripsi: m.deskripsi,
+        urutan: m.urutan ?? 0,
+        roleDefault,
+        isOverridden,
+        effectiveGranted,
+        overrideCatatan: override?.catatan ?? null,
+      };
+    });
+  }
+
+  /**
+   * 12. Helper Otorisasi Cepat: Cek apakah user punya izin pada modul tertentu
+   */
+  async hasUserPermission(userId: string, modulKey: string): Promise<boolean> {
+    const permissions = await this.getUserEffectivePermissions(userId);
+    const target = permissions.find((p) => p.modulKey === modulKey);
+    return target?.effectiveGranted ?? false;
   }
 }
 

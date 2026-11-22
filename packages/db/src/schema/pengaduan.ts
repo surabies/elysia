@@ -8,6 +8,7 @@ import {
   geometry,
   pgEnum,
   index,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth';
 import { pelanggan } from './pelanggan';
@@ -111,6 +112,7 @@ export const pengaduan = pgTable(
     jumlahDibukaKembali: integer('jumlah_dibuka_kembali').notNull().default(0),
     konfirmasiBatasAt: timestamp('konfirmasi_batas_at'),
     verifikasiAt: timestamp('verifikasi_at'),
+    kebijakanVersi: integer('kebijakan_versi').default(1),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -161,9 +163,42 @@ export const pengaduanNomorUrut = pgTable('pengaduan_nomor_urut', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// 5. Status Dokumen Kebijakan SOP
+export const statusKebijakanEnum = pgEnum('status_kebijakan_enum', [
+  'DRAFT',
+  'AKTIF',
+  'ARSIP',
+]);
+
+// 6. Tabel Dokumen Kebijakan & Regulasi SOP Pengaduan Berversi (Policy as Data)
+export const kebijakanPengaduan = pgTable(
+  'kebijakan_pengaduan',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    versi: integer('versi').notNull().unique(),
+    status: statusKebijakanEnum('status').notNull().default('DRAFT'),
+    nomorSk: varchar('nomor_sk', { length: 100 }), // Dasar hukum / SK Direksi
+    alasanPerubahan: text('alasan_perubahan'),
+    tanggalBerlaku: timestamp('tanggal_berlaku').notNull().defaultNow(),
+    config: jsonb('config').notNull(),
+    dibuatOleh: text('dibuat_oleh').references(() => user.id, { onDelete: 'set null' }),
+    disetujuiOleh: text('disetujui_oleh').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('kebijakan_pengaduan_versi_idx').on(table.versi),
+    index('kebijakan_pengaduan_status_idx').on(table.status),
+  ]
+);
+
 export type PengaduanRow = typeof pengaduan.$inferSelect;
 export type NewPengaduanRow = typeof pengaduan.$inferInsert;
 export type RiwayatPengaduanRow = typeof riwayatPengaduan.$inferSelect;
 export type NewRiwayatPengaduanRow = typeof riwayatPengaduan.$inferInsert;
 export type PengaduanNomorUrutRow = typeof pengaduanNomorUrut.$inferSelect;
 export type NewPengaduanNomorUrutRow = typeof pengaduanNomorUrut.$inferInsert;
+export type KebijakanPengaduanRow = typeof kebijakanPengaduan.$inferSelect;
+export type NewKebijakanPengaduanRow = typeof kebijakanPengaduan.$inferInsert;

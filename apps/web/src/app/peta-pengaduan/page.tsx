@@ -27,6 +27,11 @@ const DAFTAR_ROLE_OPERATOR = [
   "PENCATAT",
   "PELAKSANA",
   "ADMIN",
+  "DIREKSI",
+  "SENIOR_MANAGER",
+  "MANAGER",
+  "SUPERVISOR",
+  "STAFF",
 ]
 
 interface PageProps {

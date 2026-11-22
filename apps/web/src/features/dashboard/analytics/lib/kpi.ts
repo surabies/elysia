@@ -78,7 +78,7 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
         type: "segments",
         items: [
           { id: "normal", label: "Normal", value: totalNormal, color: "#10b981" },
-          { id: "anomali", label: "Anomali", value: totalAnomali, color: "#f59e0b" },
+          { id: "anomali", label: "Anomali", value: totalAnomali, color: "#f5a623" },
           { id: "sisa", label: "Belum", value: belumTerbaca, color: "#94a3b8" },
         ],
       },
@@ -102,7 +102,7 @@ export function buildAnalyticsMetricCards(data: AnalyticsPageData): MetricCardDa
         type: "sparkline",
         data: sparklineKubikasi,
         labels: trendLabels,
-        color: "#06b6d4",
+        color: "#0070f3",
         unit: "m³",
       },
     },

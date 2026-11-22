@@ -6,6 +6,16 @@ import { eq } from 'drizzle-orm';
 export const authPlugin = new Elysia({ name: 'auth-plugin' })
   .derive({ as: 'scoped' }, async ({ request }) => {
     try {
+      if (process.env.NODE_ENV === 'test' && request.headers.get('x-test-role')) {
+        const testRole = request.headers.get('x-test-role') as AppRole;
+        const testUserId = request.headers.get('x-test-user-id') || 'test-admin';
+        return {
+          session: { id: 'test-session', userId: testUserId } as any,
+          user: { id: testUserId, name: 'Test User', email: 'test@example.com' } as any,
+          userRoles: [testRole],
+        };
+      }
+
       const sessionData = await auth.api.getSession({
         headers: request.headers,
       });

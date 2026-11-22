@@ -2,6 +2,7 @@ import { Elysia, t } from 'elysia';
 import type { AppRole } from '@cater/db';
 import { authPlugin } from '../../plugins/auth';
 import { pengaduanService } from '../../services/pengaduan/pengaduan.service';
+import { kebijakanPengaduanService } from '../../services/pengaduan/kebijakan-pengaduan.service';
 import { DomainError } from '../../domain/pengaduan/pengaduan.errors';
 import {
   createPengaduanBodySchema,
@@ -176,6 +177,110 @@ const pengaduanRoutes = new Elysia()
     {
       requireAuth: true,
       body: createPengaduanBodySchema,
+    }
+  )
+
+  // 6a. Kebijakan Pengaduan Dinamis: Ambil Kebijakan Aktif (GET /kebijakan/aktif)
+  .get(
+    '/kebijakan/aktif',
+    async () => {
+      const data = await kebijakanPengaduanService.getKebijakanAktif();
+      return { success: true, data };
+    }
+  )
+
+  // 6b. Kebijakan Pengaduan Dinamis: Ambil Seluruh Riwayat Versi Kebijakan (GET /kebijakan/riwayat)
+  .get(
+    '/kebijakan/riwayat',
+    async () => {
+      const data = await kebijakanPengaduanService.getRiwayatKebijakan();
+      return { success: true, data };
+    }
+  )
+
+  // 6c. Kebijakan Pengaduan Dinamis: Simpan Draft Kebijakan Baru (POST /kebijakan/draft)
+  .post(
+    '/kebijakan/draft',
+    async ({ body, user }) => {
+      const data = await kebijakanPengaduanService.simpanDraftKebijakan({
+        nomorSk: body.nomorSk,
+        alasanPerubahan: body.alasanPerubahan,
+        config: body.config as any,
+        dibuatOleh: user?.id,
+      });
+      return { success: true, message: 'Draft kebijakan berhasil disimpan', data };
+    },
+    {
+      body: t.Object({
+        nomorSk: t.Optional(t.String()),
+        alasanPerubahan: t.Optional(t.String()),
+        config: t.Any(),
+      }),
+    }
+  )
+
+  // 6d. Kebijakan Pengaduan Dinamis: Terbitkan Versi Kebijakan (POST /kebijakan/:versi/terbitkan)
+  .post(
+    '/kebijakan/:versi/terbitkan',
+    async ({ params: { versi }, body, user }) => {
+      const versiNum = parseInt(versi, 10);
+      if (Number.isNaN(versiNum)) {
+        throw new Error('Nomor versi kebijakan harus berupa angka.');
+      }
+      const data = await kebijakanPengaduanService.terbitkanKebijakan(versiNum, {
+        nomorSk: body.nomorSk,
+        alasanPerubahan: body.alasanPerubahan,
+        disetujuiOleh: user?.id,
+      });
+      return { success: true, message: `Kebijakan versi ${versiNum} berhasil diterbitkan dan diaktifkan`, data };
+    },
+    {
+      params: t.Object({ versi: t.String() }),
+      body: t.Object({
+        nomorSk: t.String({ minLength: 3 }),
+        alasanPerubahan: t.String({ minLength: 5 }),
+      }),
+    }
+  )
+
+  // 6e. Kebijakan Pengaduan Dinamis: Rollback Kebijakan (POST /kebijakan/rollback)
+  .post(
+    '/kebijakan/rollback',
+    async ({ body, user }) => {
+      const data = await kebijakanPengaduanService.rollbackKebijakan(body.versiTarget, {
+        alasanRollback: body.alasanRollback,
+        disetujuiOleh: user?.id,
+      });
+      return {
+        success: true,
+        message: `Kebijakan berhasil di-rollback ke versi ${body.versiTarget}`,
+        data,
+      };
+    },
+    {
+      body: t.Object({
+        versiTarget: t.Number(),
+        alasanRollback: t.String({ minLength: 5 }),
+      }),
+    }
+  )
+
+  // 6f. Kebijakan Pengaduan Dinamis: Detail Dokumen per Versi (GET /kebijakan/:versi)
+  .get(
+    '/kebijakan/:versi',
+    async ({ params: { versi } }) => {
+      const versiNum = parseInt(versi, 10);
+      if (Number.isNaN(versiNum)) {
+        throw new Error('Nomor versi kebijakan harus berupa angka.');
+      }
+      const data = await kebijakanPengaduanService.getKebijakanByVersi(versiNum);
+      if (!data) {
+        throw new Error(`Kebijakan versi ${versiNum} tidak ditemukan.`);
+      }
+      return { success: true, data };
+    },
+    {
+      params: t.Object({ versi: t.String() }),
     }
   )
 

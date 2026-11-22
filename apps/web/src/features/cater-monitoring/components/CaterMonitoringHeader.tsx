@@ -196,7 +196,7 @@ export function CaterMonitoringHeader({
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5 font-mono uppercase text-[10px]">
+              <Badge variant="blue-subtle" size="sm">
                 Operasional
               </Badge>
               <span className="text-label-12 text-muted-foreground">
@@ -248,12 +248,9 @@ export function CaterMonitoringHeader({
             </div>
 
             {anomaliTotal > 0 && (
-              <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-label-12">
-                <span className="text-amber-700 dark:text-amber-400 font-medium">Perlu Ditinjau:</span>
-                <span className="font-semibold text-amber-700 dark:text-amber-300 font-mono">
-                  {anomaliTotal} Anomali
-                </span>
-              </div>
+              <Badge variant="amber-subtle" size="md" className="font-mono">
+                Perlu Ditinjau: {anomaliTotal} Anomali
+              </Badge>
             )}
           </div>
         </div>

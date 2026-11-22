@@ -51,8 +51,18 @@ describe('Peta Pengaduan Spasial & Endpoint Publik', () => {
 });
 
 describe('Dashboard Pengaduan Desk & V1 Endpoints', () => {
+  const authHeaders = {
+    'Content-Type': 'application/json',
+    'x-test-role': 'SUPERADMIN',
+    'x-test-user-id': 'test-admin',
+  };
+
   it('GET /api/v1/pengaduan/statistik returns operational statistics', async () => {
-    const res = await app.handle(new Request('http://localhost/api/v1/pengaduan/statistik'));
+    const res = await app.handle(
+      new Request('http://localhost/api/v1/pengaduan/statistik', {
+        headers: authHeaders,
+      })
+    );
     expect(res.status).toBe(200);
     const json = (await res.json()) as any;
     expect(json.success).toBe(true);
@@ -63,7 +73,11 @@ describe('Dashboard Pengaduan Desk & V1 Endpoints', () => {
   });
 
   it('GET /api/v1/pengaduan/petugas returns list of petugas', async () => {
-    const res = await app.handle(new Request('http://localhost/api/v1/pengaduan/petugas'));
+    const res = await app.handle(
+      new Request('http://localhost/api/v1/pengaduan/petugas', {
+        headers: authHeaders,
+      })
+    );
     expect(res.status).toBe(200);
     const json = (await res.json()) as any;
     expect(json.success).toBe(true);
@@ -74,7 +88,11 @@ describe('Dashboard Pengaduan Desk & V1 Endpoints', () => {
   });
 
   it('GET /api/v1/pengaduan returns paginated complaints for DataGrid', async () => {
-    const res = await app.handle(new Request('http://localhost/api/v1/pengaduan?page=1&pageSize=10'));
+    const res = await app.handle(
+      new Request('http://localhost/api/v1/pengaduan?page=1&pageSize=10', {
+        headers: authHeaders,
+      })
+    );
     expect(res.status).toBe(200);
     const json = (await res.json()) as any;
     expect(json.success).toBe(true);
@@ -88,7 +106,7 @@ describe('Dashboard Pengaduan Desk & V1 Endpoints', () => {
     const createRes = await app.handle(
       new Request('http://localhost/api/pengaduan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           jenis: 'BOCOR_PIPA_DINAS',
           judul: 'Pipa retak depan gerbang kantor',
@@ -106,7 +124,11 @@ describe('Dashboard Pengaduan Desk & V1 Endpoints', () => {
     const nomorTiket = createJson.data.nomorTiket;
 
     // 2. Fetch full detail by ID
-    const detailRes = await app.handle(new Request(`http://localhost/api/v1/pengaduan/${ticketId}`));
+    const detailRes = await app.handle(
+      new Request(`http://localhost/api/v1/pengaduan/${ticketId}`, {
+        headers: authHeaders,
+      })
+    );
     expect(detailRes.status).toBe(200);
     const detailJson = (await detailRes.json()) as any;
     expect(detailJson.success).toBe(true);
@@ -118,7 +140,7 @@ describe('Dashboard Pengaduan Desk & V1 Endpoints', () => {
     const catatanRes = await app.handle(
       new Request(`http://localhost/api/v1/pengaduan/${ticketId}/catatan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({ catatan: 'Telah dicek oleh tim jaga malam.' }),
       })
     );
@@ -130,7 +152,7 @@ describe('Dashboard Pengaduan Desk & V1 Endpoints', () => {
     const chatRes = await app.handle(
       new Request(`http://localhost/api/v1/pengaduan/${ticketId}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({ pesan: 'Regu lapangan sedang mempersiapkan klem pipa pengganti.' }),
       })
     );

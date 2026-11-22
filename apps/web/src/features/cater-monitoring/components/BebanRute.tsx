@@ -96,21 +96,21 @@ export function BebanRute({
     if (sl > 280) {
       return {
         label: 'Overload',
-        badgeClass: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
-        barColor: 'bg-red-500',
+        variant: 'red-subtle' as const,
+        barColor: 'bg-[var(--ds-red-700)]',
       };
     }
     if (sl > 220) {
       return {
         label: 'Padat',
-        badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-        barColor: 'bg-amber-500',
+        variant: 'amber-subtle' as const,
+        barColor: 'bg-[var(--ds-amber-700)]',
       };
     }
     return {
       label: 'Ideal',
-      badgeClass: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30',
-      barColor: 'bg-teal-500',
+      variant: 'green-subtle' as const,
+      barColor: 'bg-[var(--ds-green-700)]',
     };
   };
 
@@ -296,7 +296,7 @@ export function BebanRute({
 
                       {/* Kolom 2: Status Badge */}
                       <td className="py-1.5 px-2.5 text-center">
-                        <Badge variant="outline" className={`text-[10px] font-mono py-0 px-1.5 ${status.badgeClass}`}>
+                        <Badge variant={status.variant} size="sm" className="font-mono">
                           {status.label}
                         </Badge>
                       </td>
@@ -389,8 +389,9 @@ export function BebanRute({
               <DialogTitle className="text-heading-18 font-bold flex items-center gap-2">
                 <span>Rute {selectedRoute.kode}</span>
                 <Badge
-                  variant="outline"
-                  className={`text-label-12 font-mono ${getKapasitasStatus(selectedRoute.customerCount || 0).badgeClass}`}
+                  variant={getKapasitasStatus(selectedRoute.customerCount || 0).variant}
+                  size="sm"
+                  className="font-mono"
                 >
                   {getKapasitasStatus(selectedRoute.customerCount || 0).label}
                 </Badge>

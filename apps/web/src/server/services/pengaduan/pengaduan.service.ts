@@ -46,6 +46,7 @@ import {
   ValidationError,
 } from '../../domain/pengaduan/pengaduan.errors';
 import { isCloudinaryConfigured, uploadToCloudinary } from '../../lib/cloudinary';
+import { kebijakanPengaduanService } from './kebijakan-pengaduan.service';
 import type {
   JenisPengaduan,
   KlasifikasiPengaduan,
@@ -115,6 +116,23 @@ export interface KirimChatPetugasInput {
 
 export class PengaduanService {
   /**
+   * Helper sanitasi ID Petugas agar tidak melanggar foreign key constraint PostgreSQL jika user tidak ada
+   */
+  private async sanitizeUserId(userId?: string | null): Promise<string | null> {
+    if (!userId) return null;
+    try {
+      const [found] = await db
+        .select({ id: user.id })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1);
+      return found ? found.id : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * 1. Membuat Pengaduan Baru (Publik maupun Internal Kantor)
    * Perbaikan Integritas Data (B4, B5, B14, B15):
    * - B4: Nomor urut atomik dengan pengaduan_nomor_urut + retry maks 3x bila race condition.
@@ -164,12 +182,18 @@ export class PengaduanService {
       }
     }
 
-    const klasifikasi = input.klasifikasi ?? tentukanKlasifikasi(input.jenis);
-    const prioritas = tentukanPrioritasAwal(input.jenis, input.prioritas);
-    const sla = hitungTargetSla(prioritas, undefined, { jenis: input.jenis });
+    const kebijakanAktif = await kebijakanPengaduanService.getKebijakanAktif();
+    const configKebijakan = kebijakanAktif.config;
+
+    const klasifikasi = input.klasifikasi ?? tentukanKlasifikasi(input.jenis, configKebijakan);
+    const prioritas = tentukanPrioritasAwal(input.jenis, input.prioritas, configKebijakan);
+    const sla = hitungTargetSla(prioritas, undefined, { jenis: input.jenis, kebijakan: configKebijakan });
 
     // Deteksi laporan duplikat spasial & temporal (K7)
     let kemungkinanDuplikat: Array<{ nomorTiket: string; jarakMeter: number }> = [];
+    const duplikatJendelaJam = configKebijakan.duplikatJendelaJam ?? DUPLIKAT_JENDELA_JAM;
+    const duplikatRadiusMeter = configKebijakan.duplikatRadiusMeter ?? DUPLIKAT_RADIUS_METER;
+
     if (
       input.koordinat &&
       (input.jenis === 'BOCOR_PIPA_DINAS' ||
@@ -177,7 +201,7 @@ export class PengaduanService {
         input.jenis === 'AIR_KERUH_BAU_BERWARNA')
     ) {
       try {
-        const batasWaktu = new Date(Date.now() - DUPLIKAT_JENDELA_JAM * 60 * 60 * 1000);
+        const batasWaktu = new Date(Date.now() - duplikatJendelaJam * 60 * 60 * 1000);
         const openStatuses = [
           'BARU',
           'TERVERIFIKASI',
@@ -206,7 +230,7 @@ export class PengaduanService {
               sql`ST_DWithin(
                 ${pengaduan.koordinat}::geography,
                 ST_SetSRID(ST_MakePoint(${input.koordinat.x}, ${input.koordinat.y}), 4326)::geography,
-                ${DUPLIKAT_RADIUS_METER}
+                ${duplikatRadiusMeter}
               )`
             )
           )
@@ -342,6 +366,7 @@ export class PengaduanService {
               videoUrl: input.videoUrl,
               targetResponsAt: sla.targetResponsAt,
               targetSelesaiAt: sla.targetSelesaiAt,
+              kebijakanVersi: kebijakanAktif.versi,
             })
             .returning();
 
@@ -519,13 +544,15 @@ export class PengaduanService {
         throw new ConflictError('Status tiket sudah berubah oleh proses lain, silakan muat ulang.');
       }
 
+      const validPetugasId = await this.sanitizeUserId(input.petugasId ?? input.aktor?.id);
+
       // B10: Catat petugas_tujuan_id pada riwayat aksi DITUGASKAN
       await tx.insert(riwayatPengaduan).values({
         pengaduanId: row.id,
         aksi: 'DITUGASKAN',
         statusDari,
         statusKe: 'DITUGASKAN',
-        petugasId: input.petugasId ?? input.aktor?.id ?? null,
+        petugasId: validPetugasId,
         petugasTujuanId: input.ditugaskanKeId,
         catatan: input.catatan ?? `Tiket ditugaskan kepada ${petugasTujuan.name ?? 'petugas lapangan'}.`,
         isPublik: true,
@@ -603,7 +630,15 @@ export class PengaduanService {
       }
     }
 
-    // Evaluasi seluruh side-effect perubahan transisi status (Fase 3: K1-K5, K8)
+    // Evaluasi seluruh side-effect perubahan transisi status (Fase 3: K1-K5, K8 & Kebijakan Dinamis Berversi)
+    let kebijakanTiket = await kebijakanPengaduanService.getKebijakanAktif();
+    if (row.kebijakanVersi && row.kebijakanVersi !== kebijakanTiket.versi) {
+      const khusus = await kebijakanPengaduanService.getKebijakanByVersi(row.kebijakanVersi);
+      if (khusus) {
+        kebijakanTiket = khusus;
+      }
+    }
+
     let transisi;
     try {
       transisi = hitungPerubahanTransisi({
@@ -621,6 +656,7 @@ export class PengaduanService {
         catatan: input.catatan,
         fotoUrl: processedFotoPenyelesaian,
         sumberAksi,
+        kebijakan: kebijakanTiket.config,
       });
     } catch (err: any) {
       if (err.message && err.message.includes('tidak sah')) {
@@ -653,12 +689,14 @@ export class PengaduanService {
         throw new ConflictError('Status tiket sudah berubah oleh proses lain, silakan muat ulang.');
       }
 
+      const validPetugasId = await this.sanitizeUserId(input.petugasId ?? input.aktor?.id);
+
       await tx.insert(riwayatPengaduan).values({
         pengaduanId: row.id,
         aksi: transisi.aksiRiwayat,
         statusDari,
         statusKe,
-        petugasId: input.petugasId ?? input.aktor?.id ?? null,
+        petugasId: validPetugasId,
         catatan: transisi.pesanRiwayat,
         fotoUrl: processedFotoPenyelesaian,
         isPublik: true,
@@ -1123,6 +1161,7 @@ export class PengaduanService {
         jumlahDibukaKembali: pengaduan.jumlahDibukaKembali,
         konfirmasiBatasAt: pengaduan.konfirmasiBatasAt,
         verifikasiAt: pengaduan.verifikasiAt,
+        kebijakanVersi: pengaduan.kebijakanVersi,
         createdAt: pengaduan.createdAt,
         updatedAt: pengaduan.updatedAt,
       })
@@ -1274,6 +1313,7 @@ export class PengaduanService {
       fotoPenyelesaianUrl: row.fotoPenyelesaianUrl,
       konfirmasiBatasAt: row.konfirmasiBatasAt ? new Date(row.konfirmasiBatasAt).toISOString() : null,
       verifikasiAt: row.verifikasiAt ? new Date(row.verifikasiAt).toISOString() : null,
+      kebijakanVersi: row.kebijakanVersi,
       createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : new Date().toISOString(),
       sla: ringkasSla(row, sekarang),
       ditugaskanKe: row.ditugaskanKeId
@@ -1320,11 +1360,19 @@ export class PengaduanService {
         .where(inArray(userRoles.role, rolesLayak))
         .limit(100);
 
-      return eligibleUsers.map((u) => ({
-        id: u.id,
-        name: u.name,
-        role: u.role,
-      }));
+      // Kelompokkan per user unik agar tidak ada duplikasi ID jika user memiliki lebih dari satu role
+      const userMap = new Map<string, { id: string; name: string | null; role: string }>();
+      for (const u of eligibleUsers) {
+        if (!userMap.has(u.id)) {
+          userMap.set(u.id, {
+            id: u.id,
+            name: u.name,
+            role: u.role,
+          });
+        }
+      }
+
+      return Array.from(userMap.values());
     } catch (err) {
       console.error('[LIST_PETUGAS_PENGADUAN_ERR]', err);
       throw err;
@@ -1356,6 +1404,8 @@ export class PengaduanService {
       }
     }
 
+    const validPetugasId = await this.sanitizeUserId(input.petugasId ?? input.aktor?.id);
+
     const [inserted] = await db
       .insert(riwayatPengaduan)
       .values({
@@ -1365,7 +1415,7 @@ export class PengaduanService {
         statusKe: row.status as any,
         catatan: input.catatan,
         isPublik: Boolean(input.isPublik),
-        petugasId: input.petugasId ?? input.aktor?.id ?? null,
+        petugasId: validPetugasId,
       })
       .returning();
 
@@ -1397,6 +1447,8 @@ export class PengaduanService {
       }
     }
 
+    const validPetugasId = await this.sanitizeUserId(input.petugasId ?? input.aktor?.id);
+
     const [inserted] = await db
       .insert(riwayatPengaduan)
       .values({
@@ -1406,7 +1458,7 @@ export class PengaduanService {
         statusKe: row.status as any,
         catatan: input.pesan,
         isPublik: input.isPublik !== undefined ? Boolean(input.isPublik) : true,
-        petugasId: input.petugasId ?? input.aktor?.id ?? null,
+        petugasId: validPetugasId,
       })
       .returning();
 
@@ -1496,13 +1548,15 @@ export class PengaduanService {
         throw new ConflictError('Status tiket sudah berubah oleh proses lain, silakan muat ulang.');
       }
 
+      const validPetugasId = await this.sanitizeUserId(input.petugasId ?? input.aktor?.id);
+
       // B10: Catat petugas_tujuan_id pada riwayat aksi ESKALASI
       await tx.insert(riwayatPengaduan).values({
         pengaduanId: row.id,
         aksi: 'ESKALASI',
         statusDari,
         statusKe: statusDari,
-        petugasId: input.petugasId ?? input.aktor?.id ?? null,
+        petugasId: validPetugasId,
         petugasTujuanId: input.eskalasiKeId ?? null,
         catatan:
           input.catatan ??

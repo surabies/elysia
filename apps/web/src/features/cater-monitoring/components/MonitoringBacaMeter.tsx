@@ -32,8 +32,12 @@ export function MonitoringBacaMeter(props: UseCaterMonitoringOptions = {}) {
         anomaliTotal={state.anomaliKPI.totalAnomali}
       />
 
-      {/* 2. Kartu Metrik Ringkasan (Menyesuaikan dengan Periode Terpilih) */}
-      <RingkasanCater stats={state.stats} loading={state.overviewLoading || state.periodLoading} />
+      {/* 2. Kartu Metrik Ringkasan (Menyesuaikan dengan Periode Terpilih & Riwayat Sesi Penuh) */}
+      <RingkasanCater
+        stats={state.stats}
+        loading={state.overviewLoading || state.periodLoading}
+        riwayatSesiList={state.riwayatSesiList}
+      />
       {state.overviewError && (
         <Alert variant="destructive">
           <AlertDescription>Gagal memuat ringkasan: {state.overviewError}</AlertDescription>

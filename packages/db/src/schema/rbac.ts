@@ -34,6 +34,11 @@ export const appRoleEnum = pgEnum('app_role', [
   'PENCATAT',             // Pelaksana Lapangan (Mobile App)
   'PELAKSANA',            // Pelaksana Non-Cater
   'USER',                 // Warga / Pelanggan Mandiri
+  'DIREKSI',              // 6 Tingkatan Akun Resmi
+  'SENIOR_MANAGER',
+  'MANAGER',
+  'SUPERVISOR',
+  'STAFF',
 ]);
 
 // 3. Status Siklus Verifikasi Baca Meter (3-Tier + Staff Correction)
@@ -176,14 +181,21 @@ export const rolePermissions = pgTable(
     deskripsi: text('deskripsi'),
     urutan: numeric('urutan', { precision: 4, scale: 0 }).notNull().default('0'),
 
-    // Perizinan per Role
+    // Perizinan 6 Tingkatan Akun Resmi
     superadmin: boolean('superadmin').notNull().default(true),
+    direksi: boolean('direksi').notNull().default(false),
+    seniorManager: boolean('senior_manager').notNull().default(false),
+    manager: boolean('manager').notNull().default(false),
+    supervisor: boolean('supervisor').notNull().default(false),
+    staff: boolean('staff').notNull().default(false),
+    pelaksana: boolean('pelaksana').notNull().default(false),
+
+    // Legacy perizinan (backward-compatibility)
     staffBilling: boolean('staff_billing').notNull().default(false),
     verifikator1: boolean('verifikator_1').notNull().default(false),
     verifikator2: boolean('verifikator_2').notNull().default(false),
     verifikator3: boolean('verifikator_3').notNull().default(false),
     executive: boolean('executive').notNull().default(false),
-    pelaksana: boolean('pelaksana').notNull().default(false),
 
     updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -191,6 +203,29 @@ export const rolePermissions = pgTable(
   (table) => [
     index('role_permissions_modul_key_idx').on(table.modulKey),
     index('role_permissions_kategori_idx').on(table.kategori),
+  ]
+);
+
+// 10. Tabel Izin Khusus Pengguna / Override Hak Akses Perorangan (Custom si A)
+export const userPermissionOverrides = pgTable(
+  'user_permission_overrides',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    modulKey: varchar('modul_key', { length: 50 }).notNull(),
+    granted: boolean('granted').notNull(),
+    catatan: text('catatan'),
+    updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('user_permission_overrides_user_id_idx').on(table.userId),
+    index('user_permission_overrides_modul_key_idx').on(table.modulKey),
   ]
 );
 
@@ -209,3 +244,5 @@ export type CaterVerifikasiLog = typeof caterVerifikasiLog.$inferSelect;
 export type NewCaterVerifikasiLog = typeof caterVerifikasiLog.$inferInsert;
 export type RolePermission = typeof rolePermissions.$inferSelect;
 export type NewRolePermission = typeof rolePermissions.$inferInsert;
+export type UserPermissionOverride = typeof userPermissionOverrides.$inferSelect;
+export type NewUserPermissionOverride = typeof userPermissionOverrides.$inferInsert;

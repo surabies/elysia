@@ -48,6 +48,7 @@ export interface PengaduanBaris {
   prioritas: PrioritasPengaduan
   pelapor: string
   createdAt: string
+  kebijakanVersi?: number | null
   sla?: SlaTiket
   ditugaskanKe?: { id: string; name: string | null } | null
 }
@@ -58,6 +59,7 @@ export interface PengaduanDetail extends PengaduanBaris {
   nomorLangganan: string | null
   kontakPelapor: string | null
   fotoUrl: string | null
+  kebijakanVersi?: number | null
   /** Klip video bukti dari pelapor (opsional). */
   videoUrl: string | null
   ditanganiMulai: string | null

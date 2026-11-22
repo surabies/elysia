@@ -1,32 +1,125 @@
-# Kuesioner Wawancara Standard Operating Procedure (SOP) Pengaduan Tirtawening
+# Instrumen Wawancara Standard Operating Procedure (SOP) Pengaduan Tirtawening (Versi 2.0)
 
-Dokumen ini disusun sebagai instrumen wawancara dan sinkronisasi regulasi operasional antara pengembang sistem dengan pemangku kepentingan internal Perumda Tirtawening (Bagian Hubungan Pelanggan, Transmisi & Distribusi, Pembacaan Meter, dan Pengendalian Rekening/Billing).
-
-Setiap butir pertanyaan diangkat langsung dari konfigurasi kode sumber (`pengaduan.config.ts`) yang saat ini mengimplementasikan nilai default asumsi industri air minum.
-
----
-
-## Tabel Pertanyaan & Konfirmasi Parameter Bisnis
-
-| No | Bagian Terkait | Parameter Konfigurasi | Pertanyaan Konkret untuk Divisi | Nilai Default Sistem Saat Ini | Jawaban / Regulasi Resmi PDAM |
-| :---: | :--- | :--- | :--- | :--- | :--- |
-| **1** | Hubungan Pelanggan / TI | `JENIS_PENGADUAN_PETA_PUBLIK` | Jenis pengaduan apa saja yang tergolong gangguan utilitas publik dan boleh ditampilkan pada Peta Spasial Publik warga tanpa membocorkan privasi pelapor? | `BOCOR_PIPA_DINAS`, `TIDAK_ADA_AIR`, `AIR_KERUH_BAU_BERWARNA` | |
-| **2** | Rekening & Billing | `KLASIFIKASI_PER_JENIS` | Apakah jenis komplain *Mutasi Golongan Tarif* dan *Tidak Mampu Bayar* perlu dimasukkan ke klasifikasi `NILAI_TAGIHAN_REKENING` atau tetap `BUKAN_NILAI_TAGIHAN_REKENING`? | Hanya *Lapor Stand Meter*, *Pencatatan Meter Tidak Sesuai*, dan *Lonjakan Pemakaian* yang masuk tagihan | |
-| **3** | Distribusi & Hublang | `PRIORITAS_DEFAULT_PER_JENIS` | Jika pelapor/warga tidak menentukan prioritas tiket saat input, apakah jenis `BOCOR_PIPA_DINAS` dan `TIDAK_ADA_AIR` selalu otomatis masuk prioritas `TINGGI`? | Otomatis `TINGGI` | |
-| **4** | Distribusi / Pemeliharaan | `SLA_OVERRIDE_PER_JENIS` | Apakah ada durasi penyelesaian khusus per jenis pengaduan (misal: pipa bocor dinas harus selesai maks 12 jam, bukan 24 jam)? | Durasi mengikuti level prioritas umum (Darurat: 6j, Tinggi: 24j, Normal: 48j, Rendah: 72j) | |
-| **5** | Pengendalian Billing | `WAJIB_VERIFIKASI_TAGIHAN` | Apakah pengaduan lonjakan rekening air **wajib diverifikasi** oleh Bagian Billing terlebih dahulu sebelum petugas lapangan diizinkan melakukan pengecekan fisik meter? | `true` (Wajib Verifikasi, melarang transisi langsung BARU -> DITUGASKAN) | |
-| **6** | Hubungan Pelanggan | `BATAS_KONFIRMASI_JAM` | Berapa lama pelanggan diberi waktu untuk memeriksa dan mengonfirmasi hasil pekerjaan sebelum tiket berstatus `SELESAI` ditutup otomatis oleh sistem? | `72 Jam` (3 Hari Kalender) | |
-| **7** | Hubungan Pelanggan | `MAKS_BUKA_KEMBALI` | Berapa kali maksimal pelanggan diperbolehkan membuka kembali (*reopen*) tiket pengaduan yang sama jika perbaikan dinilai belum tuntas? | Maksimal `2 Kali` | |
-| **8** | Verifikator Layanan | `MIN_PANJANG_ALASAN_TOLAK` | Berapa panjang karakter minimal yang diwajibkan bagi petugas saat menolak laporan warga agar alasannya substantif dan jelas? | Minimal `10 Karakter` | |
-| **9** | Wilayah Distribusi | `DUPLIKAT_RADIUS_METER` & `DUPLIKAT_JENDELA_JAM` | Berapa radius jarak (meter) dan rentang waktu (jam) untuk mendeteksi bahwa dua laporan kebocoran air berasal dari titik insiden yang sama? | Radius `100 Meter`, Jendela Waktu `48 Jam` | |
-| **10** | Hublang & Distribusi | `MATRIKS_IZIN_PENGADUAN` | Siapa saja pejabat/staf yang memiliki wewenang resmi untuk menolak pengaduan warga? Apakah pelaksana lapangan boleh menolak tiket saat di lokasi? | `SUPERADMIN` dan `VERIFIKATOR_1..3` | |
-| **11** | Manajemen / KPI Eksekutif | Definisi "Selesai Ditangani" | Pada laporan kinerja eksekutif dan desk kartu KPI, apakah tiket dengan status `DITOLAK` dihitung sebagai tiket yang "selesai ditangani" atau dikecualikan dari persentase penyelesaian? | Dikecualikan (hanya tiket `SELESAI` dan `DITUTUP` yang dihitung tuntas) | |
-| **12** | Pembacaan Meter | Hak Akses Lapor Stand | Apakah staf `PENCATAT` meter memiliki hak akses untuk menerima penugasan pengecekan fisik komplain stand meter? | Ya, `PENCATAT` terdaftar pada role lapangan yang layak | |
+> **Catatan Arsitektur Sistem:**  
+> Sistem pengaduan Tirtawening telah mengadopsi arsitektur **Kebijakan Dinamis Berversi (Policy as Data)**. Seluruh parameter waktu (SLA), radius deteksi kebocoran, jendela waktu konfirmasi warga, serta matriks wewenang **tidak lagi dikunci permanen di dalam kode sumber program**, melainkan dikelola langsung melalui dokumen kebijakan ber-SK Direksi yang dapat diperbarui kapan saja secara aman tanpa henti layanan (*zero downtime*).
+>
+> Instrumen kuesioner ini dirancang untuk menggali **kondisi riil dan regulasi aktual operasional** di lapangan tanpa pertanyaan yang bersifat menggiring (*leading questions*).
 
 ---
 
-## Prosedur Pengesahan Jawaban
+## Bagian I: Bagian Hubungan Pelanggan (Hublang & Customer Service)
 
-1. Dokumen ini dicetak atau dibagikan dalam format digital kepada Kepala Bagian terkait.
-2. Kolom **Jawaban / Regulasi Resmi PDAM** diisi dengan ketetapan angka dan aturan SOP tertulis yang berlaku.
-3. Tim pengembang akan memperbarui file `pengaduan.config.ts` sesuai hasil kesepakatan berita acara wawancara ini.
+### 1.1 Klasifikasi Kedaruratan & Prioritas Layanan
+1. **Kriteria Urgensi Awal:**  
+   Ketika laporan pertama kali diterima dari warga (baik lewat kanal publik online, telepon kantor, maupun loket langsung), apa saja indikator faktual yang digunakan petugas penerima untuk menggolongkan pengaduan ke dalam kategori **Darurat**, **Tinggi**, **Normal**, atau **Rendah**?
+2. **Keterlibatan Pelapor dalam Menentukan Prioritas:**  
+   Apakah pelanggan/warga diperbolehkan memilih tingkat prioritas laporannya sendiri saat mengajukan pengaduan mandiri, ataukah penentuan prioritas murni menjadi hak prerogatif petugas verifikator layanan?
+3. **Penyaringan Informasi Publik:**  
+   Jenis insiden apa saja yang layak dan aman untuk dipublikasikan pada **Peta Sebaran Gangguan Publik** tanpa melanggar privasi warga (misal: pipa dinas bocor di jalan vs perselisihan internal meter)?
+
+### 1.2 Penyelesaian & Jendela Konfirmasi Pelanggan
+4. **Alur Validasi Setelah Pekerjaan Selesai:**  
+   Setelah regu teknis menyatakan pekerjaan di lapangan tuntas, bagaimana tahapan konfirmasi kepada pelanggan? Apakah pelanggan dihubungi via telepon, WhatsApp, atau notifikasi aplikasi?
+5. **Jendela Waktu Sanggahan Pelanggan:**  
+   Berapa lama pelanggan diberikan tenggat waktu untuk menyatakan apakah masalahnya benar-benar tuntas atau masih bermasalah sebelum tiket ditutup secara permanen oleh sistem?
+6. **Kebijakan Pembukaan Kembali (*Reopen*):**  
+   Jika pelanggan merasa perbaikan belum memuaskan dalam masa tenggat tersebut:
+   - Berapa kali maksimal tiket yang sama boleh dibuka kembali?
+   - Jika batas buka kembali terlampaui namun pelanggan masih mengeluh, apakah diterbitkan tiket baru dengan referensi tiket lama atau diarahkan ke mediasi khusus?
+
+### 1.3 Penolakan Laporan
+7. **Kriteria Penolakan Pengaduan:**  
+   Dalam kondisi apa saja sebuah laporan warga **dapat ditolak secara resmi** oleh PDAM (misalnya: pipa instalasi dalam rumah milik pelanggan pribadi, laporan fiktif, lokasi di luar wilayah layanan)?
+8. **Akuntabilitas Alasan Penolakan:**  
+   Apa standar minimal penjelasan penolakan yang wajib dicantumkan oleh petugas agar pelanggan mendapatkan transparansi informasi dan tidak menimbulkan sengketa konsumen?
+
+---
+
+## Bagian II: Bagian Transmisi & Distribusi (Trandis & Pemeliharaan Lapangan)
+
+### 2.1 Target Waktu Penanganan (SLA) & Karakteristik Fisik
+1. **Target Waktu Tanggap & Tuntas:**  
+   Berapa target standar operasional (jam/menit) untuk masing-masing jenis insiden lapangan:
+   - Kebocoran pipa dinas (pipa persil pelanggan)?
+   - Kebocoran pipa distribusi utama jalan raya?
+   - Air keruh / bau / berwarna?
+   - Aliran air mati total satu wilayah?
+2. **Penghitungan Waktu (Kalender vs Hari Kerja):**  
+   Bagaimana regulasi penghitungan SLA kebocoran air:
+   - Apakah penanganan insiden kebocoran fisik berjalan 24 jam non-stop (termasuk malam hari, akhir pekan, dan hari libur nasional)?
+   - Ataukah terdapat pembagian antara jam siaga tim darurat (*quick response*) dengan tim pekerjaan sipil terjadwal?
+
+### 2.2 Kondisi Tertunda & Jeda SLA (Penangguhan Waktu)
+3. **Kondisi Penangguhan Pekerjaan:**  
+   Faktor eksternal apa saja yang secara sah mengizinkan waktu pengerjaan SLA "dijeda" (*paused*), misalnya:
+   - Menunggu izin galian dari Dinas Bina Marga / Kepolisian?
+   - Menunggu kehadiran pemilik rumah untuk membukakan pagar/persil?
+   - Terkendala cuaca ekstrem / banjir?
+4. **Bukti Validasi Jeda:**  
+   Apa dokumen atau bukti lapangan yang wajib diunggah pelaksana untuk membuktikan bahwa penundaan tersebut bukan kelalaian petugas?
+
+### 2.3 Deteksi Laporan Berulang / Duplikat di Lapangan
+5. **Penanganan Laporan Titik yang Sama:**  
+   Jika beberapa warga melaporkan kebocoran di ruas jalan yang sama dalam rentang beberapa jam:
+   - Berapa perkiraan radius jarak (misal 50m, 100m) yang dianggap satu titik insiden yang sama?
+   - Apakah tiket-tiket tersebut digabung (*merge*) ke dalam satu surat perintah kerja (SPK) induk, atau tetap diproses masing-masing?
+
+---
+
+## Bagian III: Bagian Pengendalian Billing & Rekening Air
+
+### 3.1 Penanganan Pengaduan Lonjakan Tagihan
+1. **Tahapan Verifikasi Pra-Lapangan:**  
+   Ketika ada pelanggan yang mengajukan keberatan lonjakan tagihan rekening:
+   - Apakah laporan wajib diverifikasi terlebih dahulu oleh staf billing di kantor (analisis riwayat pemakaian 3-6 bulan terakhir) sebelum menerbitkan tugas pemeriksaan fisik meter ke lapangan?
+   - Apakah ada nilai toleransi lonjakan tertentu (misal lonjakan > 50% dari rata-rata) yang langsung memicu audit meter?
+2. **Status Rekening Selama Masa Sanggah:**  
+   Selama pengaduan lonjakan rekening dalam status pemeriksaan, apakah tagihan tersebut otomatis berstatus *dispute* (bebas denda sementara dan tidak diterbitkan surat pemutusan aliran) sampai ada putusan resmi?
+
+### 3.2 Otoritas Penyelesaian Keuangan
+3. **Wewenang Penyesuaian Rekening:**  
+   Siapa pejabat yang berwenang menandatangani berita acara koreksi rekening jika terbukti terjadi salah catat meter atau kebocoran tersembunyi (*underground leakage*)?
+
+---
+
+## Bagian IV: Bagian Pembacaan Meter (Cater)
+
+### 4.1 Hubungan Lapor Stand Mandiri & Komplain
+1. **Peran Petugas Pencatat Meter:**  
+   Jika ada komplain meter rusak, buram, atau angka stand melonjak:
+   - Apakah petugas pencatat meter wilayah setempat langsung ditugaskan melakukan verifikasi ulang di rutenya?
+   - Bagaimana mekanisme sinkronisasi antara foto stand meter hasil cater bulanan dengan foto bukti yang dikirimkan warga pada tiket pengaduan?
+2. **Koreksi Stan Meter:**  
+   Jika ditemukan selisih angka stand, apa mekanisme penyesuaian angka stand di aplikasi Cater agar sinkron dengan database billing?
+
+---
+
+## Bagian V: Jajaran Direksi & Manajemen Mutu (Quality Assurance)
+
+### 5.1 Skema Eskalasi dan Peringatan Keterlambatan
+1. **Jenjang Eskalasi Keterlambatan:**  
+   Jika sebuah tiket mendekati batas akhir SLA (misal tersisa 20% waktu) atau telah melanggar target waktu:
+   - Kepada siapa notifikasi peringatan (*warning*) pertama kali dikirimkan? (Supervisor / Manager / Senior Manager?)
+   - Kapan Direksi menerima laporan ringkasan tiket yang menunggak penanganan?
+2. **Kejadian Luar Biasa (*Force Majeure*):**  
+   Bagaimana prosedur penetapan status bencana/force majeure (misalnya pipa transmisi transmisi Cikalong jebol) yang menyebabkan ratusan komplain masuk sekaligus? Apakah ada kebijakan pembekuan SLA massal berlandaskan SK Direksi darurat?
+
+### 5.2 Tata Kelola Pembaruan Kebijakan (Policy Governance)
+3. **Prosedur Pengesahan Parameter:**  
+   Bagaimana alur persetujuan saat PDAM hendak mempercepat standar SLA pelayanan:
+   - Staf / Manager mengusulkan draf pembaruan parameter kebijakan di sistem.
+   - Direksi menyetujui dan membubuhkan Nomor SK Direksi pengesahan pada sistem.
+   - Sistem secara otomatis memberlakukan SLA baru untuk seluruh tiket yang terbit setelah tanggal penetapan SK tersebut.
+
+---
+
+## Lembar Berita Acara Kesepakatan SOP
+
+| No | Unit Kerja | Nama Pejabat / Perwakilan | Jabatan | Tanggal Wawancara | Tanda Tangan |
+| :---: | :--- | :--- | :--- | :---: | :---: |
+| 1 | Bagian Hubungan Pelanggan | | Kepala Bagian Hublang | | |
+| 2 | Bagian Transmisi & Distribusi | | Kepala Bagian Trandis | | |
+| 3 | Bagian Rekening & Billing | | Kepala Bagian Billing | | |
+| 4 | Bagian Pembacaan Meter (Cater) | | Koordinator Cater | | |
+| 5 | Bagian Hukum & Tata Kelola | | Legal Officer | | |
+| 6 | Direksi / Manajemen Mutu | | Direktur Terkait | | |

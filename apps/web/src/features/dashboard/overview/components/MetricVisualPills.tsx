@@ -85,13 +85,13 @@ export function MetricVisualPills({
             }
           } else {
             if (isHovered) {
-              fillClass = "bg-foreground shadow-xs brightness-125"
+              fillClass = "bg-[#0070f3] dark:bg-[var(--ds-blue-700)] shadow-xs brightness-110"
             } else if (isLast) {
-              fillClass = isOtherHovered ? "bg-foreground/70" : "bg-foreground"
+              fillClass = isOtherHovered ? "bg-[#0070f3]/70 dark:bg-[var(--ds-blue-700)]/70" : "bg-[#0070f3] dark:bg-[var(--ds-blue-700)]"
             } else {
               fillClass = isOtherHovered
-                ? "bg-foreground/25 dark:bg-foreground/20"
-                : "bg-foreground/50 dark:bg-foreground/40"
+                ? "bg-[#0070f3]/25 dark:bg-[var(--ds-blue-700)]/20"
+                : "bg-[#0070f3]/80 dark:bg-[var(--ds-blue-700)]/70"
             }
           }
 

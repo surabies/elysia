@@ -800,40 +800,102 @@ export class CaterProgressService {
    * Mengambil riwayat seluruh sesi harian siklus pembacaan petugas dari database nyata
    */
   async getRiwayatSesiPetugas(thbl: string = "202611") {
-    // 1. Ambil seluruh tanggal siklus kerja catat di periode ini (dinamis, tanpa batasan 20 sesi)
-    const dateRows = await db.execute<{ tanggal: string }>(sql`
-      SELECT DISTINCT to_char(tgl_catat, 'YYYY-MM-DD') as tanggal
-      FROM cater_baca_meter
-      WHERE thbl = ${thbl}
-      ORDER BY tanggal ASC
+    // 0. Cek apakah ada data di thbl yang diminta. Jika thbl tidak memiliki data, fallback ke periode riil yang tersedia
+    let activeThbl = thbl;
+    const [checkData] = await db.execute<{ count: number }>(sql`
+      SELECT count(id)::int as count FROM cater_baca_meter WHERE thbl = ${thbl}
     `);
-    const dates = dateRows.map((d) => d.tanggal);
+    if (!checkData || checkData.count === 0) {
+      const [latest] = await db.execute<{ thbl: string }>(sql`
+        SELECT thbl FROM cater_baca_meter ORDER BY thbl DESC LIMIT 1
+      `);
+      if (latest?.thbl) {
+        activeThbl = latest.thbl;
+      }
+    }
 
-    // 2. Ambil data ringkasan tiap petugas resmi dari database nyata (9 petugas cater)
-    const officers = await db.execute<{
-      id: string;
-      nama: string;
-      total_baca: number;
+    // 1. Ambil rentang siklus penuh tanggal 1 s.d. 20 (atau max transaksi riil) agar deret tanggal kalender utuh tanpa loncat
+    const [rangeRow] = await db.execute<{ min_tgl: string; max_tgl: string }>(sql`
+      SELECT 
+        to_char(min(tgl_catat), 'YYYY-MM-DD') as min_tgl,
+        to_char(max(tgl_catat), 'YYYY-MM-DD') as max_tgl
+      FROM cater_baca_meter
+      WHERE thbl = ${activeThbl}
+    `);
+
+    const yr = activeThbl.slice(0, 4);
+    const mo = activeThbl.slice(4, 6);
+    const maxDayDb = rangeRow?.max_tgl ? parseInt(rangeRow.max_tgl.slice(8, 10), 10) : 20;
+    const totalHariSiklus = Math.max(20, maxDayDb);
+
+    // Bangun deret kalender utuh lengkap dari tanggal 1 s.d. totalHariSiklus (tidak ada tanggal yang di-skip)
+    const dates: string[] = [];
+    for (let day = 1; day <= totalHariSiklus; day++) {
+      dates.push(`${yr}-${mo}-${String(day).padStart(2, "0")}`);
+    }
+
+    // 2. Ambil data ringkasan tiap petugas resmi dari database nyata secara efisien (tanpa cartesian join)
+    const officersList = await db.execute<{ id: string; nama: string }>(sql`
+      SELECT id, nama FROM petugas_cater WHERE id != '-' ORDER BY nama ASC
+    `);
+
+    const ruteRows = await db.execute<{
+      petugas_id: string;
       total_rute: number;
+      target_pelanggan: number;
     }>(sql`
       SELECT 
-        p.id,
-        p.nama,
-        count(c.id)::int as total_baca,
-        count(distinct r.kode)::int as total_rute
-      FROM petugas_cater p
-      LEFT JOIN rute_cater r ON p.id = r.pencatat_default
-      LEFT JOIN cater_baca_meter c ON p.id = c.petugas_id AND c.thbl = ${thbl}
-      WHERE p.id != '-'
-      GROUP BY p.id, p.nama
-      ORDER BY p.nama ASC
+        r.pencatat_default as petugas_id,
+        count(distinct r.kode)::int as total_rute,
+        count(pel.nolg)::int as target_pelanggan
+      FROM rute_cater r
+      LEFT JOIN pelanggan pel ON r.kode = pel.rute_kode
+      WHERE r.pencatat_default IS NOT NULL
+      GROUP BY r.pencatat_default
     `);
+    const ruteMap = new Map<string, { total_rute: number; target_pelanggan: number }>();
+    for (const r of ruteRows) {
+      if (r.petugas_id) {
+        ruteMap.set(r.petugas_id, {
+          total_rute: r.total_rute,
+          target_pelanggan: r.target_pelanggan,
+        });
+      }
+    }
+
+    const bacaRows = await db.execute<{ petugas_id: string; total_baca: number }>(sql`
+      SELECT 
+        petugas_id,
+        count(id)::int as total_baca
+      FROM cater_baca_meter
+      WHERE thbl = ${activeThbl}
+      GROUP BY petugas_id
+    `);
+    const bacaMap = new Map<string, number>();
+    for (const b of bacaRows) {
+      if (b.petugas_id) {
+        bacaMap.set(b.petugas_id, b.total_baca);
+      }
+    }
+
+    const officers = officersList.map((p) => {
+      const rInfo = ruteMap.get(p.id) || { total_rute: 1, target_pelanggan: 0 };
+      const totalBaca = bacaMap.get(p.id) || 0;
+      return {
+        id: p.id,
+        nama: p.nama,
+        total_baca: totalBaca,
+        total_rute: rInfo.total_rute,
+        target_pelanggan: rInfo.target_pelanggan,
+      };
+    });
 
     // 3. Ambil data sesi per tanggal untuk semua petugas
     const sessionRows = await db.execute<{
       petugas_id: string;
       tanggal: string;
       meter_terbaca: number;
+      kubikasi_m3: number;
       rentang_menit: number;
       anomali: number;
     }>(sql`
@@ -841,10 +903,11 @@ export class CaterProgressService {
         c.petugas_id,
         to_char(c.tgl_catat, 'YYYY-MM-DD') as tanggal,
         count(c.id)::int as meter_terbaca,
+        round(coalesce(sum(c.pakai_m3::float), 0)::numeric, 1)::float as kubikasi_m3,
         round(coalesce(extract(epoch from (max(c.tgl_catat) - min(c.tgl_catat))) / 60, 0))::int as rentang_menit,
         count(case when c.is_anomali = true then 1 end)::int as anomali
       FROM cater_baca_meter c
-      WHERE c.thbl = ${thbl}
+      WHERE c.thbl = ${activeThbl}
       GROUP BY c.petugas_id, to_char(c.tgl_catat, 'YYYY-MM-DD')
     `);
 
@@ -876,9 +939,13 @@ export class CaterProgressService {
     };
 
     return officers.map((off) => {
+      const targetBeban = off.target_pelanggan > 0 
+        ? off.target_pelanggan 
+        : (off.total_baca > 0 ? off.total_baca : 2500);
+
       // Target harian dihitung proporsional dari total beban dibagi jumlah hari siklus kerja
       const targetHarian = Math.max(
-        Math.round(off.total_baca / Math.max(dates.length, 1)),
+        Math.round(targetBeban / Math.max(dates.length, 1)),
         50,
       );
 
@@ -891,37 +958,26 @@ export class CaterProgressService {
           return {
             id: `sesi-${off.id}-${sIdx + 1}`,
             tanggal: formatTgl(tgl),
-            status: "Dilewati" as const,
+            status: "Libur" as const,
             durasiMenit: 0,
             meterTerbaca: 0,
             totalMeter: targetHarian,
+            kubikasiM3: 0,
+            anomaliCount: 0,
             petugasNama: off.nama,
-            waktuSelesaiTeks: isTerakhir
-              ? "Libur / Tidak ada jadwal"
-              : `${dates.length - sIdx} hari lalu`,
+            waktuSelesaiTeks: "Libur / Tidak Bertugas",
           };
         }
 
         const terbaca = s.meter_terbaca;
 
-        // Perhitungan durasi kerja lapangan (wajar 1–6 jam):
-        // Jika rentang_menit wajar (30 - 420 menit), gunakan rentang_menit.
-        // Jika terdapat anomali jam upload sistem (misal > 7 jam), hitung durasi efektif berbasis volume bacaan (~1.4 menit/SL).
         let durasiMenit = s.rentang_menit;
         if (durasiMenit <= 0 || durasiMenit > 420) {
           durasiMenit = Math.min(360, Math.max(75, Math.round(terbaca * 1.4)));
         }
 
-        let status: "Tuntas" | "Terlambat" | "Gagal" | "Dilewati" = "Tuntas";
-        if (durasiMenit > 360) {
-          status = "Terlambat";
-        } else if (terbaca < Math.round(targetHarian * 0.8)) {
-          status = "Terlambat";
-        } else if (s.anomali > terbaca * 0.5) {
-          status = "Terlambat";
-        } else {
-          status = "Tuntas";
-        }
+        const isAnomaliTinggi = s.anomali > terbaca * 0.3;
+        const status = isAnomaliTinggi ? ("Anomali Tinggi" as const) : ("Tercatat" as const);
 
         return {
           id: `sesi-${off.id}-${sIdx + 1}`,
@@ -930,18 +986,26 @@ export class CaterProgressService {
           durasiMenit,
           meterTerbaca: terbaca,
           totalMeter: targetHarian,
+          kubikasiM3: s.kubikasi_m3,
+          anomaliCount: s.anomali,
           petugasNama: off.nama,
           waktuSelesaiTeks: isTerakhir
             ? `Sesi ${formatTgl(tgl)}`
-            : `${dates.length - sIdx} hari lalu`,
+            : `Tercatat ${terbaca} SL`,
         };
       });
+
+      const capaianPersen = targetBeban > 0
+        ? Number(((off.total_baca / targetBeban) * 100).toFixed(1))
+        : 100;
 
       return {
         id: `petugas-${off.id}`,
         nama: `Petugas ${off.nama}`,
         seksiWilayah: `wilayah operasional · ${off.total_rute} rute binaan`,
-        jumlahPelanggan: off.total_baca,
+        jumlahPelanggan: targetBeban,
+        totalTerbaca: off.total_baca,
+        capaianPersen,
         petugasDefault: off.nama,
         isNonaktif: false,
         sesiList,

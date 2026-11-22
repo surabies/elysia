@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import {
   Users,
   Search,
@@ -15,6 +16,7 @@ import {
   UserCheck,
   UserX,
   MoreHorizontal,
+  KeyRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -71,40 +73,87 @@ const ROLE_DEFINITIONS: RoleDefinition[] = [
     deskripsi: 'Akses tanpa batas, audit trail, kelola master data, & konfigurasi RBAC',
   },
   {
+    id: 'DIREKSI',
+    nama: 'Direksi (Tingkat 1)',
+    kategori: 'VERIFIKATOR',
+    ringLabel: 'Direksi Override',
+    ringLevel: 5,
+    deskripsi: 'Executive dashboard, analitik global, & hak override verifikasi tertinggi',
+  },
+  {
+    id: 'SENIOR_MANAGER',
+    nama: 'Senior Manager (Tingkat 2)',
+    kategori: 'VERIFIKATOR',
+    ringLabel: 'Senior Manager Final',
+    ringLevel: 4,
+    deskripsi: 'Pengesahan final pelepasan data pembacaan meter sebelum masuk ke DRD billing',
+  },
+  {
+    id: 'MANAGER',
+    nama: 'Manager (Tingkat 3)',
+    kategori: 'VERIFIKATOR',
+    ringLabel: 'Manager Approval',
+    ringLevel: 3,
+    deskripsi: 'Validasi deviasi pemakaian & approval anomali pelanggan tingkat cabang/area',
+  },
+  {
+    id: 'SUPERVISOR',
+    nama: 'Supervisor (Tingkat 4)',
+    kategori: 'VERIFIKATOR',
+    ringLabel: 'Supervisor Screening',
+    ringLevel: 2,
+    deskripsi: 'Penyaringan awal bukti foto meter, koreksi rute jalan, & penugasan lapangan',
+  },
+  {
+    id: 'STAFF',
+    nama: 'Staff (Tingkat 5)',
+    kategori: 'BILLING',
+    ringLabel: 'Staff Operasional',
+    deskripsi: 'Koreksi stand pasca-verifikasi, input manual ADD, closing periode, & DRD',
+  },
+  {
+    id: 'PELAKSANA',
+    nama: 'Pelaksana / Anggota (Tingkat 6)',
+    kategori: 'OPERASIONAL',
+    ringLabel: 'Teknis Lapangan',
+    deskripsi: 'Staf teknis lapangan untuk survei fisik meter, catat meter, & tiket gangguan',
+  },
+  // Alias Legacy untuk kompatibilitas data lama
+  {
     id: 'EXECUTIVE',
-    nama: 'Direksi (Executive)',
+    nama: 'Direksi (Executive - Legacy)',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Executive Override',
-    ringLevel: 4,
+    ringLevel: 5,
     deskripsi: 'Executive dashboard, analitik pendapatan, & hak override verifikasi Ring 3',
   },
   {
     id: 'VERIFIKATOR_3',
-    nama: 'Senior Manager / Head of Billing',
+    nama: 'Senior Manager (Ring 3 - Legacy)',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 3 Final',
-    ringLevel: 3,
+    ringLevel: 4,
     deskripsi: 'Pengesahan final pelepasan data pembacaan meter sebelum masuk ke DRD billing',
   },
   {
     id: 'VERIFIKATOR_2',
-    nama: 'Manager Cabang / Area',
+    nama: 'Manager Cabang (Ring 2 - Legacy)',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 2 Approval',
-    ringLevel: 2,
+    ringLevel: 3,
     deskripsi: 'Validasi deviasi pemakaian & approval anomali pelanggan tingkat cabang',
   },
   {
     id: 'VERIFIKATOR_1',
-    nama: 'Supervisor Cater',
+    nama: 'Supervisor Cater (Ring 1 - Legacy)',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 1 Screening',
-    ringLevel: 1,
+    ringLevel: 2,
     deskripsi: 'Penyaringan awal bukti foto meter, koreksi rute jalan, & instruksi cek ulang',
   },
   {
     id: 'STAFF_ADMIN_BILLING',
-    nama: 'Staff Administrasi Billing',
+    nama: 'Staff Admin Billing (Legacy)',
     kategori: 'BILLING',
     ringLabel: 'Operasional Billing',
     deskripsi: 'Koreksi stand pasca-verifikasi, input manual ADD, closing periode, & DRD',
@@ -115,13 +164,6 @@ const ROLE_DEFINITIONS: RoleDefinition[] = [
     kategori: 'OPERASIONAL',
     ringLabel: 'Lapangan Mobile',
     deskripsi: 'Pelaksana pembacaan meter mandiri/keliling dengan aplikasi mobile Android',
-  },
-  {
-    id: 'PELAKSANA',
-    nama: 'Pelaksana Operasional Non-Cater',
-    kategori: 'OPERASIONAL',
-    ringLabel: 'Teknis Lapangan',
-    deskripsi: 'Staf teknis lapangan untuk survei fisik meter, ganti meter, & tiket gangguan',
   },
   {
     id: 'USER',
@@ -759,13 +801,19 @@ export function KelolaManajemenUser({
                                 )}
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 font-mono text-[12px]">
+                            <DropdownMenuContent align="end" className="w-52 font-mono text-[12px]">
                               <DropdownMenuItem
                                 onClick={() => bukaEditRole(userItem)}
                                 className="cursor-pointer gap-2"
                               >
                                 <SlidersHorizontal className="size-3.5 text-muted-foreground" />
                                 <span>Ubah Peran</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                                <Link href={`/master/otorisasi?userId=${userItem.id}&tab=kustom`}>
+                                  <KeyRound className="size-3.5 text-muted-foreground" />
+                                  <span>Kustom Hak Akses (Si A)</span>
+                                </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleQuickToggleStatus(userItem)}
