@@ -26,6 +26,8 @@ import {
   tentukanPrioritasAwal,
   hitungPerubahanTransisi,
   hitungEfekJeda,
+  bolehMelakukan,
+  tentukanAksiDariStatus,
   TRANSISI_PENGADUAN,
   KODE_JENIS_PENGADUAN,
   LABEL_JENIS_PENGADUAN,
@@ -35,6 +37,14 @@ import {
   DUPLIKAT_RADIUS_METER,
   DUPLIKAT_JENDELA_JAM,
 } from '../../domain/pengaduan/pengaduan.config';
+import {
+  DomainError,
+  NotFoundError,
+  ConflictError,
+  InvalidTransitionError,
+  ForbiddenError,
+  ValidationError,
+} from '../../domain/pengaduan/pengaduan.errors';
 import { isCloudinaryConfigured, uploadToCloudinary } from '../../lib/cloudinary';
 import type {
   JenisPengaduan,
@@ -67,6 +77,7 @@ export interface UbahStatusPengaduanInput {
   fotoPenyelesaianUrl?: string;
   petugasId?: string | null;
   sumberAksi?: 'STAF' | 'PELAPOR' | 'OTOMATIS';
+  aktor?: { id?: string | null; role?: AppRole };
 }
 
 export interface TugaskanPengaduanInput {
@@ -74,6 +85,32 @@ export interface TugaskanPengaduanInput {
   ditugaskanKeId: string;
   catatan?: string;
   petugasId?: string | null;
+  aktor?: { id?: string | null; role?: AppRole };
+}
+
+export interface EskalasiPengaduanInput {
+  pengaduanId: string;
+  prioritasBaru?: PrioritasPengaduan;
+  eskalasiKeId?: string;
+  catatan?: string;
+  petugasId?: string | null;
+  aktor?: { id?: string | null; role?: AppRole };
+}
+
+export interface TambahCatatanPengaduanInput {
+  pengaduanId: string;
+  catatan: string;
+  isPublik?: boolean;
+  petugasId?: string | null;
+  aktor?: { id?: string | null; role?: AppRole };
+}
+
+export interface KirimChatPetugasInput {
+  pengaduanId: string;
+  pesan: string;
+  isPublik?: boolean;
+  petugasId?: string | null;
+  aktor?: { id?: string | null; role?: AppRole };
 }
 
 export class PengaduanService {
@@ -411,41 +448,86 @@ export class PengaduanService {
 
   /**
    * 3. Penugasan Petugas Lapangan (BARU/TERVERIFIKASI -> DITUGASKAN)
+   * Dilengkapi pengunci optimistik (B8), verifikasi wewenang aktor (B6), validasi petugas layak (B3), dan petugasTujuanId (B10)
    */
   async tugaskanPengaduan(input: TugaskanPengaduanInput) {
     const [row] = await db
       .select()
       .from(pengaduan)
-      .where(eq(pengaduan.id, input.pengaduanId));
+      .where(or(eq(pengaduan.id, input.pengaduanId), eq(pengaduan.nomorTiket, input.pengaduanId)));
 
     if (!row) {
-      throw new Error(`Pengaduan dengan ID ${input.pengaduanId} tidak ditemukan.`);
+      throw new NotFoundError(`Pengaduan dengan ID atau nomor tiket '${input.pengaduanId}' tidak ditemukan.`);
     }
 
-    if (!isTransisiSah(row.status as StatusPengaduan, 'DITUGASKAN')) {
-      throw new Error(`Tidak dapat menugaskan tiket yang berada pada status ${row.status}.`);
+    // B6: Verifikasi wewenang aktor internal
+    if (input.aktor?.role) {
+      if (!bolehMelakukan(input.aktor.role, 'TUGASKAN')) {
+        throw new ForbiddenError('Anda tidak memiliki wewenang untuk menugaskan tiket pengaduan.');
+      }
     }
 
+    // B3 & B6: Validasi kelayakan petugas lapangan tujuan
+    const rolesLayak: AppRole[] = [
+      'PELAKSANA',
+      'PENCATAT',
+      'VERIFIKATOR_1',
+      'VERIFIKATOR_2',
+      'VERIFIKATOR_3',
+      'SUPERADMIN',
+    ];
+
+    const [petugasTujuan] = await db
+      .select({ id: user.id, name: user.name, role: userRoles.role })
+      .from(user)
+      .innerJoin(userRoles, eq(user.id, userRoles.userId))
+      .where(and(eq(user.id, input.ditugaskanKeId), inArray(userRoles.role, rolesLayak)))
+      .limit(1);
+
+    if (!petugasTujuan) {
+      throw new ValidationError(
+        'Petugas penerima tugas tidak ditemukan atau tidak memiliki hak akses lapangan.'
+      );
+    }
+
+    const statusDari = row.status as StatusPengaduan;
+    if (
+      !isTransisiSah(statusDari, 'DITUGASKAN', {
+        klasifikasi: row.klasifikasi as KlasifikasiPengaduan,
+      })
+    ) {
+      throw new InvalidTransitionError(
+        `Tidak dapat menugaskan tiket yang berada pada status ${statusDari}.`
+      );
+    }
+
+    // B8: Pengunci optimistik di dalam transaksi DB
     return db.transaction(async (tx) => {
       const [updated] = await tx
         .update(pengaduan)
         .set({
           status: 'DITUGASKAN',
           ditugaskanKeId: input.ditugaskanKeId,
-          ditanganiMulai: new Date(),
+          ditanganiMulai: row.ditanganiMulai ?? new Date(),
           responsAt: row.responsAt ?? new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(pengaduan.id, input.pengaduanId))
+        .where(and(eq(pengaduan.id, row.id), eq(pengaduan.status, statusDari)))
         .returning();
 
+      if (!updated) {
+        throw new ConflictError('Status tiket sudah berubah oleh proses lain, silakan muat ulang.');
+      }
+
+      // B10: Catat petugas_tujuan_id pada riwayat aksi DITUGASKAN
       await tx.insert(riwayatPengaduan).values({
         pengaduanId: row.id,
         aksi: 'DITUGASKAN',
-        statusDari: row.status as StatusPengaduan,
+        statusDari,
         statusKe: 'DITUGASKAN',
-        petugasId: input.petugasId,
-        catatan: input.catatan ?? 'Tiket ditugaskan ke petugas lapangan.',
+        petugasId: input.petugasId ?? input.aktor?.id ?? null,
+        petugasTujuanId: input.ditugaskanKeId,
+        catatan: input.catatan ?? `Tiket ditugaskan kepada ${petugasTujuan.name ?? 'petugas lapangan'}.`,
         isPublik: true,
       });
 
@@ -455,19 +537,44 @@ export class PengaduanService {
 
   /**
    * 4. Transisi Status Pengaduan (State Machine Transition)
+   * Dilengkapi B7 (blokir DITUGASKAN langsung), B6 (otorisasi role), B8 (optimistic locking), dan K1-K5, K8
    */
   async ubahStatusPengaduan(input: UbahStatusPengaduanInput) {
+    // B7: Penugasan lewat jalur penugasan saja
+    if (input.statusKe === 'DITUGASKAN') {
+      throw new ValidationError(
+        'Penugasan petugas harus dilakukan melalui endpoint penugasan (/tugaskan), bukan melalui perubahan status langsung.'
+      );
+    }
+
     const [row] = await db
       .select()
       .from(pengaduan)
-      .where(eq(pengaduan.id, input.pengaduanId));
+      .where(or(eq(pengaduan.id, input.pengaduanId), eq(pengaduan.nomorTiket, input.pengaduanId)));
 
     if (!row) {
-      throw new Error(`Pengaduan dengan ID ${input.pengaduanId} tidak ditemukan.`);
+      throw new NotFoundError(`Pengaduan dengan ID atau nomor tiket '${input.pengaduanId}' tidak ditemukan.`);
     }
 
     const statusDari = row.status as StatusPengaduan;
     const statusKe = input.statusKe;
+    const sumberAksi = input.sumberAksi ?? 'STAF';
+
+    // B6: Verifikasi wewenang role internal
+    if (sumberAksi === 'STAF' && input.aktor?.role) {
+      const aksi = tentukanAksiDariStatus(statusKe);
+      const diizinkan = bolehMelakukan(input.aktor.role, aksi, {
+        penerimaTugasId: row.ditugaskanKeId,
+        aktorId: input.aktor.id ?? input.petugasId,
+        klasifikasi: row.klasifikasi as KlasifikasiPengaduan,
+      });
+
+      if (!diizinkan) {
+        throw new ForbiddenError(
+          `Role ${input.aktor.role} tidak memiliki wewenang untuk mengubah status ke ${statusKe}.`
+        );
+      }
+    }
 
     let processedFotoPenyelesaian: string | null = null;
     let fotoPenyelesaianPublicId: string | null = null;
@@ -497,23 +604,32 @@ export class PengaduanService {
     }
 
     // Evaluasi seluruh side-effect perubahan transisi status (Fase 3: K1-K5, K8)
-    const transisi = hitungPerubahanTransisi({
-      statusDari,
-      statusKe,
-      prioritas: row.prioritas as PrioritasPengaduan,
-      jenis: row.jenis as JenisPengaduan,
-      klasifikasi: row.klasifikasi as KlasifikasiPengaduan,
-      responsAt: row.responsAt,
-      jedaMulaiAt: row.jedaMulaiAt,
-      jedaTotalMenit: row.jedaTotalMenit,
-      targetSelesaiAt: row.targetSelesaiAt,
-      konfirmasiBatasAt: row.konfirmasiBatasAt,
-      jumlahDibukaKembali: row.jumlahDibukaKembali,
-      catatan: input.catatan,
-      fotoUrl: processedFotoPenyelesaian,
-      sumberAksi: input.sumberAksi ?? 'STAF',
-    });
+    let transisi;
+    try {
+      transisi = hitungPerubahanTransisi({
+        statusDari,
+        statusKe,
+        prioritas: row.prioritas as PrioritasPengaduan,
+        jenis: row.jenis as JenisPengaduan,
+        klasifikasi: row.klasifikasi as KlasifikasiPengaduan,
+        responsAt: row.responsAt,
+        jedaMulaiAt: row.jedaMulaiAt,
+        jedaTotalMenit: row.jedaTotalMenit,
+        targetSelesaiAt: row.targetSelesaiAt,
+        konfirmasiBatasAt: row.konfirmasiBatasAt,
+        jumlahDibukaKembali: row.jumlahDibukaKembali,
+        catatan: input.catatan,
+        fotoUrl: processedFotoPenyelesaian,
+        sumberAksi,
+      });
+    } catch (err: any) {
+      if (err.message && err.message.includes('tidak sah')) {
+        throw new InvalidTransitionError(err.message);
+      }
+      throw new ValidationError(err.message);
+    }
 
+    // B8: Pengunci optimistik di dalam transaksi DB
     return db.transaction(async (tx) => {
       const updateData: Partial<PengaduanRow> = {
         ...transisi.patch,
@@ -530,15 +646,19 @@ export class PengaduanService {
       const [updated] = await tx
         .update(pengaduan)
         .set(updateData)
-        .where(eq(pengaduan.id, input.pengaduanId))
+        .where(and(eq(pengaduan.id, row.id), eq(pengaduan.status, statusDari)))
         .returning();
+
+      if (!updated) {
+        throw new ConflictError('Status tiket sudah berubah oleh proses lain, silakan muat ulang.');
+      }
 
       await tx.insert(riwayatPengaduan).values({
         pengaduanId: row.id,
         aksi: transisi.aksiRiwayat,
         statusDari,
         statusKe,
-        petugasId: input.petugasId,
+        petugasId: input.petugasId ?? input.aktor?.id ?? null,
         catatan: transisi.pesanRiwayat,
         fotoUrl: processedFotoPenyelesaian,
         isPublik: true,
@@ -553,7 +673,7 @@ export class PengaduanService {
    */
   async beriRating(nomorTiket: string, rating: number, komentar?: string) {
     if (rating < 1 || rating > 5) {
-      throw new Error('Rating kepuasan harus berada pada rentang 1 hingga 5.');
+      throw new ValidationError('Rating kepuasan harus berada pada rentang 1 hingga 5.');
     }
 
     const [row] = await db
@@ -562,28 +682,43 @@ export class PengaduanService {
       .where(eq(pengaduan.nomorTiket, nomorTiket));
 
     if (!row) {
-      throw new Error(`Tiket ${nomorTiket} tidak ditemukan.`);
+      throw new NotFoundError(`Tiket ${nomorTiket} tidak ditemukan.`);
     }
 
     if (row.status !== 'SELESAI' && row.status !== 'DITUTUP') {
-      throw new Error('Rating hanya dapat diberikan pada pengaduan yang telah berstatus SELESAI.');
+      throw new ValidationError('Rating hanya dapat diberikan pada pengaduan yang telah berstatus SELESAI atau DITUTUP.');
     }
 
-    await db
-      .update(pengaduan)
-      .set({
-        ratingKepuasan: rating,
-        komentarKepuasan: komentar,
-        ratingAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(pengaduan.id, row.id));
+    if (row.ratingKepuasan !== null && row.ratingKepuasan > 0) {
+      throw new ValidationError('Pengaduan ini sudah pernah dinilai sebelumnya.');
+    }
 
-    return {
-      nomorTiket,
-      ratingKepuasan: rating,
-      message: 'Terima kasih atas penilaian Anda terhadap layanan kami.',
-    };
+    return db.transaction(async (tx) => {
+      await tx
+        .update(pengaduan)
+        .set({
+          ratingKepuasan: rating,
+          komentarKepuasan: komentar,
+          ratingAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(pengaduan.id, row.id));
+
+      await tx.insert(riwayatPengaduan).values({
+        pengaduanId: row.id,
+        aksi: 'DINILAI',
+        statusDari: row.status as any,
+        statusKe: row.status as any,
+        catatan: komentar ? `Penilaian bintang ${rating}: ${komentar}` : `Penilaian kepuasan bintang ${rating}.`,
+        isPublik: true,
+      });
+
+      return {
+        nomorTiket,
+        ratingKepuasan: rating,
+        message: 'Terima kasih atas penilaian Anda terhadap layanan kami.',
+      };
+    });
   }
 
   /**
@@ -710,28 +845,12 @@ export class PengaduanService {
   }
 
   /**
-   * 7. Statistik Ringkasan Antrean Pengaduan (Dashboard Desk)
+   * 7. Statistik Ringkasan Antrean Pengaduan (Dashboard Desk) (B11)
+   * Agregasi SQL murni di database (GROUP BY / COUNT FILTER) tanpa memuat baris ke memori
    */
   async getStatistikPengaduan() {
     const sekarang = new Date();
     try {
-      const allRows = await db
-        .select({
-          status: pengaduan.status,
-          prioritas: pengaduan.prioritas,
-          targetSelesaiAt: pengaduan.targetSelesaiAt,
-          ratingKepuasan: pengaduan.ratingKepuasan,
-          ditugaskanKeId: pengaduan.ditugaskanKeId,
-        })
-        .from(pengaduan);
-
-      const perStatus: Record<string, number> = {};
-      const perPrioritasTerbuka: Record<string, number> = {};
-      let melanggarSla = 0;
-      let belumDitugaskan = 0;
-      let totalRating = 0;
-      let jumlahDinilai = 0;
-
       const STATUS_TERBUKA = [
         'BARU',
         'TERVERIFIKASI',
@@ -742,32 +861,64 @@ export class PengaduanService {
         'DIBUKA_KEMBALI',
       ];
 
-      for (const r of allRows) {
-        perStatus[r.status] = (perStatus[r.status] ?? 0) + 1;
+      const [statusRows, prioritasRows, agregatRows] = await Promise.all([
+        db
+          .select({
+            status: pengaduan.status,
+            jumlah: count(),
+          })
+          .from(pengaduan)
+          .groupBy(pengaduan.status),
 
-        if (STATUS_TERBUKA.includes(r.status)) {
-          perPrioritasTerbuka[r.prioritas] =
-            (perPrioritasTerbuka[r.prioritas] ?? 0) + 1;
-        }
+        db
+          .select({
+            prioritas: pengaduan.prioritas,
+            jumlah: count(),
+          })
+          .from(pengaduan)
+          .where(inArray(pengaduan.status, STATUS_TERBUKA as any))
+          .groupBy(pengaduan.prioritas),
 
-        if (
-          STATUS_TERBUKA.includes(r.status) &&
-          r.targetSelesaiAt &&
-          new Date(r.targetSelesaiAt) < sekarang
-        ) {
-          melanggarSla++;
-        }
+        db
+          .select({
+            melanggarSla: sql<number>`COALESCE(COUNT(*) FILTER (
+              WHERE ${pengaduan.status} IN ('BARU', 'TERVERIFIKASI', 'DITUGASKAN', 'MENUJU_LOKASI', 'DIPROSES', 'DIBUKA_KEMBALI')
+                AND ${pengaduan.status} <> 'MENUNGGU_PELANGGAN'
+                AND ${pengaduan.targetSelesaiAt} < NOW()
+            ), 0)::int`,
+            belumDitugaskan: sql<number>`COALESCE(COUNT(*) FILTER (
+              WHERE ${pengaduan.status} IN ('BARU', 'TERVERIFIKASI', 'DITUGASKAN', 'MENUJU_LOKASI', 'DIPROSES', 'MENUNGGU_PELANGGAN', 'DIBUKA_KEMBALI')
+                AND ${pengaduan.ditugaskanKeId} IS NULL
+            ), 0)::int`,
+            totalRating: sql<number>`COALESCE(SUM(${pengaduan.ratingKepuasan}) FILTER (
+              WHERE ${pengaduan.ratingKepuasan} IS NOT NULL AND ${pengaduan.ratingKepuasan} > 0
+            ), 0)::int`,
+            jumlahDinilai: sql<number>`COALESCE(COUNT(*) FILTER (
+              WHERE ${pengaduan.ratingKepuasan} IS NOT NULL AND ${pengaduan.ratingKepuasan} > 0
+            ), 0)::int`,
+          })
+          .from(pengaduan),
+      ]);
 
-        if (r.status === 'BARU' || !r.ditugaskanKeId) {
-          belumDitugaskan++;
-        }
-
-        if (typeof r.ratingKepuasan === 'number' && r.ratingKepuasan > 0) {
-          totalRating += r.ratingKepuasan;
-          jumlahDinilai++;
-        }
+      const perStatus: Record<string, number> = {};
+      for (const r of statusRows) {
+        perStatus[r.status] = Number(r.jumlah);
       }
 
+      const perPrioritasTerbuka: Record<string, number> = {};
+      for (const r of prioritasRows) {
+        perPrioritasTerbuka[r.prioritas] = Number(r.jumlah);
+      }
+
+      const agregat = agregatRows[0] ?? {
+        melanggarSla: 0,
+        belumDitugaskan: 0,
+        totalRating: 0,
+        jumlahDinilai: 0,
+      };
+
+      const jumlahDinilai = Number(agregat.jumlahDinilai);
+      const totalRating = Number(agregat.totalRating);
       const rataRating =
         jumlahDinilai > 0
           ? Number((totalRating / jumlahDinilai).toFixed(1))
@@ -776,8 +927,8 @@ export class PengaduanService {
       return {
         perStatus,
         perPrioritasTerbuka,
-        melanggarSla,
-        belumDitugaskan,
+        melanggarSla: Number(agregat.melanggarSla),
+        belumDitugaskan: Number(agregat.belumDitugaskan),
         rataRating,
         jumlahDinilai,
       };
@@ -837,8 +988,10 @@ export class PengaduanService {
         )
       );
     }
+    // B11: Filter melanggar SLA mengecualikan tiket yang berstatus jeda (MENUNGGU_PELANGGAN)
     if (filter.melanggarSla === true || filter.melanggarSla === 'true') {
       conditions.push(sql`${pengaduan.targetSelesaiAt} < ${sekarang}`);
+      conditions.push(ne(pengaduan.status, 'MENUNGGU_PELANGGAN'));
       conditions.push(
         inArray(pengaduan.status, [
           'BARU',
@@ -846,7 +999,6 @@ export class PengaduanService {
           'DITUGASKAN',
           'MENUJU_LOKASI',
           'DIPROSES',
-          'MENUNGGU_PELANGGAN',
           'DIBUKA_KEMBALI',
         ])
       );
@@ -927,8 +1079,12 @@ export class PengaduanService {
 
   /**
    * 9. Detail Lengkap Pengaduan untuk Halaman Kerja Petugas (/pengaduan/[id])
+   * Dilengkapi B6 (kewenangan dinamis aktor) dan B10 (petugas tujuan pada eskalasi dan riwayat)
    */
-  async getDetailPengaduanFull(idOrTiket: string) {
+  async getDetailPengaduanFull(
+    idOrTiket: string,
+    aktor?: { id?: string | null; role?: AppRole }
+  ) {
     const sekarang = new Date();
 
     const [row] = await db
@@ -977,7 +1133,7 @@ export class PengaduanService {
       );
 
     if (!row) {
-      throw new Error(`Pengaduan dengan identitas '${idOrTiket}' tidak ditemukan.`);
+      throw new NotFoundError(`Pengaduan dengan identitas '${idOrTiket}' tidak ditemukan.`);
     }
 
     // Ambil info pelanggan jika ada nomor langganan
@@ -996,7 +1152,8 @@ export class PengaduanService {
       }
     }
 
-    // Ambil seluruh riwayat linimasa (staf melihat riwayat publik maupun internal)
+    // B10: Ambil seluruh riwayat linimasa beserta info petugas tujuan
+    const petugasTujuanAlias = alias(user, 'petugas_tujuan');
     const riwayatList = await db
       .select({
         id: riwayatPengaduan.id,
@@ -1009,9 +1166,12 @@ export class PengaduanService {
         createdAt: riwayatPengaduan.createdAt,
         petugasId: riwayatPengaduan.petugasId,
         petugasNama: user.name,
+        petugasTujuanId: riwayatPengaduan.petugasTujuanId,
+        petugasTujuanNama: petugasTujuanAlias.name,
       })
       .from(riwayatPengaduan)
       .leftJoin(user, eq(riwayatPengaduan.petugasId, user.id))
+      .leftJoin(petugasTujuanAlias, eq(riwayatPengaduan.petugasTujuanId, petugasTujuanAlias.id))
       .where(eq(riwayatPengaduan.pengaduanId, row.id))
       .orderBy(desc(riwayatPengaduan.createdAt));
 
@@ -1024,6 +1184,7 @@ export class PengaduanService {
       fotoUrl: rw.fotoUrl,
       isPublik: rw.isPublik,
       olehNama: rw.petugasNama ?? 'Sistem',
+      tujuanNama: rw.petugasTujuanNama ?? null,
       createdAt: rw.createdAt ? new Date(rw.createdAt).toISOString() : new Date().toISOString(),
       oleh: rw.petugasId
         ? {
@@ -1032,22 +1193,60 @@ export class PengaduanService {
             role: 'PETUGAS_LAPANGAN',
           }
         : null,
+      tujuan: rw.petugasTujuanId
+        ? {
+            id: rw.petugasTujuanId,
+            name: rw.petugasTujuanNama ?? null,
+          }
+        : null,
     }));
 
     const transisiTersedia = (TRANSISI_PENGADUAN[row.status as StatusPengaduan] ?? []) as string[];
 
+    // B10: EskalasiKe dibaca dari petugas_tujuan_id pada riwayat aksi ESKALASI terakhir
     const lastEscalation = riwayatList.find((r) => r.aksi === 'ESKALASI');
     const eskalasiAt = lastEscalation?.createdAt
       ? new Date(lastEscalation.createdAt).toISOString()
       : null;
     const alasanEskalasi = lastEscalation?.catatan ?? null;
-    const eskalasiKe = lastEscalation?.petugasId
+    const eskalasiKe = lastEscalation?.petugasTujuanId
       ? {
-          id: lastEscalation.petugasId,
-          name: lastEscalation.petugasNama ?? null,
+          id: lastEscalation.petugasTujuanId,
+          name: lastEscalation.petugasTujuanNama ?? null,
           role: 'SUPERVISOR',
         }
       : null;
+
+    // B6: Hitung kewenangan dinamis berdasarkan role aktor + status + penerima tugas
+    const roleAktor = aktor?.role;
+    const aktorId = aktor?.id;
+    const isClosed = row.status === 'DITUTUP';
+    const isResolvedOrClosed =
+      row.status === 'SELESAI' || row.status === 'DITUTUP' || row.status === 'DITOLAK';
+
+    const kewenangan = {
+      bisaTugaskan: roleAktor
+        ? bolehMelakukan(roleAktor, 'TUGASKAN') && !isResolvedOrClosed
+        : !isResolvedOrClosed,
+      bisaEskalasi: roleAktor
+        ? bolehMelakukan(roleAktor, 'ESKALASI', {
+            penerimaTugasId: row.ditugaskanKeId,
+            aktorId,
+          }) && !isResolvedOrClosed
+        : !isResolvedOrClosed,
+      bisaChat: roleAktor
+        ? bolehMelakukan(roleAktor, 'CATATAN_CHAT') && !isClosed
+        : !isClosed,
+      transisiDiizinkan: transisiTersedia.filter((st) => {
+        if (!roleAktor) return true;
+        const aksi = tentukanAksiDariStatus(st as StatusPengaduan);
+        return bolehMelakukan(roleAktor, aksi, {
+          penerimaTugasId: row.ditugaskanKeId,
+          aktorId,
+          klasifikasi: row.klasifikasi as KlasifikasiPengaduan,
+        });
+      }),
+    };
 
     return {
       id: row.id,
@@ -1090,11 +1289,7 @@ export class PengaduanService {
       kecamatan: null,
       riwayat,
       transisiTersedia,
-      kewenangan: {
-        bisaTugaskan: row.status !== 'SELESAI' && row.status !== 'DITUTUP',
-        bisaEskalasi: row.status !== 'SELESAI' && row.status !== 'DITUTUP',
-        bisaChat: row.status !== 'DITUTUP',
-      },
+      kewenangan,
     };
   }
 
@@ -1137,20 +1332,29 @@ export class PengaduanService {
   }
 
   /**
-   * 11. Tambah Catatan Internal / Publik ke Linimasa Tiket
+   * 11. Tambah Catatan Internal / Publik ke Linimasa Tiket (B6, B12)
    */
-  async tambahCatatanPengaduan(input: {
-    pengaduanId: string;
-    catatan: string;
-    isPublik?: boolean;
-    petugasId?: string | null;
-  }) {
+  async tambahCatatanPengaduan(input: TambahCatatanPengaduanInput) {
     const [row] = await db
       .select({ id: pengaduan.id, status: pengaduan.status })
       .from(pengaduan)
       .where(or(eq(pengaduan.id, input.pengaduanId), eq(pengaduan.nomorTiket, input.pengaduanId)));
 
-    if (!row) throw new Error('Pengaduan tidak ditemukan.');
+    if (!row) {
+      throw new NotFoundError(`Pengaduan dengan identitas '${input.pengaduanId}' tidak ditemukan.`);
+    }
+
+    // B12: Catatan ditolak pada status DITUTUP
+    if (row.status === 'DITUTUP') {
+      throw new ValidationError('Tidak dapat menambahkan catatan pada tiket yang sudah ditutup.');
+    }
+
+    // B6: Verifikasi wewenang role internal
+    if (input.aktor?.role) {
+      if (!bolehMelakukan(input.aktor.role, 'CATATAN_CHAT')) {
+        throw new ForbiddenError('Role Anda tidak memiliki izin untuk menambahkan catatan.');
+      }
+    }
 
     const [inserted] = await db
       .insert(riwayatPengaduan)
@@ -1161,7 +1365,7 @@ export class PengaduanService {
         statusKe: row.status as any,
         catatan: input.catatan,
         isPublik: Boolean(input.isPublik),
-        petugasId: input.petugasId ?? null,
+        petugasId: input.petugasId ?? input.aktor?.id ?? null,
       })
       .returning();
 
@@ -1169,20 +1373,29 @@ export class PengaduanService {
   }
 
   /**
-   * 12. Kirim Chat Interaksi Petugas dengan Pelapor
+   * 12. Kirim Chat Interaksi Petugas dengan Pelapor (B6, B12)
    */
-  async kirimChatPetugas(input: {
-    pengaduanId: string;
-    pesan: string;
-    isPublik?: boolean;
-    petugasId?: string | null;
-  }) {
+  async kirimChatPetugas(input: KirimChatPetugasInput) {
     const [row] = await db
       .select({ id: pengaduan.id, status: pengaduan.status })
       .from(pengaduan)
       .where(or(eq(pengaduan.id, input.pengaduanId), eq(pengaduan.nomorTiket, input.pengaduanId)));
 
-    if (!row) throw new Error('Pengaduan tidak ditemukan.');
+    if (!row) {
+      throw new NotFoundError(`Pengaduan dengan identitas '${input.pengaduanId}' tidak ditemukan.`);
+    }
+
+    // B12: Chat ditolak pada status DITUTUP
+    if (row.status === 'DITUTUP') {
+      throw new ValidationError('Tidak dapat mengirim pesan interaksi pada tiket yang sudah ditutup.');
+    }
+
+    // B6: Verifikasi wewenang role internal
+    if (input.aktor?.role) {
+      if (!bolehMelakukan(input.aktor.role, 'CATATAN_CHAT')) {
+        throw new ForbiddenError('Role Anda tidak memiliki izin untuk mengirim interaksi pesan.');
+      }
+    }
 
     const [inserted] = await db
       .insert(riwayatPengaduan)
@@ -1193,7 +1406,7 @@ export class PengaduanService {
         statusKe: row.status as any,
         catatan: input.pesan,
         isPublik: input.isPublik !== undefined ? Boolean(input.isPublik) : true,
-        petugasId: input.petugasId ?? null,
+        petugasId: input.petugasId ?? input.aktor?.id ?? null,
       })
       .returning();
 
@@ -1201,47 +1414,102 @@ export class PengaduanService {
   }
 
   /**
-   * 13. Eskalasi Tiket ke Supervisor / Prioritas Lebih Tinggi
+   * 13. Eskalasi Tiket ke Supervisor / Prioritas Lebih Tinggi (B6, B8, B10, B12)
    */
-  async eskalasiPengaduan(input: {
-    pengaduanId: string;
-    prioritasBaru?: PrioritasPengaduan;
-    eskalasiKeId?: string;
-    catatan?: string;
-    petugasId?: string | null;
-  }) {
+  async eskalasiPengaduan(input: EskalasiPengaduanInput) {
     const [row] = await db
       .select()
       .from(pengaduan)
       .where(or(eq(pengaduan.id, input.pengaduanId), eq(pengaduan.nomorTiket, input.pengaduanId)));
 
-    if (!row) throw new Error('Pengaduan tidak ditemukan.');
+    if (!row) {
+      throw new NotFoundError(`Pengaduan dengan identitas '${input.pengaduanId}' tidak ditemukan.`);
+    }
 
-    const newPriority = input.prioritasBaru ?? 'TINGGI';
+    // B12: Eskalasi ditolak pada SELESAI, DITUTUP, DITOLAK
+    if (row.status === 'SELESAI' || row.status === 'DITUTUP' || row.status === 'DITOLAK') {
+      throw new ValidationError(`Tiket berstatus ${row.status} tidak dapat dieskalasi.`);
+    }
 
+    // B6: Verifikasi wewenang aktor
+    if (input.aktor?.role) {
+      const boleh = bolehMelakukan(input.aktor.role, 'ESKALASI', {
+        penerimaTugasId: row.ditugaskanKeId,
+        aktorId: input.aktor.id ?? input.petugasId,
+      });
+      if (!boleh) {
+        throw new ForbiddenError('Anda tidak memiliki wewenang untuk melakukan eskalasi tiket ini.');
+      }
+    }
+
+    // B12: Eskalasi hanya boleh menaikkan prioritas (urutan RENDAH < NORMAL < TINGGI < DARURAT)
+    const PRIORITAS_BOBOT: Record<PrioritasPengaduan, number> = {
+      RENDAH: 1,
+      NORMAL: 2,
+      TINGGI: 3,
+      DARURAT: 4,
+    };
+
+    const statusDari = row.status as StatusPengaduan;
+    const prioritasLama = row.prioritas as PrioritasPengaduan;
+    let prioritasAkhir = prioritasLama;
+
+    if (input.prioritasBaru) {
+      if (PRIORITAS_BOBOT[input.prioritasBaru] <= PRIORITAS_BOBOT[prioritasLama]) {
+        throw new ValidationError(
+          `Eskalasi prioritas hanya boleh menaikkan tingkat prioritas tiket (${prioritasLama} tidak dapat dieskalasi ke ${input.prioritasBaru}).`
+        );
+      }
+      prioritasAkhir = input.prioritasBaru;
+    }
+
+    // B8: Pengunci optimistik di dalam transaksi DB
     return db.transaction(async (tx) => {
-      const updateData: any = {
-        prioritas: newPriority,
+      const updateData: Partial<PengaduanRow> = {
+        prioritas: prioritasAkhir,
         updatedAt: new Date(),
       };
+
       if (input.eskalasiKeId) {
         updateData.ditugaskanKeId = input.eskalasiKeId;
+      }
+
+      // B12: Hitung ulang targetSelesaiAt & targetResponsAt saat prioritas naik
+      if (input.prioritasBaru) {
+        const slaBaru = hitungTargetSla(input.prioritasBaru, row.createdAt, {
+          jenis: row.jenis as JenisPengaduan,
+        });
+        const jedaMs = (row.jedaTotalMenit ?? 0) * 60 * 1000;
+        updateData.targetSelesaiAt = new Date(slaBaru.targetSelesaiAt.getTime() + jedaMs);
+        if (!row.responsAt) {
+          updateData.targetResponsAt = slaBaru.targetResponsAt;
+        }
       }
 
       const [updated] = await tx
         .update(pengaduan)
         .set(updateData)
-        .where(eq(pengaduan.id, row.id))
+        .where(and(eq(pengaduan.id, row.id), eq(pengaduan.status, statusDari)))
         .returning();
 
+      if (!updated) {
+        throw new ConflictError('Status tiket sudah berubah oleh proses lain, silakan muat ulang.');
+      }
+
+      // B10: Catat petugas_tujuan_id pada riwayat aksi ESKALASI
       await tx.insert(riwayatPengaduan).values({
         pengaduanId: row.id,
         aksi: 'ESKALASI',
-        statusDari: row.status as any,
-        statusKe: row.status as any,
-        catatan: input.catatan ?? `Tiket dieskalasi ke prioritas ${newPriority}.`,
+        statusDari,
+        statusKe: statusDari,
+        petugasId: input.petugasId ?? input.aktor?.id ?? null,
+        petugasTujuanId: input.eskalasiKeId ?? null,
+        catatan:
+          input.catatan ??
+          (input.prioritasBaru
+            ? `Tiket dieskalasi ke prioritas ${prioritasAkhir}.`
+            : 'Tiket dialihkan ke petugas lain.'),
         isPublik: true,
-        petugasId: input.petugasId ?? null,
       });
 
       return updated;

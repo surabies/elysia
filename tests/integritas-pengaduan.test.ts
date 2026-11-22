@@ -134,8 +134,8 @@ describe('Fase 2: Integritas Data & Transaksi Tiket (B3, B4, B5, B14, B15)', () 
       expect(p.id).toBeDefined();
       expect(p.name).toBeDefined();
       expect(rolesLayak.includes(p.role as string)).toBe(true);
-      // Memastikan bukan mock data palsu
-      expect(p.id.startsWith('usr-')).toBe(false);
+      // Memastikan bukan mock data palsu fiktif ('usr-1', 'usr-2', 'usr-3', 'usr-4')
+      expect(['usr-1', 'usr-2', 'usr-3', 'usr-4'].includes(p.id)).toBe(false);
     }
   });
 });

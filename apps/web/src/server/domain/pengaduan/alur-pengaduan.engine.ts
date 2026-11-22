@@ -588,6 +588,25 @@ export function hitungPerubahanTransisi(
 }
 
 /**
+ * Menentukan Kategori Aksi Otorisasi dari Status Tujuan (B6)
+ */
+export function tentukanAksiDariStatus(statusKe: StatusPengaduan): AksiPengaduanRole {
+  if (statusKe === 'TERVERIFIKASI' || statusKe === 'DITOLAK') {
+    return 'VERIFIKASI';
+  }
+  if (statusKe === 'DITUGASKAN') {
+    return 'TUGASKAN';
+  }
+  if (statusKe === 'DITUTUP') {
+    return 'TUTUP';
+  }
+  if (statusKe === 'DIBUKA_KEMBALI') {
+    return 'BUKA_KEMBALI';
+  }
+  return 'UPDATE_STATUS_LAPANGAN';
+}
+
+/**
  * Evaluasi Otorisasi Berdasarkan Matriks Role & Konteks Aktor (B6)
  */
 export function bolehMelakukan(
@@ -615,6 +634,17 @@ export function bolehMelakukan(
 
   // Khusus pelaksana lapangan pada update status lapangan: harus petugas yang ditugaskan
   if (aksi === 'UPDATE_STATUS_LAPANGAN' && role === 'PELAKSANA') {
+    if (
+      konteks?.penerimaTugasId &&
+      konteks?.aktorId &&
+      konteks.penerimaTugasId !== konteks.aktorId
+    ) {
+      return false;
+    }
+  }
+
+  // Khusus pelaksana lapangan pada eskalasi: harus petugas yang ditugaskan
+  if (aksi === 'ESKALASI' && role === 'PELAKSANA') {
     if (
       konteks?.penerimaTugasId &&
       konteks?.aktorId &&
