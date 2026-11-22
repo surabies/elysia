@@ -8,8 +8,21 @@ import type {
   StatusPengaduan,
   PrioritasPengaduan,
   JenisPengaduan,
+  KlasifikasiPengaduan,
+  AksiPengaduan,
   AppRole,
 } from '@cater/types';
+import {
+  KLASIFIKASI_PER_JENIS,
+  PRIORITAS_DEFAULT_PER_JENIS,
+  SLA_OVERRIDE_PER_JENIS,
+  WAJIB_VERIFIKASI_TAGIHAN,
+  BATAS_KONFIRMASI_JAM,
+  MAKS_BUKA_KEMBALI,
+  MIN_PANJANG_ALASAN_TOLAK,
+  MATRIKS_IZIN_PENGADUAN,
+  type AksiPengaduanRole,
+} from './pengaduan.config';
 
 /**
  * Pemetaan 2 Huruf Semantik Kode Jenis Pengaduan:
@@ -142,6 +155,24 @@ export function parseNomorTiket(nomorTiket: string): {
 }
 
 /**
+ * Menurunkan Klasifikasi Pengaduan (Tagihan vs Non-Tagihan) dari Jenis Pengaduan
+ */
+export function tentukanKlasifikasi(jenis: JenisPengaduan): KlasifikasiPengaduan {
+  return KLASIFIKASI_PER_JENIS[jenis] ?? 'BUKAN_NILAI_TAGIHAN_REKENING';
+}
+
+/**
+ * Menentukan Prioritas Awal Tiket (Default Berdasarkan Jenis Pengaduan jika tidak diisi)
+ */
+export function tentukanPrioritasAwal(
+  jenis: JenisPengaduan,
+  prioritasInput?: PrioritasPengaduan
+): PrioritasPengaduan {
+  if (prioritasInput) return prioritasInput;
+  return PRIORITAS_DEFAULT_PER_JENIS[jenis] ?? 'NORMAL';
+}
+
+/**
  * Daftar Transisi Status Pengaduan yang Sah (State Machine Whitelist)
  */
 export const TRANSISI_PENGADUAN: Record<StatusPengaduan, readonly StatusPengaduan[]> = {
@@ -159,10 +190,29 @@ export const TRANSISI_PENGADUAN: Record<StatusPengaduan, readonly StatusPengadua
 
 /**
  * Memvalidasi apakah transisi dari suatu status ke status baru diperbolehkan
+ * Mendukung opsi klasifikasi: pengaduan tagihan rekening wajib TERVERIFIKASI sebelum DITUGASKAN (K1)
  */
-export function isTransisiSah(dari: StatusPengaduan, ke: StatusPengaduan): boolean {
+export function isTransisiSah(
+  dari: StatusPengaduan,
+  ke: StatusPengaduan,
+  opsi?: { klasifikasi?: KlasifikasiPengaduan }
+): boolean {
   const targetSah = TRANSISI_PENGADUAN[dari];
-  return targetSah ? targetSah.includes(ke) : false;
+  if (!targetSah || !targetSah.includes(ke)) {
+    return false;
+  }
+
+  // K1: Pengaduan NILAI_TAGIHAN_REKENING wajib lewat TERVERIFIKASI, tidak boleh langsung BARU -> DITUGASKAN
+  if (
+    opsi?.klasifikasi === 'NILAI_TAGIHAN_REKENING' &&
+    WAJIB_VERIFIKASI_TAGIHAN &&
+    dari === 'BARU' &&
+    ke === 'DITUGASKAN'
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -182,12 +232,16 @@ export const SLA_PRIORITAS: Record<PrioritasPengaduan, DurasiSla> = {
 
 /**
  * Menghitung Target Waktu SLA Tiket
+ * Mendukung override per jenis pengaduan (opsi.jenis)
  */
 export function hitungTargetSla(
   prioritas: PrioritasPengaduan,
-  mulai: Date = new Date()
+  mulai: Date = new Date(),
+  opsi?: { jenis?: JenisPengaduan }
 ): { targetResponsAt: Date; targetSelesaiAt: Date } {
-  const sla = SLA_PRIORITAS[prioritas] ?? SLA_PRIORITAS.NORMAL;
+  const override = opsi?.jenis ? SLA_OVERRIDE_PER_JENIS[opsi.jenis] : undefined;
+  const sla = override ?? SLA_PRIORITAS[prioritas] ?? SLA_PRIORITAS.NORMAL;
+
   const targetResponsAt = new Date(mulai.getTime() + sla.responsJam * 60 * 60 * 1000);
   const targetSelesaiAt = new Date(mulai.getTime() + sla.selesaiJam * 60 * 60 * 1000);
 
@@ -196,6 +250,7 @@ export function hitungTargetSla(
 
 /**
  * Evaluasi Kelayakan Pembuatan Tiket (Aturan Khusus Jenis Pengaduan)
+ * Memvalidasi nama pelapor, GPS wajib untuk Bocor Pipa Dinas, serta rentang bujur/lintang
  */
 export function evaluasiPembuatanTiket(input: {
   jenis: JenisPengaduan;
@@ -213,11 +268,59 @@ export function evaluasiPembuatanTiket(input: {
     };
   }
 
+  if (input.koordinat) {
+    const { x, y } = input.koordinat;
+    if (typeof x !== 'number' || typeof y !== 'number' || Number.isNaN(x) || Number.isNaN(y)) {
+      return { valid: false, pesanError: 'Nilai koordinat harus berupa angka numerik yang valid.' };
+    }
+    if (x < -180 || x > 180 || y < -90 || y > 90) {
+      return {
+        valid: false,
+        pesanError:
+          'Koordinat GPS berada di luar rentang geografis yang valid (bujur -180..180, lintang -90..90).',
+      };
+    }
+  }
+
   return { valid: true };
 }
 
 /**
- * Ringkasan Status SLA Pengaduan untuk Grid & Detail View
+ * Menghitung Efek Jeda SLA Tiket (K3)
+ * Fungsi murni untuk menghitung durasi jeda, menambah jedaTotalMenit, dan menggeser targetSelesaiAt
+ */
+export interface EfekJeda {
+  durasiMenit: number;
+  jedaTotalMenitBaru: number;
+  targetSelesaiAtBaru: Date;
+  jedaMulaiAtBaru: null;
+}
+
+export function hitungEfekJeda(params: {
+  jedaMulaiAt: Date | string;
+  targetSelesaiAt: Date | string;
+  jedaTotalMenitSebelumnya?: number;
+  sekarang?: Date;
+}): EfekJeda {
+  const mulai = new Date(params.jedaMulaiAt);
+  const target = new Date(params.targetSelesaiAt);
+  const now = params.sekarang ?? new Date();
+
+  const durasiMs = Math.max(0, now.getTime() - mulai.getTime());
+  const durasiMenit = Math.round(durasiMs / 60000);
+  const jedaTotalMenitBaru = (params.jedaTotalMenitSebelumnya ?? 0) + durasiMenit;
+  const targetSelesaiAtBaru = new Date(target.getTime() + durasiMs);
+
+  return {
+    durasiMenit,
+    jedaTotalMenitBaru,
+    targetSelesaiAtBaru,
+    jedaMulaiAtBaru: null,
+  };
+}
+
+/**
+ * Ringkasan Status SLA Pengaduan untuk Grid & Detail View (B9)
  */
 export interface RingkasanSla {
   targetResponsAt: string | null;
@@ -239,30 +342,287 @@ export function ringkasSla(
   },
   sekarang: Date = new Date()
 ): RingkasanSla {
-  const tutup = p.status === 'SELESAI' || p.status === 'DITUTUP' || p.status === 'DITOLAK';
+  const status = p.status;
+  const tertutup = status === 'SELESAI' || status === 'DITUTUP' || status === 'DITOLAK';
   const targetSelesai = p.targetSelesaiAt ? new Date(p.targetSelesaiAt) : null;
   const targetRespons = p.targetResponsAt ? new Date(p.targetResponsAt) : null;
   const selesai = p.selesaiAt ? new Date(p.selesaiAt) : null;
-  const terjeda = p.status === 'MENUNGGU_PELANGGAN' && Boolean(p.jedaMulaiAt);
+  const respons = p.responsAt ? new Date(p.responsAt) : null;
+  const terjeda = status === 'MENUNGGU_PELANGGAN' && Boolean(p.jedaMulaiAt);
   const acuan = terjeda && p.jedaMulaiAt ? new Date(p.jedaMulaiAt) : sekarang;
 
+  // sisaMenit: dibekukan pada selesaiAt untuk tiket tertutup, atau pada jedaMulaiAt untuk tiket yang terjeda
   const sisaMenit = targetSelesai
     ? Math.round(
         (targetSelesai.getTime() -
-          (tutup && selesai ? selesai.getTime() : acuan.getTime())) /
+          (tertutup && selesai ? selesai.getTime() : acuan.getTime())) /
           60000
       )
     : null;
+
+  // B9: Tiket yang selesai setelah targetSelesaiAt tetap dihitung melanggar SLA
+  let melanggar = false;
+  if (tertutup) {
+    if (selesai && targetSelesai) {
+      melanggar = selesai.getTime() > targetSelesai.getTime();
+    } else {
+      melanggar = false; // DITOLAK tanpa penyelesaian tidak dihitung melanggar SLA
+    }
+  } else {
+    melanggar = targetSelesai !== null && sisaMenit !== null && sisaMenit < 0;
+  }
+
+  // B9: responsTerlambat untuk tiket DITOLAK dari BARU harus false jika ditutup
+  let responsTerlambat = false;
+  if (respons && targetRespons) {
+    responsTerlambat = respons.getTime() > targetRespons.getTime();
+  } else if (!respons && !tertutup && targetRespons) {
+    responsTerlambat = sekarang.getTime() > targetRespons.getTime();
+  } else {
+    responsTerlambat = false;
+  }
 
   return {
     targetResponsAt: targetRespons ? targetRespons.toISOString() : null,
     targetSelesaiAt: targetSelesai ? targetSelesai.toISOString() : null,
     sisaMenit,
-    melanggar: !tutup && sisaMenit !== null && sisaMenit < 0,
-    responsTerlambat:
-      !p.responsAt &&
-      targetRespons !== null &&
-      targetRespons.getTime() < sekarang.getTime(),
+    melanggar,
+    responsTerlambat,
     terjeda,
   };
+}
+
+/**
+ * Parameter untuk Menghitung Side-Effect Perubahan Transisi Status (Fungsi Murni)
+ */
+export interface HitungPerubahanTransisiInput {
+  statusDari: StatusPengaduan;
+  statusKe: StatusPengaduan;
+  prioritas: PrioritasPengaduan;
+  jenis: JenisPengaduan;
+  klasifikasi?: KlasifikasiPengaduan;
+  responsAt?: Date | null;
+  jedaMulaiAt?: Date | null;
+  jedaTotalMenit?: number;
+  targetSelesaiAt?: Date | null;
+  konfirmasiBatasAt?: Date | null;
+  jumlahDibukaKembali?: number;
+  catatan?: string | null;
+  fotoUrl?: string | null;
+  sumberAksi?: 'STAF' | 'PELAPOR' | 'OTOMATIS';
+  sekarang?: Date;
+}
+
+export interface HasilPerubahanTransisi {
+  patch: {
+    status: StatusPengaduan;
+    responsAt?: Date;
+    verifikasiAt?: Date;
+    selesaiAt?: Date | null;
+    konfirmasiBatasAt?: Date | null;
+    jedaMulaiAt?: Date | null;
+    jedaTotalMenit?: number;
+    targetSelesaiAt?: Date;
+    jumlahDibukaKembali?: number;
+    updatedAt: Date;
+  };
+  aksiRiwayat: AksiPengaduan;
+  pesanRiwayat: string;
+}
+
+/**
+ * Menghitung Seluruh Patch Kolom & Aksi Riwayat Audit saat Terjadi Perubahan Status Tiket
+ * Fungsi murni tanpa efek samping DB/jaringan.
+ */
+export function hitungPerubahanTransisi(
+  input: HitungPerubahanTransisiInput
+): HasilPerubahanTransisi {
+  const { statusDari, statusKe, prioritas, jenis } = input;
+  const klasifikasi = input.klasifikasi ?? tentukanKlasifikasi(jenis);
+  const now = input.sekarang ?? new Date();
+
+  // 1. Validasi sahnya transisi
+  if (!isTransisiSah(statusDari, statusKe, { klasifikasi })) {
+    throw new Error(
+      `Transisi status tidak diizinkan: dari '${statusDari}' ke '${statusKe}'${
+        klasifikasi === 'NILAI_TAGIHAN_REKENING' ? ' (Wajib Verifikasi Tagihan)' : ''
+      }.`
+    );
+  }
+
+  const patch: HasilPerubahanTransisi['patch'] = {
+    status: statusKe,
+    updatedAt: now,
+  };
+
+  let aksiRiwayat: AksiPengaduan = 'STATUS_DIUBAH';
+  let pesanRiwayat = input.catatan?.trim() || `Status tiket diubah menjadi ${statusKe}.`;
+
+  // 2. Transisi pertama keluar dari BARU mengisi responsAt
+  if (statusDari === 'BARU' && statusKe !== 'BARU') {
+    if (!input.responsAt) {
+      patch.responsAt = now;
+    }
+  }
+
+  // 3. Efek keluar dari MENUNGGU_PELANGGAN (Resume Jeda SLA)
+  if (statusDari === 'MENUNGGU_PELANGGAN' && statusKe !== 'MENUNGGU_PELANGGAN') {
+    if (input.jedaMulaiAt && input.targetSelesaiAt) {
+      const efek = hitungEfekJeda({
+        jedaMulaiAt: input.jedaMulaiAt,
+        targetSelesaiAt: input.targetSelesaiAt,
+        jedaTotalMenitSebelumnya: input.jedaTotalMenit,
+        sekarang: now,
+      });
+      patch.jedaMulaiAt = efek.jedaMulaiAtBaru;
+      patch.jedaTotalMenit = efek.jedaTotalMenitBaru;
+      patch.targetSelesaiAt = efek.targetSelesaiAtBaru;
+    }
+  }
+
+  // 4. Efek spesifik berdasarkan statusKe
+  switch (statusKe) {
+    case 'TERVERIFIKASI': {
+      patch.verifikasiAt = now;
+      aksiRiwayat = 'DIVERIFIKASI';
+      pesanRiwayat = input.catatan?.trim() || 'Pengaduan telah diverifikasi oleh tim penanganan.';
+      break;
+    }
+
+    case 'MENUNGGU_PELANGGAN': {
+      patch.jedaMulaiAt = now;
+      aksiRiwayat = 'STATUS_DIUBAH';
+      pesanRiwayat =
+        input.catatan?.trim() || 'Pengerjaan dijeda: menunggu konfirmasi/tanggapan dari pelanggan.';
+      break;
+    }
+
+    case 'SELESAI': {
+      // Wajib catatan atau foto bukti penyelesaian
+      if (!input.fotoUrl && (!input.catatan || input.catatan.trim().length === 0)) {
+        throw new Error(
+          'Penyelesaian tiket wajib menyertakan foto bukti atau catatan hasil pekerjaan.'
+        );
+      }
+      patch.selesaiAt = now;
+      patch.konfirmasiBatasAt = new Date(now.getTime() + BATAS_KONFIRMASI_JAM * 60 * 60 * 1000);
+      aksiRiwayat = 'STATUS_DIUBAH';
+      pesanRiwayat = input.catatan?.trim() || 'Pekerjaan perbaikan telah selesai dilaksanakan.';
+      break;
+    }
+
+    case 'DITUTUP': {
+      if (input.sumberAksi === 'PELAPOR') {
+        aksiRiwayat = 'DIKONFIRMASI';
+        pesanRiwayat = input.catatan?.trim() || 'Pelapor mengonfirmasi penutupan pengaduan.';
+      } else if (input.sumberAksi === 'OTOMATIS') {
+        aksiRiwayat = 'DITUTUP_OTOMATIS';
+        pesanRiwayat = 'Tiket ditutup secara otomatis karena telah melewati batas waktu konfirmasi.';
+      } else {
+        aksiRiwayat = 'STATUS_DIUBAH';
+        pesanRiwayat = input.catatan?.trim() || 'Tiket ditutup oleh petugas layanan.';
+      }
+      break;
+    }
+
+    case 'DIBUKA_KEMBALI': {
+      // Alasan pembukaan kembali wajib
+      if (!input.catatan || input.catatan.trim().length === 0) {
+        throw new Error('Alasan pembukaan kembali pengaduan wajib diisi.');
+      }
+
+      // Validasi jendela konfirmasi bila dibuka kembali dari SELESAI
+      if (statusDari === 'SELESAI' && input.konfirmasiBatasAt) {
+        const batas = new Date(input.konfirmasiBatasAt);
+        if (now.getTime() > batas.getTime()) {
+          throw new Error('Batas waktu konfirmasi dan pembukaan kembali tiket telah kedaluwarsa.');
+        }
+      }
+
+      // Validasi batas maksimal pembukaan kembali
+      const jumlahSekarang = input.jumlahDibukaKembali ?? 0;
+      if (jumlahSekarang >= MAKS_BUKA_KEMBALI) {
+        throw new Error(
+          `Pengaduan tidak dapat dibuka kembali karena telah mencapai batas maksimal (${MAKS_BUKA_KEMBALI} kali).`
+        );
+      }
+
+      patch.jumlahDibukaKembali = jumlahSekarang + 1;
+      patch.selesaiAt = null;
+      patch.konfirmasiBatasAt = null;
+      patch.jedaMulaiAt = null;
+
+      // Reset siklus SLA baru
+      const targetBaru = hitungTargetSla(prioritas, now, { jenis });
+      patch.targetSelesaiAt = targetBaru.targetSelesaiAt;
+
+      aksiRiwayat = 'DIBUKA_KEMBALI';
+      pesanRiwayat = input.catatan.trim();
+      break;
+    }
+
+    case 'DITOLAK': {
+      // K8: Penolakan tiket wajib menyertakan alasan minimal MIN_PANJANG_ALASAN_TOLAK karakter
+      if (!input.catatan || input.catatan.trim().length < MIN_PANJANG_ALASAN_TOLAK) {
+        throw new Error(
+          `Penolakan pengaduan wajib menyertakan alasan penolakan minimal ${MIN_PANJANG_ALASAN_TOLAK} karakter.`
+        );
+      }
+      aksiRiwayat = 'STATUS_DIUBAH';
+      pesanRiwayat = input.catatan.trim();
+      break;
+    }
+
+    default: {
+      aksiRiwayat = 'STATUS_DIUBAH';
+      pesanRiwayat = input.catatan?.trim() || `Status berhasil diubah ke ${statusKe}.`;
+      break;
+    }
+  }
+
+  return {
+    patch,
+    aksiRiwayat,
+    pesanRiwayat,
+  };
+}
+
+/**
+ * Evaluasi Otorisasi Berdasarkan Matriks Role & Konteks Aktor (B6)
+ */
+export function bolehMelakukan(
+  role: AppRole,
+  aksi: AksiPengaduanRole,
+  konteks?: {
+    penerimaTugasId?: string | null;
+    aktorId?: string | null;
+    klasifikasi?: KlasifikasiPengaduan;
+  }
+): boolean {
+  if (role === 'SUPERADMIN') return true;
+
+  const allowedRoles = MATRIKS_IZIN_PENGADUAN[aksi];
+  if (!allowedRoles || !allowedRoles.includes(role)) {
+    return false;
+  }
+
+  // Khusus staf billing pada verifikasi: hanya jika klasifikasi tagihan
+  if (aksi === 'VERIFIKASI' && role === 'STAFF_ADMIN_BILLING') {
+    if (konteks?.klasifikasi && konteks.klasifikasi !== 'NILAI_TAGIHAN_REKENING') {
+      return false;
+    }
+  }
+
+  // Khusus pelaksana lapangan pada update status lapangan: harus petugas yang ditugaskan
+  if (aksi === 'UPDATE_STATUS_LAPANGAN' && role === 'PELAKSANA') {
+    if (
+      konteks?.penerimaTugasId &&
+      konteks?.aktorId &&
+      konteks.penerimaTugasId !== konteks.aktorId
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 }

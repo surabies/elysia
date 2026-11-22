@@ -3,7 +3,7 @@
  * Lapisan: 2. Service Layer (Orkestrasi Drizzle ORM, Domain Engine, & Transaksi DB)
  */
 
-import { eq, desc, and, like, sql, inArray, ilike, or, count, ne, isNotNull } from 'drizzle-orm';
+import { eq, desc, and, like, sql, inArray, ilike, or, count, ne, isNotNull, gte } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import {
   db,
@@ -22,11 +22,19 @@ import {
   hitungTargetSla,
   evaluasiPembuatanTiket,
   ringkasSla,
+  tentukanKlasifikasi,
+  tentukanPrioritasAwal,
+  hitungPerubahanTransisi,
+  hitungEfekJeda,
   TRANSISI_PENGADUAN,
   KODE_JENIS_PENGADUAN,
   LABEL_JENIS_PENGADUAN,
 } from '../../domain/pengaduan/alur-pengaduan.engine';
-import { JENIS_PENGADUAN_PETA_PUBLIK } from '../../domain/pengaduan/pengaduan.config';
+import {
+  JENIS_PENGADUAN_PETA_PUBLIK,
+  DUPLIKAT_RADIUS_METER,
+  DUPLIKAT_JENDELA_JAM,
+} from '../../domain/pengaduan/pengaduan.config';
 import { isCloudinaryConfigured, uploadToCloudinary } from '../../lib/cloudinary';
 import type {
   JenisPengaduan,
@@ -58,6 +66,7 @@ export interface UbahStatusPengaduanInput {
   catatan?: string;
   fotoPenyelesaianUrl?: string;
   petugasId?: string | null;
+  sumberAksi?: 'STAF' | 'PELAPOR' | 'OTOMATIS';
 }
 
 export interface TugaskanPengaduanInput {
@@ -118,8 +127,62 @@ export class PengaduanService {
       }
     }
 
-    const prioritas = input.prioritas ?? 'NORMAL';
-    const sla = hitungTargetSla(prioritas);
+    const klasifikasi = input.klasifikasi ?? tentukanKlasifikasi(input.jenis);
+    const prioritas = tentukanPrioritasAwal(input.jenis, input.prioritas);
+    const sla = hitungTargetSla(prioritas, undefined, { jenis: input.jenis });
+
+    // Deteksi laporan duplikat spasial & temporal (K7)
+    let kemungkinanDuplikat: Array<{ nomorTiket: string; jarakMeter: number }> = [];
+    if (
+      input.koordinat &&
+      (input.jenis === 'BOCOR_PIPA_DINAS' ||
+        input.jenis === 'TIDAK_ADA_AIR' ||
+        input.jenis === 'AIR_KERUH_BAU_BERWARNA')
+    ) {
+      try {
+        const batasWaktu = new Date(Date.now() - DUPLIKAT_JENDELA_JAM * 60 * 60 * 1000);
+        const openStatuses = [
+          'BARU',
+          'TERVERIFIKASI',
+          'DITUGASKAN',
+          'MENUJU_LOKASI',
+          'DIPROSES',
+          'MENUNGGU_PELANGGAN',
+          'DIBUKA_KEMBALI',
+        ];
+
+        const duplikatRows = await db
+          .select({
+            nomorTiket: pengaduan.nomorTiket,
+            jarak: sql<number>`ST_Distance(
+              ${pengaduan.koordinat}::geography,
+              ST_SetSRID(ST_MakePoint(${input.koordinat.x}, ${input.koordinat.y}), 4326)::geography
+            )::int`,
+          })
+          .from(pengaduan)
+          .where(
+            and(
+              eq(pengaduan.jenis, input.jenis),
+              inArray(pengaduan.status, openStatuses as any),
+              isNotNull(pengaduan.koordinat),
+              gte(pengaduan.createdAt, batasWaktu),
+              sql`ST_DWithin(
+                ${pengaduan.koordinat}::geography,
+                ST_SetSRID(ST_MakePoint(${input.koordinat.x}, ${input.koordinat.y}), 4326)::geography,
+                ${DUPLIKAT_RADIUS_METER}
+              )`
+            )
+          )
+          .limit(5);
+
+        kemungkinanDuplikat = duplikatRows.map((d) => ({
+          nomorTiket: d.nomorTiket,
+          jarakMeter: Number(d.jarak),
+        }));
+      } catch (err) {
+        console.warn('[DETEKSI_DUPLIKAT_ERR]', err);
+      }
+    }
 
     // B14: Siapkan ID tiket dan lakukan upload Cloudinary DI LUAR transaksi DB
     const ticketId = crypto.randomUUID();
@@ -227,7 +290,7 @@ export class PengaduanService {
               clientRequestId: input.clientRequestId,
               nomorLangganan: input.nomorLangganan,
               pelangganId: resolvedPelangganId,
-              klasifikasi: input.klasifikasi ?? 'BUKAN_NILAI_TAGIHAN_REKENING',
+              klasifikasi,
               jenis: input.jenis,
               judul: finalJudul,
               deskripsi: input.deskripsi.trim(),
@@ -265,7 +328,20 @@ export class PengaduanService {
             });
           }
 
-          return row;
+          // Catat indikasi duplikasi ke riwayat internal jika terdeteksi (K7)
+          if (kemungkinanDuplikat.length > 0) {
+            await tx.insert(riwayatPengaduan).values({
+              pengaduanId: row.id,
+              aksi: 'CATATAN',
+              statusKe: 'BARU',
+              catatan: `Terdeteksi kemungkinan laporan duplikat dengan tiket: ${kemungkinanDuplikat
+                .map((d) => `${d.nomorTiket} (${d.jarakMeter}m)`)
+                .join(', ')}`,
+              isPublik: false,
+            });
+          }
+
+          return Object.assign(row, { kemungkinanDuplikat });
         });
       } catch (err: any) {
         const isUniqueViolation =
@@ -393,17 +469,6 @@ export class PengaduanService {
     const statusDari = row.status as StatusPengaduan;
     const statusKe = input.statusKe;
 
-    if (!isTransisiSah(statusDari, statusKe)) {
-      throw new Error(
-        `Transisi status tidak diizinkan: dari '${statusDari}' ke '${statusKe}'.`
-      );
-    }
-
-    // Jika ke SELESAI, foto penyelesaian atau catatan sangat disarankan
-    if (statusKe === 'SELESAI' && !input.fotoPenyelesaianUrl && !input.catatan) {
-      throw new Error('Penyelesaian tiket wajib menyertakan foto bukti atau catatan pekerjaan.');
-    }
-
     let processedFotoPenyelesaian: string | null = null;
     let fotoPenyelesaianPublicId: string | null = null;
 
@@ -431,14 +496,30 @@ export class PengaduanService {
       }
     }
 
+    // Evaluasi seluruh side-effect perubahan transisi status (Fase 3: K1-K5, K8)
+    const transisi = hitungPerubahanTransisi({
+      statusDari,
+      statusKe,
+      prioritas: row.prioritas as PrioritasPengaduan,
+      jenis: row.jenis as JenisPengaduan,
+      klasifikasi: row.klasifikasi as KlasifikasiPengaduan,
+      responsAt: row.responsAt,
+      jedaMulaiAt: row.jedaMulaiAt,
+      jedaTotalMenit: row.jedaTotalMenit,
+      targetSelesaiAt: row.targetSelesaiAt,
+      konfirmasiBatasAt: row.konfirmasiBatasAt,
+      jumlahDibukaKembali: row.jumlahDibukaKembali,
+      catatan: input.catatan,
+      fotoUrl: processedFotoPenyelesaian,
+      sumberAksi: input.sumberAksi ?? 'STAF',
+    });
+
     return db.transaction(async (tx) => {
       const updateData: Partial<PengaduanRow> = {
-        status: statusKe,
-        updatedAt: new Date(),
+        ...transisi.patch,
       };
 
       if (statusKe === 'SELESAI') {
-        updateData.selesaiAt = new Date();
         updateData.catatanPenyelesaian = input.catatan;
         updateData.fotoPenyelesaianUrl = processedFotoPenyelesaian;
         if (fotoPenyelesaianPublicId) {
@@ -454,11 +535,11 @@ export class PengaduanService {
 
       await tx.insert(riwayatPengaduan).values({
         pengaduanId: row.id,
-        aksi: 'STATUS_DIUBAH',
+        aksi: transisi.aksiRiwayat,
         statusDari,
         statusKe,
         petugasId: input.petugasId,
-        catatan: input.catatan,
+        catatan: transisi.pesanRiwayat,
         fotoUrl: processedFotoPenyelesaian,
         isPublik: true,
       });
