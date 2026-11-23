@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ruteApi } from "../api";
 import type { OpsiItem, PelangganItem } from "../types";
 import { FieldSelect } from "./field-select";
 
@@ -46,13 +47,9 @@ export function PindahRuteDialog({
   useEffect(() => {
     if (!open) return;
     setRuteBaru("");
-    fetch(`/api/rute/tujuan?kecuali=${encodeURIComponent(ruteAsal)}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && Array.isArray(json.data)) {
-          setOpsi(json.data);
-        }
-      })
+    ruteApi
+      .getRuteTujuan(ruteAsal)
+      .then(setOpsi)
       .catch((err) => {
         console.error("Gagal memuat rute tujuan:", err);
         toast.error("Gagal memuat daftar rute tujuan");
@@ -66,18 +63,10 @@ export function PindahRuteDialog({
     }
     setMenyimpan(true);
     try {
-      const res = await fetch("/api/rute/penggabungan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          noPelList: pelanggan.map((p) => p.noPel),
-          ruteTujuan: ruteBaru,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Gagal memindahkan rute pelanggan");
-      }
+      await ruteApi.pindahRuteMassal(
+        pelanggan.map((p) => p.noPel),
+        ruteBaru
+      );
       onSelesai(ruteBaru);
     } catch (err: any) {
       toast.error(err.message || "Gagal memindahkan rute pelanggan");

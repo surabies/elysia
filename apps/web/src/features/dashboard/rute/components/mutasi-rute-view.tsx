@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { ruteApi } from "../api";
 import type { OpsiItem, PelangganItem, RiwayatMutasiItem } from "../types";
 import { wilayahPelayananOpsi } from "../types";
 import { FieldSelect } from "./field-select";
@@ -51,14 +52,12 @@ export function MutasiRuteView() {
   const [riwayat, setRiwayat] = useState<RiwayatMutasiItem[]>([]);
   const [memuat, setMemuat] = useState(false);
 
-  // Muat opsi wilayah dari server
+  // Muat opsi wilayah dari API client
   useEffect(() => {
-    fetch("/api/rute/wilayah")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setWilayahList(json.data);
-        }
+    ruteApi
+      .getWilayah()
+      .then((opts) => {
+        if (opts.length > 0) setWilayahList(opts);
       })
       .catch((err) => console.error("Gagal memuat wilayah:", err));
   }, []);
@@ -66,11 +65,8 @@ export function MutasiRuteView() {
   const muatRiwayat = useCallback(async () => {
     setMemuat(true);
     try {
-      const res = await fetch("/api/rute/riwayat");
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setRiwayat(json.data);
-      }
+      const data = await ruteApi.getRiwayat();
+      setRiwayat(data);
     } catch (err: any) {
       toast.error(err.message || "Gagal memuat riwayat mutasi");
     } finally {
@@ -104,13 +100,12 @@ export function MutasiRuteView() {
     setCariError("");
     setMencari(true);
     try {
-      const res = await fetch(`/api/rute/pelanggan/${encodeURIComponent(noPel.trim())}`);
-      const json = await res.json();
-      if (res.status === 404 || !json.success || !json.data) {
+      const hasil = await ruteApi.cariPelanggan(noPel.trim());
+      if (!hasil) {
         setPelanggan(null);
         setCariError("Pelanggan tidak ditemukan");
       } else {
-        setPelanggan(json.data);
+        setPelanggan(hasil);
       }
     } catch (err: any) {
       setCariError(err.message || "Gagal mencari data pelanggan");
@@ -140,22 +135,14 @@ export function MutasiRuteView() {
 
     setMenyimpan(true);
     try {
-      const res = await fetch("/api/rute/mutasi", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          noPel: pelanggan.noPel,
-          wilayahId: wilayah,
-          ruteKode: rute.trim().toUpperCase(),
-          noUrut: Number(urut),
-        }),
+      const log = await ruteApi.simpanMutasi({
+        noPel: pelanggan.noPel,
+        wilayahId: wilayah,
+        ruteKode: rute.trim().toUpperCase(),
+        noUrut: Number(urut),
       });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Gagal menyimpan mutasi rute");
-      }
 
-      setRiwayat((r) => [json.data, ...r]);
+      setRiwayat((r) => [log, ...r]);
       toast.success(`Pelanggan ${pelanggan.noPel} dipindahkan ke rute ${rute.trim().toUpperCase()}`);
       reset();
     } catch (err: any) {
@@ -215,12 +202,12 @@ export function MutasiRuteView() {
           </CardHeader>
 
           <CardContent className="space-y-4 pt-4">
-            {/* Cari pelanggan */}
+            {/* Cari pelanggan dengan button yang selaras tinggi inputnya */}
             <div className="grid gap-1.5">
               <Label htmlFor="no-pel" className="text-xs font-medium text-muted-foreground">
                 Nomor Pelanggan
               </Label>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -230,12 +217,18 @@ export function MutasiRuteView() {
                     onChange={(e) => setNoPel(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && cari()}
                     placeholder="Contoh: 00700250273"
-                    className="pl-8 font-mono text-xs"
+                    className="h-9 pl-8 font-mono text-xs"
                     aria-invalid={!!cariError}
                   />
                 </div>
-                <Button variant="outline" size="sm" onClick={cari} disabled={mencari}>
-                  {mencari ? <Loader2 className="size-4 animate-spin" /> : "Cari"}
+                <Button
+                  variant="outline"
+                  className="h-9 px-4 text-xs shrink-0"
+                  onClick={cari}
+                  disabled={mencari}
+                >
+                  {mencari ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
+                  Cari
                 </Button>
               </div>
               {cariError && <p className="text-xs text-destructive">{cariError}</p>}
@@ -304,7 +297,7 @@ export function MutasiRuteView() {
                     value={rute}
                     onChange={(e) => setRute(e.target.value)}
                     placeholder="Contoh: BD502"
-                    className="font-mono uppercase text-xs"
+                    className="h-9 font-mono uppercase text-xs"
                     disabled={!pelanggan}
                     aria-invalid={!!errors.rute}
                   />
@@ -317,7 +310,7 @@ export function MutasiRuteView() {
                     min={1}
                     value={urut}
                     onChange={(e) => setUrut(e.target.value)}
-                    className="font-mono tabular-nums text-xs"
+                    className="h-9 font-mono tabular-nums text-xs"
                     disabled={!pelanggan}
                     aria-invalid={!!errors.urut}
                   />

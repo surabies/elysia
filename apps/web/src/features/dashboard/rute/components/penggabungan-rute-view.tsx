@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { ruteApi } from "../api";
 import type { OpsiItem, PelangganItem } from "../types";
 import { wilayahPelayananOpsi } from "../types";
 import { FieldSelect } from "./field-select";
@@ -48,13 +49,8 @@ export function PenggabunganRuteView() {
     setRute("");
     setRuteOpsi([]);
     try {
-      const res = await fetch(`/api/rute/petugas?wilayahId=${encodeURIComponent(v)}`);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setPetugasOpsi(json.data);
-      } else {
-        setPetugasOpsi([]);
-      }
+      const opts = await ruteApi.getPetugas(v);
+      setPetugasOpsi(opts);
     } catch (err) {
       console.error("Gagal memuat petugas:", err);
       toast.error("Gagal memuat daftar petugas");
@@ -63,12 +59,10 @@ export function PenggabunganRuteView() {
 
   // Muat opsi wilayah dan pre-load petugas untuk WP 5 saat pertama kali komponen dirender
   useEffect(() => {
-    fetch("/api/rute/wilayah")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setWilayahList(json.data);
-        }
+    ruteApi
+      .getWilayah()
+      .then((opts) => {
+        if (opts.length > 0) setWilayahList(opts);
       })
       .catch((err) => console.error("Gagal memuat wilayah:", err));
 
@@ -79,13 +73,8 @@ export function PenggabunganRuteView() {
     setPetugas(v);
     setRute("");
     try {
-      const res = await fetch(`/api/rute/daftar?petugasId=${encodeURIComponent(v)}`);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setRuteOpsi(json.data);
-      } else {
-        setRuteOpsi([]);
-      }
+      const opts = await ruteApi.getRuteByPetugas(v);
+      setRuteOpsi(opts);
     } catch (err) {
       console.error("Gagal memuat rute:", err);
       toast.error("Gagal memuat daftar rute petugas");
@@ -97,13 +86,8 @@ export function PenggabunganRuteView() {
     setMemuat(true);
     setTerpilih(new Set());
     try {
-      const res = await fetch(`/api/rute/pelanggan?ruteId=${encodeURIComponent(rute)}`);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setData(json.data);
-      } else {
-        setData([]);
-      }
+      const result = await ruteApi.getPelangganByRute(rute);
+      setData(result);
     } catch (err: any) {
       toast.error(err.message || "Gagal memuat data pelanggan");
     } finally {
@@ -138,11 +122,8 @@ export function PenggabunganRuteView() {
     if (rute) {
       setMemuat(true);
       try {
-        const res = await fetch(`/api/rute/pelanggan?ruteId=${encodeURIComponent(rute)}`);
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          setData(json.data);
-        }
+        const fresh = await ruteApi.getPelangganByRute(rute);
+        setData(fresh);
       } catch (err) {
         console.error("Gagal memuat ulang data rute:", err);
       } finally {
@@ -226,13 +207,12 @@ export function PenggabunganRuteView() {
             <Button
               onClick={cari}
               disabled={!rute || memuat}
-              size="sm"
-              className="h-9 gap-1.5"
+              className="h-9 gap-1.5 px-4 text-xs shrink-0"
             >
               {memuat ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin mr-1.5" />
               ) : (
-                <Search className="size-4" />
+                <Search className="size-4 mr-1.5" />
               )}
               Tampilkan Pelanggan
             </Button>
