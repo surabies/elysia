@@ -624,18 +624,17 @@ export function TabelPengaduanGlide({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col">
-      {/* 1. Render Toolbar Compact & Premium ke Navbar via Portal (tanpa fallback inline agar tabel tidak melompat saat hydration/reload) */}
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {/* 1. Render Toolbar Compact & Premium ke Navbar via Portal */}
       {targetPortal && createPortal(toolbarContent, targetPortal)}
 
       {/* 2. Kontainer Rounded Card Murni: Header Tabel Menempel 100% ke Border Atas Panel Tabel */}
-      <div className="flex h-full min-h-0 flex-1 flex-col rounded-lg border border-border bg-card shadow-panel overflow-hidden">
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col rounded-lg border border-border bg-card shadow-panel overflow-hidden">
         <EnterpriseGlideGrid
           className="h-full w-full rounded-none border-0"
           columns={columns}
           rows={data.length}
           freezeColumns={2}
-          flexColumnId="judul"
           memuat={isLoading}
           getCellContent={getCellContent}
           onCellClicked={handleCellClicked}

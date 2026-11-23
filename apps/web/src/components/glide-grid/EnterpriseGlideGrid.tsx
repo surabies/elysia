@@ -82,18 +82,22 @@ export function EnterpriseGlideGrid({
     setIsMounted(true);
   }, []);
 
-  // Responsif terhadap ukuran container dengan ResizeObserver
+  // Responsif terhadap ukuran container dengan ResizeObserver (hanya aktif bila flexColumnId digunakan)
   React.useEffect(() => {
+    if (!flexColumnId) return;
     const el = containerRef.current;
     if (!el) return;
 
     const updateSize = () => {
       const rect = el.getBoundingClientRect();
       if (rect.width > 0) {
-        setDimensions({
-          width: Math.floor(rect.width),
-          height: Math.floor(rect.height > 0 ? rect.height : (typeof minHeight === 'number' ? minHeight : 450)),
-        });
+        const nextW = Math.floor(rect.width);
+        const nextH = Math.floor(
+          rect.height > 0 ? rect.height : typeof minHeight === 'number' ? minHeight : 450
+        );
+        setDimensions((prev) =>
+          prev.width === nextW && prev.height === nextH ? prev : { width: nextW, height: nextH }
+        );
       }
     };
 
@@ -102,16 +106,19 @@ export function EnterpriseGlideGrid({
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        setDimensions({
-          width: Math.floor(width),
-          height: Math.floor(height > 0 ? height : (typeof minHeight === 'number' ? minHeight : 450)),
-        });
+        const nextW = Math.floor(width);
+        const nextH = Math.floor(
+          height > 0 ? height : typeof minHeight === 'number' ? minHeight : 450
+        );
+        setDimensions((prev) =>
+          prev.width === nextW && prev.height === nextH ? prev : { width: nextW, height: nextH }
+        );
       }
     });
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [minHeight, rows, memuat, isMounted]);
+  }, [flexColumnId, minHeight, rows, memuat, isMounted]);
 
   // Kalkulasi kolom dengan auto-fit: jika total lebar kolom < lebar kontainer,
   // tambahkan sisa lebar ke flexColumnId (hanya jika ditentukan secara eksplisit)
@@ -263,7 +270,7 @@ export function EnterpriseGlideGrid({
       ref={containerRef}
       style={minHeight ? { minHeight } : undefined}
       className={cn(
-        'relative w-full h-full min-h-0 flex-1 rounded-none bg-card overflow-hidden shadow-none select-none',
+        'relative w-full h-full min-h-0 min-w-0 flex-1 rounded-none bg-card overflow-hidden shadow-none select-none',
         className
       )}
     >
