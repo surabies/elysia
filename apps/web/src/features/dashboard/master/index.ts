@@ -1,3 +1,4 @@
+export * from './api';
 export { KelolaKodeKelainan } from './components/KelolaKodeKelainan';
 export { KelolaManajemenUser } from './components/KelolaManajemenUser';
 export { KelolaPetugas } from './components/KelolaPetugas';

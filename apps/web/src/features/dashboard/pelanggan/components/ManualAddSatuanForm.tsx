@@ -22,6 +22,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { LABEL_KONDISI_CATAT } from '@/components/tanstacktable';
 import { cn } from '@/lib/utils';
+import { manualAddApi } from '../api';
 
 const numberFormat = new Intl.NumberFormat('id-ID');
 
@@ -210,12 +211,8 @@ export function ManualAddSatuanForm({
       }
       setSearchLoading(true);
       try {
-        const res = await fetch(
-          `/api/v1/manual-add/cari-pelanggan?nomor=${encodeURIComponent(q)}&periode=${periode}`
-        );
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          const list: PelangganSearchResult[] = json.data;
+        const list: PelangganSearchResult[] = await manualAddApi.cariPelanggan(q, periode);
+        if (Array.isArray(list)) {
           const exactMatch = list.find(
             (p) => p.nomorLangganan.toLowerCase() === q.toLowerCase()
           );
@@ -307,21 +304,16 @@ export function ManualAddSatuanForm({
       : `[Manual ADD - ${labelKondisi}]`;
 
     try {
-      const res = await fetch('/api/v1/manual-add/satuan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pelangganId: selectedPelanggan.nomorLangganan,
-          periode: Number(periode),
-          standAwal,
-          standAkhir: stmaNumber,
-          pemakaian: pakaiNumber,
-          kondisiCatat,
-          alasanManual: fullCatatan,
-        }),
+      const json = await manualAddApi.submitSatuan({
+        pelangganId: selectedPelanggan.nomorLangganan,
+        periode: Number(periode),
+        standAwal,
+        standAkhir: stmaNumber,
+        pemakaian: pakaiNumber,
+        kondisiCatat,
+        alasanManual: fullCatatan,
       });
 
-      const json = await res.json();
       if (json.success) {
         setNotification({
           type: 'success',

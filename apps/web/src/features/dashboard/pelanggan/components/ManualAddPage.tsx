@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { STANDAR_PERIODE_OPTIONS, PERIODE_BERJALAN_AKTIF } from '@/config/periode';
+import { manualAddApi } from '../api';
 import { ManualAddSatuanForm } from './ManualAddSatuanForm';
 import { ManualAddMasalTaksasi } from './ManualAddMasalTaksasi';
 import { ManualAddRiwayatTable, type RiwayatResponse } from './ManualAddRiwayatTable';
@@ -48,10 +49,9 @@ export function ManualAddPage() {
   const fetchKpi = React.useCallback(async () => {
     setKpiLoading(true);
     try {
-      const res = await fetch(`/api/v1/manual-add/riwayat?periode=${periode}&limit=1`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setKpiData(json.data.kpi);
+      const kpi = await manualAddApi.getKpi(periode);
+      if (kpi) {
+        setKpiData(kpi);
       }
     } catch (err) {
       console.error('Failed to fetch KPI manual add:', err);

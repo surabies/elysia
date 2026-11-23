@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { manualAddApi } from '../api';
 import type {
   ItemPreviewTaksasi,
   PreviewTaksasiResult,
@@ -80,13 +81,9 @@ export function ManualAddMasalTaksasi({
 
   // 1. Muat opsi filter Petugas & Rute
   React.useEffect(() => {
-    fetch('/api/v1/manual-add/masal/options')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && json.data) {
-          setFilterOptions(json.data);
-        }
-      })
+    manualAddApi
+      .getMasalFilterOptions()
+      .then(setFilterOptions)
       .catch((err) => console.error('Failed to load filter options:', err));
   }, []);
 
@@ -107,23 +104,21 @@ export function ManualAddMasalTaksasi({
     setPreviewLoading(true);
     setNotification(null);
     try {
-      const params = new URLSearchParams({
+      const data = await manualAddApi.getPreviewMasal({
         periode,
-        hanyaBelumBaca: String(hanyaBelumBaca),
+        hanyaBelumBaca,
+        petugasId: filterPetugas,
+        ruteKode: filterRute,
       });
-      if (filterPetugas !== 'all') params.append('petugasId', filterPetugas);
-      if (filterRute !== 'all') params.append('ruteKode', filterRute);
 
-      const res = await fetch(`/api/v1/manual-add/masal/preview?${params.toString()}`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setPreviewData(json.data);
+      if (data) {
+        setPreviewData(data);
         setOverridePakai({});
-        setSelectedNolgs(new Set(json.data.items.map((i: ItemPreviewTaksasi) => i.nolg)));
+        setSelectedNolgs(new Set(data.items.map((i: ItemPreviewTaksasi) => i.nolg)));
       } else {
         setNotification({
           type: 'error',
-          message: json.error?.message || 'Gagal memuat pratinjau taksasi masal.',
+          message: 'Gagal memuat pratinjau taksasi masal.',
         });
       }
     } catch (err: any) {
@@ -196,18 +191,13 @@ export function ManualAddMasalTaksasi({
     setNotification(null);
 
     try {
-      const res = await fetch('/api/v1/manual-add/masal/eksekusi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          periode: Number(periode),
-          alasanKategori: alasanMasal,
-          catatanBeritaAcara: memoMasal,
-          items: itemsToExecute,
-        }),
+      const json = await manualAddApi.eksekusiMasal({
+        periode: Number(periode),
+        alasanKategori: alasanMasal,
+        catatanBeritaAcara: memoMasal,
+        items: itemsToExecute,
       });
 
-      const json = await res.json();
       if (json.success) {
         setNotification({
           type: 'success',

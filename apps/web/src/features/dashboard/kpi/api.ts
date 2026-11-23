@@ -1,0 +1,66 @@
+/**
+ * KPI Scorecard API Client
+ * Menangani seluruh pemanggilan endpoint backend /api/kpi/* secara terpusat,
+ * konsisten, dan strongly-typed.
+ */
+
+export const kpiApi = {
+  /** Mengambil data perspektif KPI untuk periode tertentu */
+  async getByPeriode(periode: string) {
+    const res = await fetch(`/api/kpi?periode=${encodeURIComponent(periode)}`);
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat data KPI");
+    }
+    return json.data ?? [];
+  },
+
+  /** Memperbarui nilai aktual KPI */
+  async updateNilai(kpiId: string, periode: string, nilai: number | null) {
+    const res = await fetch(`/api/kpi/${encodeURIComponent(kpiId)}/nilai`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ periode, nilai }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui nilai aktual KPI");
+    }
+    return json.data;
+  },
+
+  /** Memperbarui bobot persentase KPI */
+  async updateBobot(kpiId: string, bobot: number) {
+    const res = await fetch(`/api/kpi/${encodeURIComponent(kpiId)}/bobot`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bobot }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui bobot KPI");
+    }
+    return json.data;
+  },
+
+  /** Memperbarui penanggung jawab (owner) KPI */
+  async updatePemilik(
+    kpiId: string,
+    owner: { id: string; name: string; initials: string }
+  ) {
+    const res = await fetch(`/api/kpi/${encodeURIComponent(kpiId)}/pemilik`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pemilikId: owner.id,
+        pemilikNama: owner.name,
+        pemilikInisial: owner.initials,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui pemilik KPI");
+    }
+    return json.data;
+  },
+};

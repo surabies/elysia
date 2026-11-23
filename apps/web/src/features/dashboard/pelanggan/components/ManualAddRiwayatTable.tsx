@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { manualAddApi } from '../api';
 
 const numberFormat = new Intl.NumberFormat('id-ID');
 
@@ -72,11 +73,9 @@ export function ManualAddRiwayatTable({
   const fetchRiwayat = React.useCallback(async () => {
     setLoading(true);
     try {
-      const q = searchQuery.trim() ? `&q=${encodeURIComponent(searchQuery.trim())}` : '';
-      const res = await fetch(`/api/v1/manual-add/riwayat?periode=${periode}${q}`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setData(json.data);
+      const result = await manualAddApi.getRiwayat(periode, searchQuery);
+      if (result) {
+        setData(result);
       }
     } catch (err) {
       console.error('Failed to fetch riwayat manual add:', err);

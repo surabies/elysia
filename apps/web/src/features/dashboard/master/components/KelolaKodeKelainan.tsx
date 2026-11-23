@@ -35,6 +35,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { masterApi } from '../api';
 import type { KelainanMasterItem } from '@/server/services/master/master-extended.service';
 
 export function KelolaKodeKelainan() {
@@ -54,11 +55,8 @@ export function KelolaKodeKelainan() {
   const fetchData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/master/kelainan');
-      const json = await res.json();
-      if (json.success && json.data) {
-        setItems(json.data);
-      }
+      const items = await masterApi.kelainan.getAll();
+      setItems(items);
     } catch (err) {
       console.error('Failed to load kelainan master:', err);
     } finally {
@@ -84,22 +82,15 @@ export function KelolaKodeKelainan() {
     if (!editItem) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/master/kelainan/${editItem.kodeTmss}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nama: editNama,
-          deskripsi: editDeskripsi,
-          aktif: editAktif,
-          isKendalaAkses: editAkses,
-          triggerBacaMandiri: editMandiri,
-        }),
+      await masterApi.kelainan.update(editItem.kodeTmss, {
+        nama: editNama,
+        deskripsi: editDeskripsi,
+        aktif: editAktif,
+        isKendalaAkses: editAkses,
+        triggerBacaMandiri: editMandiri,
       });
-      const json = await res.json();
-      if (json.success) {
-        setEditItem(null);
-        fetchData();
-      }
+      setEditItem(null);
+      fetchData();
     } catch (err) {
       console.error('Failed to update kelainan:', err);
     } finally {

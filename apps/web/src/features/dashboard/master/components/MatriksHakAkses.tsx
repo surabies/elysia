@@ -38,6 +38,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { masterApi } from '../api';
 import type { MatriksHakAksesItem } from '@/server/services/master/master-extended.service';
 import type { UserEffectivePermission } from '@cater/types';
 
@@ -165,11 +166,10 @@ export function MatriksHakAkses({
   const fetchMatrix = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/master/otorisasi');
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setMatrix(json.data);
-        setOriginalMatrix(JSON.parse(JSON.stringify(json.data)));
+      const data = await masterApi.otorisasi.getMatrix();
+      if (Array.isArray(data)) {
+        setMatrix(data);
+        setOriginalMatrix(JSON.parse(JSON.stringify(data)));
       } else {
         toast.error('Gagal memuat matriks otorisasi.');
       }
@@ -185,13 +185,10 @@ export function MatriksHakAkses({
   const fetchUsers = React.useCallback(async () => {
     setLoadingUsers(true);
     try {
-      const res = await fetch('/api/master/users');
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setUserList(json.data);
-        if (!selectedUserId && json.data.length > 0 && !initialUserId) {
-          setSelectedUserId(json.data[0].id);
-        }
+      const users = await masterApi.users.getAll();
+      setUserList(users);
+      if (!selectedUserId && users.length > 0 && !initialUserId) {
+        setSelectedUserId(users[0].id);
       }
     } catch (err) {
       console.error('Failed to load users:', err);
@@ -205,14 +202,9 @@ export function MatriksHakAkses({
     if (!targetUserId) return;
     setLoadingUserPerms(true);
     try {
-      const res = await fetch(`/api/master/users/${targetUserId}/hak-akses`);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setUserPerms(json.data);
-        setOriginalUserPerms(JSON.parse(JSON.stringify(json.data)));
-      } else {
-        toast.error('Gagal mengambil izin pengguna.');
-      }
+      const data = await masterApi.otorisasi.getUserOverrides(targetUserId);
+      setUserPerms(data);
+      setOriginalUserPerms(JSON.parse(JSON.stringify(data)));
     } catch (err) {
       console.error('Failed to load user permissions:', err);
       toast.error('Gagal memuat hak akses pengguna.');
@@ -312,13 +304,7 @@ export function MatriksHakAkses({
 
     setSaving(true);
     try {
-      const res = await fetch('/api/master/otorisasi', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: changedItems }),
-      });
-
-      const json = await res.json();
+      const json = await masterApi.otorisasi.saveMatrix(changedItems);
       if (json.success) {
         toast.success('Matriks hak akses berhasil diperbarui!');
         setOriginalMatrix(JSON.parse(JSON.stringify(matrix)));
@@ -385,13 +371,7 @@ export function MatriksHakAkses({
           catatan: p.overrideCatatan || 'Kustom khusus pengguna',
         }));
 
-      const res = await fetch(`/api/master/users/${selectedUserId}/hak-akses`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ overrides: overridesToSave }),
-      });
-
-      const json = await res.json();
+      const json = await masterApi.otorisasi.saveUserOverrides(selectedUserId, overridesToSave);
       if (json.success) {
         toast.success('Hak akses kustom pengguna berhasil disimpan!');
         setOriginalUserPerms(JSON.parse(JSON.stringify(userPerms)));

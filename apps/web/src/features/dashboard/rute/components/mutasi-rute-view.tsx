@@ -339,7 +339,7 @@ export function MutasiRuteView() {
             </Button>
             <Button size="sm" onClick={simpan} disabled={!pelanggan || menyimpan}>
               {menyimpan && <Loader2 className="size-4 animate-spin mr-1.5" />}
-              Simpan Mutasi
+              Simpan
             </Button>
           </CardFooter>
         </Card>

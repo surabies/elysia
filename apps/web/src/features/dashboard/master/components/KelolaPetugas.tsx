@@ -40,6 +40,7 @@ import {
 import { PageContainer } from '@/components/layout/page/PageContainer';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { masterApi } from '../api';
 
 export interface PetugasMasterItem {
   id: string;
@@ -71,11 +72,8 @@ export function KelolaPetugas() {
   const fetchData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/master/petugas');
-      const json = await res.json();
-      if (json.success && json.data) {
-        setData(json.data);
-      }
+      const items = await masterApi.petugas.getAll();
+      setData(items);
     } catch (err) {
       console.error('Failed to load petugas:', err);
     } finally {
@@ -110,42 +108,24 @@ export function KelolaPetugas() {
     setSaving(true);
     try {
       if (modalPetugas?.mode === 'tambah') {
-        const res = await fetch('/api/master/petugas', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: formId.trim().toUpperCase(),
-            nama: formNama.trim(),
-            noHp: formNoHp.trim() || undefined,
-            aktif: formAktif,
-          }),
+        await masterApi.petugas.create({
+          id: formId.trim().toUpperCase(),
+          nama: formNama.trim(),
+          noHp: formNoHp.trim() || undefined,
+          aktif: formAktif,
         });
-        const json = await res.json();
-        if (json.success) {
-          toast.success('Petugas baru berhasil ditambahkan');
-          setModalPetugas(null);
-          fetchData();
-        } else {
-          toast.error(json.error || 'Gagal menambah petugas');
-        }
+        toast.success('Petugas baru berhasil ditambahkan');
+        setModalPetugas(null);
+        fetchData();
       } else if (modalPetugas?.mode === 'edit' && modalPetugas.item) {
-        const res = await fetch(`/api/master/petugas/${modalPetugas.item.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nama: formNama.trim(),
-            noHp: formNoHp.trim() || undefined,
-            aktif: formAktif,
-          }),
+        await masterApi.petugas.update(modalPetugas.item.id, {
+          nama: formNama.trim(),
+          noHp: formNoHp.trim() || undefined,
+          aktif: formAktif,
         });
-        const json = await res.json();
-        if (json.success) {
-          toast.success('Data petugas berhasil diperbarui');
-          setModalPetugas(null);
-          fetchData();
-        } else {
-          toast.error(json.error || 'Gagal update petugas');
-        }
+        toast.success('Data petugas berhasil diperbarui');
+        setModalPetugas(null);
+        fetchData();
       }
     } catch (err: any) {
       toast.error(err.message || 'Terjadi kesalahan');

@@ -25,6 +25,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { masterApi } from '../api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -246,36 +247,26 @@ export function KelolaManajemenUser({
 
     setTambahLoading(true);
     try {
-      const res = await fetch('/api/master/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      await masterApi.users.create(payload);
+      toast.success(`Pengguna ${formTambah.name} berhasil dibuat!`);
+      setOpenTambahUser(false);
+      fetchUsers();
+      // Reset form
+      setFormTambah({
+        name: '',
+        email: '',
+        password: '',
+        nip: '',
+        wilayahKerja: 'WILAYAH_5',
+        bagian: 'PENCATAT_METER',
+        level: 'SUPERVISOR',
+        jabatanNama: 'Supervisor Pencatat Meter Wilayah 5',
+        role: 'SUPERVISOR',
+        noHp: '',
+        wajibGantiPassword: true,
       });
-
-      const json = await res.json();
-      if (json.success) {
-        toast.success(`Pengguna ${formTambah.name} berhasil dibuat!`);
-        setOpenTambahUser(false);
-        fetchUsers();
-        // Reset form
-        setFormTambah({
-          name: '',
-          email: '',
-          password: '',
-          nip: '',
-          wilayahKerja: 'WILAYAH_5',
-          bagian: 'PENCATAT_METER',
-          level: 'SUPERVISOR',
-          jabatanNama: 'Supervisor Pencatat Meter Wilayah 5',
-          role: 'SUPERVISOR',
-          noHp: '',
-          wajibGantiPassword: true,
-        });
-      } else {
-        toast.error(json.error || 'Gagal menambahkan pengguna.');
-      }
     } catch (err: any) {
-      toast.error('Terjadi kesalahan koneksi saat membuat pengguna.');
+      toast.error(err.message || 'Terjadi kesalahan koneksi saat membuat pengguna.');
     } finally {
       setTambahLoading(false);
     }
@@ -301,13 +292,8 @@ export function KelolaManajemenUser({
   const fetchUsers = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/master/users');
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setUsers(json.data);
-      } else {
-        toast.error('Gagal mengambil daftar pengguna.');
-      }
+      const usersData = await masterApi.users.getAll();
+      setUsers(usersData);
     } catch (err: any) {
       console.error('Failed to load users:', err);
       toast.error('Koneksi server gagal saat mengambil data pengguna.');
@@ -342,34 +328,23 @@ export function KelolaManajemenUser({
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/master/users/${encodeURIComponent(editUser.id)}/role`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          role: selectedRole,
-          status: selectedStatus,
-        }),
+      await masterApi.users.updateRole(editUser.id, {
+        role: selectedRole,
+        status: selectedStatus,
       });
 
-      const json = await res.json();
-      if (json.success) {
-        toast.success(`Peran ${editUser.name || editUser.email} berhasil diperbarui menjadi ${selectedRole}.`);
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === editUser.id
-              ? { ...u, role: selectedRole, status: selectedStatus }
-              : u
-          )
-        );
-        setEditUser(null);
-      } else {
-        toast.error(json.error || 'Gagal menyimpan pembaruan peran.');
-      }
+      toast.success(`Peran ${editUser.name || editUser.email} berhasil diperbarui menjadi ${selectedRole}.`);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === editUser.id
+            ? { ...u, role: selectedRole, status: selectedStatus }
+            : u
+        )
+      );
+      setEditUser(null);
     } catch (err: any) {
       console.error('Error updating role:', err);
-      toast.error('Terjadi kesalahan koneksi saat menyimpan perubahan.');
+      toast.error(err.message || 'Terjadi kesalahan koneksi saat menyimpan perubahan.');
     } finally {
       setSaving(false);
     }
@@ -386,25 +361,17 @@ export function KelolaManajemenUser({
     setTogglingUserId(userItem.id);
 
     try {
-      const res = await fetch(`/api/master/users/${encodeURIComponent(userItem.id)}/role`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role: userItem.role,
-          status: nextStatus,
-        }),
+      await masterApi.users.updateRole(userItem.id, {
+        role: userItem.role,
+        status: nextStatus,
       });
-      const json = await res.json();
-      if (json.success) {
-        toast.success(`Status akun ${userItem.name || userItem.email} diubah menjadi ${nextStatus}.`);
-        setUsers((prev) =>
-          prev.map((u) => (u.id === userItem.id ? { ...u, status: nextStatus } : u))
-        );
-      } else {
-        toast.error(json.error || 'Gagal mengubah status akun.');
-      }
+
+      toast.success(`Status akun ${userItem.name || userItem.email} diubah menjadi ${nextStatus}.`);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userItem.id ? { ...u, status: nextStatus } : u))
+      );
     } catch (err: any) {
-      toast.error('Terjadi kesalahan jaringan.');
+      toast.error(err.message || 'Gagal mengubah status akun.');
     } finally {
       setTogglingUserId(null);
     }

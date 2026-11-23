@@ -28,6 +28,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { masterApi } from '../api';
 import type { PelangganUrutanItem } from '@/server/services/master/master-extended.service';
 
 export function KelolaUrutanRute() {
@@ -44,14 +45,12 @@ export function KelolaUrutanRute() {
 
   // 1. Ambil daftar rute untuk dropdown
   React.useEffect(() => {
-    fetch('/api/master/pemetaan-petugas')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && json.data?.rute) {
-          setRuteList(json.data.rute);
-          if (json.data.rute.length > 0) {
-            setSelectedRute(json.data.rute[0].kode);
-          }
+    masterApi.urutan
+      .getRuteList()
+      .then((routes) => {
+        setRuteList(routes);
+        if (routes.length > 0) {
+          setSelectedRute(routes[0].kode);
         }
       })
       .catch((err) => console.error('Failed to load rute list:', err));
@@ -62,11 +61,8 @@ export function KelolaUrutanRute() {
     setLoading(true);
     setNotification(null);
     try {
-      const res = await fetch(`/api/master/urut?ruteKode=${ruteKode}`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setItems(json.data.items);
-      }
+      const urutanItems = await masterApi.urutan.getUrutanByRute(ruteKode);
+      setItems(urutanItems);
     } catch (err) {
       console.error('Failed to load urutan rute:', err);
     } finally {
@@ -114,33 +110,21 @@ export function KelolaUrutanRute() {
         item.urutan = idx + 1;
       });
 
-      const res = await fetch('/api/master/urut', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ruteKode: selectedRute,
-          periode: '202601',
-          items: sorted.map((i) => ({ nolg: i.nolg, urutan: i.urutan })),
-        }),
-      });
+      const json = await masterApi.urutan.saveUrutan(
+        selectedRute,
+        sorted.map((i) => ({ nolg: i.nolg, urutan: i.urutan })),
+        '202601'
+      );
 
-      const json = await res.json();
-      if (json.success) {
-        setNotification({
-          type: 'success',
-          message: `Berhasil menyimpan urutan langkah jalan untuk ${json.data.totalUpdated} pelanggan di Rute ${selectedRute}.`,
-        });
-        setItems(sorted);
-      } else {
-        setNotification({
-          type: 'error',
-          message: json.error || 'Gagal menyimpan urutan.',
-        });
-      }
+      setNotification({
+        type: 'success',
+        message: `Berhasil menyimpan urutan langkah jalan untuk ${json.data.totalUpdated} pelanggan di Rute ${selectedRute}.`,
+      });
+      setItems(sorted);
     } catch (err: any) {
       setNotification({
         type: 'error',
-        message: err.message || 'Terjadi kesalahan sistem.',
+        message: err.message || 'Gagal menyimpan urutan.',
       });
     } finally {
       setSaving(false);

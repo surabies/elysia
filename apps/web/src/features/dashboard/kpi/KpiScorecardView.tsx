@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
+import { kpiApi } from "./api"
 import type { KpiItem, KpiOwner, Perspective } from "./types/KpiTypes"
 import { INITIAL_SCORECARD_PERSPECTIVES, KPI_OWNERS } from "./data/KpiMockData"
 import { calculateCompanySummary } from "./lib/KpiCalculations"
@@ -109,10 +110,9 @@ export function KpiScorecardView({
   const handleChangePeriod = async (newPeriod: string) => {
     setSelectedPeriod(newPeriod)
     try {
-      const res = await fetch(`/api/kpi?periode=${encodeURIComponent(newPeriod)}`)
-      const json = await res.json()
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-        setPerspectives(json.data)
+      const data = await kpiApi.getByPeriode(newPeriod)
+      if (Array.isArray(data) && data.length > 0) {
+        setPerspectives(data)
       }
     } catch (err) {
       console.error("Gagal sinkronisasi data periode:", err)
@@ -136,14 +136,7 @@ export function KpiScorecardView({
     pushHistory(next)
 
     // Sync ke PostgreSQL database via Elysia API
-    fetch(`/api/kpi/${kpiId}/nilai`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        periode: selectedPeriod,
-        nilai: newValue,
-      }),
-    }).catch((err) => {
+    kpiApi.updateNilai(kpiId, selectedPeriod, newValue).catch((err) => {
       console.error("Gagal simpan nilai aktual ke DB:", err)
     })
   }
@@ -165,11 +158,7 @@ export function KpiScorecardView({
     pushHistory(next)
 
     // Sync ke PostgreSQL database via Elysia API
-    fetch(`/api/kpi/${kpiId}/bobot`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bobot: newWeight }),
-    }).catch((err) => {
+    kpiApi.updateBobot(kpiId, newWeight).catch((err) => {
       console.error("Gagal simpan bobot ke DB:", err)
     })
   }
@@ -191,15 +180,7 @@ export function KpiScorecardView({
     pushHistory(next)
 
     // Sync ke PostgreSQL database via Elysia API
-    fetch(`/api/kpi/${kpiId}/pemilik`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pemilikId: newOwner.id,
-        pemilikNama: newOwner.name,
-        pemilikInisial: newOwner.initials,
-      }),
-    }).catch((err) => {
+    kpiApi.updatePemilik(kpiId, newOwner).catch((err) => {
       console.error("Gagal simpan pemilik ke DB:", err)
     })
   }

@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { masterApi } from '../api';
 
 export interface RuteMappingItem {
   kode: string;
@@ -95,12 +96,11 @@ export function PemetaanPetugasRute() {
   const fetchData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/master/pemetaan-petugas');
-      const json = await res.json();
-      if (json.success && json.data) {
-        const fetchedRoutes: RuteMappingItem[] = json.data.rute || [];
-        const fetchedPetugas: PetugasSummaryOption[] = json.data.petugasOptions || [];
-        const fetchedWilayah: { kode: string; nama: string }[] = json.data.wilayahOptions || [];
+      const data = await masterApi.pemetaan.getData();
+      if (data) {
+        const fetchedRoutes: RuteMappingItem[] = data.rute || [];
+        const fetchedPetugas: PetugasSummaryOption[] = data.petugasOptions || [];
+        const fetchedWilayah: { kode: string; nama: string }[] = data.wilayahOptions || [];
 
         setRoutes(fetchedRoutes);
         setPetugasOptions(fetchedPetugas);
@@ -113,8 +113,6 @@ export function PemetaanPetugasRute() {
         if (fetchedPetugas.length > 0 && !selectedPetugasUrutan) {
           setSelectedPetugasUrutan(fetchedPetugas[0].id);
         }
-      } else {
-        toast.error(json.error || 'Gagal memuat data pemetaan rute');
       }
     } catch (err: any) {
       console.error('Failed to load rute mapping:', err);
@@ -186,16 +184,7 @@ export function PemetaanPetugasRute() {
     const isSementara = statusSementaraToAdd === 'YA';
 
     try {
-      const res = await fetch('/api/master/pemetaan-petugas/assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ruteKode: selectedRuteToAdd,
-          petugasId: selectedPetugasId,
-          statusSementara: isSementara,
-        }),
-      });
-      const json = await res.json();
+      const json = await masterApi.pemetaan.assignRute(selectedRuteToAdd, selectedPetugasId, isSementara);
       if (json.success) {
         toast.success(
           `Rute ${selectedRuteToAdd} berhasil ditambahkan ke ${activePetugas?.nama || selectedPetugasId}`
@@ -256,16 +245,7 @@ export function PemetaanPetugasRute() {
     const targetRoute = routes.find((r) => r.kode === ruteKode);
 
     try {
-      const res = await fetch('/api/master/pemetaan-petugas/assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ruteKode,
-          petugasId: null,
-          statusSementara: false,
-        }),
-      });
-      const json = await res.json();
+      const json = await masterApi.pemetaan.assignRute(ruteKode, null, false);
       if (json.success) {
         toast.success(`Rute ${ruteKode} berhasil dilepas dari penugasan`);
 
@@ -380,12 +360,7 @@ export function PemetaanPetugasRute() {
         noUrut: item.noUrut,
       }));
 
-      const res = await fetch('/api/master/pemetaan-petugas/urutan-rute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: payload }),
-      });
-      const json = await res.json();
+      const json = await masterApi.pemetaan.updateUrutanRute(payload);
 
       if (json.success) {
         toast.success(`Berhasil menyimpan urutan untuk ${normalized.length} rute`);
