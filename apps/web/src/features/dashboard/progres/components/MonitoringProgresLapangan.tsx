@@ -353,28 +353,12 @@ export function MonitoringProgresLapangan({
         </section>
 
         {/* ========================================================= */}
-        {/* 3. PANEL DAFTAR PETUGAS (Standar Container Geist Vercel)  */}
+        {/* 3. DAFTAR PETUGAS (Standalone Table dengan Toolbar di Atas) */}
         {/* ========================================================= */}
-        <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none space-y-4">
-          {/* Header Panel Toolbar dengan Fitur Filter Lengkap & Konsisten */}
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-border/60">
-            <div>
-              <div className="flex items-center gap-2">
-                <Users className="size-4 text-blue-600 dark:text-blue-400" />
-                <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                  Daftar Produktivitas &amp; Beban Kerja Petugas Lapangan
-                </h2>
-                <Badge variant="pill" size="sm" className="font-mono">
-                  {filteredPetugas.length} / {data?.petugas?.length ?? 0} Petugas
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Evaluasi capaian rute harian, volume terdistribusi, dan kepatuhan pencatatan periode {periodeLabel}.
-              </p>
-            </div>
-
-            {/* Filter Controls Row */}
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="space-y-3">
+          {/* Filter Controls Toolbar di luar dan di atas tabel */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
               {/* Search Box */}
               <div className="relative min-w-[200px] sm:min-w-[240px]">
                 <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
@@ -383,14 +367,14 @@ export function MonitoringProgresLapangan({
                   placeholder="Cari nama, ID, atau kode rute…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="h-8 pl-8 pr-7 text-xs bg-background border-border shadow-none"
+                  className="h-8 pl-8 pr-7 text-xs bg-card border-border shadow-none"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch('')}
                     aria-label="Bersihkan pencarian"
-                    className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -402,7 +386,7 @@ export function MonitoringProgresLapangan({
                 value={statusFilter}
                 onValueChange={(val) => setStatusFilter(val as StatusKerjaFilter)}
               >
-                <SelectTrigger size="sm" className="h-8 min-w-[130px] text-xs bg-background border-border shadow-none">
+                <SelectTrigger size="sm" className="h-8 min-w-[130px] text-xs bg-card border-border shadow-none">
                   <SelectValue placeholder="Status Kerja" />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -417,7 +401,7 @@ export function MonitoringProgresLapangan({
                 value={anomaliFilter}
                 onValueChange={(val) => setAnomaliFilter(val as AnomaliFilter)}
               >
-                <SelectTrigger size="sm" className="h-8 min-w-[130px] text-xs bg-background border-border shadow-none">
+                <SelectTrigger size="sm" className="h-8 min-w-[130px] text-xs bg-card border-border shadow-none">
                   <SelectValue placeholder="Anomali" />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -432,7 +416,7 @@ export function MonitoringProgresLapangan({
                 value={sortBy}
                 onValueChange={(val) => setSortBy(val as SortFilter)}
               >
-                <SelectTrigger size="sm" className="h-8 min-w-[145px] text-xs bg-background border-border shadow-none">
+                <SelectTrigger size="sm" className="h-8 min-w-[145px] text-xs bg-card border-border shadow-none">
                   <SelectValue placeholder="Urutkan" />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -459,29 +443,33 @@ export function MonitoringProgresLapangan({
                 </Button>
               )}
 
-              {/* View Switcher: Table vs Grid */}
-              <div className="flex items-center gap-1 border border-border rounded-md p-0.5 bg-muted/40">
-                <Button
-                  size="xs"
-                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                  onClick={() => setViewMode('table')}
-                  className="h-6.5 px-2.5 text-[11px] gap-1.5 font-medium"
-                  title="Tampilan Tabel"
-                >
-                  <TableIcon className="size-3.5" />
-                  <span className="hidden sm:inline">Tabel</span>
-                </Button>
-                <Button
-                  size="xs"
-                  variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                  onClick={() => setViewMode('grid')}
-                  className="h-6.5 px-2.5 text-[11px] gap-1.5 font-medium"
-                  title="Tampilan Grid Kartu"
-                >
-                  <LayoutGrid className="size-3.5" />
-                  <span className="hidden sm:inline">Grid</span>
-                </Button>
-              </div>
+              <Badge variant="pill" size="sm" className="font-mono h-8 px-2.5">
+                {filteredPetugas.length} / {data?.petugas?.length ?? 0} Petugas
+              </Badge>
+            </div>
+
+            {/* View Switcher: Table vs Grid */}
+            <div className="flex items-center gap-1 border border-border rounded-md p-0.5 bg-muted/40 shrink-0">
+              <Button
+                size="xs"
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                onClick={() => setViewMode('table')}
+                className="h-6.5 px-2.5 text-[11px] gap-1.5 font-medium"
+                title="Tampilan Tabel"
+              >
+                <TableIcon className="size-3.5" />
+                <span className="hidden sm:inline">Tabel</span>
+              </Button>
+              <Button
+                size="xs"
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                onClick={() => setViewMode('grid')}
+                className="h-6.5 px-2.5 text-[11px] gap-1.5 font-medium"
+                title="Tampilan Grid Kartu"
+              >
+                <LayoutGrid className="size-3.5" />
+                <span className="hidden sm:inline">Grid</span>
+              </Button>
             </div>
           </div>
 

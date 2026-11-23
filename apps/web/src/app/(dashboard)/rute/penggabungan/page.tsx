@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { PageContainer } from '@/components/layout/page/PageContainer';
 import { PenggabunganRuteView } from '@/features/dashboard/rute';
 
 export const metadata: Metadata = {
@@ -8,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function PenggabunganRutePage() {
-  return (
-    <PageContainer className="space-y-6">
-      <PenggabunganRuteView />
-    </PageContainer>
-  );
+  return <PenggabunganRuteView />;
 }

@@ -133,9 +133,9 @@ export function PenggabunganRuteView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-[calc(100vh-4.5rem)] min-h-[640px] max-w-[1720px] mx-auto w-full p-3 sm:p-5 gap-3 overflow-hidden">
       {/* 1. Header Toolbar Konsisten */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-md bg-foreground text-background">
@@ -148,7 +148,7 @@ export function PenggabunganRuteView() {
               Penggabungan Rute
             </Badge>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground font-sans">
+          <p className="mt-0.5 text-xs text-muted-foreground font-sans">
             Gabungkan atau pindahkan pelanggan dari satu rute baca ke rute petugas lain
           </p>
         </div>
@@ -168,10 +168,10 @@ export function PenggabunganRuteView() {
       </div>
 
       {/* 2. Filter Rute */}
-      <Card className="border-border bg-card shadow-xs">
-        <CardHeader className="pb-3 border-b border-border/50">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
-            <Search className="size-4 text-muted-foreground" />
+      <Card className="border-border bg-card shadow-2xs shrink-0">
+        <CardHeader className="p-3 sm:p-3.5 border-b border-border/60 bg-muted/20">
+          <CardTitle className="text-label-12 font-bold flex items-center gap-2 text-foreground">
+            <Search className="size-3.5 text-muted-foreground" />
             Filter Rute Asal Pelanggan
           </CardTitle>
           <CardDescription className="text-xs">
@@ -179,8 +179,8 @@ export function PenggabunganRuteView() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="pt-4">
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]">
+        <CardContent className="p-3 sm:p-3.5">
+          <div className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]">
             <FieldSelect
               label="Wilayah Pelayanan"
               value={wilayah}
@@ -221,11 +221,11 @@ export function PenggabunganRuteView() {
       </Card>
 
       {/* 3. Tabel Pelanggan Rute Asal */}
-      <Card className="border-border bg-card shadow-xs">
-        <CardHeader className="py-3 px-4 border-b border-border/50">
+      <Card className="border-border bg-card shadow-2xs flex-1 min-h-0 flex flex-col overflow-hidden">
+        <CardHeader className="py-2.5 px-3 sm:px-3.5 border-b border-border/60 bg-muted/20 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-semibold text-foreground">
+              <CardTitle className="text-label-12 font-bold text-foreground">
                 Daftar Pelanggan Rute
               </CardTitle>
               {rute && (
@@ -257,90 +257,88 @@ export function PenggabunganRuteView() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-0">
-          <div className="max-h-[600px] overflow-auto">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-xs z-10">
+        <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
+          <Table containerClassName="h-full overflow-auto">
+            <TableHeader className="sticky top-0 z-20 bg-muted/95 backdrop-blur-xs [&_th]:sticky [&_th]:top-0 [&_th]:bg-muted/95 [&_th]:backdrop-blur-xs [&_th]:z-20">
+              <TableRow className="h-8">
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={semua ? true : sebagian ? "indeterminate" : false}
+                    onCheckedChange={toggleSemua}
+                    disabled={!data?.length}
+                    aria-label="Pilih semua baris"
+                  />
+                </TableHead>
+                <TableHead className="w-16 font-mono text-label-11">No. Urut</TableHead>
+                <TableHead className="font-mono text-label-11">No. Pelanggan</TableHead>
+                <TableHead className="font-mono text-label-11">Nama Pelanggan</TableHead>
+                <TableHead className="font-mono text-label-11">Gol. Tarif</TableHead>
+                <TableHead className="font-mono text-label-11">Alamat</TableHead>
+                <TableHead className="font-mono text-label-11">Rute</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {memuat ? (
                 <TableRow>
-                  <TableHead className="w-10">
-                    <Checkbox
-                      checked={semua ? true : sebagian ? "indeterminate" : false}
-                      onCheckedChange={toggleSemua}
-                      disabled={!data?.length}
-                      aria-label="Pilih semua baris"
-                    />
-                  </TableHead>
-                  <TableHead className="w-16">No. Urut</TableHead>
-                  <TableHead>No. Pelanggan</TableHead>
-                  <TableHead>Nama Pelanggan</TableHead>
-                  <TableHead>Gol. Tarif</TableHead>
-                  <TableHead>Alamat</TableHead>
-                  <TableHead>Rute</TableHead>
+                  <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
+                    <Loader2 className="size-5 animate-spin mx-auto mb-2" />
+                    Memuat data pelanggan rute...
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {memuat ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
-                      <Loader2 className="size-5 animate-spin mx-auto mb-2" />
-                      Memuat data pelanggan rute...
-                    </TableCell>
-                  </TableRow>
-                ) : !data ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
-                      Pilih filter rute di atas lalu klik Tampilkan Pelanggan.
-                    </TableCell>
-                  </TableRow>
-                ) : data.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
-                      Tidak ada pelanggan yang terdaftar pada rute ini.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  data.map((p) => {
-                    const aktif = terpilih.has(p.noPel);
-                    return (
-                      <TableRow
-                        key={p.noPel}
-                        data-state={aktif ? "selected" : undefined}
-                        className={cn(aktif && "bg-muted/50")}
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={aktif}
-                            onCheckedChange={() => toggle(p.noPel)}
-                            aria-label={`Pilih ${p.nama}`}
-                          />
-                        </TableCell>
-                        <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
-                          {p.urut}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs font-medium">
-                          {p.noPel}
-                        </TableCell>
-                        <TableCell className="text-xs font-medium">
-                          {p.nama}
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          <Badge variant="secondary" className="font-mono text-label-11">
-                            {p.golTarif}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-[280px] truncate">
-                          {p.alamat}
-                        </TableCell>
-                        <TableCell className="text-xs font-mono">
-                          <Badge variant="outline">{p.rute}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+              ) : !data ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
+                    Pilih filter rute di atas lalu klik Tampilkan Pelanggan.
+                  </TableCell>
+                </TableRow>
+              ) : data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
+                    Tidak ada pelanggan yang terdaftar pada rute ini.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.map((p) => {
+                  const aktif = terpilih.has(p.noPel);
+                  return (
+                    <TableRow
+                      key={p.noPel}
+                      data-state={aktif ? "selected" : undefined}
+                      className={cn("h-9 hover:bg-muted/40", aktif && "bg-muted/50")}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={aktif}
+                          onCheckedChange={() => toggle(p.noPel)}
+                          aria-label={`Pilih ${p.nama}`}
+                        />
+                      </TableCell>
+                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {p.urut}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs font-medium">
+                        {p.noPel}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">
+                        {p.nama}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant="secondary" className="font-mono text-label-11">
+                          {p.golTarif}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[280px] truncate">
+                        {p.alamat}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono">
+                        <Badge variant="outline">{p.rute}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 

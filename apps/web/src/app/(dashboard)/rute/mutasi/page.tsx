@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { PageContainer } from '@/components/layout/page/PageContainer';
 import { MutasiRuteView } from '@/features/dashboard/rute';
 
 export const metadata: Metadata = {
@@ -8,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function MutasiRutePage() {
-  return (
-    <PageContainer className="space-y-6">
-      <MutasiRuteView />
-    </PageContainer>
-  );
+  return <MutasiRuteView />;
 }

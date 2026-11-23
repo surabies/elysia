@@ -75,6 +75,7 @@ export function PemetaanPetugasRute() {
   const [petugasOptions, setPetugasOptions] = React.useState<PetugasSummaryOption[]>([]);
   const [wilayahOptions, setWilayahOptions] = React.useState<{ kode: string; nama: string }[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   // Tab 1: Penugasan State
   const [selectedPetugasId, setSelectedPetugasId] = React.useState<string>('');
@@ -93,8 +94,12 @@ export function PemetaanPetugasRute() {
   const [hasUrutanChanges, setHasUrutanChanges] = React.useState<boolean>(false);
 
   // Fetch initial data
-  const fetchData = React.useCallback(async () => {
-    setLoading(true);
+  const fetchData = React.useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const data = await masterApi.pemetaan.getData();
       if (data) {
@@ -107,20 +112,17 @@ export function PemetaanPetugasRute() {
         setWilayahOptions(fetchedWilayah);
 
         // Set default selected petugas if not set
-        if (fetchedPetugas.length > 0 && !selectedPetugasId) {
-          setSelectedPetugasId(fetchedPetugas[0].id);
-        }
-        if (fetchedPetugas.length > 0 && !selectedPetugasUrutan) {
-          setSelectedPetugasUrutan(fetchedPetugas[0].id);
-        }
+        setSelectedPetugasId((prev) => prev || (fetchedPetugas.length > 0 ? fetchedPetugas[0].id : ''));
+        setSelectedPetugasUrutan((prev) => prev || (fetchedPetugas.length > 0 ? fetchedPetugas[0].id : ''));
       }
     } catch (err: any) {
       console.error('Failed to load rute mapping:', err);
       toast.error(err.message || 'Terjadi kesalahan jaringan');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [selectedPetugasId, selectedPetugasUrutan]);
+  }, []);
 
   React.useEffect(() => {
     fetchData();
@@ -420,12 +422,12 @@ export function PemetaanPetugasRute() {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchData}
-            disabled={loading}
+            onClick={() => fetchData(true)}
+            disabled={loading || refreshing}
             className="h-8 gap-1.5 text-label-12 font-mono"
             title="Segarkan Data"
           >
-            <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
+            <RefreshCw className={cn('size-3.5', (loading || refreshing) && 'animate-spin')} />
             Segarkan
           </Button>
         </div>
@@ -486,7 +488,7 @@ export function PemetaanPetugasRute() {
                           type="button"
                           onClick={() => setSelectedPetugasId(petugas.id)}
                           className={cn(
-                            'w-full text-left p-2.5 sm:p-3 transition-colors flex items-center justify-between group cursor-pointer',
+                            'w-full text-left p-2.5 sm:p-3 transition-colors duration-150 flex items-center justify-between group cursor-pointer',
                             isSelected
                               ? 'bg-foreground text-background font-medium'
                               : 'hover:bg-muted/50 text-foreground'
@@ -495,7 +497,7 @@ export function PemetaanPetugasRute() {
                           <div className="flex flex-col min-w-0 pr-2">
                             <span
                               className={cn(
-                                'text-label-13 font-semibold truncate',
+                                'text-label-13 font-semibold truncate transition-colors duration-150',
                                 isSelected ? 'text-background' : 'text-foreground'
                               )}
                             >
@@ -503,7 +505,7 @@ export function PemetaanPetugasRute() {
                             </span>
                             <span
                               className={cn(
-                                'font-mono text-label-11',
+                                'font-mono text-label-11 transition-colors duration-150',
                                 isSelected ? 'text-background/80' : 'text-muted-foreground'
                               )}
                             >
@@ -515,7 +517,7 @@ export function PemetaanPetugasRute() {
                             <Badge
                               variant={isSelected ? 'outline' : 'secondary'}
                               className={cn(
-                                'font-mono text-[10px] px-1.5 py-0',
+                                'font-mono text-[10px] px-1.5 py-0 transition-colors duration-150',
                                 isSelected
                                   ? 'border-background/40 text-background bg-background/10'
                                   : 'text-foreground'
@@ -526,7 +528,7 @@ export function PemetaanPetugasRute() {
                             <Badge
                               variant={isSelected ? 'outline' : 'outline'}
                               className={cn(
-                                'font-mono text-[10px] px-1.5 py-0',
+                                'font-mono text-[10px] px-1.5 py-0 transition-colors duration-150',
                                 isSelected
                                   ? 'border-background/40 text-background bg-background/10'
                                   : 'text-muted-foreground'
@@ -536,7 +538,7 @@ export function PemetaanPetugasRute() {
                             </Badge>
                             <ChevronRight
                               className={cn(
-                                'size-3.5 transition-transform',
+                                'size-3.5 transition-transform duration-150',
                                 isSelected
                                   ? 'text-background translate-x-0.5'
                                   : 'text-muted-foreground opacity-50 group-hover:opacity-100'
@@ -700,7 +702,7 @@ export function PemetaanPetugasRute() {
                   </div>
 
                   {/* Tabel dengan Scroll Internal (Tinggi Layar Dibatasi) */}
-                  <div className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="flex-1 min-h-0 overflow-hidden">
                     {filteredAssignedRoutes.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
                         <Route className="size-8 stroke-1 text-muted-foreground/40 mb-2" />
@@ -713,8 +715,8 @@ export function PemetaanPetugasRute() {
                         </span>
                       </div>
                     ) : (
-                      <Table>
-                        <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                      <Table containerClassName="h-full overflow-auto">
+                        <TableHeader className="sticky top-0 z-20 bg-muted/95 backdrop-blur-xs [&_th]:sticky [&_th]:top-0 [&_th]:bg-muted/95 [&_th]:backdrop-blur-xs [&_th]:z-20">
                           <TableRow className="h-8">
                             <TableHead className="w-16 text-center font-mono text-label-11">
                               Nomor
@@ -917,7 +919,7 @@ export function PemetaanPetugasRute() {
                 </div>
 
                 {/* Tabel Urutan dengan Scroll Internal */}
-                <div className="flex-1 min-h-0 overflow-y-auto">
+                <div className="flex-1 min-h-0 overflow-hidden">
                   {urutanList.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
                       <ListOrdered className="size-8 stroke-1 text-muted-foreground/40 mb-2" />
@@ -930,8 +932,8 @@ export function PemetaanPetugasRute() {
                       </span>
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                    <Table containerClassName="h-full overflow-auto">
+                      <TableHeader className="sticky top-0 z-20 bg-muted/95 backdrop-blur-xs [&_th]:sticky [&_th]:top-0 [&_th]:bg-muted/95 [&_th]:backdrop-blur-xs [&_th]:z-20">
                         <TableRow className="h-8">
                           <TableHead className="w-16 text-center font-mono text-label-11">
                             No

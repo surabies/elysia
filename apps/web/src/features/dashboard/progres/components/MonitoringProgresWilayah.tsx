@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import {
-  MapPin,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -294,27 +293,11 @@ export function MonitoringProgresWilayah({
       </div>
 
       {/* ========================================================= */}
-      {/* 4. PANEL DAFTAR WILAYAH (Standar Container Geist Vercel)  */}
+      {/* 4. DAFTAR WILAYAH (Standalone Table dengan Toolbar di Atas) */}
       {/* ========================================================= */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none space-y-4">
-        {/* Header Panel Toolbar dengan Badge & Fitur Kontrol Lengkap */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-3 border-b border-border/60">
-          <div>
-            <div className="flex items-center gap-2">
-              <MapPin className="size-4 text-(--ds-blue-700)" />
-              <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                Daftar Capaian &amp; Distribusi Wilayah
-              </h2>
-              <Badge variant="pill" size="sm" className="font-mono">
-                {filteredWilayah.length} / {data?.wilayah?.length ?? 0} Kelurahan
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Rincian capaian pembacaan meter, target sambungan, kubikasi, dan status per kelurahan periode {periodeLabel}.
-            </p>
-          </div>
-
-          {/* Filter Controls Row */}
+      <div className="space-y-3">
+        {/* Filter Toolbar di luar dan di atas tabel */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
             {/* Search Box */}
             <div className="relative min-w-[200px] sm:min-w-[240px]">
@@ -324,7 +307,7 @@ export function MonitoringProgresWilayah({
                 placeholder="Cari kelurahan / kecamatan..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8 pl-8 pr-7 text-xs bg-background border-border shadow-none"
+                className="h-8 pl-8 pr-7 text-xs bg-card border-border shadow-none"
               />
               {search && (
                 <button
@@ -339,7 +322,7 @@ export function MonitoringProgresWilayah({
             </div>
 
             {/* Sorting */}
-            <div className="flex items-center rounded-md border border-border bg-background px-2.5 h-8 text-label-12 text-muted-foreground">
+            <div className="flex items-center rounded-md border border-border bg-card px-2.5 h-8 text-label-12 text-muted-foreground">
               <span className="mr-1.5 text-xs">Urutkan:</span>
               <NativeSelect
                 value={sortBy}
@@ -353,27 +336,31 @@ export function MonitoringProgresWilayah({
               </NativeSelect>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center rounded-md border border-border p-0.5 bg-(--ds-gray-100) h-8">
-              <Button
-                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                size="xs"
-                onClick={() => setViewMode('table')}
-                className="h-6.5 px-2 text-xs"
-              >
-                <TableIcon className="size-3.5 mr-1" />
-                Tabel
-              </Button>
-              <Button
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                size="xs"
-                onClick={() => setViewMode('grid')}
-                className="h-6.5 px-2 text-xs"
-              >
-                <LayoutGrid className="size-3.5 mr-1" />
-                Kartu
-              </Button>
-            </div>
+            <Badge variant="pill" size="sm" className="font-mono h-8 px-2.5">
+              {filteredWilayah.length} / {data?.wilayah?.length ?? 0} Kelurahan
+            </Badge>
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-(--ds-gray-100) h-8">
+            <Button
+              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+              size="xs"
+              onClick={() => setViewMode('table')}
+              className="h-6.5 px-2 text-xs"
+            >
+              <TableIcon className="size-3.5 mr-1" />
+              Tabel
+            </Button>
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="xs"
+              onClick={() => setViewMode('grid')}
+              className="h-6.5 px-2 text-xs"
+            >
+              <LayoutGrid className="size-3.5 mr-1" />
+              Kartu
+            </Button>
           </div>
         </div>
 

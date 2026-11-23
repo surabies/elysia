@@ -153,9 +153,9 @@ export function MutasiRuteView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-[calc(100vh-4.5rem)] min-h-[640px] max-w-[1720px] mx-auto w-full p-3 sm:p-5 gap-3 overflow-hidden">
       {/* 1. Header Toolbar Konsisten */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-md bg-foreground text-background">
@@ -168,7 +168,7 @@ export function MutasiRuteView() {
               WP 5 Aktif
             </Badge>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground font-sans">
+          <p className="mt-0.5 text-xs text-muted-foreground font-sans">
             Pindahkan satu pelanggan ke rute baca dan nomor urut baru di wilayah pelayanan
           </p>
         </div>
@@ -188,12 +188,12 @@ export function MutasiRuteView() {
       </div>
 
       {/* 2. Grid Layout Dua Kolom */}
-      <div className="grid items-start gap-6 lg:grid-cols-[400px_minmax(0,1fr)]">
+      <div className="grid items-stretch gap-3 lg:grid-cols-[400px_minmax(0,1fr)] flex-1 min-h-0 overflow-hidden">
         {/* Kolom Kiri: Form Mutasi */}
-        <Card className="border-border bg-card shadow-xs">
-          <CardHeader className="pb-3 border-b border-border/50">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
-              <Route className="size-4 text-muted-foreground" />
+        <Card className="border-border bg-card shadow-2xs flex flex-col min-h-0 overflow-hidden">
+          <CardHeader className="p-3 sm:p-3.5 border-b border-border/60 bg-muted/20 shrink-0">
+            <CardTitle className="text-label-12 font-bold flex items-center gap-2 text-foreground">
+              <Route className="size-3.5 text-muted-foreground" />
               Form Mutasi Rute
             </CardTitle>
             <CardDescription className="text-xs">
@@ -201,7 +201,7 @@ export function MutasiRuteView() {
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-4 pt-4">
+          <CardContent className="space-y-4 p-3 sm:p-3.5 overflow-y-auto flex-1 min-h-0">
             {/* Cari pelanggan dengan button yang selaras tinggi inputnya */}
             <div className="grid gap-1.5">
               <Label htmlFor="no-pel" className="text-xs font-medium text-muted-foreground">
@@ -333,7 +333,7 @@ export function MutasiRuteView() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end gap-2 border-t border-border/50 bg-muted/20 px-4 py-3">
+          <CardFooter className="flex justify-end gap-2 border-t border-border/50 bg-muted/20 px-3 py-2.5 shrink-0">
             <Button variant="outline" size="sm" onClick={reset} disabled={menyimpan}>
               Batal
             </Button>
@@ -345,11 +345,11 @@ export function MutasiRuteView() {
         </Card>
 
         {/* Kolom Kanan: Tabel Riwayat Mutasi */}
-        <Card className="border-border bg-card shadow-xs">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border-border bg-card shadow-2xs flex flex-col min-h-0 overflow-hidden">
+          <CardHeader className="p-3 sm:p-3.5 border-b border-border/60 bg-muted/20 shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-semibold text-foreground">
+                <CardTitle className="text-label-12 font-bold text-foreground">
                   Riwayat Mutasi Rute Pelanggan
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -362,72 +362,70 @@ export function MutasiRuteView() {
             </div>
           </CardHeader>
 
-          <CardContent className="p-0">
-            <div className="max-h-[640px] overflow-auto">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-xs z-10">
+          <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
+            <Table containerClassName="h-full overflow-auto">
+              <TableHeader className="sticky top-0 z-20 bg-muted/95 backdrop-blur-xs [&_th]:sticky [&_th]:top-0 [&_th]:bg-muted/95 [&_th]:backdrop-blur-xs [&_th]:z-20">
+                <TableRow className="h-8">
+                  <TableHead className="w-12 text-center font-mono text-label-11">No</TableHead>
+                  <TableHead className="font-mono text-label-11">Waktu Input</TableHead>
+                  <TableHead className="font-mono text-label-11">No. Pelanggan</TableHead>
+                  <TableHead className="font-mono text-label-11">Nama Pelanggan</TableHead>
+                  <TableHead className="font-mono text-label-11">Rute Lama</TableHead>
+                  <TableHead className="w-8"></TableHead>
+                  <TableHead className="font-mono text-label-11">Rute Baru</TableHead>
+                  <TableHead className="font-mono text-label-11">Petugas Input</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {memuat && riwayat.length === 0 ? (
                   <TableRow>
-                    <TableHead className="w-12">No</TableHead>
-                    <TableHead>Waktu Input</TableHead>
-                    <TableHead>No. Pelanggan</TableHead>
-                    <TableHead>Nama Pelanggan</TableHead>
-                    <TableHead>Rute Lama</TableHead>
-                    <TableHead className="w-8"></TableHead>
-                    <TableHead>Rute Baru</TableHead>
-                    <TableHead>Petugas Input</TableHead>
+                    <TableCell colSpan={8} className="py-8 text-center text-xs text-muted-foreground">
+                      <Loader2 className="size-5 animate-spin mx-auto mb-2" />
+                      Memuat data riwayat mutasi...
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {memuat && riwayat.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="py-8 text-center text-xs text-muted-foreground">
-                        <Loader2 className="size-5 animate-spin mx-auto mb-2" />
-                        Memuat data riwayat mutasi...
+                ) : riwayat.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-8 text-center text-xs text-muted-foreground">
+                      Belum ada riwayat mutasi rute yang tercatat.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  riwayat.map((r, i) => (
+                    <TableRow key={r.id} className="h-9 hover:bg-muted/40">
+                      <TableCell className="text-center text-xs tabular-nums text-muted-foreground">
+                        {i + 1}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">
+                        {r.tglInput}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono font-medium">
+                        {r.noPel}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">
+                        {r.nama}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono whitespace-nowrap">
+                        <Badge variant="outline" className="font-mono text-label-11">
+                          {r.lama.rute} #{r.lama.urut}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs px-1 text-muted-foreground text-center">
+                        <ArrowRight className="size-3" />
+                      </TableCell>
+                      <TableCell className="text-xs font-mono whitespace-nowrap">
+                        <Badge variant="secondary" className="font-mono text-label-11">
+                          {r.baru.rute} #{r.baru.urut}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground font-mono">
+                        {r.inputBy}
                       </TableCell>
                     </TableRow>
-                  ) : riwayat.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="py-8 text-center text-xs text-muted-foreground">
-                        Belum ada riwayat mutasi rute yang tercatat.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    riwayat.map((r, i) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="text-xs tabular-nums text-muted-foreground">
-                          {i + 1}
-                        </TableCell>
-                        <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">
-                          {r.tglInput}
-                        </TableCell>
-                        <TableCell className="text-xs font-mono font-medium">
-                          {r.noPel}
-                        </TableCell>
-                        <TableCell className="text-xs font-medium">
-                          {r.nama}
-                        </TableCell>
-                        <TableCell className="text-xs font-mono whitespace-nowrap">
-                          <Badge variant="outline" className="font-mono text-label-11">
-                            {r.lama.rute} #{r.lama.urut}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs px-1 text-muted-foreground">
-                          <ArrowRight className="size-3" />
-                        </TableCell>
-                        <TableCell className="text-xs font-mono whitespace-nowrap">
-                          <Badge variant="secondary" className="font-mono text-label-11">
-                            {r.baru.rute} #{r.baru.urut}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground font-mono">
-                          {r.inputBy}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
