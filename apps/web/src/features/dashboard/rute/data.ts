@@ -5,7 +5,6 @@
 
 import {
   fetchWilayah,
-  fetchZona,
   fetchPetugas,
   fetchRute,
   fetchRuteTujuan,
@@ -43,13 +42,14 @@ export type RiwayatMutasi = {
   inputBy: string;
 };
 
-// Opsi wilayah default (akan diisi secara dinamis oleh getWilayah/fetchWilayah)
+// Opsi 6 Wilayah Pelayanan Kota Bandung (PDAM Tirtawening)
 export const wilayahOpsi: Opsi[] = [
-  { value: 'WP 1', label: 'WP 1' },
-  { value: 'WP 2', label: 'WP 2' },
-  { value: 'WP 3', label: 'WP 3' },
-  { value: 'WP 4', label: 'WP 4' },
-  { value: 'WP 5', label: 'WP 5' },
+  { value: 'WP 1', label: 'WP 1 — Wilayah Pelayanan 1' },
+  { value: 'WP 2', label: 'WP 2 — Wilayah Pelayanan 2' },
+  { value: 'WP 3', label: 'WP 3 — Wilayah Pelayanan 3' },
+  { value: 'WP 4', label: 'WP 4 — Wilayah Pelayanan 4' },
+  { value: 'WP 5', label: 'WP 5 — Wilayah Pelayanan 5' },
+  { value: 'WP 6', label: 'WP 6 — Wilayah Pelayanan 6' },
 ];
 
 export async function getWilayah(): Promise<Opsi[]> {
@@ -69,10 +69,6 @@ export async function getRuteTujuan(kecuali?: string): Promise<Opsi[]> {
   return await fetchRuteTujuan(kecuali);
 }
 
-export async function getZona(): Promise<Opsi[]> {
-  return await fetchZona();
-}
-
 export async function getPelanggan(rute: string): Promise<Pelanggan[]> {
   return await fetchPelanggan(rute);
 }
@@ -89,6 +85,6 @@ export async function getRiwayat(): Promise<RiwayatMutasi[]> {
   return await fetchRiwayat();
 }
 
-export async function simpanMutasi(p: Pelanggan, tujuan: Posisi, zona?: string): Promise<RiwayatMutasi> {
-  return await postMutasiPelanggan(p.noPel, tujuan.wil, tujuan.rute, tujuan.urut, zona);
+export async function simpanMutasi(p: Pelanggan, tujuan: Posisi): Promise<RiwayatMutasi> {
+  return await postMutasiPelanggan(p.noPel, tujuan.wil, tujuan.rute, tujuan.urut);
 }

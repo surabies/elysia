@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PenggabunganRuteView } from '@/features/rute';
+import { PenggabunganRuteView } from '@/features/dashboard/rute';
 
 export const metadata: Metadata = {
   title: 'Kelola Rute Pencatatan Petugas | PDAM Tirtawening',

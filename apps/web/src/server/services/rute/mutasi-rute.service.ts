@@ -64,26 +64,17 @@ export interface PenggabunganRuteInput {
 export class MutasiRuteService {
   /**
    * Mengambil daftar wilayah administratif / seksi rute
+   * Kota Bandung memiliki 6 Wilayah Pelayanan (WP 1 s.d. WP 6)
    */
   async getWilayahOpsi(): Promise<OpsiItem[]> {
-    const list = await db
-      .select({
-        kode: ruteCater.seksiKode,
-        nama: ruteCater.seksiNama,
-      })
-      .from(ruteCater)
-      .where(sql`${ruteCater.seksiKode} IS NOT NULL`)
-      .groupBy(ruteCater.seksiKode, ruteCater.seksiNama)
-      .orderBy(ruteCater.seksiKode);
-
-    if (list.length === 0) {
-      return ['WP 1', 'WP 2', 'WP 3', 'WP 4', 'WP 5'].map((w) => ({ value: w, label: w }));
-    }
-
-    return list.map((item) => ({
-      value: item.kode || 'UMUM',
-      label: item.nama ? `${item.kode} · ${item.nama}` : (item.kode || 'Wilayah Umum'),
-    }));
+    return [
+      { value: 'WP 1', label: 'WP 1 — Wilayah Pelayanan 1' },
+      { value: 'WP 2', label: 'WP 2 — Wilayah Pelayanan 2' },
+      { value: 'WP 3', label: 'WP 3 — Wilayah Pelayanan 3' },
+      { value: 'WP 4', label: 'WP 4 — Wilayah Pelayanan 4' },
+      { value: 'WP 5', label: 'WP 5 — Wilayah Pelayanan 5' },
+      { value: 'WP 6', label: 'WP 6 — Wilayah Pelayanan 6' },
+    ];
   }
 
   /**
@@ -143,6 +134,9 @@ export class MutasiRuteService {
           .filter((p) => petugasIds.has(p.id))
           .map((p) => ({ value: p.id, label: p.nama }));
       }
+
+      // Wilayah pelayanan belum memiliki data petugas/rute terdaftar
+      return [];
     }
 
     return list.map((p) => ({ value: p.id, label: p.nama }));

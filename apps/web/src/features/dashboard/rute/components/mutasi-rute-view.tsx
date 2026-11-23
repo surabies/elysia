@@ -20,7 +20,6 @@ import {
   cariPelanggan,
   getRiwayat,
   getWilayah,
-  getZona,
   simpanMutasi,
   wilayahOpsi as fallbackWilayahOpsi,
   type Opsi,
@@ -30,7 +29,7 @@ import {
 import { FieldSelect } from "./field-select";
 import { InfoRow, Kbd, PageHeader, Panel } from "./ui-parts";
 
-type Errors = Partial<Record<"wilayah" | "zona" | "rute" | "urut", string>>;
+type Errors = Partial<Record<"wilayah" | "rute" | "urut", string>>;
 
 export function MutasiRuteView() {
   // 1. Pencarian pelanggan
@@ -40,11 +39,9 @@ export function MutasiRuteView() {
   const [cariError, setCariError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 2. Form tujuan mutasi
-  const [wilayah, setWilayah] = useState("");
+  // 2. Form tujuan mutasi (Default wilayah pelayanan 5)
+  const [wilayah, setWilayah] = useState("WP 5");
   const [wilayahList, setWilayahList] = useState<Opsi[]>(fallbackWilayahOpsi);
-  const [zona, setZona] = useState("");
-  const [zonaOpsi, setZonaOpsi] = useState<Opsi[]>([]);
   const [rute, setRute] = useState("");
   const [urut, setUrut] = useState("");
   const [errors, setErrors] = useState<Errors>({});
@@ -115,23 +112,14 @@ export function MutasiRuteView() {
     }
   };
 
-  const ubahWilayah = async (v: string) => {
+  const ubahWilayah = (v: string) => {
     setWilayah(v);
-    setZona("");
-    try {
-      const z = await getZona();
-      setZonaOpsi(z);
-    } catch (err) {
-      console.error("Gagal memuat zona:", err);
-    }
   };
 
   const reset = () => {
     setNoPel("");
     setPelanggan(null);
-    setWilayah("");
-    setZona("");
-    setZonaOpsi([]);
+    setWilayah("WP 5");
     setRute("");
     setUrut("");
     setErrors({});
@@ -142,7 +130,6 @@ export function MutasiRuteView() {
     if (!pelanggan) return;
     const e: Errors = {};
     if (!wilayah) e.wilayah = "Pilih wilayah tujuan";
-    if (!zona) e.zona = "Pilih zona";
     if (!rute.trim()) e.rute = "Isi rute tujuan";
     if (!urut || Number(urut) < 1) e.urut = "Minimal 1";
     setErrors(e);
@@ -156,8 +143,7 @@ export function MutasiRuteView() {
           wil: wilayah,
           rute: rute.trim().toUpperCase(),
           urut: Number(urut),
-        },
-        zona
+        }
       );
       setRiwayat((r) => [log, ...r]);
       toast.success(`Pelanggan ${pelanggan.noPel} dipindahkan ke rute ${log.baru.rute}`);
@@ -244,15 +230,6 @@ export function MutasiRuteView() {
                 placeholder="Pilih wilayah"
                 disabled={!pelanggan}
                 error={errors.wilayah}
-              />
-              <FieldSelect
-                label="Zona"
-                value={zona}
-                onChange={setZona}
-                options={zonaOpsi}
-                placeholder="Pilih zona"
-                disabled={!wilayah}
-                error={errors.zona}
               />
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">

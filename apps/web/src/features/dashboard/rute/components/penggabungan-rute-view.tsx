@@ -28,8 +28,8 @@ import { PindahRuteDialog } from "./pindah-rute-dialog";
 import { PageHeader, Panel } from "./ui-parts";
 
 export function PenggabunganRuteView() {
-  // 1. Filter bertingkat: wilayah > petugas > rute
-  const [wilayah, setWilayah] = useState("");
+  // 1. Filter bertingkat: wilayah > petugas > rute (Default WP 5)
+  const [wilayah, setWilayah] = useState("WP 5");
   const [wilayahList, setWilayahList] = useState<Opsi[]>(fallbackWilayahOpsi);
   const [petugas, setPetugas] = useState("");
   const [rute, setRute] = useState("");
@@ -41,15 +41,6 @@ export function PenggabunganRuteView() {
   const [memuat, setMemuat] = useState(false);
   const [terpilih, setTerpilih] = useState<Set<string>>(new Set());
   const [dialog, setDialog] = useState(false);
-
-  // Muat opsi wilayah saat pertama kali komponen dirender
-  useEffect(() => {
-    getWilayah()
-      .then((opts) => {
-        if (opts.length > 0) setWilayahList(opts);
-      })
-      .catch((err) => console.error("Gagal memuat wilayah:", err));
-  }, []);
 
   const ubahWilayah = async (v: string) => {
     setWilayah(v);
@@ -63,6 +54,17 @@ export function PenggabunganRuteView() {
       toast.error("Gagal memuat daftar petugas");
     }
   };
+
+  // Muat opsi wilayah dan pre-load petugas untuk WP 5 saat pertama kali komponen dirender
+  useEffect(() => {
+    getWilayah()
+      .then((opts) => {
+        if (opts.length > 0) setWilayahList(opts);
+      })
+      .catch((err) => console.error("Gagal memuat wilayah:", err));
+
+    ubahWilayah("WP 5");
+  }, []);
 
   const ubahPetugas = async (v: string) => {
     setPetugas(v);
