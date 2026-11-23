@@ -26,7 +26,9 @@ export interface BarisVerifikasi {
   standAkhir?: number | null
   standAkhirRevisi?: number | null
   standAngkatLama?: number | null
+  standAngkatRevisi?: number | null
   standMeterBaru?: number | null
+  standMeterBaruRevisi?: number | null
   standPasang?: number | null
   pemakaian?: number | null
   pemakaianRevisi?: number | null
@@ -177,7 +179,9 @@ export interface LaporanHarianDetail {
   standAwalRevisi?: number | null
   kondisiRevisi?: string | null
   standAngkatLama?: number | null
+  standAngkatRevisi?: number | null
   standMeterBaru?: number | null
+  standMeterBaruRevisi?: number | null
   pemakaianTagihVerif?: number | null
   meterVerifId?: string | null
   blokTarifVerif?: number | null

@@ -17,13 +17,28 @@ import {
   UserX,
   MoreHorizontal,
   KeyRound,
+  UserPlus,
+  Building2,
+  MapPin,
+  Briefcase,
+  Sparkles,
+  Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +62,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { PageContainer } from '@/components/layout/page/PageContainer';
+import { IconStack } from '@/components/reui/icon-stack';
 import { cn } from '@/lib/utils';
 import type { UserManagementItem } from '@/server/services/master/master-extended.service';
 
@@ -67,69 +83,69 @@ interface RoleDefinition {
 const ROLE_DEFINITIONS: RoleDefinition[] = [
   {
     id: 'SUPERADMIN',
-    nama: 'Super Administrator',
+    nama: 'Super Admin',
     kategori: 'SUPERADMIN',
     ringLabel: 'System Root',
-    deskripsi: 'Akses tanpa batas, audit trail, kelola master data, & konfigurasi RBAC',
+    deskripsi: 'Akses penuh sistem, audit trail, kelola master data, dan otorisasi',
   },
   {
     id: 'DIREKSI',
-    nama: 'Direksi (Tingkat 1)',
+    nama: 'Direksi',
     kategori: 'VERIFIKATOR',
-    ringLabel: 'Direksi Override',
+    ringLabel: 'Executive Override',
     ringLevel: 5,
-    deskripsi: 'Executive dashboard, analitik global, & hak override verifikasi tertinggi',
+    deskripsi: 'Executive dashboard, analitik pendapatan, dan hak override tertinggi',
   },
   {
     id: 'SENIOR_MANAGER',
-    nama: 'Senior Manager (Tingkat 2)',
+    nama: 'Senior Manager',
     kategori: 'VERIFIKATOR',
-    ringLabel: 'Senior Manager Final',
+    ringLabel: 'Pengesahan Final',
     ringLevel: 4,
     deskripsi: 'Pengesahan final pelepasan data pembacaan meter sebelum masuk ke DRD billing',
   },
   {
     id: 'MANAGER',
-    nama: 'Manager (Tingkat 3)',
+    nama: 'Manager',
     kategori: 'VERIFIKATOR',
-    ringLabel: 'Manager Approval',
+    ringLabel: 'Approval Deviasi',
     ringLevel: 3,
-    deskripsi: 'Validasi deviasi pemakaian & approval anomali pelanggan tingkat cabang/area',
+    deskripsi: 'Validasi deviasi pemakaian dan approval anomali pelanggan tingkat cabang',
   },
   {
     id: 'SUPERVISOR',
-    nama: 'Supervisor (Tingkat 4)',
+    nama: 'Supervisor',
     kategori: 'VERIFIKATOR',
-    ringLabel: 'Supervisor Screening',
+    ringLabel: 'Screening Awal',
     ringLevel: 2,
-    deskripsi: 'Penyaringan awal bukti foto meter, koreksi rute jalan, & penugasan lapangan',
+    deskripsi: 'Penyaringan awal bukti foto meter, koreksi rute jalan, dan penugasan lapangan',
   },
   {
     id: 'STAFF',
-    nama: 'Staff (Tingkat 5)',
+    nama: 'Staf',
     kategori: 'BILLING',
-    ringLabel: 'Staff Operasional',
-    deskripsi: 'Koreksi stand pasca-verifikasi, input manual ADD, closing periode, & DRD',
+    ringLabel: 'Staf Operasional',
+    deskripsi: 'Koreksi stand pasca-verifikasi, input manual ADD, closing periode, dan DRD',
   },
   {
     id: 'PELAKSANA',
-    nama: 'Pelaksana / Anggota (Tingkat 6)',
+    nama: 'Pelaksana',
     kategori: 'OPERASIONAL',
-    ringLabel: 'Teknis Lapangan',
-    deskripsi: 'Staf teknis lapangan untuk survei fisik meter, catat meter, & tiket gangguan',
+    ringLabel: 'Staf Lapangan',
+    deskripsi: 'Staf pelaksana lapangan untuk teknis pipa, tera meter, survei, dan pencatatan meter',
   },
   // Alias Legacy untuk kompatibilitas data lama
   {
     id: 'EXECUTIVE',
-    nama: 'Direksi (Executive - Legacy)',
+    nama: 'Direksi Eksekutif',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Executive Override',
     ringLevel: 5,
-    deskripsi: 'Executive dashboard, analitik pendapatan, & hak override verifikasi Ring 3',
+    deskripsi: 'Executive dashboard, analitik pendapatan, dan hak override verifikasi',
   },
   {
     id: 'VERIFIKATOR_3',
-    nama: 'Senior Manager (Ring 3 - Legacy)',
+    nama: 'Senior Manager Verifikator 3',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 3 Final',
     ringLevel: 4,
@@ -137,40 +153,33 @@ const ROLE_DEFINITIONS: RoleDefinition[] = [
   },
   {
     id: 'VERIFIKATOR_2',
-    nama: 'Manager Cabang (Ring 2 - Legacy)',
+    nama: 'Manager Verifikator 2',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 2 Approval',
     ringLevel: 3,
-    deskripsi: 'Validasi deviasi pemakaian & approval anomali pelanggan tingkat cabang',
+    deskripsi: 'Validasi deviasi pemakaian dan approval anomali pelanggan tingkat cabang',
   },
   {
     id: 'VERIFIKATOR_1',
-    nama: 'Supervisor Cater (Ring 1 - Legacy)',
+    nama: 'Supervisor Verifikator 1',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 1 Screening',
     ringLevel: 2,
-    deskripsi: 'Penyaringan awal bukti foto meter, koreksi rute jalan, & instruksi cek ulang',
+    deskripsi: 'Penyaringan awal bukti foto meter, koreksi rute jalan, dan instruksi cek ulang',
   },
   {
     id: 'STAFF_ADMIN_BILLING',
-    nama: 'Staff Admin Billing (Legacy)',
+    nama: 'Staf Admin Billing',
     kategori: 'BILLING',
     ringLabel: 'Operasional Billing',
-    deskripsi: 'Koreksi stand pasca-verifikasi, input manual ADD, closing periode, & DRD',
-  },
-  {
-    id: 'PENCATAT',
-    nama: 'Petugas Pembaca Meter (Cater)',
-    kategori: 'OPERASIONAL',
-    ringLabel: 'Lapangan Mobile',
-    deskripsi: 'Pelaksana pembacaan meter mandiri/keliling dengan aplikasi mobile Android',
+    deskripsi: 'Koreksi stand pasca-verifikasi, input manual ADD, closing periode, dan DRD',
   },
   {
     id: 'USER',
-    nama: 'Warga / Pelanggan Mandiri',
+    nama: 'Pelanggan Mandiri',
     kategori: 'USER',
     ringLabel: 'Publik Warga',
-    deskripsi: 'Pelanggan mandiri untuk pelaporan angka meter bulanan & pengaduan air',
+    deskripsi: 'Pelanggan mandiri untuk pelaporan angka meter bulanan dan pengaduan air',
   },
 ];
 
@@ -193,6 +202,84 @@ export function KelolaManajemenUser({
   const [selectedStatus, setSelectedStatus] = React.useState<'AKTIF' | 'NONAKTIF'>('AKTIF');
   const [saving, setSaving] = React.useState(false);
   const [togglingUserId, setTogglingUserId] = React.useState<string | null>(null);
+
+  // Modal Tambah User State
+  const [openTambahUser, setOpenTambahUser] = React.useState(false);
+  const [tambahLoading, setTambahLoading] = React.useState(false);
+  const [formTambah, setFormTambah] = React.useState({
+    name: '',
+    email: '',
+    password: '',
+    nip: '',
+    wilayahKerja: 'WILAYAH_5',
+    bagian: 'PENCATAT_METER',
+    level: 'SUPERVISOR',
+    jabatanNama: 'Supervisor Pencatat Meter Wilayah 5',
+    role: 'SUPERVISOR',
+    noHp: '',
+    wajibGantiPassword: true,
+  });
+
+  const generatePassword = React.useCallback(() => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let pwd = '';
+    for (let i = 0; i < 12; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormTambah((prev) => ({ ...prev, password: pwd }));
+  }, []);
+
+  const handleTambahUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formTambah.name.trim() || !formTambah.email.trim() || !formTambah.password.trim()) {
+      toast.error('Mohon lengkapi Nama, Email, dan Password.');
+      return;
+    }
+
+    const payload = {
+      ...formTambah,
+      roles:
+        formTambah.role === 'PELAKSANA' && formTambah.bagian === 'PENCATAT_METER'
+          ? ['PELAKSANA', 'PENCATAT']
+          : [formTambah.role],
+    };
+
+    setTambahLoading(true);
+    try {
+      const res = await fetch('/api/master/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`Pengguna ${formTambah.name} berhasil dibuat!`);
+        setOpenTambahUser(false);
+        fetchUsers();
+        // Reset form
+        setFormTambah({
+          name: '',
+          email: '',
+          password: '',
+          nip: '',
+          wilayahKerja: 'WILAYAH_5',
+          bagian: 'PENCATAT_METER',
+          level: 'SUPERVISOR',
+          jabatanNama: 'Supervisor Pencatat Meter Wilayah 5',
+          role: 'SUPERVISOR',
+          noHp: '',
+          wajibGantiPassword: true,
+        });
+      } else {
+        toast.error(json.error || 'Gagal menambahkan pengguna.');
+      }
+    } catch (err: any) {
+      toast.error('Terjadi kesalahan koneksi saat membuat pengguna.');
+    } finally {
+      setTambahLoading(false);
+    }
+  };
 
   // Otoritas Pengguna
   const isAuthorized = React.useMemo(() => {
@@ -328,9 +415,9 @@ export function KelolaManajemenUser({
     const total = users.length;
     const superadminCount = users.filter((u) => u.role === 'SUPERADMIN' || u.roles?.includes('SUPERADMIN')).length;
     const verifikatorCount = users.filter((u) =>
-      ['EXECUTIVE', 'VERIFIKATOR_3', 'VERIFIKATOR_2', 'VERIFIKATOR_1'].includes(u.role)
+      ['EXECUTIVE', 'VERIFIKATOR_3', 'VERIFIKATOR_2', 'VERIFIKATOR_1', 'DIREKSI', 'SENIOR_MANAGER', 'MANAGER', 'SUPERVISOR'].includes(u.role)
     ).length;
-    const billingCount = users.filter((u) => u.role === 'STAFF_ADMIN_BILLING').length;
+    const billingCount = users.filter((u) => ['STAFF_ADMIN_BILLING', 'STAFF'].includes(u.role)).length;
     const lapanganCount = users.filter((u) => ['PENCATAT', 'PELAKSANA'].includes(u.role)).length;
     const userCount = users.filter((u) => u.role === 'USER').length;
     const aktifCount = users.filter((u) => u.status === 'AKTIF').length;
@@ -351,11 +438,11 @@ export function KelolaManajemenUser({
   const navTabs = React.useMemo(
     () => [
       { id: 'ALL' as FilterCategory, label: 'Semua Akun', count: stats.total },
-      { id: 'SUPERADMIN' as FilterCategory, label: 'Superadmin', count: stats.superadminCount },
-      { id: 'VERIFIKATOR' as FilterCategory, label: 'Verifikator (Ring 1-3)', count: stats.verifikatorCount },
-      { id: 'BILLING' as FilterCategory, label: 'Staff Billing', count: stats.billingCount },
-      { id: 'OPERASIONAL' as FilterCategory, label: 'Petugas Lapangan', count: stats.lapanganCount },
-      { id: 'USER' as FilterCategory, label: 'Warga / Pelanggan', count: stats.userCount },
+      { id: 'SUPERADMIN' as FilterCategory, label: 'Super Admin', count: stats.superadminCount },
+      { id: 'VERIFIKATOR' as FilterCategory, label: 'Verifikator Ring', count: stats.verifikatorCount },
+      { id: 'BILLING' as FilterCategory, label: 'Staf Billing', count: stats.billingCount },
+      { id: 'OPERASIONAL' as FilterCategory, label: 'Staf Lapangan', count: stats.lapanganCount },
+      { id: 'USER' as FilterCategory, label: 'Pelanggan Mandiri', count: stats.userCount },
     ],
     [stats]
   );
@@ -377,9 +464,9 @@ export function KelolaManajemenUser({
       if (categoryFilter === 'SUPERADMIN') {
         matchCat = u.role === 'SUPERADMIN' || Boolean(u.roles?.includes('SUPERADMIN'));
       } else if (categoryFilter === 'VERIFIKATOR') {
-        matchCat = ['EXECUTIVE', 'VERIFIKATOR_3', 'VERIFIKATOR_2', 'VERIFIKATOR_1'].includes(u.role);
+        matchCat = ['EXECUTIVE', 'VERIFIKATOR_3', 'VERIFIKATOR_2', 'VERIFIKATOR_1', 'DIREKSI', 'SENIOR_MANAGER', 'MANAGER', 'SUPERVISOR'].includes(u.role);
       } else if (categoryFilter === 'BILLING') {
-        matchCat = u.role === 'STAFF_ADMIN_BILLING';
+        matchCat = ['STAFF_ADMIN_BILLING', 'STAFF'].includes(u.role);
       } else if (categoryFilter === 'OPERASIONAL') {
         matchCat = ['PENCATAT', 'PELAKSANA'].includes(u.role);
       } else if (categoryFilter === 'USER') {
@@ -427,27 +514,25 @@ export function KelolaManajemenUser({
         break;
       case 'VERIFIKATOR_3':
         dotColor = 'bg-amber-500';
-        label = 'RING 3 (FINAL)';
+        label = 'RING 3 FINAL';
         break;
       case 'VERIFIKATOR_2':
         dotColor = 'bg-blue-500';
-        label = 'RING 2 (CABANG)';
+        label = 'RING 2 CABANG';
         break;
       case 'VERIFIKATOR_1':
         dotColor = 'bg-sky-500';
-        label = 'RING 1 (SUPERVISOR)';
+        label = 'RING 1 SUPERVISOR';
         break;
+      case 'STAFF':
       case 'STAFF_ADMIN_BILLING':
         dotColor = 'bg-indigo-500';
-        label = 'STAFF BILLING';
+        label = 'STAF';
         break;
       case 'PENCATAT':
-        dotColor = 'bg-emerald-500';
-        label = 'PENCATAT LAPANGAN';
-        break;
       case 'PELAKSANA':
-        dotColor = 'bg-zinc-400';
-        label = 'PELAKSANA TEKNIS';
+        dotColor = 'bg-emerald-500';
+        label = 'PELAKSANA';
         break;
       default:
         dotColor = 'bg-muted-foreground/40';
@@ -473,7 +558,7 @@ export function KelolaManajemenUser({
               Manajemen Akun Pengguna & Hak Akses
             </h1>
             <p className="text-copy-13 text-muted-foreground max-w-3xl">
-              Konfigurasi otorisasi akun pegawai, penetapan peran sistem (RBAC 3-Tier Ring Approval), dan pemantauan status operasional petugas.
+              Konfigurasi otorisasi akun pegawai, penetapan peran sistem, dan pemantauan status operasional petugas.
             </p>
           </div>
 
@@ -493,7 +578,7 @@ export function KelolaManajemenUser({
                   isAuthorized ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/50'
                 )}
               />
-              <span>{isAuthorized ? 'Mode Otoritas Aktif' : 'Mode Pratinjau (Hanya Baca)'}</span>
+              <span>{isAuthorized ? 'Mode Otoritas Aktif' : 'Mode Pratinjau'}</span>
             </div>
 
             <Button
@@ -506,6 +591,20 @@ export function KelolaManajemenUser({
               <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
               Segarkan
             </Button>
+
+            {isAuthorized && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  generatePassword();
+                  setOpenTambahUser(true);
+                }}
+                className="h-8 gap-1.5 font-mono text-label-12 bg-foreground text-background hover:bg-foreground/90 shadow-2xs"
+              >
+                <UserPlus className="size-3.5" />
+                Tambah Pengguna
+              </Button>
+            )}
           </div>
         </div>
 
@@ -599,7 +698,7 @@ export function KelolaManajemenUser({
               {stats.aktifCount}
             </span>
             <span className="text-copy-12 text-muted-foreground">
-              aktif ({stats.persenAktif}%)
+              aktif {stats.persenAktif}%
             </span>
           </div>
         </Card>
@@ -719,7 +818,7 @@ export function KelolaManajemenUser({
                     Jabatan
                   </TableHead>
                   <TableHead className="w-[200px] text-label-11 uppercase font-mono tracking-wider text-muted-foreground">
-                    Unit Kerja
+                    Bagian & Wilayah
                   </TableHead>
                   <TableHead className="w-[110px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground">
                     Status
@@ -762,9 +861,16 @@ export function KelolaManajemenUser({
                       {userItem.jabatan || 'Staf Operasional'}
                     </TableCell>
 
-                    {/* 5. Unit Kerja (Dedicated Separate Column) */}
+                    {/* 5. Bagian & Wilayah Kerja */}
                     <TableCell className="py-3 text-copy-12 text-muted-foreground">
-                      {userItem.unitKerja || 'Divisi Hubungan Langganan'}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-foreground font-medium text-label-12">
+                          {userItem.bagian ? userItem.bagian.replace(/_/g, ' ') : 'Umum'}
+                        </span>
+                        <span className="font-mono text-[11px] text-muted-foreground truncate">
+                          {userItem.wilayahKerja ? userItem.wilayahKerja.replace(/_/g, ' ') : userItem.unitKerja || 'Pelayanan Wilayah'}
+                        </span>
+                      </div>
                     </TableCell>
 
                     {/* 6. Status (Hanya Aksen Dot & Text) */}
@@ -979,30 +1085,340 @@ export function KelolaManajemenUser({
               </div>
 
               {/* Modal Footer */}
-              <DialogFooter className="pt-2 border-t border-border gap-2 sm:gap-0">
+              <DialogFooter className="pt-2 border-t border-border flex items-center justify-end gap-3 sm:gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setEditUser(null)}
                   disabled={saving}
-                  className="font-mono text-label-12 border-border"
+                  className="font-mono text-label-12 border-border px-4"
                 >
-                  Batalkan
+                  Batal
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
                   disabled={saving}
-                  className="font-mono text-label-12 bg-foreground text-background hover:bg-foreground/90 gap-1.5"
+                  className="font-mono text-label-12 bg-foreground text-background hover:bg-foreground/90 gap-1.5 px-4"
                 >
                   {saving && <Spinner className="size-3.5" />}
-                  Simpan Perubahan
+                  Simpan
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         )}
+      </Dialog>
+
+      {/* 6. Modal Dialog: Tambah Pengguna Baru (Wide & Full Shadcn UI) */}
+      <Dialog open={openTambahUser} onOpenChange={setOpenTambahUser}>
+        <DialogContent className="max-w-4xl sm:max-w-4xl lg:max-w-4xl p-0 overflow-hidden border-border bg-card shadow-xl">
+          <div className="p-6 border-b border-border bg-muted/20">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <IconStack className="w-9 h-10 shrink-0">
+                    <UserPlus className="size-4" />
+                  </IconStack>
+                  <div className="space-y-0.5">
+                    <DialogTitle className="text-heading-18 text-foreground tracking-tight">
+                      Tambah Akun Pegawai
+                    </DialogTitle>
+                    <DialogDescription className="text-copy-13 text-muted-foreground">
+                      Registrasi akun pengguna, struktur penempatan departemen, dan tingkat hak akses.
+                    </DialogDescription>
+                  </div>
+                </div>
+                <Badge variant="outline" className="hidden sm:inline-flex font-mono text-[11px] px-2.5 py-1 border-border bg-card">
+                  Unit Pelayanan Wilayah
+                </Badge>
+              </div>
+            </DialogHeader>
+          </div>
+
+          <form onSubmit={handleTambahUserSubmit}>
+            <div className="p-6 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* KOLOM KIRI: Kredensial & Profil Akun */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 border-b border-border/70 pb-2">
+                    <KeyRound className="size-3.5 text-muted-foreground" />
+                    <h4 className="text-label-12 font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+                      1. Kredensial dan Profil Akun
+                    </h4>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tambah-nama" className="text-label-12 font-medium text-foreground">
+                      Nama Lengkap <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="tambah-nama"
+                      required
+                      placeholder="Contoh: Budi Santoso"
+                      value={formTambah.name}
+                      onChange={(e) => setFormTambah((prev) => ({ ...prev, name: e.target.value }))}
+                      className="h-9 font-sans text-copy-13 bg-card border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tambah-email" className="text-label-12 font-medium text-foreground">
+                      Email Kantor <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="tambah-email"
+                      required
+                      type="email"
+                      placeholder="budi.santoso@pdam.co.id"
+                      value={formTambah.email}
+                      onChange={(e) => setFormTambah((prev) => ({ ...prev, email: e.target.value }))}
+                      className="h-9 font-mono text-copy-13 bg-card border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tambah-nip" className="text-label-12 font-medium text-foreground">
+                      NIP Pegawai
+                    </Label>
+                    <Input
+                      id="tambah-nip"
+                      placeholder="Contoh: 198503152010011002"
+                      value={formTambah.nip}
+                      onChange={(e) => setFormTambah((prev) => ({ ...prev, nip: e.target.value }))}
+                      className="h-9 font-mono text-copy-13 bg-card border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="tambah-password" className="text-label-12 font-medium text-foreground">
+                        Password Sementara <span className="text-red-500">*</span>
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={generatePassword}
+                        className="text-label-11 font-mono text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Sparkles className="size-3 text-amber-500" />
+                        Acak Sandi Kuat
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <Input
+                        id="tambah-password"
+                        required
+                        type="text"
+                        value={formTambah.password}
+                        onChange={(e) => setFormTambah((prev) => ({ ...prev, password: e.target.value }))}
+                        className="h-9 font-mono text-copy-13 bg-card border-border pr-20"
+                        placeholder="Minimal 8 karakter"
+                      />
+                      {formTambah.password && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(formTambah.password);
+                            toast.success('Password sementara disalin ke clipboard.');
+                          }}
+                          className="absolute right-2 top-2 text-[11px] font-mono text-muted-foreground hover:text-foreground flex items-center gap-1 px-1.5 py-0.5 rounded border border-border bg-muted/40 cursor-pointer"
+                        >
+                          <Copy className="size-3" />
+                          Salin
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] font-mono text-muted-foreground">
+                      Pengguna diwajibkan mengganti password pada saat login pertama kali.
+                    </p>
+                  </div>
+                </div>
+
+                {/* KOLOM KANAN: Struktur Organisasi & Peran Sistem */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 border-b border-border/70 pb-2">
+                    <Building2 className="size-3.5 text-muted-foreground" />
+                    <h4 className="text-label-12 font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+                      2. Struktur Organisasi dan Hak Akses
+                    </h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-label-12 font-medium text-foreground">
+                        Pelayanan Wilayah <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formTambah.wilayahKerja}
+                        onValueChange={(w) => {
+                          const lvlLabel = formTambah.level.replace(/_/g, ' ');
+                          const bLabel = formTambah.bagian.replace(/_/g, ' ');
+                          const wLabel = w.replace(/_/g, ' ');
+                          setFormTambah((prev) => ({
+                            ...prev,
+                            wilayahKerja: w,
+                            jabatanNama: `${lvlLabel} ${bLabel} ${wLabel}`,
+                          }));
+                        }}
+                      >
+                        <SelectTrigger className="w-full h-9 bg-card border-border font-sans text-copy-13">
+                          <SelectValue placeholder="Pilih wilayah..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="WILAYAH_1">Pelayanan Wilayah 1</SelectItem>
+                          <SelectItem value="WILAYAH_2">Pelayanan Wilayah 2</SelectItem>
+                          <SelectItem value="WILAYAH_3">Pelayanan Wilayah 3</SelectItem>
+                          <SelectItem value="WILAYAH_4">Pelayanan Wilayah 4</SelectItem>
+                          <SelectItem value="WILAYAH_5">Pelayanan Wilayah 5</SelectItem>
+                          <SelectItem value="WILAYAH_6">Pelayanan Wilayah 6</SelectItem>
+                          <SelectItem value="KANTOR_PUSAT">Kantor Pusat dan Direksi</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-label-12 font-medium text-foreground">
+                        Bagian Departemen <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formTambah.bagian}
+                        onValueChange={(b) => {
+                          const lvlLabel = formTambah.level.replace(/_/g, ' ');
+                          const bLabel = b.replace(/_/g, ' ');
+                          const wLabel = formTambah.wilayahKerja.replace(/_/g, ' ');
+                          setFormTambah((prev) => ({
+                            ...prev,
+                            bagian: b,
+                            jabatanNama: `${lvlLabel} ${bLabel} ${wLabel}`,
+                          }));
+                        }}
+                      >
+                        <SelectTrigger className="w-full h-9 bg-card border-border font-sans text-copy-13">
+                          <SelectValue placeholder="Pilih bagian..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PENCATAT_METER">Pencatat Meter</SelectItem>
+                          <SelectItem value="LANGGANAN">Langganan</SelectItem>
+                          <SelectItem value="PENAGIHAN">Penagihan</SelectItem>
+                          <SelectItem value="RPM">RPM</SelectItem>
+                          <SelectItem value="DISTRIBUSI">Distribusi Sub Zona</SelectItem>
+                          <SelectItem value="UMUM">Umum dan IT</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-label-12 font-medium text-foreground">
+                        Tingkat Jabatan <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formTambah.level}
+                        onValueChange={(lvl) => {
+                          let suggestedRole = lvl;
+                          if (lvl === 'STAFF_PENYELIA') suggestedRole = 'STAFF';
+                          const lvlLabel = lvl.replace(/_/g, ' ');
+                          const bLabel = formTambah.bagian.replace(/_/g, ' ');
+                          const wLabel = formTambah.wilayahKerja.replace(/_/g, ' ');
+                          setFormTambah((prev) => ({
+                            ...prev,
+                            level: lvl,
+                            role: suggestedRole,
+                            jabatanNama: `${lvlLabel} ${bLabel} ${wLabel}`,
+                          }));
+                        }}
+                      >
+                        <SelectTrigger className="w-full h-9 bg-card border-border font-sans text-copy-13">
+                          <SelectValue placeholder="Pilih jabatan..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="DIREKSI">Direksi</SelectItem>
+                          <SelectItem value="SENIOR_MANAGER">Senior Manager</SelectItem>
+                          <SelectItem value="MANAGER">Manager</SelectItem>
+                          <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+                          <SelectItem value="STAFF_PENYELIA">Staf</SelectItem>
+                          <SelectItem value="PELAKSANA">Pelaksana</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-label-12 font-medium text-foreground">
+                        Peran Utama Sistem <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formTambah.role}
+                        onValueChange={(r) => setFormTambah((prev) => ({ ...prev, role: r }))}
+                      >
+                        <SelectTrigger className="w-full h-9 bg-card border-border font-sans text-copy-13">
+                          <SelectValue placeholder="Pilih peran..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+                          <SelectItem value="MANAGER">Manager</SelectItem>
+                          <SelectItem value="SENIOR_MANAGER">Senior Manager</SelectItem>
+                          <SelectItem value="STAFF">Staf</SelectItem>
+                          <SelectItem value="PELAKSANA">Pelaksana</SelectItem>
+                          <SelectItem value="DIREKSI">Direksi</SelectItem>
+                          <SelectItem value="SUPERADMIN">Super Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tambah-jabatan" className="text-label-12 font-medium text-foreground">
+                      Nama Jabatan Resmi di Kantor
+                    </Label>
+                    <Input
+                      id="tambah-jabatan"
+                      value={formTambah.jabatanNama}
+                      onChange={(e) => setFormTambah((prev) => ({ ...prev, jabatanNama: e.target.value }))}
+                      className="h-9 font-sans text-copy-13 bg-card border-border"
+                    />
+                  </div>
+
+                  {/* Card Info Proteksi Dapur */}
+                  <div className="p-3 rounded-lg border border-border bg-muted/20 text-copy-12 text-muted-foreground space-y-1">
+                    <p className="font-medium text-foreground flex items-center gap-1.5">
+                      <ShieldCheck className="size-3.5 text-emerald-500" />
+                      Proteksi Dapur Bagian dan Sinkronisasi Otomatis:
+                    </p>
+                    <p>
+                      Pengguna secara otomatis hanya mengakses modul Bagian {formTambah.bagian.replace(/_/g, ' ')}. Untuk anggota Bagian Pencatat Meter dengan peran Pelaksana, integrasi rute buku catat meter mobile cater otomatis terhubung.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <DialogFooter className="p-4 sm:p-6 pt-3 border-t border-border bg-muted/10 flex items-center justify-end gap-3 sm:gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setOpenTambahUser(false)}
+                disabled={tambahLoading}
+                className="font-mono text-label-12 border-border px-4"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={tambahLoading}
+                className="font-mono text-label-12 bg-foreground text-background hover:bg-foreground/90 gap-1.5 px-4"
+              >
+                {tambahLoading && <Spinner className="size-3.5" />}
+                Buat
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
       </Dialog>
     </PageContainer>
   );

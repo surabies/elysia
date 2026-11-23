@@ -56,6 +56,8 @@ export interface KondisiMapItem {
   aturanKode?: string;
   isBaselineNormal: boolean;
   isPeriodeTidakAktif: boolean;
+  modeHitung?: string;
+  kategori?: string;
   aktif: boolean;
 }
 
@@ -168,9 +170,12 @@ export function evaluasiAnomaliBaris(
     let matched = false;
 
     switch (rule.tipeAturan) {
-      // 1. Meter Mundur: stma < stml
+      // 1. Meter Mundur: stma < stml (Dikecualikan jika kondisi adalah METER_BARU / MB)
       case 'METER_MUNDUR': {
-        if (stma < stml) {
+        const isMeterBaru =
+          tmssClean === '4' ||
+          currentMaps.some((m) => m.modeHitung === 'METER_BARU' || m.kategori === 'METER_BARU');
+        if (stma < stml && !isMeterBaru) {
           matched = true;
         }
         break;

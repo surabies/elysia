@@ -25,6 +25,8 @@ export interface BarisVerifikasi {
   standAwalRevisi?: number | null
   standAkhir?: number | null
   standAkhirRevisi?: number | null
+  standAngkatRevisi?: number | null
+  standMeterBaruRevisi?: number | null
   standAngkatLama?: number | null
   standMeterBaru?: number | null
   standPasang?: number | null

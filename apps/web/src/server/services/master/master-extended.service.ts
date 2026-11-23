@@ -10,14 +10,17 @@ import {
   ruteCater,
   masterKondisiCatat,
   user,
+  account,
   userRoles,
   pegawai,
+  petugasCater,
   daftarCatat,
   rolePermissions,
   userPermissionOverrides,
   getActivePeriode,
   type AppRole,
 } from '@cater/db';
+import { hashPassword } from 'better-auth/crypto';
 import type { UserEffectivePermission } from '@cater/types';
 
 export interface PelangganUrutanItem {
@@ -48,10 +51,29 @@ export interface UserManagementItem {
   roles?: string[];
   jabatan: string | null;
   unitKerja: string | null;
+  bagian?: string | null;
+  wilayahKerja?: string | null;
+  level?: string | null;
   nip?: string | null;
   noHp?: string | null;
   status: 'AKTIF' | 'NONAKTIF';
   createdAt: string;
+}
+
+export interface CreateUserInput {
+  name: string;
+  email: string;
+  password: string;
+  role: AppRole | string;
+  roles?: string[];
+  nip?: string;
+  level?: 'DIREKSI' | 'SENIOR_MANAGER' | 'MANAGER' | 'SUPERVISOR' | 'STAFF_PENYELIA' | 'PELAKSANA';
+  bagian?: 'PENCATAT_METER' | 'LANGGANAN' | 'PENAGIHAN' | 'RPM' | 'DISTRIBUSI' | 'UMUM' | string;
+  wilayahKerja?: string;
+  jabatanNama?: string;
+  unitKerja?: string;
+  noHp?: string;
+  wajibGantiPassword?: boolean;
 }
 
 export interface MatriksHakAksesItem {
@@ -288,6 +310,143 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     verifikator3: false,
     executive: false,
   },
+  // --- Modul Bagian RPM (Rekening & Pengendalian Meter) ---
+  {
+    modulKey: 'rpm_ganti_meter',
+    modulNama: 'Penggantian Meter (GWM)',
+    kategori: 'RPM',
+    deskripsi: 'Input & validasi fisik meter baru/rusak',
+    urutan: 12,
+    superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: true,
+    staffBilling: true,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
+  {
+    modulKey: 'rpm_tera_kalibrasi',
+    modulNama: 'Uji Akurasi & Tera Meter',
+    kategori: 'RPM',
+    deskripsi: 'Pengujian meteran air & kalibrasi lab',
+    urutan: 13,
+    superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
+    staffBilling: false,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
+  // --- Modul Bagian Distribusi / Sub Zona ---
+  {
+    modulKey: 'distribusi_gis_pipa',
+    modulNama: 'GIS Jaringan Pipa & Valve',
+    kategori: 'DISTRIBUSI',
+    deskripsi: 'Pemetaan pipa transmisi & katup distribusi',
+    urutan: 14,
+    superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: true,
+    staffBilling: false,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
+  {
+    modulKey: 'distribusi_dma_tekanan',
+    modulNama: 'Monitoring DMA & Tekanan Air',
+    kategori: 'DISTRIBUSI',
+    deskripsi: 'Logger tekanan air sub zona & indikasi bocor',
+    urutan: 15,
+    superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
+    staffBilling: false,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
+  // --- Modul Bagian Langganan (Hublang) ---
+  {
+    modulKey: 'langganan_pasang_baru',
+    modulNama: 'Pasang Sambungan Baru (PB)',
+    kategori: 'LANGGANAN',
+    deskripsi: 'Survei teknis & persetujuan sambungan baru',
+    urutan: 16,
+    superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
+    staffBilling: false,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
+  {
+    modulKey: 'langganan_mutasi_tarif',
+    modulNama: 'Mutasi Golongan & Balik Nama',
+    kategori: 'LANGGANAN',
+    deskripsi: 'Perubahan tarif pelanggan & status kepemilikan',
+    urutan: 17,
+    superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
+    staffBilling: false,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
+  // --- Modul Bagian Penagihan ---
+  {
+    modulKey: 'penagihan_piutang_sp',
+    modulNama: 'Piutang & Surat Peringatan (SP)',
+    kategori: 'PENAGIHAN',
+    deskripsi: 'Monitoring tunggakan & cetak surat segel',
+    urutan: 18,
+    superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
+    staffBilling: true,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
 ];
 
 export class MasterExtendedService {
@@ -426,10 +585,15 @@ export class MasterExtendedService {
 
     const ROLE_PRIORITY: Record<string, number> = {
       SUPERADMIN: 100,
+      DIREKSI: 90,
       EXECUTIVE: 90,
+      SENIOR_MANAGER: 80,
       VERIFIKATOR_3: 80,
+      MANAGER: 70,
       VERIFIKATOR_2: 70,
+      SUPERVISOR: 60,
       VERIFIKATOR_1: 60,
+      STAFF: 50,
       STAFF_ADMIN_BILLING: 50,
       PENCATAT: 40,
       PELAKSANA: 30,
@@ -459,6 +623,9 @@ export class MasterExtendedService {
       {
         jabatan: string | null;
         unit: string | null;
+        bagian: string | null;
+        wilayahKerja: string | null;
+        level: string | null;
         aktif: boolean;
         nip: string | null;
         noHp: string | null;
@@ -469,6 +636,9 @@ export class MasterExtendedService {
         pegMap.set(p.userId, {
           jabatan: p.jabatanNama,
           unit: p.unitKerja,
+          bagian: (p as any).bagian ?? 'UMUM',
+          wilayahKerja: (p as any).wilayahKerja ?? 'WILAYAH_5',
+          level: p.level,
           aktif: p.aktif,
           nip: p.nip,
           noHp: p.noHp,
@@ -488,6 +658,9 @@ export class MasterExtendedService {
         roles: assignedRoles,
         jabatan: p?.jabatan ?? 'Staf Operasional',
         unitKerja: p?.unit ?? 'Divisi Hubungan Langganan',
+        bagian: p?.bagian ?? 'UMUM',
+        wilayahKerja: p?.wilayahKerja ?? 'WILAYAH_5',
+        level: p?.level ?? 'STAFF_PENYELIA',
         nip: p?.nip ?? null,
         noHp: p?.noHp ?? null,
         status: p?.aktif === false ? 'NONAKTIF' : 'AKTIF',
@@ -501,25 +674,55 @@ export class MasterExtendedService {
    */
   async updateUserRoleAndStatus(
     userId: string,
-    newRole: AppRole,
-    status?: 'AKTIF' | 'NONAKTIF'
-  ) {
-    // 1. Perbarui peran pada user_roles (hapus peranan lama, set peranan baru)
-    await db.delete(userRoles).where(eq(userRoles.userId, userId));
-    await db.insert(userRoles).values({
-      userId,
-      role: newRole,
-      createdAt: new Date(),
-    });
-
-    // 2. Sinkronkan status ke tabel pegawai jika akun tertaut profil pegawai
-    if (status) {
-      const isAktif = status === 'AKTIF';
-      await db
-        .update(pegawai)
-        .set({ aktif: isAktif, updatedAt: new Date() })
-        .where(eq(pegawai.userId, userId));
+    newRole: AppRole | string,
+    status?: 'AKTIF' | 'NONAKTIF',
+    details?: {
+      bagian?: string;
+      wilayahKerja?: string;
+      jabatanNama?: string;
+      unitKerja?: string;
+      level?: any;
     }
+  ) {
+    // 1. Perbarui peran pada user_roles dengan bridging otomatis
+    const rolesToAssign = new Set<string>();
+    rolesToAssign.add(newRole);
+
+    if (newRole === 'SUPERVISOR') rolesToAssign.add('VERIFIKATOR_1');
+    else if (newRole === 'MANAGER') rolesToAssign.add('VERIFIKATOR_2');
+    else if (newRole === 'SENIOR_MANAGER') rolesToAssign.add('VERIFIKATOR_3');
+    else if (newRole === 'DIREKSI') rolesToAssign.add('EXECUTIVE');
+    else if (newRole === 'STAFF') rolesToAssign.add('STAFF_ADMIN_BILLING');
+    else if (newRole === 'VERIFIKATOR_1') rolesToAssign.add('SUPERVISOR');
+    else if (newRole === 'VERIFIKATOR_2') rolesToAssign.add('MANAGER');
+    else if (newRole === 'VERIFIKATOR_3') rolesToAssign.add('SENIOR_MANAGER');
+    else if (newRole === 'EXECUTIVE') rolesToAssign.add('DIREKSI');
+    else if (newRole === 'STAFF_ADMIN_BILLING') rolesToAssign.add('STAFF');
+
+    await db.delete(userRoles).where(eq(userRoles.userId, userId));
+    for (const r of rolesToAssign) {
+      await db.insert(userRoles).values({
+        userId,
+        role: r as any,
+        createdAt: new Date(),
+      }).onConflictDoNothing();
+    }
+
+    // 2. Sinkronkan status dan data pegawai jika akun tertaut profil pegawai
+    const updatePayload: Record<string, any> = { updatedAt: new Date() };
+    if (status) {
+      updatePayload.aktif = status === 'AKTIF';
+    }
+    if (details?.bagian) updatePayload.bagian = details.bagian;
+    if (details?.wilayahKerja) updatePayload.wilayahKerja = details.wilayahKerja;
+    if (details?.jabatanNama) updatePayload.jabatanNama = details.jabatanNama;
+    if (details?.unitKerja) updatePayload.unitKerja = details.unitKerja;
+    if (details?.level) updatePayload.level = details.level;
+
+    await db
+      .update(pegawai)
+      .set(updatePayload)
+      .where(eq(pegawai.userId, userId));
 
     return {
       success: true,
@@ -527,6 +730,157 @@ export class MasterExtendedService {
       role: newRole,
       status: status ?? 'AKTIF',
       updatedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * 5c. Pembuatan Akun Baru (User, Credential Account, Role, Profil Pegawai & Wilayah Scope)
+   */
+  async createUser(input: CreateUserInput) {
+    const emailNorm = input.email.toLowerCase().trim();
+
+    // 1. Validasi Keunikan Email
+    const [existingUser] = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.email, emailNorm))
+      .limit(1);
+
+    if (existingUser) {
+      throw new Error(`Email ${emailNorm} sudah terdaftar dalam sistem.`);
+    }
+
+    // 2. Validasi Keunikan NIP jika diisi
+    if (input.nip && input.nip.trim()) {
+      const [existingPeg] = await db
+        .select({ id: pegawai.id })
+        .from(pegawai)
+        .where(eq(pegawai.nip, input.nip.trim()))
+        .limit(1);
+
+      if (existingPeg) {
+        throw new Error(`NIP ${input.nip} sudah digunakan oleh pegawai lain.`);
+      }
+    }
+
+    if (!input.password || input.password.length < 8) {
+      throw new Error('Password minimal harus 8 karakter.');
+    }
+
+    const passwordHash = await hashPassword(input.password);
+    const userId = crypto.randomUUID();
+    const now = new Date();
+
+    // 3. Eksekusi Atomic Transaction
+    await db.transaction(async (tx) => {
+      // a. Insert User
+      await tx.insert(user).values({
+        id: userId,
+        name: input.name.trim(),
+        email: emailNorm,
+        emailVerified: true,
+        wajibGantiPassword: input.wajibGantiPassword ?? true,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // b. Insert Credential Account
+      await tx.insert(account).values({
+        id: `account-${userId}`,
+        userId,
+        accountId: userId,
+        providerId: 'credential',
+        password: passwordHash,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // c. Tentukan Roles & Bridging Otomatis
+      const rolesToAssign = new Set<string>();
+      if (input.role) rolesToAssign.add(input.role);
+      if (input.roles && Array.isArray(input.roles)) {
+        input.roles.forEach((r) => rolesToAssign.add(r));
+      }
+
+      // Bridging otomatis ke role fungsional verifikasi agar tidak 403 di legacy routes
+      if (rolesToAssign.has('SUPERVISOR')) rolesToAssign.add('VERIFIKATOR_1');
+      if (rolesToAssign.has('MANAGER')) rolesToAssign.add('VERIFIKATOR_2');
+      if (rolesToAssign.has('SENIOR_MANAGER')) rolesToAssign.add('VERIFIKATOR_3');
+      if (rolesToAssign.has('DIREKSI')) rolesToAssign.add('EXECUTIVE');
+      if (rolesToAssign.has('STAFF')) rolesToAssign.add('STAFF_ADMIN_BILLING');
+
+      if (rolesToAssign.has('VERIFIKATOR_1')) rolesToAssign.add('SUPERVISOR');
+      if (rolesToAssign.has('VERIFIKATOR_2')) rolesToAssign.add('MANAGER');
+      if (rolesToAssign.has('VERIFIKATOR_3')) rolesToAssign.add('SENIOR_MANAGER');
+      if (rolesToAssign.has('EXECUTIVE')) rolesToAssign.add('DIREKSI');
+      if (rolesToAssign.has('STAFF_ADMIN_BILLING')) rolesToAssign.add('STAFF');
+
+      for (const roleName of rolesToAssign) {
+        await tx.insert(userRoles).values({
+          userId,
+          role: roleName as any,
+          createdAt: now,
+        }).onConflictDoNothing();
+      }
+
+      // d. Tentukan Tingkat Pegawai
+      let level: any = input.level;
+      if (!level) {
+        if (rolesToAssign.has('DIREKSI') || rolesToAssign.has('EXECUTIVE')) level = 'DIREKSI';
+        else if (rolesToAssign.has('SENIOR_MANAGER') || rolesToAssign.has('VERIFIKATOR_3')) level = 'SENIOR_MANAGER';
+        else if (rolesToAssign.has('MANAGER') || rolesToAssign.has('VERIFIKATOR_2')) level = 'MANAGER';
+        else if (rolesToAssign.has('SUPERVISOR') || rolesToAssign.has('VERIFIKATOR_1')) level = 'SUPERVISOR';
+        else if (rolesToAssign.has('STAFF') || rolesToAssign.has('STAFF_ADMIN_BILLING')) level = 'STAFF_PENYELIA';
+        else level = 'PELAKSANA';
+      }
+
+      const bagian = input.bagian || 'UMUM';
+      const wilayahKerja = input.wilayahKerja || 'WILAYAH_5';
+      const nip = input.nip?.trim() || `PEG-${Date.now().toString().slice(-6)}`;
+      const jabatanNama = input.jabatanNama || `${level} Bagian ${bagian} (${wilayahKerja})`;
+      const unitKerja = input.unitKerja || `Pelayanan ${wilayahKerja} - Bagian ${bagian}`;
+
+      // e. Insert Profil Pegawai
+      await tx.insert(pegawai).values({
+        id: crypto.randomUUID(),
+        userId,
+        nip,
+        namaLengkap: input.name.trim(),
+        level,
+        jabatanNama,
+        unitKerja,
+        bagian,
+        wilayahKerja,
+        noHp: input.noHp?.trim() || null,
+        aktif: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // f. Hubungkan ke Petugas Cater jika bertugas sebagai Pencatat Lapangan
+      if (rolesToAssign.has('PENCATAT') || level === 'PELAKSANA') {
+        const petugasId = input.name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 50);
+        if (petugasId) {
+          await tx
+            .insert(petugasCater)
+            .values({
+              id: petugasId,
+              nama: input.name.trim(),
+              noHp: input.noHp?.trim() || null,
+              aktif: true,
+              createdAt: now,
+            })
+            .onConflictDoNothing();
+        }
+      }
+    });
+
+    return {
+      success: true,
+      userId,
+      email: emailNorm,
+      name: input.name.trim(),
+      message: 'Pengguna baru dan profil pegawai berhasil dibuat.',
     };
   }
 
@@ -852,13 +1206,18 @@ export class MasterExtendedService {
       .where(eq(userRoles.userId, userId));
     const roleSet = new Set(uRoles.map((r) => r.role));
 
-    // 3. Ambil profil pegawai untuk level struktural
+    // 3. Ambil profil pegawai untuk level struktural, bagian, dan wilayah kerja
     const [peg] = await db
-      .select({ level: pegawai.level })
+      .select({
+        level: pegawai.level,
+        bagian: pegawai.bagian,
+        wilayahKerja: pegawai.wilayahKerja,
+      })
       .from(pegawai)
       .where(eq(pegawai.userId, userId))
       .limit(1);
     const level = peg?.level;
+    const userBagian = (peg?.bagian ?? 'UMUM').toUpperCase();
 
     const isSuperadmin = roleSet.has('SUPERADMIN');
     const isDireksi = roleSet.has('DIREKSI') || roleSet.has('EXECUTIVE') || level === 'DIREKSI';
@@ -883,25 +1242,43 @@ export class MasterExtendedService {
     const overrideMap = new Map(overrides.map((o) => [o.modulKey, o]));
 
     return matrix.map((m) => {
-      // Hitung izin default berdasarkan role / level
+      // Deteksi kepemilikan bagian modul (Dapur Departemen)
+      let modulBagian = 'UMUM';
+      if (m.modulKey.startsWith('rpm_') || m.kategori === 'RPM') modulBagian = 'RPM';
+      else if (m.modulKey.startsWith('distribusi_') || m.kategori === 'DISTRIBUSI') modulBagian = 'DISTRIBUSI';
+      else if (m.modulKey.startsWith('langganan_') || m.kategori === 'LANGGANAN') modulBagian = 'LANGGANAN';
+      else if (m.modulKey.startsWith('penagihan_') || m.kategori === 'PENAGIHAN' || m.kategori === 'BILLING') modulBagian = 'PENAGIHAN';
+      else if (m.kategori === 'VERIFIKASI' || m.modulKey.includes('cater') || m.modulKey.includes('stand') || m.modulKey.includes('gis')) {
+        modulBagian = 'PENCATAT_METER';
+      }
+
+      // Hitung izin default berdasarkan role / level dan batas sekat dapur
       let roleDefault = false;
       if (isSuperadmin) {
         roleDefault = true;
       } else if (isDireksi && m.direksi) {
         roleDefault = true;
       } else if (isSeniorManager && m.seniorManager) {
+        // Senior Manager membawahi 5 bagian di pelayanan wilayahnya
         roleDefault = true;
-      } else if (isManager && m.manager) {
-        roleDefault = true;
-      } else if (isSupervisor && m.supervisor) {
-        roleDefault = true;
-      } else if (isStaff && m.staff) {
-        roleDefault = true;
-      } else if (isPelaksana && m.pelaksana) {
-        roleDefault = true;
+      } else {
+        // Manager, Supervisor, Staff, Pelaksana:
+        // Cek apakah modul ini sesuai dapur bagiannya atau berstatus UMUM
+        const cocokBagian =
+          userBagian === 'UMUM' ||
+          modulBagian === 'UMUM' ||
+          userBagian === modulBagian;
+
+        if (cocokBagian) {
+          if (isManager && m.manager) roleDefault = true;
+          else if (isSupervisor && m.supervisor) roleDefault = true;
+          else if (isStaff && m.staff) roleDefault = true;
+          else if (isPelaksana && m.pelaksana) roleDefault = true;
+        }
       }
 
-      // Evaluasi apakah ada custom override khusus untuk Si A
+      // Evaluasi apakah ada custom override khusus untuk Si A (Kustomisasi Dinamis Superadmin)
+      // Override selalu memenangkan aturan default dapur!
       const override = overrideMap.get(m.modulKey);
       const isOverridden = !!override;
       const effectiveGranted = isSuperadmin ? true : isOverridden ? override.granted : roleDefault;

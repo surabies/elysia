@@ -11,6 +11,11 @@ const MASTER_READ_ROLES: AppRole[] = [
   'VERIFIKATOR_1',
   'VERIFIKATOR_2',
   'VERIFIKATOR_3',
+  'DIREKSI',
+  'SENIOR_MANAGER',
+  'MANAGER',
+  'SUPERVISOR',
+  'STAFF',
 ];
 
 const MASTER_WRITE_ROLES: AppRole[] = [
@@ -19,6 +24,11 @@ const MASTER_WRITE_ROLES: AppRole[] = [
   'VERIFIKATOR_1',
   'VERIFIKATOR_2',
   'VERIFIKATOR_3',
+  'DIREKSI',
+  'SENIOR_MANAGER',
+  'MANAGER',
+  'SUPERVISOR',
+  'STAFF',
 ];
 
 export const masterRouter = new Elysia({ prefix: '/master' })
@@ -208,7 +218,7 @@ export const masterRouter = new Elysia({ prefix: '/master' })
       return { success: true, data };
     },
     {
-      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3'],
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3', 'DIREKSI', 'SENIOR_MANAGER'],
     }
   )
 
@@ -220,7 +230,14 @@ export const masterRouter = new Elysia({ prefix: '/master' })
         const result = await masterExtendedService.updateUserRoleAndStatus(
           params.id,
           body.role,
-          body.status
+          body.status,
+          {
+            bagian: body.bagian,
+            wilayahKerja: body.wilayahKerja,
+            jabatanNama: body.jabatanNama,
+            unitKerja: body.unitKerja,
+            level: body.level,
+          }
         );
         return { success: true, data: result };
       } catch (err: any) {
@@ -229,10 +246,47 @@ export const masterRouter = new Elysia({ prefix: '/master' })
       }
     },
     {
-      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3'],
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'VERIFIKATOR_3', 'DIREKSI', 'SENIOR_MANAGER'],
       body: t.Object({
         role: t.String(),
         status: t.Optional(t.Union([t.Literal('AKTIF'), t.Literal('NONAKTIF')])),
+        bagian: t.Optional(t.String()),
+        wilayahKerja: t.Optional(t.String()),
+        jabatanNama: t.Optional(t.String()),
+        unitKerja: t.Optional(t.String()),
+        level: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  // 11c. Tambah Pengguna Baru (Hanya Superadmin & Direksi)
+  .post(
+    '/users',
+    async ({ body, set }: any) => {
+      try {
+        const result = await masterExtendedService.createUser(body);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['SUPERADMIN', 'EXECUTIVE', 'DIREKSI'],
+      body: t.Object({
+        name: t.String({ minLength: 2 }),
+        email: t.String({ format: 'email' }),
+        password: t.String({ minLength: 8 }),
+        role: t.String(),
+        roles: t.Optional(t.Array(t.String())),
+        nip: t.Optional(t.String()),
+        level: t.Optional(t.String()),
+        bagian: t.Optional(t.String()),
+        wilayahKerja: t.Optional(t.String()),
+        jabatanNama: t.Optional(t.String()),
+        unitKerja: t.Optional(t.String()),
+        noHp: t.Optional(t.String()),
+        wajibGantiPassword: t.Optional(t.Boolean()),
       }),
     }
   )

@@ -409,4 +409,19 @@ describe('Engine Evaluasi Anomali SSOT Terpusat (Tanpa Hardcode)', () => {
     expect(res0.isAnomali).toBe(false);
     expect(res0.kodeUtama).toBeNull();
   });
+
+  it('15. Pergantian Meter Baru (MB / kode TMSS 4): stma < stml tidak memicu ANOM_METER_MUNDUR', () => {
+    // Pada meter baru, meter lama dicabut (misal stand 837) dan meter baru dipasang mulai dari 0.
+    // Stand catat baru terbaca 5 m³ (stma 5 < stml 837).
+    const inputMb: ReadingInput = {
+      stml: 837,
+      stma: 5,
+      pakaiM3: 5,
+      pakaiLalu: 10,
+      kodeTmss: '4',
+    };
+    const resMb = evaluasiAnomaliBaris(inputMb, RULES, MOCK_KONDISI_MAP, 1);
+    expect(resMb.kodeUtama).not.toBe('ANOM_METER_MUNDUR');
+    expect(resMb.kodeList).not.toContain('ANOM_METER_MUNDUR');
+  });
 });

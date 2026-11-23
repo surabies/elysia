@@ -1023,7 +1023,7 @@ export function TabelVerifikasi({
               const kondisiAktif = row.kondisiRevisi ?? row.kondisi;
               const isMB = kondisiAktif === "MB";
               const gantiMeterDikoreksi =
-                row.standAngkatLama != null || row.standMeterBaru != null;
+                row.standAngkatRevisi != null || row.standMeterBaruRevisi != null;
               const pemakaianDikoreksi =
                 standAwalDikoreksi ||
                 standAkhirDikoreksi ||

@@ -964,11 +964,14 @@ export class ImportDataService {
             }
 
             const tmss = item.tmss?.trim() || '-';
+            const isMb = tmss === '4' || item.ketCatat?.trim().toUpperCase() === 'MB';
             const tglCatat = item.tglCatat ? new Date(item.tglCatat) : new Date();
-            const isStandMundur = item.stma < item.stml;
+            const isStandMundur = item.stma < item.stml && !isMb;
             const defaultCatatan = isStandMundur
               ? `Import LapDataMeter (Anomali Stand: STMA ${item.stma} < STML ${item.stml}, Pakai=${pakaiM3}m³)`
-              : `Import LapDataMeter ${item.thbl}`;
+              : isMb
+                ? `Import LapDataMeter ${item.thbl} (Meter Baru / Penggantian Meter)`
+                : `Import LapDataMeter ${item.thbl}`;
             const catatan = item.catatan || defaultCatatan;
 
             const evalRes = evaluasiAnomaliBaris(
@@ -1048,8 +1051,14 @@ export class ImportDataService {
                 });
             }
 
-            // Catat audit log reset untuk baris yang ditimpa
+            // Bersihkan histori verifikasi lama dan catat audit log reset untuk baris yang ditimpa
             if (existingCaterRows.length > 0) {
+              const existingIds = existingCaterRows.map((r) => r.id);
+              for (let i = 0; i < existingIds.length; i += CHUNK_SIZE) {
+                const chunkIds = existingIds.slice(i, i + CHUNK_SIZE);
+                await tx.delete(caterVerifikasiLog).where(inArray(caterVerifikasiLog.caterId, chunkIds));
+              }
+
               const auditLogItems = existingCaterRows.map((r) => ({
                 caterId: r.id,
                 userId: userContext?.userId || 'user-superadmin',

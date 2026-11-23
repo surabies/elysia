@@ -508,9 +508,13 @@ export class VerifikasiGridService {
     return {
       rows: rows.map((row) => {
         const rowLogs = logMap.get(row.id) ?? [];
-        const latestV1 = rowLogs.find((log) => log.stage === "V1");
-        const latestV2 = rowLogs.find((log) => log.stage === "V2");
-        const latestV3 = rowLogs.find((log) => log.stage === "V3");
+        // Abaikan histori log sebelum SYSTEM_RESET terakhir karena data baca meter telah di-reset
+        const resetIndex = rowLogs.findIndex((log) => log.stage === "SYSTEM_RESET");
+        const activeLogs = resetIndex >= 0 ? rowLogs.slice(0, resetIndex) : rowLogs;
+
+        const latestV1 = activeLogs.find((log) => log.stage === "V1");
+        const latestV2 = activeLogs.find((log) => log.stage === "V2");
+        const latestV3 = activeLogs.find((log) => log.stage === "V3");
         const v1 = latestV1?.action === "APPROVE" ? latestV1 : undefined;
         const v2 = latestV2?.action === "APPROVE" ? latestV2 : undefined;
         const v3 = latestV3?.action === "APPROVE" ? latestV3 : undefined;
@@ -519,6 +523,17 @@ export class VerifikasiGridService {
           row.statusVerifikasi as (typeof FINAL_STATUSES)[number],
         );
         const point = row.titikLokasi as { x?: number; y?: number } | null;
+
+        // Status-aware verification stages:
+        // verif3At HANYA aktif jika statusVerifikasi merupakan final (APPROVED_FINAL, CORRECTED_POST_VERIF, LOCKED_BILLING).
+        // Jangan pernah menampilkan V3 jika statusVerifikasi adalah SUBMITTED / DRAFT / ANOMALY!
+        const hasV3 = final && Boolean(v3);
+        const hasV2 = (final || row.statusVerifikasi === "VERIFIED_L2") && Boolean(v2 || v3);
+        const hasV1 =
+          (final ||
+            row.statusVerifikasi === "VERIFIED_L2" ||
+            row.statusVerifikasi === "VERIFIED_L1") &&
+          Boolean(v1 || v2 || v3);
 
         return {
           id: row.id,
@@ -531,6 +546,8 @@ export class VerifikasiGridService {
           standAkhir: asNumber(row.stma),
           standAwalRevisi: asNumber(row.stmlRevisi),
           standAkhirRevisi: asNumber(row.stmaRevisi),
+          standAngkatRevisi: asNumber(row.standAngkatRevisi),
+          standMeterBaruRevisi: asNumber(row.standMeterBaruRevisi),
           standAngkatLama:
             asNumber(row.standAngkatRevisi) ?? asNumber(row.standAngkatLama),
           standMeterBaru:
@@ -563,22 +580,31 @@ export class VerifikasiGridService {
           tanggalCatat: toIso(row.tglCatat),
           status: mapStatus(row.statusVerifikasi),
           isVerified: final,
-          isCorrected: rowLogs.some(
-            (log) =>
-              log.stage === "FORM_CORRECTION" && log.action === "ADJUST_STAND",
-          ),
+          isCorrected:
+            activeLogs.some(
+              (log) =>
+                log.stage === "FORM_CORRECTION" && log.action === "ADJUST_STAND",
+            ) ||
+            Boolean(
+              row.stmlRevisi ||
+                row.stmaRevisi ||
+                row.standAngkatRevisi ||
+                row.standMeterBaruRevisi ||
+                row.pakaiM3Revisi ||
+                row.ketCatatRevisi,
+            ),
           verifiedAt: rejected ? toIso(latestV1?.createdAt) : null,
           catatanVerif: rejected
             ? (latestV1?.alasan ?? row.catatan)
             : row.catatan,
           pembacaanId: final ? row.id : null,
-          verif1At: toIso(v1?.createdAt),
-          verif2At: toIso(v2?.createdAt),
-          verif3At: toIso(v3?.createdAt),
-          verif1By: v1 ? { name: v1.userName } : null,
-          verif2By: v2 ? { name: v2.userName } : null,
-          verif3By: v3 ? { name: v3.userName } : null,
-          verifiedBy: v3 ? { name: v3.userName } : null,
+          verif1At: hasV1 ? toIso(v1?.createdAt ?? v2?.createdAt ?? v3?.createdAt) : null,
+          verif2At: hasV2 ? toIso(v2?.createdAt ?? v3?.createdAt) : null,
+          verif3At: hasV3 ? toIso(v3?.createdAt) : null,
+          verif1By: hasV1 && v1 ? { name: v1.userName } : null,
+          verif2By: hasV2 && v2 ? { name: v2.userName } : null,
+          verif3By: hasV3 && v3 ? { name: v3.userName } : null,
+          verifiedBy: hasV3 && v3 ? { name: v3.userName } : null,
           nomorMeter: row.noMeter,
           fotoStandUrl: row.fotoMeterUrl,
           fotoSegelUrl: row.fotoSegelUrl,

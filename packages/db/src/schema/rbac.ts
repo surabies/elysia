@@ -66,6 +66,8 @@ export const pegawai = pgTable(
     level: employeeLevelEnum('level').notNull().default('PELAKSANA'),
     jabatanNama: varchar('jabatan_nama', { length: 100 }), // e.g. "Supervisor Cater Wilayah Cibeunying"
     unitKerja: varchar('unit_kerja', { length: 100 }),    // e.g. "Seksi Pembacaan Meter Wilayah 4"
+    bagian: varchar('bagian', { length: 50 }).notNull().default('UMUM'), // e.g. "PENCATAT_METER", "LANGGANAN", "PENAGIHAN", "RPM", "DISTRIBUSI", "UMUM"
+    wilayahKerja: varchar('wilayah_kerja', { length: 50 }).notNull().default('WILAYAH_5'), // e.g. "WILAYAH_1" - "WILAYAH_6", "KANTOR_PUSAT"
     atasanId: text('atasan_id').references((): any => pegawai.id, { onDelete: 'set null' }),
     noHp: varchar('no_hp', { length: 30 }),
     aktif: boolean('aktif').notNull().default(true),

@@ -60,7 +60,8 @@ export function turunkanBaris(row: BarisVerifikasi): BarisTurunan {
     row.standAkhirRevisi != null && row.standAkhirRevisi !== row.standAkhir
   const kondisiDikoreksi =
     row.kondisiRevisi != null && row.kondisiRevisi !== row.kondisi
-  const gantiMeter = row.standAngkatLama != null || row.standMeterBaru != null
+  const gantiMeter =
+    row.standAngkatRevisi != null || row.standMeterBaruRevisi != null
   const pemakaianDikoreksi =
     standAwalDikoreksi ||
     standAkhirDikoreksi ||
