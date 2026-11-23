@@ -7,7 +7,9 @@ import {
   type CustomRenderer,
   GridCellKind,
 } from '@glideapps/glide-data-grid';
+import { roundedRect } from '../renderers/canvas-drawers';
 import { FONT_SANS } from '../theme';
+import { potongTeksDenganEllipsis } from '../utils/measure';
 
 export type ActionKind = 'edit' | 'view';
 
@@ -33,16 +35,22 @@ export const actionButtonCellRenderer: CustomRenderer<ActionButtonGridCell> = {
     // Deteksi dark mode
     const bgThemeLower = (theme.bgCell || '').toLowerCase();
     const isDark =
+      (typeof document !== 'undefined' &&
+        document.documentElement.classList.contains('dark')) ||
       bgThemeLower === '#09090b' ||
       bgThemeLower === '#0a0a0a' ||
       bgThemeLower === '#000000' ||
-      bgThemeLower === '#18181b';
+      bgThemeLower === '#18181b' ||
+      (theme.borderColor || '').toLowerCase() === '#27272a';
+
+    const maxBtnWidth = rect.width - 14;
+    if (maxBtnWidth <= 14) return true;
 
     ctx.save();
 
-    // Ukuran tombol
-    const btnHeight = 24;
-    const btnWidth = Math.min(rect.width - 16, 68);
+    // Ukuran tombol ringkas selaras badge Vercel Geist (21px, radius 5px)
+    const btnHeight = Math.min(21, Math.max(15, rect.height - 12));
+    const btnWidth = Math.min(maxBtnWidth, 64);
     const btnX = Math.round(rect.x + (rect.width - btnWidth) / 2);
     const btnY = Math.round(rect.y + (rect.height - btnHeight) / 2);
 
@@ -60,11 +68,7 @@ export const actionButtonCellRenderer: CustomRenderer<ActionButtonGridCell> = {
 
     // Gambar Rounded Box Tombol
     ctx.beginPath();
-    if (typeof ctx.roundRect === 'function') {
-      ctx.roundRect(btnX, btnY, btnWidth, btnHeight, 5);
-    } else {
-      ctx.rect(btnX, btnY, btnWidth, btnHeight);
-    }
+    roundedRect(ctx, btnX, btnY, btnWidth, btnHeight, 5);
     ctx.fillStyle = btnBg;
     ctx.fill();
 
@@ -72,8 +76,13 @@ export const actionButtonCellRenderer: CustomRenderer<ActionButtonGridCell> = {
     ctx.lineWidth = 1;
     ctx.stroke();
 
+    // Clip isi tombol agar ikon & teks tidak pernah bocor keluar border tombol saat kolom disusutkan
+    ctx.beginPath();
+    ctx.rect(btnX + 2, btnY + 1, Math.max(0, btnWidth - 4), Math.max(0, btnHeight - 2));
+    ctx.clip();
+
     // Gambar Ikon Vektor Presisi
-    const iconCenterX = btnX + 13;
+    const iconCenterX = btnWidth < 36 ? Math.round(btnX + btnWidth / 2) : btnX + 12;
     const iconCenterY = btnY + btnHeight / 2;
 
     if (isEdit) {
@@ -124,12 +133,19 @@ export const actionButtonCellRenderer: CustomRenderer<ActionButtonGridCell> = {
       ctx.restore();
     }
 
-    // Gambar Teks Label
-    ctx.fillStyle = btnFg;
-    ctx.font = `500 11.5px ${FONT_SANS}`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, btnX + 25, btnY + btnHeight / 2 + 0.5);
+    // Gambar Teks Label (dengan truncation bila ruang menyempit)
+    const textStartX = btnX + 22;
+    const availableTextWidth = Math.max(0, btnX + btnWidth - 5 - textStartX);
+    if (btnWidth >= 36 && availableTextWidth > 4) {
+      ctx.fillStyle = btnFg;
+      ctx.font = `500 11px ${FONT_SANS}`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      const displayText = potongTeksDenganEllipsis(ctx, text, availableTextWidth);
+      if (displayText) {
+        ctx.fillText(displayText, textStartX, Math.round(btnY + btnHeight / 2 + 0.5));
+      }
+    }
 
     ctx.restore();
     return true;

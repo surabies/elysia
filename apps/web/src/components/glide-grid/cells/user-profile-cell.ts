@@ -8,6 +8,7 @@ import {
   GridCellKind,
 } from '@glideapps/glide-data-grid';
 import { FONT_SANS } from '../theme';
+import { potongTeksDenganEllipsis } from '../utils/measure';
 
 export interface UserProfileCellData {
   kind: 'user-profile-cell';
@@ -60,6 +61,9 @@ export const userProfileCellRenderer: CustomRenderer<UserProfileGridCell> = {
     const avatarX = rect.x + padX + avatarRadius;
 
     ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x + 2, rect.y + 2, Math.max(0, rect.width - 4), Math.max(0, rect.height - 4));
+    ctx.clip();
 
     // Gambar Lingkaran Avatar
     ctx.beginPath();
@@ -76,26 +80,41 @@ export const userProfileCellRenderer: CustomRenderer<UserProfileGridCell> = {
       ctx.fillText(initials, avatarX, cy);
     }
 
-    // Nama & Role
+    // Nama & Role (dengan truncation ellipsis otomatis saat kolom disusutkan)
     const textStartX = avatarX + avatarRadius + 8;
-    if (role) {
-      // Dua baris (Nama di atas, Role di bawah)
-      ctx.font = `500 11.5px ${FONT_SANS}`;
-      ctx.fillStyle = theme.textDark || '#ededed';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(name, textStartX, cy - 6);
+    const availableWidth = Math.max(0, rect.x + rect.width - padX - textStartX);
+    if (availableWidth > 4) {
+      if (role) {
+        // Dua baris (Nama di atas, Role di bawah)
+        ctx.font = `500 11.5px ${FONT_SANS}`;
+        ctx.fillStyle = theme.textDark || '#ededed';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+          potongTeksDenganEllipsis(ctx, name, availableWidth),
+          textStartX,
+          cy - 6
+        );
 
-      ctx.font = `400 10px ${FONT_SANS}`;
-      ctx.fillStyle = theme.textLight || '#a1a1aa';
-      ctx.fillText(role, textStartX, cy + 7);
-    } else {
-      // Satu baris vertikal tengah
-      ctx.font = `500 12px ${FONT_SANS}`;
-      ctx.fillStyle = theme.textDark || '#ededed';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(name, textStartX, cy);
+        ctx.font = `400 10px ${FONT_SANS}`;
+        ctx.fillStyle = theme.textLight || '#a1a1aa';
+        ctx.fillText(
+          potongTeksDenganEllipsis(ctx, role, availableWidth),
+          textStartX,
+          cy + 7
+        );
+      } else {
+        // Satu baris vertikal tengah
+        ctx.font = `500 12px ${FONT_SANS}`;
+        ctx.fillStyle = theme.textDark || '#ededed';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+          potongTeksDenganEllipsis(ctx, name, availableWidth),
+          textStartX,
+          cy
+        );
+      }
     }
 
     ctx.restore();
