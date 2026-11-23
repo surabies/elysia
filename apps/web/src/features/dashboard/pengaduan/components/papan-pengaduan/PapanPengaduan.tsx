@@ -284,9 +284,10 @@ export function PapanPengaduan({
 
   // Memoize konten kolom kiri & konten dalam panel kanan agar TIDAK ikut re-render
   // saat panelWidth / isResizing berubah pada setiap pixel mousemove (persis {children} di DashboardShell.tsx)
+  // PENTING: Jangan pasang overflow-hidden pada wrapper kolom kiri agar floating button (-top-3 / -bottom-3) tidak terpotong.
   const kolomKiriElement = React.useMemo(
     () => (
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-3">
         <PengaduanHeader
           stat={stat}
           onRefresh={handleRefreshAll}
@@ -306,21 +307,38 @@ export function PapanPengaduan({
 
         <div className="relative group/table-top flex min-h-0 min-w-0 flex-1 flex-col">
           {!kpiTerbuka && (
-            <button
-              type="button"
-              aria-label="Tampilkan kartu KPI"
-              title="Tampilkan kartu KPI"
-              onClick={toggleKpi}
-              className={cn(
-                "absolute -top-3 left-1/2 -translate-x-1/2 z-30",
-                "size-6 rounded-full border border-border bg-card",
-                "grid place-content-center cursor-pointer transition-opacity duration-150",
-                "opacity-0 group-hover/table-top:opacity-100 focus-visible:opacity-100 shadow-xs",
-                "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800"
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5">
+              {!headerTerbuka && (
+                <button
+                  type="button"
+                  aria-label="Tampilkan panel judul"
+                  title="Tampilkan panel judul"
+                  onClick={toggleHeader}
+                  className={cn(
+                    "size-6 rounded-full border border-border bg-card",
+                    "grid place-content-center cursor-pointer transition-opacity duration-150",
+                    "opacity-0 pointer-events-none group-hover/table-top:opacity-100 group-hover/table-top:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto shadow-xs",
+                    "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800"
+                  )}
+                >
+                  <ChevronDown className="size-3.5 text-muted-foreground" />
+                </button>
               )}
-            >
-              <ChevronDown className="size-3.5 text-muted-foreground" />
-            </button>
+              <button
+                type="button"
+                aria-label="Tampilkan kartu KPI"
+                title="Tampilkan kartu KPI"
+                onClick={toggleKpi}
+                className={cn(
+                  "size-6 rounded-full border border-border bg-card",
+                  "grid place-content-center cursor-pointer transition-opacity duration-150",
+                  "opacity-0 pointer-events-none group-hover/table-top:opacity-100 group-hover/table-top:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto shadow-xs",
+                  "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800"
+                )}
+              >
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </button>
+            </div>
           )}
 
           <TabelPengaduanGlide

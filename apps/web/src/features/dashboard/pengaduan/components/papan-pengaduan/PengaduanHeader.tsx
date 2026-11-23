@@ -359,7 +359,7 @@ export function PengaduanHeader({
             "absolute -bottom-3 left-1/2 -translate-x-1/2 z-30",
             "size-6 rounded-full border border-border bg-card",
             "grid place-content-center cursor-pointer transition-opacity duration-150",
-            "opacity-0 group-hover/header:opacity-100 focus-visible:opacity-100 shadow-xs",
+            "opacity-0 pointer-events-none group-hover/header:opacity-100 group-hover/header:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto shadow-xs",
             "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800"
           )}
         >

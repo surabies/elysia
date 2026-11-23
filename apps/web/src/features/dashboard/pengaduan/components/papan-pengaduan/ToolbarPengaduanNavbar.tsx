@@ -7,14 +7,7 @@
 //          + Filter Periode (persis Panel Dashboard) + Segarkan + Indicator Dot Status Baris + Sortir Per Baris (Tanpa Paginasi)
 
 import * as React from "react";
-import {
-  BarChart3,
-  LayoutTemplate,
-  PanelRight,
-  RotateCcw,
-  Search,
-  X,
-} from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -145,75 +138,15 @@ export function ToolbarPengaduanNavbar({
         </div>
       </div>
 
-      {/* SISI KANAN: Ringkasan Sebaris + Restore Trigger + Filter Periode (persis Panel Dashboard) + Status Baris + Sortir Per Baris */}
+      {/* SISI KANAN: Ringkasan Sebaris + Filter Periode (persis Panel Dashboard) + Status Baris + Sortir Per Baris */}
       <div className="flex items-center gap-1.5 shrink-0">
         {!kpiTerbuka && stat && <RingkasanPengaduanSebaris stat={stat} />}
 
         <div
           className="flex items-center gap-1 shrink-0"
           role="toolbar"
-          aria-label="Kontrol Pemulihan Panel & Filter Periode"
+          aria-label="Filter Periode & Penyegaran Data"
         >
-          {!headerTerbuka && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="Tampilkan panel judul"
-                  onClick={onToggleHeader}
-                  className="h-8 w-8 relative shrink-0 transition-colors duration-150 cursor-pointer border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground shadow-none"
-                >
-                  <LayoutTemplate className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                Tampilkan Panel Judul
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {!kpiTerbuka && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="Tampilkan kartu KPI"
-                  onClick={onToggleKpi}
-                  className="h-8 w-8 relative shrink-0 transition-colors duration-150 cursor-pointer border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground shadow-none"
-                >
-                  <BarChart3 className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                Tampilkan Kartu KPI
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {!detailTerbuka && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="Tampilkan panel detail kanan"
-                  onClick={onToggleDetail}
-                  className="h-8 w-8 relative shrink-0 transition-colors duration-150 cursor-pointer border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground shadow-none"
-                >
-                  <PanelRight className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                Tampilkan Panel Detail Kanan
-              </TooltipContent>
-            </Tooltip>
-          )}
-
           {/* Pemilih Periode (Disamakan dengan Panel Dashboard RingkasanHeader.tsx) */}
           <Select value={periode} onValueChange={onPeriodeChange}>
             <SelectTrigger

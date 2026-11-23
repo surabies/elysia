@@ -66,10 +66,10 @@ export function KartuStatistik({
           title="Tampilkan panel judul"
           onClick={onToggleHeader}
           className={cn(
-            "absolute -top-2.5 left-1/2 -translate-x-1/2 z-30",
+            "absolute -top-3 left-1/2 -translate-x-1/2 z-30",
             "size-6 rounded-full border border-border bg-card",
             "grid place-content-center cursor-pointer transition-opacity duration-150",
-            "opacity-0 group-hover/kpi:opacity-100 focus-visible:opacity-100 shadow-xs",
+            "opacity-0 pointer-events-none group-hover/kpi:opacity-100 group-hover/kpi:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto shadow-xs",
             "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800"
           )}
         >
@@ -214,7 +214,7 @@ export function KartuStatistik({
             "absolute -bottom-3 left-1/2 -translate-x-1/2 z-30",
             "size-6 rounded-full border border-border bg-card",
             "grid place-content-center cursor-pointer transition-opacity duration-150",
-            "opacity-0 group-hover/kpi:opacity-100 focus-visible:opacity-100 shadow-xs",
+            "opacity-0 pointer-events-none group-hover/kpi:opacity-100 group-hover/kpi:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto shadow-xs",
             "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800"
           )}
         >
