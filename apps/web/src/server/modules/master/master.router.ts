@@ -100,7 +100,8 @@ export const masterRouter = new Elysia({ prefix: '/master' })
       try {
         const result = await masterPetugasService.assignRute(
           body.ruteKode,
-          body.petugasId ?? null
+          body.petugasId ?? null,
+          body.statusSementara ?? false
         );
         return { success: true, data: result };
       } catch (err: any) {
@@ -112,6 +113,31 @@ export const masterRouter = new Elysia({ prefix: '/master' })
       body: t.Object({
         ruteKode: t.String(),
         petugasId: t.Nullable(t.String()),
+        statusSementara: t.Optional(t.Boolean()),
+      }),
+    }
+  )
+
+  // 5b. Update urutan rute baca petugas
+  .post(
+    '/pemetaan-petugas/urutan-rute',
+    async ({ body, set }) => {
+      try {
+        const result = await masterPetugasService.updateUrutanRutePetugas(body.items);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      body: t.Object({
+        items: t.Array(
+          t.Object({
+            ruteKode: t.String(),
+            noUrut: t.Number(),
+          })
+        ),
       }),
     }
   )

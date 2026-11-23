@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, boolean, timestamp, integer } from 'drizzle-orm/pg-core';
 
 // 1. Wilayah Administrasi (e.g. C = CIBEUNYING, K = KAREES)
 export const wilayahAdministrasi = pgTable('wilayah_administrasi', {
@@ -44,6 +44,8 @@ export const ruteCater = pgTable('rute_cater', {
   seksiKode: varchar('seksi_kode', { length: 20 }), // e.g. 'C4'
   seksiNama: varchar('seksi_nama', { length: 100 }), // e.g. 'WIL CATER 4'
   pencatatDefault: varchar('pencatat_default', { length: 50 }).references(() => petugasCater.id),
+  statusSementara: boolean('status_sementara').notNull().default(false),
+  noUrut: integer('no_urut').notNull().default(1),
 });
 
 export type WilayahAdministrasi = typeof wilayahAdministrasi.$inferSelect;

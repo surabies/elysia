@@ -24,6 +24,15 @@ export interface RuteMappingItem {
   pencatatDefault: string | null;
   namaPetugas: string | null;
   totalPelanggan: number;
+  statusSementara: boolean;
+  noUrut: number;
+}
+
+export interface PetugasSummaryOption {
+  id: string;
+  nama: string;
+  totalRute: number;
+  totalSl: number;
 }
 
 export class MasterPetugasService {
@@ -73,11 +82,16 @@ export class MasterPetugasService {
    */
   async getPemetaanRute(): Promise<{
     rute: RuteMappingItem[];
-    petugasOptions: { id: string; nama: string }[];
+    petugasOptions: PetugasSummaryOption[];
+    wilayahOptions: { kode: string; nama: string }[];
   }> {
     const [routes, listPetugas, pelangganPerRute] = await Promise.all([
-      db.select().from(ruteCater).orderBy(ruteCater.kode),
-      db.select({ id: petugasCater.id, nama: petugasCater.nama }).from(petugasCater).where(eq(petugasCater.aktif, true)),
+      db.select().from(ruteCater).orderBy(ruteCater.noUrut, ruteCater.kode),
+      db
+        .select({ id: petugasCater.id, nama: petugasCater.nama })
+        .from(petugasCater)
+        .where(eq(petugasCater.aktif, true))
+        .orderBy(petugasCater.nama),
       db
         .select({
           ruteKode: pelanggan.ruteKode,
@@ -97,11 +111,46 @@ export class MasterPetugasService {
       pencatatDefault: r.pencatatDefault,
       namaPetugas: r.pencatatDefault ? petMap.get(r.pencatatDefault) ?? r.pencatatDefault : null,
       totalPelanggan: pelMap.get(r.kode) ?? 0,
+      statusSementara: Boolean(r.statusSementara),
+      noUrut: r.noUrut ?? 1,
     }));
+
+    // Agregasi beban kerja per petugas
+    const petugasStatsMap = new Map<string, { totalRute: number; totalSl: number }>();
+    for (const r of ruteItems) {
+      if (r.pencatatDefault) {
+        const curr = petugasStatsMap.get(r.pencatatDefault) || { totalRute: 0, totalSl: 0 };
+        curr.totalRute += 1;
+        curr.totalSl += r.totalPelanggan;
+        petugasStatsMap.set(r.pencatatDefault, curr);
+      }
+    }
+
+    const enhancedPetugas: PetugasSummaryOption[] = listPetugas.map((p) => {
+      const stats = petugasStatsMap.get(p.id) || { totalRute: 0, totalSl: 0 };
+      return {
+        id: p.id,
+        nama: p.nama,
+        totalRute: stats.totalRute,
+        totalSl: stats.totalSl,
+      };
+    });
+
+    // Opsi wilayah unik dari seksiKode / seksiNama
+    const wilayahMap = new Map<string, string>();
+    for (const r of routes) {
+      const wKode = r.seksiKode || 'UMUM';
+      const wNama = r.seksiNama || r.seksiKode || 'Wilayah Umum';
+      if (!wilayahMap.has(wKode)) {
+        wilayahMap.set(wKode, wNama);
+      }
+    }
+    const wilayahOptions = Array.from(wilayahMap.entries()).map(([kode, nama]) => ({ kode, nama }));
 
     return {
       rute: ruteItems,
-      petugasOptions: listPetugas,
+      petugasOptions: enhancedPetugas,
+      wilayahOptions,
     };
   }
 
@@ -138,15 +187,33 @@ export class MasterPetugasService {
   }
 
   /**
-   * Menugaskan satu rute ke petugas tertentu
+   * Menugaskan satu rute ke petugas tertentu (atau unassign jika petugasId = null)
    */
-  async assignRute(ruteKode: string, petugasId: string | null) {
+  async assignRute(ruteKode: string, petugasId: string | null, statusSementara: boolean = false) {
     const [updated] = await db
       .update(ruteCater)
-      .set({ pencatatDefault: petugasId })
+      .set({
+        pencatatDefault: petugasId,
+        statusSementara: petugasId ? statusSementara : false,
+      })
       .where(eq(ruteCater.kode, ruteKode))
       .returning();
     return updated;
+  }
+
+  /**
+   * Update urutan langkah nomor rute baca per petugas
+   */
+  async updateUrutanRutePetugas(items: { ruteKode: string; noUrut: number }[]) {
+    await db.transaction(async (tx) => {
+      for (const item of items) {
+        await tx
+          .update(ruteCater)
+          .set({ noUrut: item.noUrut })
+          .where(eq(ruteCater.kode, item.ruteKode));
+      }
+    });
+    return { success: true, count: items.length };
   }
 
   /**
