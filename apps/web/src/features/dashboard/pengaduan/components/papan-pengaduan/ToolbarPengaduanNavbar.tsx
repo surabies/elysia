@@ -114,7 +114,7 @@ export function ToolbarPengaduanNavbar({
           <Input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Cari tiket, judul, pelapor…"
+            placeholder="Cari tiket, jenis, pelapor…"
             className="h-8 pl-8 pr-7 text-xs bg-background border-border/60 hover:border-border rounded-md shadow-none"
           />
           {search && (

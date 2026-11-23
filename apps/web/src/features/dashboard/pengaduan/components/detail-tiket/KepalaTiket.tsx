@@ -74,19 +74,18 @@ export function KepalaTiket({
   return (
     <header className="shrink-0 border-b border-border pb-4">
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-        {/* Kiri: identitas */}
+        {/* Kiri: identitas (Nomor Tiket & Jenis Pengaduan — Tanpa Judul) */}
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border/80 shadow-2xs">
               {detail.nomorTiket}
             </span>
             <h2 className="text-xl font-semibold tracking-tight">
-              {detail.judul}
+              {LABEL_JENIS_PENGADUAN[detail.jenis] ?? detail.jenis}
             </h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            {LABEL_JENIS_PENGADUAN[detail.jenis] ?? detail.jenis} · masuk{" "}
-            {formatWaktu(detail.createdAt)} WIB
+            Masuk {formatWaktu(detail.createdAt)} WIB
           </p>
         </div>
 

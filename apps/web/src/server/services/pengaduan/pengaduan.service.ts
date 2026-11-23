@@ -277,12 +277,9 @@ export class PengaduanService {
       }
     }
 
-    // Auto-generate judul terstandar jika tidak disertakan secara manual
+    // Struktur baru: pelaporan tidak lagi menggunakan judul bebas, melainkan langsung nama Jenis Pengaduan
     const labelJenis = LABEL_JENIS_PENGADUAN[input.jenis] ?? input.jenis;
-    const ringkasanAlamat = input.alamatKejadian?.trim() ? ` (${input.alamatKejadian.trim().slice(0, 40)})` : '';
-    const cuplikanDeskripsi = input.deskripsi.trim().slice(0, 60);
-    const autoJudul = `${labelJenis}${ringkasanAlamat} — ${cuplikanDeskripsi}`;
-    const finalJudul = (input.judul?.trim() || autoJudul).slice(0, 255);
+    const finalJudul = labelJenis.slice(0, 255);
 
     // B4: Retry loop maks 3x untuk menjamin nomor tiket unik dan atomik
     let attempt = 0;

@@ -118,7 +118,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00801100260',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'BOCOR_PIPA_DINAS',
-      judul: 'Pipa dinas bocor deras menyembur di depan ruko',
+      judul: 'Bocor pipa dinas',
       deskripsi:
         'Pipa dinas distribusi pecah di pinggir trotoar jalan depan toko, air menyembur deras hingga meluber ke jalan raya. Mohon segera dikirim tim reaksi cepat tanggap darurat.',
       alamatKejadian: 'Jl. ABC No. 28, Kel. Braga, Kec. Sumur Bandung',
@@ -149,7 +149,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00401200610',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'AIR_KERUH_BAU_BERWARNA',
-      judul: 'Air kran berwarna kecoklatan dan berbau lumpur',
+      judul: 'Air keruh, berbau, atau berwarna',
       deskripsi:
         'Kran air keluar keruh coklat pekat sejak subuh tadi, endapan lumpur banyak sekali di bak penampungan dan berbau besi. Tidak layak dipakai mandi maupun konsumsi.',
       alamatKejadian: 'Jl. Lengkong Dalam No. 3, Kel. Pungkur, Kec. Regol',
@@ -190,7 +190,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00801950265',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'PENCATATAN_METER_TIDAK_SESUAI',
-      judul: 'Jarum water meter macet tidak berputar',
+      judul: 'Pencatatan meter tidak sesuai',
       deskripsi:
         'Meskipun kran dibuka penuh dan air mengalir normal ke rumah, jarum dial meteran air macet di angka 0142 m3. Khawatir perhitungan kubikasi tidak akurat saat pencatatan.',
       alamatKejadian: 'Jl. Pangarang Bawah No. 47, Kel. Cikawao, Kec. Lengkong',
@@ -231,7 +231,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00401700903',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'TIDAK_ADA_AIR',
-      judul: 'Air mati total satu gang sejak sore kemarin',
+      judul: 'Tidak ada air',
       deskripsi:
         'Aliran air PDAM mati total sejak sore kemarin di sepanjang Gang H. Umar. Beberapa tetangga juga melaporkan hal yang sama, diduga ada gate valve distribusi yang macet/tertutup.',
       alamatKejadian: 'Gang H. Umar No. 25A, Kel. Ciateul, Kec. Regol',
@@ -281,7 +281,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00402000426',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'PASANGAN_LIAR',
-      judul: 'Dugaan sambungan pipa ilegal sebelum meteran air',
+      judul: 'Pasangan liar',
       deskripsi:
         'Laporan penertiban: ditemukan adanya sambungan pipa T ilegal sebelum meteran air di halaman samping bangunan ruko kosong. Air dialirkan secara ilegal ke tangki penampungan.',
       alamatKejadian: 'Jl. Ciateul No. 74-A, Kel. Ciateul, Kec. Regol',
@@ -338,7 +338,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00402200655',
       klasifikasi: 'NILAI_TAGIHAN_REKENING',
       jenis: 'LONJAKAN_PEMAKAIAN_AIR',
-      judul: 'Tagihan air membengkak 3 kali lipat dari rata-rata',
+      judul: 'Lonjakan pemakaian air',
       deskripsi:
         'Tagihan air bulan ini melonjak menjadi 65 m3 padahal rata-rata pemakaian 3 bulan terakhir hanya 18-20 m3. Pelanggan memohon pemeriksaan kebocoran pipa instalasi dalam rumah.',
       alamatKejadian: 'Jl. Akil No. 1A, Kel. Balonggede, Kec. Regol',
@@ -388,7 +388,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00402300417',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'GANTI_STOP_KRAN',
-      judul: 'Stop kran sebelum meteran patah dan merembes',
+      judul: 'Ganti stop kran',
       deskripsi:
         'Handle stop kran sebelum meter air patah saat mau ditutup, air merembes keluar terus menerus membasahi tembok pagar rumah.',
       alamatKejadian: 'Jl. Akil No. 10 Pav, Kel. Balonggede, Kec. Regol',
@@ -451,7 +451,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00404300110',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'LAPOR_STAND_METER',
-      judul: 'Pelaporan mandiri stand meter bulan berjalan',
+      judul: 'Lapor stand meter',
       deskripsi:
         'Laporan angka stand meter mandiri oleh pelanggan karena gerbang pagar digembok saat petugas cater melintas.',
       alamatKejadian: 'Jl. Murni I No. 18, Kel. Ciateul, Kec. Regol',
@@ -502,7 +502,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00402500522',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'BOCOR_PIPA_DINAS',
-      judul: 'Kebocoran pipa bawah aspal jalan raya',
+      judul: 'Bocor pipa dinas',
       deskripsi:
         'Pipa bocor di bawah lapisan aspal jalan raya yang padat lalu lintas. Diperlukan koordinasi izin pembongkaran jalan dari Dinas Bina Marga/PU setempat.',
       alamatKejadian: 'Jl. Pungkur No. 109B, Kel. Pungkur, Kec. Regol',
@@ -560,7 +560,7 @@ export async function seedPengaduan() {
       nomorLangganan: '00801700080',
       klasifikasi: 'BUKAN_NILAI_TAGIHAN_REKENING',
       jenis: 'MUTASI_GOLONGAN_TARIF',
-      judul: 'Permohonan mutasi tarif Niaga ke Sosial untuk rumah ibadah',
+      judul: 'Mutasi golongan tarif',
       deskripsi:
         'Pelanggan memohon penyesuaian golongan tarif dari Niaga 2 ke Sosial A karena gedung telah diwakafkan menjadi musholla dan sarana pendidikan anak.',
       alamatKejadian: 'Jl. Dalem Kaum No. 33, Kel. Balonggede, Kec. Regol',

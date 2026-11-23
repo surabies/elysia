@@ -344,10 +344,9 @@ function opsiPopup(
         : undefined,
       baris: [
         {
-          label: "Kategori pengaduan",
+          label: "Jenis pengaduan",
           value: jenis ? formatLabel(jenis) : null,
         },
-        { label: "Judul", value: propertiTeks(properties, "judul") },
         { label: "Alamat kejadian", value: propertiTeks(properties, "alamat") },
         { label: "Kelurahan", value: propertiTeks(properties, "kelurahan") },
         { label: "Kecamatan", value: propertiTeks(properties, "kecamatan") },

@@ -222,7 +222,7 @@ export function TabelPengaduanGlide({
     }
   };
 
-  // Definisi Kolom Glide Data Grid
+  // Definisi Kolom Glide Data Grid (Tanpa Kolom Judul — Menggunakan Jenis Pengaduan Sesuai Form Pelaporan Baru)
   const columns = React.useMemo<GridColumn[]>(() => {
     return [
       {
@@ -242,17 +242,9 @@ export function TabelPengaduanGlide({
         menuIcon: GridColumnMenuIcon.Dots,
       },
       {
-        title: 'Judul Pengaduan',
-        id: 'judul',
-        width: manualColumnSizes.judul ?? 260,
-        icon: GridColumnIcon.HeaderString,
-        hasMenu: true,
-        menuIcon: GridColumnMenuIcon.Dots,
-      },
-      {
-        title: 'Jenis',
+        title: 'Jenis Pengaduan',
         id: 'jenis',
-        width: manualColumnSizes.jenis ?? 140,
+        width: manualColumnSizes.jenis ?? 220,
         icon: GridColumnIcon.HeaderString,
         hasMenu: true,
         menuIcon: GridColumnMenuIcon.Dots,
@@ -291,7 +283,7 @@ export function TabelPengaduanGlide({
       {
         title: 'Pelapor',
         id: 'pelapor',
-        width: manualColumnSizes.pelapor ?? 130,
+        width: manualColumnSizes.pelapor ?? 140,
         hasMenu: true,
         menuIcon: GridColumnMenuIcon.Dots,
       },
@@ -355,18 +347,8 @@ export function TabelPengaduanGlide({
           };
         }
 
-        case 2: // Judul Pengaduan
-          return {
-            kind: GridCellKind.Text,
-            data: item.judul || '-',
-            displayData: item.judul || '-',
-            allowOverlay: false,
-            contentAlign: 'left',
-            themeOverride: activeBg ? { ...boldSansTheme, bgCell: activeBg } : boldSansTheme,
-          };
-
-        case 3: {
-          // Jenis
+        case 2: {
+          // Jenis Pengaduan
           const labelJenis = LABEL_JENIS_PENGADUAN[item.jenis] || item.jenis || '-';
           return {
             kind: GridCellKind.Text,
@@ -374,11 +356,11 @@ export function TabelPengaduanGlide({
             displayData: labelJenis,
             allowOverlay: false,
             contentAlign: 'left',
-            themeOverride: baseThemeOverride,
+            themeOverride: activeBg ? { ...boldSansTheme, bgCell: activeBg } : boldSansTheme,
           };
         }
 
-        case 4: {
+        case 3: {
           // Prioritas (Badge)
           let tone: BadgeTone = 'gray';
           if (item.prioritas === 'DARURAT') tone = 'red';
@@ -400,7 +382,7 @@ export function TabelPengaduanGlide({
           return cell;
         }
 
-        case 5: {
+        case 4: {
           // Status (Badge)
           let tone: BadgeTone = 'gray';
           if (item.status === 'SELESAI') tone = 'green';
@@ -425,7 +407,7 @@ export function TabelPengaduanGlide({
           return cell;
         }
 
-        case 6: {
+        case 5: {
           // Sisa SLA
           const sla = item.sla;
           if (!sla) {
@@ -495,7 +477,7 @@ export function TabelPengaduanGlide({
           return cell;
         }
 
-        case 7: {
+        case 6: {
           // Petugas Lapangan (UserProfileCell)
           const namaPetugas = item.ditugaskanKe?.name || 'Belum Ditugaskan';
           if (!item.ditugaskanKe?.name) {
@@ -517,7 +499,7 @@ export function TabelPengaduanGlide({
           return activeBg ? { ...profileCell, themeOverride: baseThemeOverride } : profileCell;
         }
 
-        case 8: // Pelapor
+        case 7: // Pelapor
           return {
             kind: GridCellKind.Text,
             data: item.pelapor || '-',
@@ -527,7 +509,7 @@ export function TabelPengaduanGlide({
             themeOverride: baseThemeOverride,
           };
 
-        case 9: // Waktu Masuk
+        case 8: // Waktu Masuk
           return {
             kind: GridCellKind.Text,
             data: item.createdAt,
@@ -537,7 +519,7 @@ export function TabelPengaduanGlide({
             themeOverride: baseThemeOverride,
           };
 
-        case 10: {
+        case 9: {
           // Aksi Detail (ActionButtonCell)
           const cell: ActionButtonGridCell = {
             kind: GridCellKind.Custom,
@@ -571,7 +553,7 @@ export function TabelPengaduanGlide({
         return;
       }
 
-      if (col === 10 || col === 0) {
+      if (col === 9 || col === 0) {
         router.push(`/pengaduan/${selected.id}`);
       }
     },

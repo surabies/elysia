@@ -207,8 +207,7 @@ export function LembarCetak({
             <SeksiJudul nomor="II" judul="Uraian Perkara & Kronologi Gangguan" />
             <div className="rounded-sm border border-slate-200 bg-slate-50/50 p-2.5">
               <dl className="grid grid-cols-2 gap-x-6 gap-y-2">
-                <ItemData label="Perihal / Pokok Aduan">{detail.judul}</ItemData>
-                <ItemData label="Kategori Aduan">
+                <ItemData label="Jenis Pengaduan" lebar>
                   {LABEL_JENIS_PENGADUAN[detail.jenis] ?? detail.jenis}
                 </ItemData>
                 <ItemData label="Waktu Masuk Aduan">

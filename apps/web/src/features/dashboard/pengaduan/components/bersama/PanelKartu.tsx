@@ -21,7 +21,7 @@ export function PanelKartu({
   children: React.ReactNode
 }) {
   return (
-    <section className={cn("flex flex-col gap-3 px-3.5 py-3.5", className)}>
+    <section className={cn("flex flex-col gap-3 py-3.5", className)}>
       <header className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {Ikon && (

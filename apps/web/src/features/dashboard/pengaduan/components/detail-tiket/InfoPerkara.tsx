@@ -57,15 +57,12 @@ export function InfoPerkara({ detail }: { detail: PengaduanDetail }) {
         </div>
       }
     >
-      {/* 1. Judul Lengkap & Deskripsi Keluhan (Langsung tanpa container pembungkus ganda) */}
+      {/* 1. Jenis Keluhan, Waktu Laporan & Keterangan Detail (Tanpa Judul Pengaduan) */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground font-mono">
           <span>Dilaporkan {formatWaktu(detail.createdAt)} WIB</span>
         </div>
-        <h3 className="text-sm font-semibold text-foreground leading-snug">
-          {detail.judul}
-        </h3>
-        <p className="text-xs @[420px]/detail:text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+        <p className="text-xs @[420px]/detail:text-sm text-foreground whitespace-pre-wrap leading-relaxed">
           {detail.deskripsi}
         </p>
       </div>
