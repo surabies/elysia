@@ -3,18 +3,17 @@ import { cookies } from "next/headers";
 import { auth } from "@/lib/auth/index";
 import { dashboardService } from "@/server/services/dashboard/dashboard.service";
 import { pengaduanService } from "@/server/services/pengaduan/pengaduan.service";
-import {
-  PapanPengaduan,
-  DEFAULT_PENGADUAN_PANEL_WIDTH,
-  MIN_PENGADUAN_PANEL_WIDTH,
-  MAX_PENGADUAN_PANEL_WIDTH,
-} from "@/features/dashboard/pengaduan/components/papan-pengaduan/index";
+import { PapanPengaduan } from "@/features/dashboard/pengaduan/components/papan-pengaduan/index";
 import type {
   PengaduanBaris,
   PengaduanDetail,
   PetugasRingkas,
   StatistikPengaduan,
 } from "@/features/dashboard/pengaduan/types/TipePengaduan";
+
+const MIN_PANEL_WIDTH = 340;
+const MAX_PANEL_WIDTH = 640;
+const DEFAULT_PANEL_WIDTH = 420;
 
 export const dynamic = "force-dynamic";
 
@@ -78,16 +77,16 @@ export default async function PengaduanDashboardPage({
       .catch(() => null)) as unknown as PengaduanDetail | null;
   }
 
+  // PENTING: Gunakan angka literal di Server Component (persis app/(dashboard)/layout.tsx)
+  // karena konstanta yang di-export dari file "use client" menjadi React Client Reference Proxy di server.
   const rawWidth = cookieStore.get("pengaduan_panel_width")?.value;
-  const parsedWidth = rawWidth
-    ? parseInt(rawWidth, 10)
-    : DEFAULT_PENGADUAN_PANEL_WIDTH;
+  const parsedWidth = rawWidth ? parseInt(rawWidth, 10) : DEFAULT_PANEL_WIDTH;
   const defaultPanelWidth =
     !isNaN(parsedWidth) &&
-    parsedWidth >= MIN_PENGADUAN_PANEL_WIDTH &&
-    parsedWidth <= MAX_PENGADUAN_PANEL_WIDTH
+    parsedWidth >= MIN_PANEL_WIDTH &&
+    parsedWidth <= MAX_PANEL_WIDTH
       ? parsedWidth
-      : DEFAULT_PENGADUAN_PANEL_WIDTH;
+      : DEFAULT_PANEL_WIDTH;
 
   const rawPanelOpen = cookieStore.get("pengaduan_panel_open")?.value;
   const defaultPanelOpen =

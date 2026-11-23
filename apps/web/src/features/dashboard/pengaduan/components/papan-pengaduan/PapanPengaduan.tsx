@@ -104,7 +104,7 @@ export function PapanPengaduan({
     return () => clearTimeout(timer);
   }, []);
 
-  // Inisialisasi properti CSS di sisi client dan sinkronisasi cookie & localStorage (1:1 SidebarContext.tsx)
+  // Inisialisasi properti CSS di sisi client dan sinkronisasi cookie & localStorage
   React.useEffect(() => {
     document.documentElement.style.setProperty(
       "--pengaduan-panel-width",
@@ -112,34 +112,17 @@ export function PapanPengaduan({
     );
 
     try {
-      const savedState = localStorage.getItem(PANEL_OPEN_STORAGE_KEY);
-      const savedWidth = localStorage.getItem(PANEL_WIDTH_STORAGE_KEY);
-      const savedHeader = localStorage.getItem(HEADER_OPEN_STORAGE_KEY);
-      const savedKpi = localStorage.getItem(KPI_OPEN_STORAGE_KEY);
+      localStorage.setItem(PANEL_OPEN_STORAGE_KEY, String(detailTerbuka));
+      document.cookie = `${PANEL_OPEN_COOKIE}=${detailTerbuka}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 
-      if (savedState !== null) {
-        document.cookie = `${PANEL_OPEN_COOKIE}=${savedState}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-      } else {
-        localStorage.setItem(PANEL_OPEN_STORAGE_KEY, String(detailTerbuka));
-      }
+      localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(panelWidth));
+      document.cookie = `${PANEL_WIDTH_COOKIE}=${panelWidth}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 
-      if (savedWidth !== null) {
-        document.cookie = `${PANEL_WIDTH_COOKIE}=${savedWidth}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-      } else {
-        localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(panelWidth));
-      }
+      localStorage.setItem(HEADER_OPEN_STORAGE_KEY, String(headerTerbuka));
+      document.cookie = `${HEADER_OPEN_COOKIE}=${headerTerbuka}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 
-      if (savedHeader !== null) {
-        document.cookie = `${HEADER_OPEN_COOKIE}=${savedHeader}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-      } else {
-        localStorage.setItem(HEADER_OPEN_STORAGE_KEY, String(headerTerbuka));
-      }
-
-      if (savedKpi !== null) {
-        document.cookie = `${KPI_OPEN_COOKIE}=${savedKpi}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-      } else {
-        localStorage.setItem(KPI_OPEN_STORAGE_KEY, String(kpiTerbuka));
-      }
+      localStorage.setItem(KPI_OPEN_STORAGE_KEY, String(kpiTerbuka));
+      document.cookie = `${KPI_OPEN_COOKIE}=${kpiTerbuka}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
     } catch {
       // Abaikan jika localStorage tidak tersedia
     }

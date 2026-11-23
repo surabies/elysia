@@ -59,6 +59,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var m=document.cookie.match(/(?:^|; )sidebar_width=(\\d+)/);var w=m?m[1]:localStorage.getItem("elysia-sidebar-width");if(w){var n=parseInt(w,10);if(n>=256&&n<=420){document.documentElement.style.setProperty("--sidebar-width",n+"px");}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}else{document.documentElement.style.setProperty("--sidebar-width","256px");}}catch(e){}
+try{var mp=document.cookie.match(/(?:^|; )pengaduan_panel_width=(\\d+)/);var wp=mp?mp[1]:localStorage.getItem("elysia-pengaduan-panel-width");if(wp){var np=parseInt(wp,10);if(np>=340&&np<=640){document.documentElement.style.setProperty("--pengaduan-panel-width",np+"px");}else{document.documentElement.style.setProperty("--pengaduan-panel-width","420px");}}else{document.documentElement.style.setProperty("--pengaduan-panel-width","420px");}}catch(e){}
 try{if(location.hostname==="localhost"||location.hostname==="127.0.0.1"){if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(r){for(var i=0;i<r.length;i++){r[i].unregister();}});}if("caches" in window){caches.keys().then(function(k){for(var i=0;i<k.length;i++){caches.delete(k[i]);}});}}}catch(e){}`,
           }}
         />
