@@ -102,10 +102,18 @@ export interface StatistikPengaduan {
   belumDitugaskan: number
   rataRating: number | null
   jumlahDinilai: number
+  trenHarian?: Array<{
+    label: string
+    masuk: number
+    selesai: number
+  }>
 }
 
 export interface PetugasRingkas {
   id: string
   name: string | null
   role: string
+  level?: string | null
+  bagian?: string | null
+  jabatan?: string | null
 }

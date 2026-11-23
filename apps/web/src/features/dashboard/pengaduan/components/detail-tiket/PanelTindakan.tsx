@@ -124,7 +124,7 @@ export function PanelTindakan({
   return (
     <PanelKartu judul="Tindakan">
       {/* 1. Form Penugasan Petugas */}
-      <div className="flex gap-2">
+      <div className="flex gap-1.5 @[400px]/detail:gap-2">
         <PilihPetugas
           petugas={petugas}
           value={pilihPetugas}
@@ -134,7 +134,9 @@ export function PanelTindakan({
           disabled={mengirim}
         />
         <Button
-          className="shrink-0"
+          size="sm"
+          title="Tugaskan petugas terpilih"
+          className="h-9 shrink-0 px-2.5 @[380px]/detail:px-3"
           disabled={mengirim || !pilihPetugas}
           onClick={() =>
             kirim(() =>
@@ -145,14 +147,14 @@ export function PanelTindakan({
             )
           }
         >
-          <UserCheck />
-          Tugaskan
+          <UserCheck className="size-4 shrink-0" />
+          <span className="hidden @[360px]/detail:inline">Tugaskan</span>
         </Button>
       </div>
 
       {/* 2. Form Catatan Internal / Publik Cepat */}
       <Textarea
-        rows={3}
+        rows={2}
         placeholder="Catatan tindak lanjut… (dipakai oleh tombol di bawah)"
         value={catatan}
         onChange={(e) => setCatatan(e.target.value)}
@@ -183,9 +185,9 @@ export function PanelTindakan({
       </div>
 
       {/* 3. Baris Tombol Aksi Transisi */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         <Button
-          size="default"
+          size="sm"
           variant="outline"
           disabled={mengirim || !catatanBersih}
           onClick={() =>
@@ -197,7 +199,7 @@ export function PanelTindakan({
             )
           }
         >
-          {mengirim ? <Spinner className="size-3.5" /> : <Send />}
+          {mengirim ? <Spinner className="size-3.5" /> : <Send className="size-3.5" />}
           Tambah catatan
         </Button>
 
@@ -207,7 +209,7 @@ export function PanelTindakan({
             return (
               <Button
                 key={s}
-                size="default"
+                size="sm"
                 variant="destructive"
                 disabled={mengirim}
                 onClick={() => setDialogTolakBuka(true)}
@@ -223,7 +225,7 @@ export function PanelTindakan({
             return (
               <Button
                 key={s}
-                size="default"
+                size="sm"
                 variant="secondary"
                 disabled={mengirim}
                 onClick={() => setDialogJedaBuka(true)}
@@ -240,7 +242,7 @@ export function PanelTindakan({
           return (
             <Button
               key={s}
-              size="default"
+              size="sm"
               variant="secondary"
               disabled={tidakBoleh}
               title={

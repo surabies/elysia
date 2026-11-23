@@ -1,6 +1,7 @@
 // features/dashboard/pengaduan/components/detail-tiket/InfoPerkara.tsx —
-// duduk perkara: deskripsi + fakta tiket (pelapor, target, petugas, lokasi,
-// eskalasi, batas konfirmasi, penilaian).
+// Kartu "Duduk Perkara" (Ringkasan Perkara & Fakta Tiket):
+// Menampung Judul Lengkap Pengaduan, Badge Jenis Keluhan, Badge Prioritas, Waktu Masuk,
+// Deskripsi keluhan, serta grid fakta tiket (pelapor, target SLA, petugas, lokasi, eskalasi, penilaian).
 import {
   ArrowUpCircle,
   CircleUser,
@@ -8,33 +9,71 @@ import {
   MapPin,
   Star,
   UserCheck,
-  FileText,
-} from "@/components/ui/hugeicons-compat"
-import { formatWaktu } from "@/features/public/lib/format"
-import { BarisInfo } from "@/features/dashboard/pengaduan/components/bersama/BarisInfo"
-import { PanelKartu } from "@/features/dashboard/pengaduan/components/bersama/PanelKartu"
-import type { PengaduanDetail } from "@/features/dashboard/pengaduan/types/TipePengaduan"
+} from "@/components/ui/hugeicons-compat";
+import { Badge } from "@/components/ui/badge";
+import {
+  LABEL_JENIS_PENGADUAN,
+  formatWaktu,
+} from "@/features/public/lib/format";
+import { LABEL_PRIORITAS_PENGADUAN } from "@/features/dashboard/lib/LabelPengaduan";
+import { BarisInfo } from "@/features/dashboard/pengaduan/components/bersama/BarisInfo";
+import { PanelKartu } from "@/features/dashboard/pengaduan/components/bersama/PanelKartu";
+import { cn } from "@/lib/utils";
+import type {
+  PengaduanDetail,
+  PrioritasPengaduan,
+} from "@/features/dashboard/pengaduan/types/TipePengaduan";
+
+const TITIK_PRIORITAS: Record<PrioritasPengaduan, string> = {
+  DARURAT: "bg-destructive",
+  TINGGI: "bg-warning",
+  NORMAL: "bg-muted-foreground/60",
+  RENDAH: "bg-muted-foreground/30",
+};
 
 export function InfoPerkara({ detail }: { detail: PengaduanDetail }) {
   const wilayah = [detail.kelurahan?.nama, detail.kecamatan?.nama]
     .filter(Boolean)
-    .join(", ")
+    .join(", ");
 
   return (
-    <PanelKartu judul="Duduk perkara">
-      <p className="text-sm whitespace-pre-wrap">{detail.deskripsi}</p>
+    <PanelKartu
+      judul="Duduk perkara"
+      aksi={
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="blue-subtle" size="sm" className="text-[11px]">
+            {LABEL_JENIS_PENGADUAN[detail.jenis] ?? detail.jenis}
+          </Badge>
+          <Badge variant="outline" className="gap-1 text-[11px] h-5 px-2">
+            <span
+              aria-hidden
+              className={cn(
+                "size-1.5 rounded-full shrink-0",
+                TITIK_PRIORITAS[detail.prioritas]
+              )}
+            />
+            <span>{LABEL_PRIORITAS_PENGADUAN[detail.prioritas]}</span>
+          </Badge>
+        </div>
+      }
+    >
+      {/* 1. Judul Lengkap & Deskripsi Keluhan (Tidak lagi terpotong di header atas) */}
+      <div className="rounded-md border border-border/70 bg-muted/25 p-3 space-y-1.5">
+        <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground font-mono">
+          <span>Dilaporkan {formatWaktu(detail.createdAt)} WIB</span>
+        </div>
+        <h3 className="text-sm font-semibold text-foreground leading-snug">
+          {detail.judul}
+        </h3>
+        <p className="text-xs @[420px]/detail:text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+          {detail.deskripsi}
+        </p>
+      </div>
 
-      <div className="grid gap-4 border-t border-border-subtle pt-4 sm:grid-cols-2">
-        <BarisInfo ikon={FileText} label="Nomor Tiket">
-          <p className="font-mono font-semibold text-foreground tracking-wide">
-            {detail.nomorTiket}
-          </p>
-        </BarisInfo>
-
+      {/* 2. Grid Fakta Tiket */}
+      <div className="grid gap-3.5 border-t border-border-subtle pt-3.5 grid-cols-1 @[460px]/detail:grid-cols-2">
         <BarisInfo ikon={CircleUser} label="Pelapor">
-          <p>{detail.pelapor}</p>
-          {/* Kontak pelapor tampil di sini (sisi petugas), TIDAK pernah di
-              halaman publik. */}
+          <p className="font-medium text-foreground">{detail.pelapor}</p>
           {detail.kontakPelapor && (
             <p className="text-muted-foreground">{detail.kontakPelapor}</p>
           )}
@@ -60,8 +99,6 @@ export function InfoPerkara({ detail }: { detail: PengaduanDetail }) {
 
         <BarisInfo ikon={MapPin} label="Lokasi kejadian">
           <p>{detail.alamatKejadian ?? "—"}</p>
-          {/* Wilayah hasil auto-tag ST_Contains — bantu operator memilah
-              antrean per wilayah kerja tanpa menebak dari alamat teks. */}
           {wilayah && <p className="text-muted-foreground">{wilayah}</p>}
         </BarisInfo>
 
@@ -104,5 +141,5 @@ export function InfoPerkara({ detail }: { detail: PengaduanDetail }) {
         )}
       </div>
     </PanelKartu>
-  )
+  );
 }

@@ -105,6 +105,9 @@ export const listPengaduanQuerySchema = t.Object({
   status: t.Optional(statusPengaduanSchema),
   prioritas: t.Optional(prioritasPengaduanSchema),
   jenis: t.Optional(jenisPengaduanSchema),
+  periode: t.Optional(t.String()),
+  sortBy: t.Optional(t.String()),
+  sortDir: t.Optional(t.String()),
   ditugaskanKeId: t.Optional(t.String()),
   melanggarSla: t.Optional(t.Union([t.Boolean(), t.String()])),
 });

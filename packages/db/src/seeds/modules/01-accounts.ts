@@ -597,15 +597,19 @@ export async function seedAccounts(defaultPassword?: string) {
         },
       });
 
-    // 3. Reset & Seed RBAC User Roles (dengan bridging otomatis)
+    // 3. Reset & Seed RBAC User Roles (Verifikator V1/V2 khusus Bagian Pencatat Meter)
     await db.delete(userRoles).where(eq(userRoles.userId, acc.id));
     const rolesToAssign = new Set<string>(acc.roles);
 
-    if (rolesToAssign.has('SUPERVISOR')) rolesToAssign.add('VERIFIKATOR_1');
-    if (rolesToAssign.has('MANAGER')) rolesToAssign.add('VERIFIKATOR_2');
+    if (acc.bagian === 'PENCATAT_METER') {
+      if (rolesToAssign.has('SUPERVISOR')) rolesToAssign.add('VERIFIKATOR_1');
+      if (rolesToAssign.has('MANAGER')) rolesToAssign.add('VERIFIKATOR_2');
+    }
     if (rolesToAssign.has('SENIOR_MANAGER')) rolesToAssign.add('VERIFIKATOR_3');
     if (rolesToAssign.has('DIREKSI')) rolesToAssign.add('EXECUTIVE');
-    if (rolesToAssign.has('STAFF')) rolesToAssign.add('STAFF_ADMIN_BILLING');
+    if (rolesToAssign.has('STAFF') && acc.bagian !== 'DISTRIBUSI') {
+      rolesToAssign.add('STAFF_ADMIN_BILLING');
+    }
 
     for (const r of rolesToAssign) {
       await db.insert(userRoles).values({

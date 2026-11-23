@@ -13,6 +13,7 @@ import {
   pelanggan,
   user,
   userRoles,
+  pegawai,
   type PengaduanRow,
   type RiwayatPengaduanRow,
 } from '@cater/db';
@@ -492,10 +493,15 @@ export class PengaduanService {
       }
     }
 
-    // B3 & B6: Validasi kelayakan petugas lapangan tujuan
+    // B3 & B6: Validasi kelayakan petugas lapangan / pejabat penerima tugas
     const rolesLayak: AppRole[] = [
       'PELAKSANA',
       'PENCATAT',
+      'STAFF',
+      'STAFF_ADMIN_BILLING',
+      'SUPERVISOR',
+      'MANAGER',
+      'SENIOR_MANAGER',
       'VERIFIKATOR_1',
       'VERIFIKATOR_2',
       'VERIFIKATOR_3',
@@ -886,8 +892,7 @@ export class PengaduanService {
    * 7. Statistik Ringkasan Antrean Pengaduan (Dashboard Desk) (B11)
    * Agregasi SQL murni di database (GROUP BY / COUNT FILTER) tanpa memuat baris ke memori
    */
-  async getStatistikPengaduan() {
-    const sekarang = new Date();
+  async getStatistikPengaduan(periode?: string) {
     try {
       const STATUS_TERBUKA = [
         'BARU',
@@ -899,13 +904,19 @@ export class PengaduanService {
         'DIBUKA_KEMBALI',
       ];
 
-      const [statusRows, prioritasRows, agregatRows] = await Promise.all([
+      const filterPeriode =
+        periode && /^\d{6}$/.test(periode)
+          ? sql`TO_CHAR(${pengaduan.createdAt} AT TIME ZONE 'Asia/Jakarta', 'YYYYMM') = ${periode}`
+          : undefined;
+
+      const [statusRows, prioritasRows, agregatRows, trenHarianRows] = await Promise.all([
         db
           .select({
             status: pengaduan.status,
             jumlah: count(),
           })
           .from(pengaduan)
+          .where(filterPeriode)
           .groupBy(pengaduan.status),
 
         db
@@ -914,7 +925,11 @@ export class PengaduanService {
             jumlah: count(),
           })
           .from(pengaduan)
-          .where(inArray(pengaduan.status, STATUS_TERBUKA as any))
+          .where(
+            filterPeriode
+              ? and(inArray(pengaduan.status, STATUS_TERBUKA as any), filterPeriode)
+              : inArray(pengaduan.status, STATUS_TERBUKA as any)
+          )
           .groupBy(pengaduan.prioritas),
 
         db
@@ -935,7 +950,26 @@ export class PengaduanService {
               WHERE ${pengaduan.ratingKepuasan} IS NOT NULL AND ${pengaduan.ratingKepuasan} > 0
             ), 0)::int`,
           })
-          .from(pengaduan),
+          .from(pengaduan)
+          .where(filterPeriode),
+
+        db
+          .select({
+            tanggal: sql<string>`TO_CHAR(${pengaduan.createdAt} AT TIME ZONE 'Asia/Jakarta', 'DD Mon')`,
+            hariIso: sql<string>`TO_CHAR(${pengaduan.createdAt} AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD')`,
+            masuk: count(),
+            selesai: sql<number>`COALESCE(COUNT(*) FILTER (
+              WHERE ${pengaduan.status} IN ('SELESAI', 'DITUTUP')
+            ), 0)::int`,
+          })
+          .from(pengaduan)
+          .where(filterPeriode)
+          .groupBy(
+            sql`TO_CHAR(${pengaduan.createdAt} AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD')`,
+            sql`TO_CHAR(${pengaduan.createdAt} AT TIME ZONE 'Asia/Jakarta', 'DD Mon')`
+          )
+          .orderBy(sql`TO_CHAR(${pengaduan.createdAt} AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD') ASC`)
+          .limit(20),
       ]);
 
       const perStatus: Record<string, number> = {};
@@ -962,6 +996,12 @@ export class PengaduanService {
           ? Number((totalRating / jumlahDinilai).toFixed(1))
           : null;
 
+      const trenHarian = trenHarianRows.map((t) => ({
+        label: t.tanggal,
+        masuk: Number(t.masuk),
+        selesai: Number(t.selesai),
+      }));
+
       return {
         perStatus,
         perPrioritasTerbuka,
@@ -969,6 +1009,7 @@ export class PengaduanService {
         belumDitugaskan: Number(agregat.belumDitugaskan),
         rataRating,
         jumlahDinilai,
+        trenHarian,
       };
     } catch (err) {
       console.warn('[GET_STATISTIK_PENGADUAN_ERR]', err);
@@ -979,6 +1020,7 @@ export class PengaduanService {
         belumDitugaskan: 0,
         rataRating: null,
         jumlahDinilai: 0,
+        trenHarian: [],
       };
     }
   }
@@ -993,6 +1035,7 @@ export class PengaduanService {
     status?: string;
     prioritas?: string;
     jenis?: string;
+    periode?: string;
     ditugaskanKeId?: string;
     melanggarSla?: boolean | string;
   } = {}) {
@@ -1003,6 +1046,11 @@ export class PengaduanService {
 
     const conditions: any[] = [];
 
+    if (filter.periode && /^\d{6}$/.test(filter.periode)) {
+      conditions.push(
+        sql`TO_CHAR(${pengaduan.createdAt} AT TIME ZONE 'Asia/Jakarta', 'YYYYMM') = ${filter.periode}`
+      );
+    }
     if (filter.status) {
       conditions.push(eq(pengaduan.status, filter.status as any));
     }
@@ -1028,7 +1076,7 @@ export class PengaduanService {
     }
     // B11: Filter melanggar SLA mengecualikan tiket yang berstatus jeda (MENUNGGU_PELANGGAN)
     if (filter.melanggarSla === true || filter.melanggarSla === 'true') {
-      conditions.push(sql`${pengaduan.targetSelesaiAt} < ${sekarang}`);
+      conditions.push(sql`${pengaduan.targetSelesaiAt} < NOW()`);
       conditions.push(ne(pengaduan.status, 'MENUNGGU_PELANGGAN'));
       conditions.push(
         inArray(pengaduan.status, [
@@ -1334,14 +1382,19 @@ export class PengaduanService {
   }
 
   /**
-   * 10. Daftar Petugas untuk Penugasan / Eskalasi
-   * Filter role petugas yang layak (PELAKSANA, VERIFIKATOR_*, SUPERADMIN)
-   * Hapus fallback data tiruan fiktif (B3)
+   * 10. Daftar Petugas & Pejabat Struktural untuk Penugasan / Eskalasi
+   * Mengambil data profil asli dari tabel `pegawai` (jabatanNama, bagian, level)
+   * sekaligus membersihkan bridging VERIFIKATOR_1/VERIFIKATOR_2 yang tidak berada di bagian PENCATAT_METER.
    */
   async listPetugasPengaduan() {
     const rolesLayak: AppRole[] = [
       'PELAKSANA',
       'PENCATAT',
+      'STAFF',
+      'STAFF_ADMIN_BILLING',
+      'SUPERVISOR',
+      'MANAGER',
+      'SENIOR_MANAGER',
       'VERIFIKATOR_1',
       'VERIFIKATOR_2',
       'VERIFIKATOR_3',
@@ -1349,30 +1402,85 @@ export class PengaduanService {
     ];
 
     try {
+      // Koreksi otomatis di DB bila ada pegawai non-PENCATAT_METER yang masih menyimpan role VERIFIKATOR_1 / VERIFIKATOR_2 warisan seed lama
+      await db.execute(sql`
+        DELETE FROM user_roles ur
+        USING pegawai p
+        WHERE ur.user_id = p.user_id
+          AND p.bagian <> 'PENCATAT_METER'
+          AND ur.role IN ('VERIFIKATOR_1', 'VERIFIKATOR_2')
+      `).catch(() => {});
+
       const eligibleUsers = await db
-        .selectDistinct({
+        .select({
           id: user.id,
           name: user.name,
           role: userRoles.role,
+          level: pegawai.level,
+          bagian: pegawai.bagian,
+          jabatanNama: pegawai.jabatanNama,
         })
         .from(user)
         .innerJoin(userRoles, eq(user.id, userRoles.userId))
+        .leftJoin(pegawai, eq(user.id, pegawai.userId))
         .where(inArray(userRoles.role, rolesLayak))
-        .limit(100);
+        .limit(200);
 
-      // Kelompokkan per user unik agar tidak ada duplikasi ID jika user memiliki lebih dari satu role
-      const userMap = new Map<string, { id: string; name: string | null; role: string }>();
-      for (const u of eligibleUsers) {
-        if (!userMap.has(u.id)) {
+      // Prioritas role struktural bila tidak ada jabatanNama di tabel pegawai
+      const ROLE_PRIORITY: Record<string, number> = {
+        SENIOR_MANAGER: 1,
+        MANAGER: 2,
+        SUPERVISOR: 3,
+        STAFF: 4,
+        STAFF_ADMIN_BILLING: 5,
+        PELAKSANA: 6,
+        PENCATAT: 7,
+        VERIFIKATOR_3: 8,
+        VERIFIKATOR_2: 9,
+        VERIFIKATOR_1: 10,
+        SUPERADMIN: 11,
+      };
+
+      const userMap = new Map<
+        string,
+        {
+          id: string;
+          name: string | null;
+          role: string;
+          rawRolePriority: number;
+          level: string | null;
+          bagian: string | null;
+          jabatan: string | null;
+        }
+      >();
+
+      const hasOfficialPegawai = eligibleUsers.some((u) => u.bagian !== null);
+      const sourceUsers = hasOfficialPegawai
+        ? eligibleUsers.filter((u) => u.bagian !== null)
+        : eligibleUsers;
+
+      for (const u of sourceUsers) {
+        const prio = ROLE_PRIORITY[u.role] ?? 99;
+        const cleanJabatan = u.jabatanNama
+          ? u.jabatanNama.replace(/\s+Wilayah\s+\d+$/i, '').trim()
+          : null;
+        const displayRole = cleanJabatan || u.level || u.role;
+
+        const existing = userMap.get(u.id);
+        if (!existing || prio < existing.rawRolePriority) {
           userMap.set(u.id, {
             id: u.id,
             name: u.name,
-            role: u.role,
+            role: displayRole,
+            rawRolePriority: prio,
+            level: u.level ?? null,
+            bagian: u.bagian ?? null,
+            jabatan: cleanJabatan,
           });
         }
       }
 
-      return Array.from(userMap.values());
+      return Array.from(userMap.values()).map(({ rawRolePriority, ...rest }) => rest);
     } catch (err) {
       console.error('[LIST_PETUGAS_PENGADUAN_ERR]', err);
       throw err;

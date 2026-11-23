@@ -20,7 +20,7 @@ export function MediaBukti({ detail }: { detail: PengaduanDetail }) {
 
   return (
     <PanelKartu judul="Lampiran">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3.5 grid-cols-1 @[460px]/detail:grid-cols-2">
         {fotoUrl && (
           <div className="flex flex-col gap-1.5">
             <JudulBagian ikon={ImageIcon}>Foto dari pelapor</JudulBagian>

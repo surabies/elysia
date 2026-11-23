@@ -90,10 +90,18 @@ const pengaduanRoutes = new Elysia()
   })
 
   // 1. Ringkasan Statistik Antrean Pengaduan (Desk Kartu KPI)
-  .get('/statistik', async () => {
-    const data = await pengaduanService.getStatistikPengaduan();
-    return { success: true, data };
-  })
+  .get(
+    '/statistik',
+    async ({ query }) => {
+      const data = await pengaduanService.getStatistikPengaduan(query.periode);
+      return { success: true, data };
+    },
+    {
+      query: t.Object({
+        periode: t.Optional(t.String()),
+      }),
+    }
+  )
 
   // 2. Daftar Petugas Lapangan untuk Penugasan / Eskalasi
   .get('/petugas', async () => {

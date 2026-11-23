@@ -19,14 +19,26 @@ function pesanGalat(err: unknown, cadangan: string) {
   return err instanceof ApiError ? err.message : cadangan
 }
 
-export function useDetailTiket(pengaduanId: string) {
+export function useDetailTiket(
+  pengaduanId: string | null,
+  onMutated?: () => void
+) {
   const [detail, setDetail] = React.useState<PengaduanDetail | null>(null)
   const [petugas, setPetugas] = React.useState<PetugasRingkas[]>([])
-  const [memuat, setMemuat] = React.useState(true)
+  const [memuat, setMemuat] = React.useState(Boolean(pengaduanId))
   const [galat, setGalat] = React.useState<string | null>(null)
   const [mengirim, setMengirim] = React.useState(false)
+  const onMutatedRef = React.useRef(onMutated)
+  React.useEffect(() => {
+    onMutatedRef.current = onMutated
+  }, [onMutated])
 
   const muat = React.useCallback(async () => {
+    if (!pengaduanId) {
+      setDetail(null)
+      setGalat(null)
+      return
+    }
     try {
       setDetail(await ambilSatu<PengaduanDetail>(`/pengaduan/${pengaduanId}`))
       setGalat(null)
@@ -36,14 +48,20 @@ export function useDetailTiket(pengaduanId: string) {
   }, [pengaduanId])
 
   React.useEffect(() => {
+    if (!pengaduanId) {
+      setDetail(null)
+      setMemuat(false)
+      return
+    }
     let batal = false
+    setMemuat(true)
     void muat().finally(() => {
       if (!batal) setMemuat(false)
     })
     return () => {
       batal = true
     }
-  }, [muat])
+  }, [muat, pengaduanId])
 
   // Sumbernya /pengaduan/petugas, BUKAN /users — /users dibatasi
   // MANAGEMENT_UP sementara menugaskan tiket cuma butuh SUPERVISOR_UP.
@@ -70,6 +88,7 @@ export function useDetailTiket(pengaduanId: string) {
       try {
         await aksi()
         await muat()
+        onMutatedRef.current?.()
         return true
       } catch (err) {
         setGalat(pesanGalat(err, "Aksi gagal. Coba lagi."))

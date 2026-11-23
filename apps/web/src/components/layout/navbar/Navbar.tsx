@@ -30,6 +30,7 @@ export function Navbar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isDrdPage = pathname === "/laporan/lap-drd";
+  const isPengaduanPage = pathname === "/pengaduan";
   const isVerifikasiPage =
     pathname === "/verifikasi/baca-petugas" ||
     pathname.startsWith("/verifikasi");
@@ -46,6 +47,32 @@ export function Navbar() {
           <div
             id="verifikasi-navbar-controls"
             className="flex items-center justify-end gap-1.5 min-w-0 flex-1 overflow-visible"
+          />
+        </div>
+      ) : isPengaduanPage ? (
+        <div className="flex h-14 items-center justify-between px-3 sm:px-4 gap-2 overflow-visible">
+          {!isOpen && (
+            <button
+              type="button"
+              data-testid="nav-sidebar/sidebar-button"
+              aria-label="Buka sidebar"
+              title="Buka sidebar (Ctrl+B)"
+              onClick={toggleSidebar}
+              className={cn(
+                "outline-none m-0 border-0 align-baseline no-underline group/trigger relative cursor-pointer select-none",
+                "flex items-center justify-center rounded-md bg-transparent text-foreground",
+                "hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200) transition-colors duration-150",
+                "p-0 size-8 shrink-0"
+              )}
+            >
+              <span className="truncate px-1.5 inline-flex items-center justify-center shrink-0">
+                <GeistPanelLeft size={16} className="size-4 text-foreground" />
+              </span>
+            </button>
+          )}
+          <div
+            id="pengaduan-navbar-controls"
+            className="flex items-center justify-between gap-2 min-w-0 flex-1 overflow-visible"
           />
         </div>
       ) : (
