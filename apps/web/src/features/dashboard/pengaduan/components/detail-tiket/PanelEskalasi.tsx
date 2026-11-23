@@ -1,9 +1,7 @@
 "use client"
 
 // features/dashboard/pengaduan/components/detail-tiket/PanelEskalasi.tsx —
-// Eskalasi tiket ke pejabat struktural / atasan (Supervisor, Manager, Senior Manager),
-// menggunakan komponen shadcn/ui <Select> penuh.
-// Pilihan kenaikan prioritas disaring otomatis hanya untuk prioritas di atas prioritas tiket saat ini.
+// Eskalasi tiket ke atasan (Manager & Supervisor), menggunakan perilaku standar shadcn/ui <Select>.
 import * as React from "react"
 import { ArrowUpCircle } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
@@ -22,18 +20,10 @@ import { PilihPetugas } from "@/features/dashboard/pengaduan/components/bersama/
 import type {
   PengaduanDetail,
   PetugasRingkas,
-  PrioritasPengaduan,
 } from "@/features/dashboard/pengaduan/types/TipePengaduan"
 import type { JalankanAksi } from "../../hooks/UseRincianTiket"
 
 const TETAP_VALUE = "TETAP"
-
-const BOBOT_PRIORITAS: Record<PrioritasPengaduan, number> = {
-  RENDAH: 1,
-  NORMAL: 2,
-  TINGGI: 3,
-  DARURAT: 4,
-}
 
 export function PanelEskalasi({
   detail,
@@ -49,18 +39,6 @@ export function PanelEskalasi({
   const [atasan, setAtasan] = React.useState("")
   const [alasan, setAlasan] = React.useState("")
   const [prioritas, setPrioritas] = React.useState<string>(TETAP_VALUE)
-
-  // Saring hanya prioritas yang lebih tinggi dari prioritas tiket saat ini (sesuai aturan domain B12)
-  const opsiPrioritasLebihTinggi = React.useMemo(() => {
-    const bobotSaatIni = BOBOT_PRIORITAS[detail.prioritas] ?? 2
-    return (Object.entries(LABEL_PRIORITAS_PENGADUAN) as [PrioritasPengaduan, string][]).filter(
-      ([val]) => (BOBOT_PRIORITAS[val] ?? 0) > bobotSaatIni
-    )
-  }, [detail.prioritas])
-
-  React.useEffect(() => {
-    setPrioritas(TETAP_VALUE)
-  }, [detail.id, detail.prioritas])
 
   async function eskalasi() {
     const prioritasBaru =
@@ -82,12 +60,12 @@ export function PanelEskalasi({
 
   return (
     <PanelKartu judul="Eskalasi ke atasan">
-      <div className="flex flex-col @[440px]/detail:flex-row gap-2">
+      <div className="flex items-center gap-2">
         <PilihPetugas
           petugas={petugas}
           value={atasan}
           onChange={setAtasan}
-          placeholder="Pilih atasan / pejabat…"
+          placeholder="Pilih atasan…"
           ariaLabel="Pilih atasan untuk eskalasi"
           disabled={mengirim}
           mode="atasan"
@@ -100,17 +78,15 @@ export function PanelEskalasi({
           <SelectTrigger
             size="sm"
             aria-label="Naikkan prioritas (opsional)"
-            className="h-9 w-full @[440px]/detail:w-44 shrink-0 text-xs bg-background"
+            className="w-40 shrink-0"
           >
             <SelectValue placeholder="Prioritas tetap" />
           </SelectTrigger>
-          <SelectContent position="popper" align="end" className="z-50">
-            <SelectItem value={TETAP_VALUE} className="text-xs">
-              Prioritas tetap ({LABEL_PRIORITAS_PENGADUAN[detail.prioritas]})
-            </SelectItem>
-            {opsiPrioritasLebihTinggi.map(([value, label]) => (
-              <SelectItem key={value} value={value} className="text-xs">
-                Naik ke {label}
+          <SelectContent>
+            <SelectItem value={TETAP_VALUE}>Prioritas tetap</SelectItem>
+            {Object.entries(LABEL_PRIORITAS_PENGADUAN).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -118,7 +94,7 @@ export function PanelEskalasi({
       </div>
       <Textarea
         rows={2}
-        placeholder="Alasan eskalasi… (mis. butuh alat berat / keputusan lintas bagian)"
+        placeholder="Alasan eskalasi… (mis. butuh alat berat / keputusan anggaran)"
         value={alasan}
         onChange={(e) => setAlasan(e.target.value)}
         disabled={mengirim}
@@ -130,7 +106,7 @@ export function PanelEskalasi({
         disabled={mengirim || !atasan || !alasan.trim()}
         onClick={eskalasi}
       >
-        <ArrowUpCircle className="size-3.5" />
+        <ArrowUpCircle />
         Eskalasi
       </Button>
     </PanelKartu>

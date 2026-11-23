@@ -124,7 +124,7 @@ export function PanelTindakan({
   return (
     <PanelKartu judul="Tindakan">
       {/* 1. Form Penugasan Petugas */}
-      <div className="flex gap-1.5 @[400px]/detail:gap-2">
+      <div className="flex items-center gap-2">
         <PilihPetugas
           petugas={petugas}
           value={pilihPetugas}
@@ -132,11 +132,12 @@ export function PanelTindakan({
           placeholder="Pilih petugas…"
           ariaLabel="Pilih petugas"
           disabled={mengirim}
+          mode="petugas"
         />
         <Button
-          size="sm"
+          size="default"
           title="Tugaskan petugas terpilih"
-          className="h-9 shrink-0 px-2.5 @[380px]/detail:px-3"
+          className="shrink-0"
           disabled={mengirim || !pilihPetugas}
           onClick={() =>
             kirim(() =>
@@ -148,7 +149,7 @@ export function PanelTindakan({
           }
         >
           <UserCheck className="size-4 shrink-0" />
-          <span className="hidden @[360px]/detail:inline">Tugaskan</span>
+          <span>Tugaskan</span>
         </Button>
       </div>
 

@@ -76,8 +76,12 @@ export function EnterpriseGlideGrid({
   const [dimensions, setDimensions] = React.useState({ width: 0, height: 0 });
   const [menuKolom, setMenuKolom] = React.useState<HeaderMenuData | null>(null);
 
-  // Responsif terhadap ukuran container dengan ResizeObserver
-  React.useEffect(() => {
+  // Responsif terhadap ukuran container dengan useLayoutEffect + ResizeObserver
+  // agar ukuran kanvas langsung terukur sebelum browser mengecat frame pertama (Zero Flash)
+  const useIsomorphicLayoutEffect =
+    typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect;
+
+  useIsomorphicLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 

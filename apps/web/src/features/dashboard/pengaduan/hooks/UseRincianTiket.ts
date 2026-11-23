@@ -1,104 +1,118 @@
 // features/dashboard/pengaduan/hooks/UseRincianTiket.ts —
 // SEMUA urusan data halaman detail: ambil tiket, ambil daftar petugas, dan
 // pembungkus aksi (`jalankan`) yang mengatur status mengirim, galat, dan
-// muat ulang. Komponen panel tinggal memanggil `jalankan`, tidak perlu tahu
-// cara memuat ulang.
-import * as React from "react"
-import { ambilSatu, ApiError } from "@/features/dashboard/api/ApiDashboard"
+// muat ulang. Mendukung initialDetail & initialPetugas dari SSR agar saat reload
+// panel kanan langsung menampilkan detail tiket tanpa berkedip skeleton.
+import * as React from "react";
+import { ambilSatu, ApiError } from "@/features/dashboard/api/ApiDashboard";
 import type {
   PengaduanDetail,
   PetugasRingkas,
-} from "@/features/dashboard/pengaduan/types/TipePengaduan"
+} from "@/features/dashboard/pengaduan/types/TipePengaduan";
 
-/// Menjalankan satu aksi ke server lalu memuat ulang tiket. Mengembalikan
-/// true bila berhasil — pemanggil memakainya untuk mengosongkan form-nya
-/// sendiri HANYA saat aksi sukses.
-export type JalankanAksi = (aksi: () => Promise<unknown>) => Promise<boolean>
+export type JalankanAksi = (aksi: () => Promise<unknown>) => Promise<boolean>;
 
 function pesanGalat(err: unknown, cadangan: string) {
-  return err instanceof ApiError ? err.message : cadangan
+  return err instanceof ApiError ? err.message : cadangan;
 }
 
 export function useDetailTiket(
   pengaduanId: string | null,
-  onMutated?: () => void
+  onMutated?: () => void,
+  initialDetail: PengaduanDetail | null = null,
+  initialPetugas: PetugasRingkas[] = []
 ) {
-  const [detail, setDetail] = React.useState<PengaduanDetail | null>(null)
-  const [petugas, setPetugas] = React.useState<PetugasRingkas[]>([])
-  const [memuat, setMemuat] = React.useState(Boolean(pengaduanId))
-  const [galat, setGalat] = React.useState<string | null>(null)
-  const [mengirim, setMengirim] = React.useState(false)
-  const onMutatedRef = React.useRef(onMutated)
+  const [detail, setDetail] = React.useState<PengaduanDetail | null>(
+    initialDetail
+  );
+  const [petugas, setPetugas] = React.useState<PetugasRingkas[]>(
+    initialPetugas
+  );
+  const [memuat, setMemuat] = React.useState(
+    Boolean(pengaduanId) && !initialDetail
+  );
+  const [galat, setGalat] = React.useState<string | null>(null);
+  const [mengirim, setMengirim] = React.useState(false);
+
+  const onMutatedRef = React.useRef(onMutated);
   React.useEffect(() => {
-    onMutatedRef.current = onMutated
-  }, [onMutated])
+    onMutatedRef.current = onMutated;
+  }, [onMutated]);
+
+  const initialIdRef = React.useRef<string | null>(
+    initialDetail ? initialDetail.id : null
+  );
 
   const muat = React.useCallback(async () => {
     if (!pengaduanId) {
-      setDetail(null)
-      setGalat(null)
-      return
+      setDetail(null);
+      setGalat(null);
+      return;
     }
     try {
-      setDetail(await ambilSatu<PengaduanDetail>(`/pengaduan/${pengaduanId}`))
-      setGalat(null)
+      setDetail(await ambilSatu<PengaduanDetail>(`/pengaduan/${pengaduanId}`));
+      setGalat(null);
     } catch (err) {
-      setGalat(pesanGalat(err, "Gagal memuat detail tiket."))
+      setGalat(pesanGalat(err, "Gagal memuat detail tiket."));
     }
-  }, [pengaduanId])
+  }, [pengaduanId]);
 
   React.useEffect(() => {
     if (!pengaduanId) {
-      setDetail(null)
-      setMemuat(false)
-      return
+      setDetail(null);
+      setMemuat(false);
+      return;
     }
-    let batal = false
-    setMemuat(true)
+    // Jika data awal dari SSR sudah cocok dengan pengaduanId pertama, lewati fetch ulang saat mount
+    if (initialIdRef.current && initialIdRef.current === pengaduanId) {
+      initialIdRef.current = null;
+      setMemuat(false);
+      return;
+    }
+    let batal = false;
+    setMemuat(true);
     void muat().finally(() => {
-      if (!batal) setMemuat(false)
-    })
+      if (!batal) setMemuat(false);
+    });
     return () => {
-      batal = true
-    }
-  }, [muat, pengaduanId])
+      batal = true;
+    };
+  }, [muat, pengaduanId]);
 
-  // Sumbernya /pengaduan/petugas, BUKAN /users — /users dibatasi
-  // MANAGEMENT_UP sementara menugaskan tiket cuma butuh SUPERVISOR_UP.
   React.useEffect(() => {
-    let batal = false
+    if (initialPetugas.length > 0) return;
+    let batal = false;
     void (async () => {
       try {
-        const rows = await ambilSatu<PetugasRingkas[]>("/pengaduan/petugas")
-        if (!batal) setPetugas(rows)
+        const rows = await ambilSatu<PetugasRingkas[]>("/pengaduan/petugas");
+        if (!batal) setPetugas(rows);
       } catch {
-        // Dropdown kosong sudah cukup menjelaskan dirinya; aksi lain tetap
-        // berguna.
+        // Abaikan
       }
-    })()
+    })();
     return () => {
-      batal = true
-    }
-  }, [])
+      batal = true;
+    };
+  }, [initialPetugas.length]);
 
   const jalankan: JalankanAksi = React.useCallback(
     async (aksi) => {
-      setMengirim(true)
-      setGalat(null)
+      setMengirim(true);
+      setGalat(null);
       try {
-        await aksi()
-        await muat()
-        onMutatedRef.current?.()
-        return true
+        await aksi();
+        await muat();
+        onMutatedRef.current?.();
+        return true;
       } catch (err) {
-        setGalat(pesanGalat(err, "Aksi gagal. Coba lagi."))
-        return false
+        setGalat(pesanGalat(err, "Aksi gagal. Coba lagi."));
+        return false;
       } finally {
-        setMengirim(false)
+        setMengirim(false);
       }
     },
     [muat]
-  )
+  );
 
-  return { detail, petugas, memuat, galat, mengirim, jalankan }
+  return { detail, petugas, memuat, galat, mengirim, jalankan };
 }

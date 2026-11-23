@@ -54,19 +54,28 @@ import { LembarCetak } from "../detail-tiket/cetak/LembarCetak";
 import { useCetak } from "../../hooks/UseCetak";
 import { useDetailTiket } from "../../hooks/UseRincianTiket";
 
+import type {
+  PengaduanDetail,
+  PetugasRingkas,
+} from "../../types/TipePengaduan";
+
 const STATUS_AKHIR = ["SELESAI", "DITUTUP", "DITOLAK"];
 
 export interface PanelDetailPengaduanProps {
   pengaduanId: string | null;
+  initialDetail?: PengaduanDetail | null;
+  initialPetugas?: PetugasRingkas[];
   onMutated?: () => void;
 }
 
 export function PanelDetailPengaduan({
   pengaduanId,
+  initialDetail = null,
+  initialPetugas = [],
   onMutated,
 }: PanelDetailPengaduanProps) {
   const { detail, petugas, memuat, galat, mengirim, jalankan } =
-    useDetailTiket(pengaduanId, onMutated);
+    useDetailTiket(pengaduanId, onMutated, initialDetail, initialPetugas);
   const { mencetak, tanggalCetak, mulai: cetak } = useCetak();
   const [subTab, setSubTab] = React.useState<"tindakan" | "obrolan">("tindakan");
   const [modeRiwayat, setModeRiwayat] =
