@@ -19,7 +19,8 @@ Dokumen ini melacak kemajuan (*progress tracking*), arsitektur keputusan, hasil 
 | **Refactor Hono -> Elysia (5 Fase)**| ✅ **Selesai** | 5 Fase pengerjaan tuntas 100% (Domain Engines, Services, Routers, Quality Gate). |
 | **Penyelarasan Modul Aurora Sidebar**| ✅ **Selesai** | 9 Modul sidebar Aurora terpetakan dan terpasang penuh di backend Elysia. |
 | **Pengujian Otomatis (Unit & Integration)**| ✅ **Selesai** | 91 Pengujian lulus 100% (0 error) mencakup 6 kasus bisnis kritis & sidebar. |
-| **Pengembangan Frontend** | 🚀 **Siap Dimulai** | Seluruh API, kontrak data TypeBox, dan pondasi backend telah siap 100%. |
+| **Standarisasi Arsitektur api.ts (Fase 1)**| ✅ **Selesai** | Modul `rute`, `master`, `pelanggan`, `cater/capaian`, dan `kpi` telah memakai `api.ts`. Detail di `docs/STANDAR_API_CLIENT_DAN_MIGRASI.md`. |
+| **Pengembangan & Migrasi Frontend Lanjutan** | 🚀 **Dalam Pengerjaan** | Migrasi `api.ts` Fase 2: Pengaturan, Progres, Laporan, Setting Landing. |
 
 ---
 
