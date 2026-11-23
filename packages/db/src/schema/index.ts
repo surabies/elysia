@@ -21,4 +21,5 @@ export * from './jaringan';
 export * from './riwayat';
 export * from './anomali';
 export * from './capaian';
+export * from './mutasi-rute';
 

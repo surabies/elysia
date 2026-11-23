@@ -298,6 +298,20 @@ export const navGroups: NavGroup[] = [
         keywords: ["pemetaan", "rute", "dpm", "penugasan petugas"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
+      {
+        title: "Mutasi Rute",
+        href: "/rute/mutasi",
+        description: "Pindahkan satu pelanggan ke rute baca dan nomor urut baru.",
+        keywords: ["mutasi rute", "pindah rute", "urut rute", "mutasi pelanggan"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
+      {
+        title: "Penggabungan Rute",
+        href: "/rute/penggabungan",
+        description: "Gabungkan atau pindahkan pelanggan dari satu rute baca ke rute petugas lain.",
+        keywords: ["penggabungan rute", "kelola rute", "transfer rute", "pindah banyak"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+      },
     ],
   },
 

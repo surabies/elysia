@@ -20,6 +20,7 @@ import { mediaRouter } from "./modules/media";
 import { broadcastModule } from "./modules/broadcast";
 import { importModule } from "./modules/import";
 import { aturanAnomaliRouter } from "./modules/cater/aturan-anomali.router";
+import { ruteModule } from "./modules/rute/rute.router";
 
 export const app = new Elysia({ prefix: "/api" })
   .use(corsPlugin)
@@ -37,6 +38,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(authModule)
   .use(geoModule)
   .use(caterModule)
+  .use(ruteModule)
   .use(closingModule)
   .use(mandiriModule)
   .use(gwmModule)
