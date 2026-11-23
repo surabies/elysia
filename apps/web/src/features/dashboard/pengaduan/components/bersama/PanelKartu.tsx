@@ -1,7 +1,6 @@
-// features/dashboard/pengaduan/components/bersama/PanelKartu.tsx — wadah
-// panel gaya Geist: permukaan --card, garis --border, bayangan --shadow-panel,
-// header dipisah garis --border-subtle. Dipakai SEMUA blok di halaman detail
-// supaya radius, padding, dan bayangannya seragam dan diubah di satu tempat.
+// features/dashboard/pengaduan/components/bersama/PanelKartu.tsx —
+// Seksi datar (flat section) di dalam Panel Kanan tanpa container card pembungkus ganda,
+// karena Panel Kanan (<aside>) sudah menjadi container utama.
 import type * as React from "react"
 import { cn } from "@/lib/utils"
 
@@ -22,14 +21,8 @@ export function PanelKartu({
   children: React.ReactNode
 }) {
   return (
-    <section
-      className={cn(
-        "rounded-lg border bg-card text-card-foreground shadow-panel",
-        nada === "sukses" ? "border-success/30" : "border-border",
-        className
-      )}
-    >
-      <header className="flex items-center justify-between gap-2 border-b border-border-subtle px-4 py-2.5">
+    <section className={cn("flex flex-col gap-3 px-3.5 py-3.5", className)}>
+      <header className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {Ikon && (
             <Ikon
@@ -39,11 +32,13 @@ export function PanelKartu({
               )}
             />
           )}
-          <h3 className="text-sm font-medium">{judul}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {judul}
+          </h3>
         </div>
         {aksi && <div className="flex items-center">{aksi}</div>}
       </header>
-      <div className="flex flex-col gap-3 p-4">{children}</div>
+      <div className="flex flex-col gap-3">{children}</div>
     </section>
   )
 }

@@ -57,8 +57,8 @@ export function InfoPerkara({ detail }: { detail: PengaduanDetail }) {
         </div>
       }
     >
-      {/* 1. Judul Lengkap & Deskripsi Keluhan (Tidak lagi terpotong di header atas) */}
-      <div className="rounded-md border border-border/70 bg-muted/25 p-3 space-y-1.5">
+      {/* 1. Judul Lengkap & Deskripsi Keluhan (Langsung tanpa container pembungkus ganda) */}
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground font-mono">
           <span>Dilaporkan {formatWaktu(detail.createdAt)} WIB</span>
         </div>

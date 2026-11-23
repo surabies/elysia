@@ -479,7 +479,7 @@ export function LinimasaStaf({
 
   if (riwayat.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-8 text-center text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
         <Clock className="size-5 mb-2 opacity-40" />
         <p className="text-sm">Belum ada riwayat tindak lanjut.</p>
       </div>
@@ -575,8 +575,8 @@ export function LinimasaStaf({
           Tidak ada entri riwayat untuk kategori filter ini.
         </p>
       ) : modeTampilan === "CHAT" ? (
-        // Mode Obrolan Chat Bubble (Tik-Tok-Kan: Kiri Petugas, Kanan Pelanggan)
-        <div className="flex flex-col gap-1.5 rounded-xl bg-muted/20 p-2 sm:p-3 border border-border/40">
+        // Mode Obrolan Chat Bubble (Tanpa container pembungkus ganda)
+        <div className="flex flex-col gap-1.5">
           {riwayatTersaring.map((e) => {
             // 1. Pesan Chat
             if (e.aksi === "CHAT") {
