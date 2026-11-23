@@ -21,13 +21,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getRuteTujuan, pindahRute, type Opsi, type Pelanggan } from "../data";
+import type { OpsiItem, PelangganItem } from "../types";
 import { FieldSelect } from "./field-select";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pelanggan: Pelanggan[];
+  pelanggan: PelangganItem[];
   ruteAsal: string;
   onSelesai: (ruteBaru: string) => void;
 };
@@ -39,16 +39,20 @@ export function PindahRuteDialog({
   ruteAsal,
   onSelesai,
 }: Props) {
-  const [opsi, setOpsi] = useState<Opsi[]>([]);
+  const [opsi, setOpsi] = useState<OpsiItem[]>([]);
   const [ruteBaru, setRuteBaru] = useState("");
   const [menyimpan, setMenyimpan] = useState(false);
 
-  // Setiap dialog dibuka: reset pilihan, muat daftar rute tujuan
   useEffect(() => {
     if (!open) return;
     setRuteBaru("");
-    getRuteTujuan(ruteAsal)
-      .then(setOpsi)
+    fetch(`/api/rute/tujuan?kecuali=${encodeURIComponent(ruteAsal)}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setOpsi(json.data);
+        }
+      })
       .catch((err) => {
         console.error("Gagal memuat rute tujuan:", err);
         toast.error("Gagal memuat daftar rute tujuan");
@@ -62,10 +66,18 @@ export function PindahRuteDialog({
     }
     setMenyimpan(true);
     try {
-      await pindahRute(
-        pelanggan.map((p) => p.noPel),
-        ruteBaru
-      );
+      const res = await fetch("/api/rute/penggabungan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          noPelList: pelanggan.map((p) => p.noPel),
+          ruteTujuan: ruteBaru,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Gagal memindahkan rute pelanggan");
+      }
       onSelesai(ruteBaru);
     } catch (err: any) {
       toast.error(err.message || "Gagal memindahkan rute pelanggan");

@@ -8,19 +8,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Opsi } from "../data";
+import type { OpsiItem } from "../types";
 
 type Props = {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: Opsi[];
+  options: OpsiItem[];
   placeholder?: string;
   disabled?: boolean;
   error?: string;
 };
 
-// Pembungkus Select: label di atas, error di bawah.
 export function FieldSelect({
   label,
   value,

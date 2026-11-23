@@ -5,6 +5,14 @@ import { ArrowRight, Loader2, RefreshCw, Route, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -16,46 +24,41 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  cariPelanggan,
-  getRiwayat,
-  getWilayah,
-  simpanMutasi,
-  wilayahOpsi as fallbackWilayahOpsi,
-  type Opsi,
-  type Pelanggan,
-  type RiwayatMutasi,
-} from "../data";
+import { cn } from "@/lib/utils";
+import type { OpsiItem, PelangganItem, RiwayatMutasiItem } from "../types";
+import { wilayahPelayananOpsi } from "../types";
 import { FieldSelect } from "./field-select";
-import { InfoRow, Kbd, PageHeader, Panel } from "./ui-parts";
 
 type Errors = Partial<Record<"wilayah" | "rute" | "urut", string>>;
 
 export function MutasiRuteView() {
   // 1. Pencarian pelanggan
   const [noPel, setNoPel] = useState("");
-  const [pelanggan, setPelanggan] = useState<Pelanggan | null>(null);
+  const [pelanggan, setPelanggan] = useState<PelangganItem | null>(null);
   const [mencari, setMencari] = useState(false);
   const [cariError, setCariError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 2. Form tujuan mutasi (Default wilayah pelayanan 5)
+  // 2. Form tujuan mutasi (Default WP 5)
   const [wilayah, setWilayah] = useState("WP 5");
-  const [wilayahList, setWilayahList] = useState<Opsi[]>(fallbackWilayahOpsi);
+  const [wilayahList, setWilayahList] = useState<OpsiItem[]>(wilayahPelayananOpsi);
   const [rute, setRute] = useState("");
   const [urut, setUrut] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [menyimpan, setMenyimpan] = useState(false);
 
   // 3. Riwayat mutasi
-  const [riwayat, setRiwayat] = useState<RiwayatMutasi[]>([]);
+  const [riwayat, setRiwayat] = useState<RiwayatMutasiItem[]>([]);
   const [memuat, setMemuat] = useState(false);
 
-  // Load wilayah options from DB
+  // Muat opsi wilayah dari server
   useEffect(() => {
-    getWilayah()
-      .then((opts) => {
-        if (opts.length > 0) setWilayahList(opts);
+    fetch("/api/rute/wilayah")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setWilayahList(json.data);
+        }
       })
       .catch((err) => console.error("Gagal memuat wilayah:", err));
   }, []);
@@ -63,8 +66,11 @@ export function MutasiRuteView() {
   const muatRiwayat = useCallback(async () => {
     setMemuat(true);
     try {
-      const data = await getRiwayat();
-      setRiwayat(data);
+      const res = await fetch("/api/rute/riwayat");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setRiwayat(json.data);
+      }
     } catch (err: any) {
       toast.error(err.message || "Gagal memuat riwayat mutasi");
     } finally {
@@ -76,7 +82,7 @@ export function MutasiRuteView() {
     muatRiwayat();
   }, [muatRiwayat]);
 
-  // 4. Shortcut keyboard: F2 = cari, F3 = refresh
+  // Shortcut keyboard: F2 = fokus cari, F3 = refresh riwayat
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "F2") {
@@ -92,28 +98,25 @@ export function MutasiRuteView() {
     return () => window.removeEventListener("keydown", onKey);
   }, [muatRiwayat]);
 
-  // 5. Handler
+  // Handler Cari
   const cari = async () => {
     if (!noPel.trim()) return setCariError("Masukkan nomor pelanggan");
     setCariError("");
     setMencari(true);
     try {
-      const hasil = await cariPelanggan(noPel.trim());
-      if (!hasil) {
+      const res = await fetch(`/api/rute/pelanggan/${encodeURIComponent(noPel.trim())}`);
+      const json = await res.json();
+      if (res.status === 404 || !json.success || !json.data) {
         setPelanggan(null);
         setCariError("Pelanggan tidak ditemukan");
       } else {
-        setPelanggan(hasil);
+        setPelanggan(json.data);
       }
     } catch (err: any) {
       setCariError(err.message || "Gagal mencari data pelanggan");
     } finally {
       setMencari(false);
     }
-  };
-
-  const ubahWilayah = (v: string) => {
-    setWilayah(v);
   };
 
   const reset = () => {
@@ -137,16 +140,23 @@ export function MutasiRuteView() {
 
     setMenyimpan(true);
     try {
-      const log = await simpanMutasi(
-        pelanggan,
-        {
-          wil: wilayah,
-          rute: rute.trim().toUpperCase(),
-          urut: Number(urut),
-        }
-      );
-      setRiwayat((r) => [log, ...r]);
-      toast.success(`Pelanggan ${pelanggan.noPel} dipindahkan ke rute ${log.baru.rute}`);
+      const res = await fetch("/api/rute/mutasi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          noPel: pelanggan.noPel,
+          wilayahId: wilayah,
+          ruteKode: rute.trim().toUpperCase(),
+          noUrut: Number(urut),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Gagal menyimpan mutasi rute");
+      }
+
+      setRiwayat((r) => [json.data, ...r]);
+      toast.success(`Pelanggan ${pelanggan.noPel} dipindahkan ke rute ${rute.trim().toUpperCase()}`);
       reset();
     } catch (err: any) {
       toast.error(err.message || "Gagal menyimpan mutasi rute");
@@ -156,19 +166,59 @@ export function MutasiRuteView() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6">
-      <PageHeader
-        title="Mutasi rute pelanggan"
-        description="Pindahkan satu pelanggan ke rute baca dan nomor urut baru."
-      />
+    <div className="space-y-6">
+      {/* 1. Header Toolbar Konsisten */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-foreground text-background">
+              <Route className="size-4" />
+            </div>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-sans">
+              Mutasi Rute Pelanggan
+            </h1>
+            <Badge variant="outline" className="font-mono text-label-11">
+              WP 5 Aktif
+            </Badge>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground font-sans">
+            Pindahkan satu pelanggan ke rute baca dan nomor urut baru di wilayah pelayanan
+          </p>
+        </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <Panel title="Form mutasi" icon={<Route />}>
-          <div className="space-y-5 p-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={muatRiwayat}
+            disabled={memuat}
+            className="h-8 gap-1.5 text-label-12 font-mono"
+          >
+            <RefreshCw className={cn("size-3.5", memuat && "animate-spin")} />
+            Segarkan
+          </Button>
+        </div>
+      </div>
+
+      {/* 2. Grid Layout Dua Kolom */}
+      <div className="grid items-start gap-6 lg:grid-cols-[400px_minmax(0,1fr)]">
+        {/* Kolom Kiri: Form Mutasi */}
+        <Card className="border-border bg-card shadow-xs">
+          <CardHeader className="pb-3 border-b border-border/50">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
+              <Route className="size-4 text-muted-foreground" />
+              Form Mutasi Rute
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Cari nomor pelanggan lalu tentukan rute dan nomor urut baru
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4 pt-4">
             {/* Cari pelanggan */}
             <div className="grid gap-1.5">
               <Label htmlFor="no-pel" className="text-xs font-medium text-muted-foreground">
-                No. pelanggan
+                Nomor Pelanggan
               </Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -179,79 +229,95 @@ export function MutasiRuteView() {
                     value={noPel}
                     onChange={(e) => setNoPel(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && cari()}
-                    placeholder="00800400550"
-                    className="pl-8 pr-10 font-mono"
+                    placeholder="Contoh: 00700250273"
+                    className="pl-8 font-mono text-xs"
                     aria-invalid={!!cariError}
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2">
-                    <Kbd>F2</Kbd>
-                  </span>
                 </div>
-                <Button variant="outline" onClick={cari} disabled={mencari}>
-                  {mencari ? <Loader2 className="animate-spin" /> : "Cari"}
+                <Button variant="outline" size="sm" onClick={cari} disabled={mencari}>
+                  {mencari ? <Loader2 className="size-4 animate-spin" /> : "Cari"}
                 </Button>
               </div>
               {cariError && <p className="text-xs text-destructive">{cariError}</p>}
             </div>
 
-            {/* Rute saat ini (read-only) */}
-            <div className="rounded-lg border bg-muted/30 px-3">
+            {/* Informasi Pelanggan Saat Ini */}
+            <div className="rounded-md border border-border/60 bg-muted/30 p-3 text-xs">
               {pelanggan ? (
-                <dl className="divide-y">
-                  <InfoRow label="Nama">{pelanggan.nama}</InfoRow>
-                  <InfoRow label="Gol. tarif">
-                    <Badge variant="secondary">{pelanggan.golTarif}</Badge>
-                  </InfoRow>
-                  <InfoRow label="Alamat">{pelanggan.alamat}</InfoRow>
-                  <InfoRow label="Wilayah">{pelanggan.wilayah}</InfoRow>
-                  <InfoRow label="Rute lama">
-                    <span className="font-mono">{pelanggan.rute}</span>
-                  </InfoRow>
-                  <InfoRow label="No. urut lama">
-                    <span className="font-mono tabular-nums">{pelanggan.urut}</span>
-                  </InfoRow>
-                </dl>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Nama</span>
+                    <span className="font-medium text-foreground text-right">{pelanggan.nama}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Golongan Tarif</span>
+                    <Badge variant="secondary" className="font-mono text-label-11">
+                      {pelanggan.golTarif}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-muted-foreground">Alamat</span>
+                    <span className="text-right text-muted-foreground max-w-[200px] truncate">
+                      {pelanggan.alamat}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Wilayah Pelayanan</span>
+                    <span className="font-mono">{pelanggan.wilayah}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Rute Lama</span>
+                    <Badge variant="outline" className="font-mono">
+                      {pelanggan.rute}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Nomor Urut Lama</span>
+                    <span className="font-mono font-semibold tabular-nums">{pelanggan.urut}</span>
+                  </div>
+                </div>
               ) : (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  Cari nomor pelanggan untuk melihat rute saat ini.
-                </p>
+                <div className="py-6 text-center text-xs text-muted-foreground">
+                  Masukkan nomor pelanggan di atas untuk memuat rute saat ini.
+                </div>
               )}
             </div>
 
             <Separator />
 
-            {/* Tujuan mutasi */}
-            <div className="space-y-4">
+            {/* Input Rute & Urut Tujuan */}
+            <div className="space-y-3">
               <FieldSelect
-                label="Wilayah tujuan"
+                label="Wilayah Pelayanan Tujuan"
                 value={wilayah}
-                onChange={ubahWilayah}
+                onChange={setWilayah}
                 options={wilayahList}
-                placeholder="Pilih wilayah"
+                placeholder="Pilih wilayah pelayanan"
                 disabled={!pelanggan}
                 error={errors.wilayah}
               />
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Rute baru</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">Rute Baru</Label>
                   <Input
                     value={rute}
                     onChange={(e) => setRute(e.target.value)}
-                    placeholder="BD601"
-                    className="font-mono uppercase"
+                    placeholder="Contoh: BD502"
+                    className="font-mono uppercase text-xs"
                     disabled={!pelanggan}
                     aria-invalid={!!errors.rute}
                   />
                   {errors.rute && <p className="text-xs text-destructive">{errors.rute}</p>}
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">No. urut baru</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">Nomor Urut Baru</Label>
                   <Input
                     type="number"
                     min={1}
                     value={urut}
                     onChange={(e) => setUrut(e.target.value)}
-                    className="font-mono tabular-nums"
+                    className="font-mono tabular-nums text-xs"
                     disabled={!pelanggan}
                     aria-invalid={!!errors.urut}
                   />
@@ -259,109 +325,118 @@ export function MutasiRuteView() {
                 </div>
               </div>
 
-              {/* Pratinjau perubahan */}
+              {/* Pratinjau Perubahan */}
               {pelanggan && rute && urut && (
-                <div className="flex items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 px-3 py-2 font-mono text-xs">
+                <div className="flex items-center justify-center gap-2 rounded-md border border-dashed border-border/80 bg-muted/40 p-2 font-mono text-xs">
                   <span>
                     {pelanggan.rute} #{pelanggan.urut}
                   </span>
                   <ArrowRight className="size-3.5 text-muted-foreground" />
-                  <span className="font-semibold">
+                  <span className="font-semibold text-foreground">
                     {rute.toUpperCase()} #{urut}
                   </span>
                 </div>
               )}
             </div>
-          </div>
+          </CardContent>
 
-          <div className="flex justify-end gap-2 border-t bg-muted/30 px-4 py-3">
-            <Button variant="ghost" onClick={reset}>
-              Reset
+          <CardFooter className="flex justify-end gap-2 border-t border-border/50 bg-muted/20 px-4 py-3">
+            <Button variant="outline" size="sm" onClick={reset} disabled={menyimpan}>
+              Batal
             </Button>
-            <Button onClick={simpan} disabled={!pelanggan || menyimpan}>
-              {menyimpan && <Loader2 className="animate-spin" />}
-              Simpan mutasi
+            <Button size="sm" onClick={simpan} disabled={!pelanggan || menyimpan}>
+              {menyimpan && <Loader2 className="size-4 animate-spin mr-1.5" />}
+              Simpan Mutasi
             </Button>
-          </div>
-        </Panel>
+          </CardFooter>
+        </Card>
 
-        {/* Tabel riwayat mutasi */}
-        <Panel
-          title={
-            <>
-              Riwayat mutasi
-              {riwayat.length > 0 && (
-                <Badge variant="secondary" className="tabular-nums">
-                  {riwayat.length}
-                </Badge>
-              )}
-            </>
-          }
-          icon={<RefreshCw className={memuat ? "animate-spin" : undefined} />}
-          actions={
-            <Button variant="ghost" size="sm" onClick={muatRiwayat} disabled={memuat}>
-              Segarkan
-              <Kbd>F3</Kbd>
-            </Button>
-          }
-        >
-          <div className="max-h-[620px] overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-28">Tgl input</TableHead>
-                  <TableHead>No. pelanggan</TableHead>
-                  <TableHead>Nama</TableHead>
-                  <TableHead>Wilayah</TableHead>
-                  <TableHead>Rute lama</TableHead>
-                  <TableHead>Rute baru</TableHead>
-                  <TableHead>Petugas input</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {memuat && riwayat.length === 0 ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i} className="hover:bg-transparent">
-                      <TableCell colSpan={7}>
-                        <div className="h-4 animate-pulse rounded bg-muted" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : riwayat.length === 0 ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
-                      Belum ada riwayat mutasi rute.
-                    </TableCell>
+        {/* Kolom Kanan: Tabel Riwayat Mutasi */}
+        <Card className="border-border bg-card shadow-xs">
+          <CardHeader className="pb-3 border-b border-border/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-semibold text-foreground">
+                  Riwayat Mutasi Rute Pelanggan
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Daftar transaksi mutasi posisi rute baca pelanggan yang telah tersimpan
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="font-mono text-label-11">
+                {riwayat.length} Catatan
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <div className="max-h-[640px] overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-xs z-10">
+                  <TableRow>
+                    <TableHead className="w-12">No</TableHead>
+                    <TableHead>Waktu Input</TableHead>
+                    <TableHead>No. Pelanggan</TableHead>
+                    <TableHead>Nama Pelanggan</TableHead>
+                    <TableHead>Rute Lama</TableHead>
+                    <TableHead className="w-8"></TableHead>
+                    <TableHead>Rute Baru</TableHead>
+                    <TableHead>Petugas Input</TableHead>
                   </TableRow>
-                ) : (
-                  riwayat.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
-                        {r.tglInput}
+                </TableHeader>
+                <TableBody>
+                  {memuat && riwayat.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-8 text-center text-xs text-muted-foreground">
+                        <Loader2 className="size-5 animate-spin mx-auto mb-2" />
+                        Memuat data riwayat mutasi...
                       </TableCell>
-                      <TableCell className="font-mono text-xs font-semibold">
-                        {r.noPel}
-                      </TableCell>
-                      <TableCell className="font-medium">{r.nama}</TableCell>
-                      <TableCell className="text-muted-foreground">{r.kodeWilayah}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-mono">
-                          {r.lama.rute} #{r.lama.urut}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="default" className="font-mono">
-                          {r.baru.rute} #{r.baru.urut}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{r.inputBy}</TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </Panel>
+                  ) : riwayat.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-8 text-center text-xs text-muted-foreground">
+                        Belum ada riwayat mutasi rute yang tercatat.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    riwayat.map((r, i) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-xs tabular-nums text-muted-foreground">
+                          {i + 1}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">
+                          {r.tglInput}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono font-medium">
+                          {r.noPel}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium">
+                          {r.nama}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono whitespace-nowrap">
+                          <Badge variant="outline" className="font-mono text-label-11">
+                            {r.lama.rute} #{r.lama.urut}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs px-1 text-muted-foreground">
+                          <ArrowRight className="size-3" />
+                        </TableCell>
+                        <TableCell className="text-xs font-mono whitespace-nowrap">
+                          <Badge variant="secondary" className="font-mono text-label-11">
+                            {r.baru.rute} #{r.baru.urut}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground font-mono">
+                          {r.inputBy}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
