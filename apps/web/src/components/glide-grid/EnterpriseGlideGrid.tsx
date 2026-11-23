@@ -73,15 +73,17 @@ export function EnterpriseGlideGrid({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
+  const [isMounted, setIsMounted] = React.useState(false);
   const [dimensions, setDimensions] = React.useState({ width: 0, height: 0 });
   const [menuKolom, setMenuKolom] = React.useState<HeaderMenuData | null>(null);
 
-  // Responsif terhadap ukuran container dengan useLayoutEffect + ResizeObserver
-  // agar ukuran kanvas langsung terukur sebelum browser mengecat frame pertama (Zero Flash)
-  const useIsomorphicLayoutEffect =
-    typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect;
+  // Pastikan DataEditor (yang mengakses window.navigator) hanya dirender di browser setelah mount
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  useIsomorphicLayoutEffect(() => {
+  // Responsif terhadap ukuran container dengan ResizeObserver
+  React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
@@ -109,7 +111,7 @@ export function EnterpriseGlideGrid({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [minHeight, rows, memuat]);
+  }, [minHeight, rows, memuat, isMounted]);
 
   // Kalkulasi kolom dengan auto-fit: jika total lebar kolom < lebar kontainer,
   // tambahkan sisa lebar ke flexColumnId (hanya jika ditentukan secara eksplisit)
@@ -164,16 +166,29 @@ export function EnterpriseGlideGrid({
     [computedColumns, customOnHeaderMenuClick]
   );
 
-  // Gambar Header Otomatis dengan Indikator Sort
+  // Gambar Header Otomatis dengan Indikator Sort (dilengkapi fallback aman jika cache color-parser terputus saat HMR)
   const internalDrawHeader = React.useCallback<DrawHeaderCallback>(
     (args, defaultDraw) => {
       if (customDrawHeader) {
         customDrawHeader(args, defaultDraw);
         return;
       }
-      defaultDraw();
+      const { ctx, rect, column, columnIndex, theme: headerTheme } = args;
+      try {
+        defaultDraw();
+      } catch {
+        ctx.save();
+        ctx.fillStyle = headerTheme.bgHeader || (isDark ? '#18181b' : '#f4f4f5');
+        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        ctx.fillStyle = headerTheme.textHeader || (isDark ? '#f4f4f5' : '#09090b');
+        ctx.font = `${headerTheme.headerFontStyle || '600 13px'} ${headerTheme.fontFamily || FONT_SANS}`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+        const padX = headerTheme.cellHorizontalPadding || 12;
+        ctx.fillText(column.title, rect.x + padX, Math.round(rect.y + rect.height / 2));
+        ctx.restore();
+      }
 
-      const { ctx, rect, columnIndex } = args;
       const columnDef = computedColumns[columnIndex];
       if (!columnDef) return;
 
@@ -252,8 +267,8 @@ export function EnterpriseGlideGrid({
         className
       )}
     >
-      {/* 1. Tampilan Skeleton saat data sedang dimuat */}
-      {rows === 0 && memuat ? (
+      {/* 1. Tampilan Skeleton saat SSR (!isMounted) atau saat data sedang dimuat */}
+      {!isMounted || (rows === 0 && memuat) ? (
         <div className="flex h-full w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div className="flex h-9 w-full shrink-0 items-center border-b border-border bg-muted/20 px-3">
             <div className="flex items-center gap-3 w-full">

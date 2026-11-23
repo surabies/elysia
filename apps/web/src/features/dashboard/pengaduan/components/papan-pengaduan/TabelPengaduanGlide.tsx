@@ -48,8 +48,6 @@ import type { FilterPengaduanState } from './SkemaFilterPengaduan';
 
 interface TabelPengaduanGlideProps {
   initialSearch?: string;
-  initialRows?: PengaduanBaris[];
-  initialTotal?: number;
   periode: string;
   availablePeriods?: PeriodeOption[];
   onPeriodeChange: (nextPeriode: string) => void;
@@ -69,8 +67,6 @@ interface TabelPengaduanGlideProps {
 
 export function TabelPengaduanGlide({
   initialSearch = '',
-  initialRows = [],
-  initialTotal = 0,
   periode,
   availablePeriods = [],
   onPeriodeChange,
@@ -91,24 +87,20 @@ export function TabelPengaduanGlide({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
-  // Target portal di Navbar (#pengaduan-navbar-controls) dipasang sinkron sebelum paint pertama
+  // Target portal di Navbar (#pengaduan-navbar-controls)
   const [targetPortal, setTargetPortal] = React.useState<HTMLElement | null>(null);
-  const useIsomorphicLayoutEffect =
-    typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect;
-
-  useIsomorphicLayoutEffect(() => {
+  React.useEffect(() => {
     const el = document.getElementById('pengaduan-navbar-controls');
     if (el) {
       setTargetPortal(el);
     }
   }, []);
 
-  // State Data & Sortir Per Baris (Diinisialisasi langsung dari SSR initialRows agar Zero Flash saat reload)
-  const [data, setData] = React.useState<PengaduanBaris[]>(initialRows);
-  const [totalRows, setTotalRows] = React.useState(initialTotal);
+  // State Data & Sortir Per Baris
+  const [data, setData] = React.useState<PengaduanBaris[]>([]);
+  const [totalRows, setTotalRows] = React.useState(0);
   const [pageSize, setPageSize] = React.useState(50);
-  const [isLoading, setIsLoading] = React.useState(initialRows.length === 0);
-  const skipInitialFetchRef = React.useRef(initialRows.length > 0);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   // State Filter & Pencarian
   const [search, setSearch] = React.useState(initialSearch);
@@ -135,10 +127,6 @@ export function TabelPengaduanGlide({
 
   // Fetch data dari endpoint /pengaduan secara reaktif
   React.useEffect(() => {
-    if (skipInitialFetchRef.current) {
-      skipInitialFetchRef.current = false;
-      return;
-    }
     let ignore = false;
 
     async function loadData() {

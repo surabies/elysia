@@ -273,8 +273,6 @@ export function PapanPengaduan({
 
           <TabelPengaduanGlide
             initialSearch={initialQ}
-            initialRows={initialRows}
-            initialTotal={initialTotal}
             periode={periode}
             availablePeriods={availablePeriods}
             onPeriodeChange={setPeriode}

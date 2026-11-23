@@ -26,13 +26,13 @@ export const GEIST_LIGHT_GLIDE_THEME: Partial<Theme> = {
   accentLight: 'rgba(37, 99, 235, 0.12)',
 
   // Tipografi & Teks
-  textDark: '#09090b',
-  textMedium: '#71717a',
-  textLight: '#a1a1aa',
-  textHeader: '#09090b',
-  textHeaderSelected: '#09090b',
-  textGroupHeader: '#71717a',
-  textBubble: '#09090b',
+  textDark: 'rgb(9, 9, 11)',
+  textMedium: 'rgb(113, 113, 122)',
+  textLight: 'rgb(161, 161, 170)',
+  textHeader: 'rgb(9, 9, 11)',
+  textHeaderSelected: 'rgb(9, 9, 11)',
+  textGroupHeader: 'rgb(113, 113, 122)',
+  textBubble: 'rgb(9, 9, 11)',
 
   // Latar Sel & Header
   bgCell: '#ffffff',
@@ -70,13 +70,13 @@ export const GEIST_DARK_GLIDE_THEME: Partial<Theme> = {
   accentLight: 'rgba(59, 130, 246, 0.2)',
 
   // Tipografi & Teks
-  textDark: '#f4f4f5',
-  textMedium: '#a1a1aa',
-  textLight: '#71717a',
-  textHeader: '#f4f4f5',
-  textHeaderSelected: '#ffffff',
-  textGroupHeader: '#a1a1aa',
-  textBubble: '#f4f4f5',
+  textDark: 'rgb(244, 244, 245)',
+  textMedium: 'rgb(161, 161, 170)',
+  textLight: 'rgb(113, 113, 122)',
+  textHeader: 'rgb(244, 244, 245)',
+  textHeaderSelected: 'rgb(255, 255, 255)',
+  textGroupHeader: 'rgb(161, 161, 170)',
+  textBubble: 'rgb(244, 244, 245)',
 
   // Latar Sel & Header
   bgCell: '#18181b',
