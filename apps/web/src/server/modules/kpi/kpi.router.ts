@@ -6,12 +6,14 @@ import {
   perbaruiNilaiAktualKpi,
   perbaruiBobotKpi,
   perbaruiPemilikKpi,
+  sinkronisasiKpiDariDatabaseRiil,
+  dapatkanEvaluasiInsentifPetugas,
 } from "../../services/kpi/kpi.service"
 
 export const kpiRouter = new Elysia({ prefix: "/kpi" })
   .use(authPlugin)
   .guard({
-    requireRole: ["SUPERADMIN", "EXECUTIVE"],
+    requireRole: ["SUPERADMIN", "EXECUTIVE", "SENIOR_MANAGER", "MANAGER"],
   })
   // 1. Ambil Scorecard Tree per Periode
   .get(
@@ -23,6 +25,63 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
         success: true,
         periode,
         data,
+      }
+    },
+    {
+      query: t.Object({
+        periode: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  // 1b. Sinkronisasi Realisasi KPI Otomatis dari Laporan Transaksi Database Riil
+  .post(
+    "/sync-realisasi",
+    async ({ body, set }) => {
+      try {
+        const result = await sinkronisasiKpiDariDatabaseRiil(
+          body.periode || "Nov 2026",
+          body.thbl
+        )
+        return {
+          success: true,
+          message: "Realisasi KPI berhasil disinkronkan dari laporan database riil",
+          ...result,
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal menyinkronkan realisasi dari database",
+        }
+      }
+    },
+    {
+      body: t.Object({
+        periode: t.Optional(t.String()),
+        thbl: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  // 1c. Ambil Matriks Evaluasi Beban Kerja & Parameter Insentif Petugas
+  .get(
+    "/evaluasi-insentif",
+    async ({ query, set }) => {
+      try {
+        const result = await dapatkanEvaluasiInsentifPetugas(
+          query.periode || "202611"
+        )
+        return {
+          success: true,
+          data: result,
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal memuat matriks evaluasi insentif",
+        }
       }
     },
     {

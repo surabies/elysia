@@ -7,6 +7,7 @@ export { NavbarSearch } from "./navbar/NavbarSearch"
 export { MobileMenu } from "./navbar/MobileMenu"
 
 export { MobileSidebar } from "./navigation/MobileSidebar"
+export { MobileNav, MobileNavProvider, useMobileNav } from "./navigation/MobileNav"
 export { SidebarNav } from "./navigation/SidebarNav"
 
 export { SearchDialog } from "./search/SearchDialog"

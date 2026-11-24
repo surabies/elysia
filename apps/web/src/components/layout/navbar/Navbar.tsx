@@ -60,7 +60,7 @@ export function Navbar() {
               onClick={toggleSidebar}
               className={cn(
                 "outline-none m-0 border-0 align-baseline no-underline group/trigger relative cursor-pointer select-none",
-                "flex items-center justify-center rounded-md bg-transparent text-foreground",
+                "hidden lg:flex items-center justify-center rounded-md bg-transparent text-foreground",
                 "hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200) transition-colors duration-150",
                 "p-0 size-8 shrink-0"
               )}
@@ -93,7 +93,7 @@ export function Navbar() {
                 onClick={toggleSidebar}
                 className={cn(
                   "outline-none m-0 border-0 align-baseline no-underline group/trigger relative cursor-pointer select-none",
-                  "flex items-center justify-center rounded-md bg-transparent text-foreground",
+                  "hidden lg:flex items-center justify-center rounded-md bg-transparent text-foreground",
                   "hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200) transition-colors duration-150",
                   "p-0 size-8 shrink-0"
                 )}

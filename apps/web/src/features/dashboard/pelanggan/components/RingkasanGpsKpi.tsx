@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { MapPin, CheckCircle2, AlertTriangle, Compass } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import type { GpsKpiStats } from '../types';
 
 const id = (n: number) => n.toLocaleString('id-ID');
@@ -17,6 +18,7 @@ export function RingkasanGpsKpi({
   const berGps = stats?.berGps ?? 0;
   const tanpaGps = stats?.tanpaGps ?? 0;
   const persen = stats?.persen ?? (total > 0 ? Math.round((berGps / total) * 100) : 0);
+  const persenTanpa = total > 0 ? Math.round((tanpaGps / total) * 100) : 0;
 
   return (
     <div className="@container/kpi relative w-full shrink-0">
@@ -24,10 +26,10 @@ export function RingkasanGpsKpi({
         aria-label="Indikator Ringkasan Geotagging & Titik GPS"
         className="grid min-w-0 grid-cols-2 gap-2.5 @[620px]/kpi:grid-cols-4 @[800px]/kpi:gap-3"
       >
-        {/* 1. Total Pelanggan (Blue Subtle Theme) */}
-        <div className="@container/card p-3 @[200px]/card:p-3.5 rounded-lg bg-(--ds-blue-100) transition-colors">
+        {/* 1. Total Pelanggan */}
+        <div className="@container/card p-3 @[200px]/card:p-4 rounded-lg border border-border bg-card transition-colors">
           <div className="flex items-center justify-between gap-1.5">
-            <span className="text-label-12 font-medium text-(--ds-blue-900) truncate">
+            <span className="text-label-12 font-medium text-muted-foreground truncate">
               Total Pelanggan
             </span>
             <Compass
@@ -35,21 +37,23 @@ export function RingkasanGpsKpi({
               aria-hidden
             />
           </div>
-          <div className="mt-1 @[200px]/card:mt-1.5 text-heading-20 @[200px]/card:text-heading-24 text-(--ds-blue-900) font-mono font-bold tabular-nums truncate">
-            {loading ? '-' : id(total)}
-            <span className="text-label-12 font-normal text-(--ds-blue-900)/70 ml-1.5 font-sans">
-              sambungan
+          <div className="mt-1.5 flex items-baseline gap-1.5">
+            <span className="text-heading-20 @[200px]/card:text-heading-24 text-foreground font-mono font-bold tabular-nums truncate">
+              {loading ? '-' : id(total)}
+            </span>
+            <span className="text-label-12 font-normal text-muted-foreground font-sans">
+              SL
             </span>
           </div>
-          <p className="hidden @[150px]/card:block mt-0.5 @[200px]/card:mt-1 text-copy-12 text-(--ds-blue-900)/80 truncate">
-            Master sambungan aktif & terdaftar
+          <p className="hidden @[150px]/card:block mt-1 text-copy-12 text-muted-foreground truncate">
+            Master sambungan terdaftar
           </p>
         </div>
 
-        {/* 2. Sudah Ber-GPS (Green Subtle Theme) */}
-        <div className="@container/card p-3 @[200px]/card:p-3.5 rounded-lg bg-(--ds-green-100) transition-colors">
+        {/* 2. Sudah Ber-GPS */}
+        <div className="@container/card p-3 @[200px]/card:p-4 rounded-lg border border-border bg-card transition-colors">
           <div className="flex items-center justify-between gap-1.5">
-            <span className="text-label-12 font-medium text-(--ds-green-900) truncate">
+            <span className="text-label-12 font-medium text-muted-foreground truncate">
               Sudah Ber-GPS
             </span>
             <CheckCircle2
@@ -57,43 +61,51 @@ export function RingkasanGpsKpi({
               aria-hidden
             />
           </div>
-          <div className="mt-1 @[200px]/card:mt-1.5 text-heading-20 @[200px]/card:text-heading-24 text-(--ds-green-900) font-mono font-bold tabular-nums truncate">
-            {loading ? '-' : id(berGps)}
-            <span className="text-label-12 font-normal text-(--ds-green-900)/70 ml-1.5 font-sans">
-              ({persen}%)
+          <div className="mt-1.5 flex items-baseline gap-1.5">
+            <span className="text-heading-20 @[200px]/card:text-heading-24 text-foreground font-mono font-bold tabular-nums truncate">
+              {loading ? '-' : id(berGps)}
             </span>
+            {!loading && (
+              <Badge variant="green-subtle" size="sm">
+                {persen}%
+              </Badge>
+            )}
           </div>
-          <p className="hidden @[150px]/card:block mt-0.5 @[200px]/card:mt-1 text-copy-12 text-(--ds-green-900)/80 truncate">
-            Terplot pada layer PostGIS GIS
+          <p className="hidden @[150px]/card:block mt-1 text-copy-12 text-muted-foreground truncate">
+            Terplot pada layer PostGIS
           </p>
         </div>
 
-        {/* 3. Belum Ada Titik GPS (Amber Subtle Theme - Prioritas Geotagging) */}
-        <div className="@container/card p-3 @[200px]/card:p-3.5 rounded-lg bg-(--ds-amber-100) transition-colors">
+        {/* 3. Belum Ada Titik GPS */}
+        <div className="@container/card p-3 @[200px]/card:p-4 rounded-lg border border-border bg-card transition-colors">
           <div className="flex items-center justify-between gap-1.5">
-            <span className="text-label-12 font-medium text-(--ds-amber-900) truncate">
-              Belum Ada GPS (Antrean)
+            <span className="text-label-12 font-medium text-muted-foreground truncate">
+              Belum Ada GPS
             </span>
             <AlertTriangle
-              className="size-3.5 @[200px]/card:size-4 text-(--ds-amber-700) shrink-0"
+              className="size-3.5 @[200px]/card:size-4 text-(--ds-amber-800) shrink-0"
               aria-hidden
             />
           </div>
-          <div className="mt-1 @[200px]/card:mt-1.5 text-heading-20 @[200px]/card:text-heading-24 text-(--ds-amber-900) font-mono font-bold tabular-nums truncate">
-            {loading ? '-' : id(tanpaGps)}
-            <span className="text-label-12 font-normal text-(--ds-amber-900)/70 ml-1.5 font-sans">
-              ({total > 0 ? Math.round((tanpaGps / total) * 100) : 0}%)
+          <div className="mt-1.5 flex items-baseline gap-1.5">
+            <span className="text-heading-20 @[200px]/card:text-heading-24 text-foreground font-mono font-bold tabular-nums truncate">
+              {loading ? '-' : id(tanpaGps)}
             </span>
+            {!loading && (
+              <Badge variant="amber-subtle" size="sm">
+                {persenTanpa}%
+              </Badge>
+            )}
           </div>
-          <p className="hidden @[150px]/card:block mt-0.5 @[200px]/card:mt-1 text-copy-12 text-(--ds-amber-900)/80 truncate">
-            Prioritas pemutakhiran titik lapangan
+          <p className="hidden @[150px]/card:block mt-1 text-copy-12 text-muted-foreground truncate">
+            Prioritas geotagging lapangan
           </p>
         </div>
 
-        {/* 4. Kelengkapan Spasial (Purple Subtle Theme) */}
-        <div className="@container/card p-3 @[200px]/card:p-3.5 rounded-lg bg-(--ds-purple-100) transition-colors">
+        {/* 4. Cakupan Spasial */}
+        <div className="@container/card p-3 @[200px]/card:p-4 rounded-lg border border-border bg-card transition-colors">
           <div className="flex items-center justify-between gap-1.5">
-            <span className="text-label-12 font-medium text-(--ds-purple-900) truncate">
+            <span className="text-label-12 font-medium text-muted-foreground truncate">
               Cakupan Spasial
             </span>
             <MapPin
@@ -101,14 +113,16 @@ export function RingkasanGpsKpi({
               aria-hidden
             />
           </div>
-          <div className="mt-1 @[200px]/card:mt-1.5 text-heading-20 @[200px]/card:text-heading-24 text-(--ds-purple-900) font-mono font-bold tabular-nums truncate">
-            {loading ? '-' : `${persen}%`}
-            <span className="text-label-12 font-normal text-(--ds-purple-900)/70 ml-1.5 font-sans">
+          <div className="mt-1.5 flex items-baseline gap-1.5">
+            <span className="text-heading-20 @[200px]/card:text-heading-24 text-foreground font-mono font-bold tabular-nums truncate">
+              {loading ? '-' : `${persen}%`}
+            </span>
+            <span className="text-label-12 font-normal text-muted-foreground font-sans">
               terpetakan
             </span>
           </div>
-          <p className="hidden @[150px]/card:block mt-0.5 @[200px]/card:mt-1 text-copy-12 text-(--ds-purple-900)/80 truncate">
-            Rasio kesiapan peta rute cater
+          <p className="hidden @[150px]/card:block mt-1 text-copy-12 text-muted-foreground truncate">
+            Kesiapan peta rute cater
           </p>
         </div>
       </section>

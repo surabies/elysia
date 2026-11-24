@@ -568,16 +568,16 @@
   --ds-red-1000: #570000;
 
   /* Amber */
-  --ds-amber-100: #fef9ec;
-  --ds-amber-200: #feefc3;
-  --ds-amber-300: #fedb88;
-  --ds-amber-400: #f5be38;
-  --ds-amber-500: #f5a623;
-  --ds-amber-600: #e08a00;
-  --ds-amber-700: #c27100;
-  --ds-amber-800: #a35800;
-  --ds-amber-900: #7a3e00;
-  --ds-amber-1000: #4d2300;
+  --ds-amber-100: #fff6e5;
+  --ds-amber-200: #fff4d6;
+  --ds-amber-300: #fef0cd;
+  --ds-amber-400: #ffdd8f;
+  --ds-amber-500: #ffc96b;
+  --ds-amber-600: #f5b047;
+  --ds-amber-700: #ffb224;
+  --ds-amber-800: #ff990a;
+  --ds-amber-900: #a35200;
+  --ds-amber-1000: #4e2009;
 
   /* Green */
   --ds-green-100: #edfcf2;
@@ -902,16 +902,16 @@
   --ds-red-1000: #ffd6d6;
 
   /* Amber */
-  --ds-amber-100: #241000;
-  --ds-amber-200: #3b1c00;
-  --ds-amber-300: #542900;
-  --ds-amber-400: #733900;
-  --ds-amber-500: #9c4f00;
-  --ds-amber-600: #c26700;
-  --ds-amber-700: #e08a00;
-  --ds-amber-800: #f5a623;
-  --ds-amber-900: #f8c266;
-  --ds-amber-1000: #feefc3;
+  --ds-amber-100: #1f1300;
+  --ds-amber-200: #331b00;
+  --ds-amber-300: #4d2a00;
+  --ds-amber-400: #573300;
+  --ds-amber-500: #6b4100;
+  --ds-amber-600: #e79d13;
+  --ds-amber-700: #ffb224;
+  --ds-amber-800: #ff990a;
+  --ds-amber-900: #ff990a;
+  --ds-amber-1000: #fef3dc;
 
   /* Green */
   --ds-green-100: #001c0a;

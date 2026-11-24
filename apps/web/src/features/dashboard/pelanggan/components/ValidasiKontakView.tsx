@@ -150,20 +150,20 @@ export function ValidasiKontakView() {
       {/* Filter & Search Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 bg-card p-3 rounded-lg border border-border">
         {/* Status Filter Tabs / Segmented Pills */}
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex items-center gap-1 p-1 bg-muted/60 rounded-lg border border-border overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => handleFilterStatus('ALL')}
             className={cn(
-              'h-8 px-3 text-label-12 font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5',
+              'h-7 px-3 text-label-12 font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5 shrink-0',
               statusFilter === 'ALL'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                ? 'bg-background text-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <span>Semua</span>
             {kpiStats && (
-              <Badge variant={statusFilter === 'ALL' ? 'pill' : 'gray-subtle'} size="sm" className="h-4.5 px-1.5 text-[10px]">
+              <Badge variant="gray-subtle" size="sm" className="h-4.5 px-1.5 text-[10px]">
                 {kpiStats.total}
               </Badge>
             )}
@@ -173,16 +173,16 @@ export function ValidasiKontakView() {
             type="button"
             onClick={() => handleFilterStatus('VALID')}
             className={cn(
-              'h-8 px-3 text-label-12 font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5',
+              'h-7 px-3 text-label-12 font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5 shrink-0',
               statusFilter === 'VALID'
-                ? 'bg-(--ds-green-700) text-white shadow-xs'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                ? 'bg-background text-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <CheckCircle2 className="size-3.5 text-(--ds-green-700)" />
             <span>Valid WA</span>
             {kpiStats && (
-              <Badge variant={statusFilter === 'VALID' ? 'pill' : 'green-subtle'} size="sm" className="h-4.5 px-1.5 text-[10px]">
+              <Badge variant="green-subtle" size="sm" className="h-4.5 px-1.5 text-[10px]">
                 {kpiStats.valid}
               </Badge>
             )}
@@ -192,16 +192,16 @@ export function ValidasiKontakView() {
             type="button"
             onClick={() => handleFilterStatus('EMPTY')}
             className={cn(
-              'h-8 px-3 text-label-12 font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5',
+              'h-7 px-3 text-label-12 font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5 shrink-0',
               statusFilter === 'EMPTY'
-                ? 'bg-(--ds-amber-700) text-[#0a0a0a] shadow-xs'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                ? 'bg-background text-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <AlertCircle className="size-3.5 text-(--ds-amber-700)" />
+            <AlertCircle className="size-3.5 text-(--ds-amber-800)" />
             <span>Belum Ada</span>
             {kpiStats && (
-              <Badge variant={statusFilter === 'EMPTY' ? 'pill' : 'amber-subtle'} size="sm" className="h-4.5 px-1.5 text-[10px]">
+              <Badge variant="amber-subtle" size="sm" className="h-4.5 px-1.5 text-[10px]">
                 {kpiStats.empty}
               </Badge>
             )}
@@ -211,16 +211,16 @@ export function ValidasiKontakView() {
             type="button"
             onClick={() => handleFilterStatus('INVALID')}
             className={cn(
-              'h-8 px-3 text-label-12 font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5',
+              'h-7 px-3 text-label-12 font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5 shrink-0',
               statusFilter === 'INVALID'
-                ? 'bg-(--ds-blue-700) text-white shadow-xs'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                ? 'bg-background text-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <Phone className="size-3.5 text-(--ds-blue-700)" />
             <span>Perlu Cek</span>
             {kpiStats && (
-              <Badge variant={statusFilter === 'INVALID' ? 'pill' : 'blue-subtle'} size="sm" className="h-4.5 px-1.5 text-[10px]">
+              <Badge variant="blue-subtle" size="sm" className="h-4.5 px-1.5 text-[10px]">
                 {kpiStats.invalid}
               </Badge>
             )}

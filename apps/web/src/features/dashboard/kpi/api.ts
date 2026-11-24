@@ -15,6 +15,32 @@ export const kpiApi = {
     return json.data ?? [];
   },
 
+  /** Sinkronisasi otomatis nilai aktual KPI dari laporan transaksi database riil */
+  async syncRealisasiDariDatabase(periode: string, thbl?: string) {
+    const res = await fetch("/api/kpi/sync-realisasi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ periode, thbl }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal menyinkronkan data dari laporan");
+    }
+    return json;
+  },
+
+  /** Mengambil matriks evaluasi beban kerja & parameter insentif petugas */
+  async getEvaluasiInsentif(periode: string) {
+    const res = await fetch(
+      `/api/kpi/evaluasi-insentif?periode=${encodeURIComponent(periode)}`
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat matriks evaluasi insentif");
+    }
+    return json.data;
+  },
+
   /** Memperbarui nilai aktual KPI */
   async updateNilai(kpiId: string, periode: string, nilai: number | null) {
     const res = await fetch(`/api/kpi/${encodeURIComponent(kpiId)}/nilai`, {

@@ -11,6 +11,10 @@ import {
   Plus,
   Calendar,
   Undo2,
+  RefreshCw,
+  Target,
+  Calculator,
+  FileText,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +24,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import { kpiApi } from "./api"
 import type { KpiItem, KpiOwner, Perspective } from "./types/KpiTypes"
 import { INITIAL_SCORECARD_PERSPECTIVES, KPI_OWNERS } from "./data/KpiMockData"
@@ -29,6 +41,7 @@ import type { ParsedNewKpi } from "./lib/KpiFormValidation"
 import { KpiSummaryStrip } from "./components/KpiSummaryStrip"
 import { KpiScorecardTable } from "./components/KpiScorecardTable"
 import { AddKpiSheet } from "./components/AddKpiSheet"
+import { KpiInsentifPetugasTab } from "./components/KpiInsentifPetugasTab"
 
 interface KpiScorecardViewProps {
   initialPerspectives?: Perspective[]
@@ -39,6 +52,7 @@ export function KpiScorecardView({
   initialPerspectives,
   initialPeriod = "Sep 2026",
 }: KpiScorecardViewProps = {}) {
+  const [activeTab, setActiveTab] = React.useState<"scorecard" | "insentif">("scorecard")
   const [perspectives, setPerspectives] = React.useState<Perspective[]>(
     initialPerspectives && initialPerspectives.length > 0
       ? initialPerspectives
@@ -47,7 +61,9 @@ export function KpiScorecardView({
   const [history, setHistory] = React.useState<Perspective[][]>([])
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedPeriod, setSelectedPeriod] = React.useState(initialPeriod)
+  const [syncingDb, setSyncingDb] = React.useState(false)
   const [isAddKpiOpen, setIsAddKpiOpen] = React.useState(false)
+  const [isFormulaOpen, setIsFormulaOpen] = React.useState(false)
   const [preselectedObjectiveId, setPreselectedObjectiveId] = React.useState<string | null>(null)
   const searchInputRef = React.useRef<HTMLInputElement | null>(null)
 
@@ -80,7 +96,6 @@ export function KpiScorecardView({
   // Keyboard shortcut: '/' fokus ke search, Ctrl+Z untuk undo
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Shortcut '/'
       if (
         e.key === "/" &&
         document.activeElement?.tagName !== "INPUT" &&
@@ -90,7 +105,6 @@ export function KpiScorecardView({
         searchInputRef.current?.focus()
       }
 
-      // Shortcut Ctrl+Z
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         if (
           document.activeElement?.tagName !== "INPUT" &&
@@ -119,6 +133,24 @@ export function KpiScorecardView({
     }
   }
 
+  // Handler Tarik & Sinkronkan Realisasi Otomatis dari Laporan Transaksi Database Riil
+  const handleSyncFromRealReports = async () => {
+    setSyncingDb(true)
+    try {
+      const res = await kpiApi.syncRealisasiDariDatabase(selectedPeriod)
+      if (res.perspectives && res.perspectives.length > 0) {
+        pushHistory(res.perspectives)
+      }
+      toast.success(
+        `Realisasi KPI berhasil ditarik dari laporan database riil (Periode ${res.thbl})`
+      )
+    } catch (err: any) {
+      toast.error(err.message || "Gagal menyinkronkan data dari laporan database")
+    } finally {
+      setSyncingDb(false)
+    }
+  }
+
   // Handler update value KPI
   const handleUpdateKpiValue = (kpiId: string, newValue: number | null) => {
     const next = perspectives.map((p) => ({
@@ -135,7 +167,6 @@ export function KpiScorecardView({
     }))
     pushHistory(next)
 
-    // Sync ke PostgreSQL database via Elysia API
     kpiApi.updateNilai(kpiId, selectedPeriod, newValue).catch((err) => {
       console.error("Gagal simpan nilai aktual ke DB:", err)
     })
@@ -157,7 +188,6 @@ export function KpiScorecardView({
     }))
     pushHistory(next)
 
-    // Sync ke PostgreSQL database via Elysia API
     kpiApi.updateBobot(kpiId, newWeight).catch((err) => {
       console.error("Gagal simpan bobot ke DB:", err)
     })
@@ -179,7 +209,6 @@ export function KpiScorecardView({
     }))
     pushHistory(next)
 
-    // Sync ke PostgreSQL database via Elysia API
     kpiApi.updatePemilik(kpiId, newOwner).catch((err) => {
       console.error("Gagal simpan pemilik ke DB:", err)
     })
@@ -235,7 +264,6 @@ export function KpiScorecardView({
     pushHistory(next)
     toast.success("Indikator KPI berhasil disimpan ke database")
 
-    // Sync ke PostgreSQL database via Elysia API
     fetch("/api/kpi", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -253,13 +281,12 @@ export function KpiScorecardView({
     })
   }
 
-  // Handler paste range nilai dari spreadsheet (tab/newline separated)
+  // Handler paste range nilai dari spreadsheet
   const handlePasteRange = (
     startKpiId: string,
     field: "value" | "weight",
     values: string[]
   ) => {
-    // Kumpulkan seluruh KPI terurut dalam daftar flat
     const flatKpis: { kpiId: string }[] = []
     perspectives.forEach((p) => {
       p.objectives.forEach((obj) => {
@@ -308,83 +335,114 @@ export function KpiScorecardView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background p-4 sm:p-6 lg:p-7">
-      {/* A. Header Halaman */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        {/* Breadcrumb M2C Tirtawening > Kinerja & Evaluasi > Strategy Scorecard (KPI) */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5 font-medium text-foreground">
-            <span className="size-2 rounded-full bg-sky-600 shadow-sm" />
-            <span>M2C Tirtawening</span>
-          </div>
-          <span>&gt;</span>
-          <span className="hover:text-foreground">Kinerja & Evaluasi</span>
-          <span>&gt;</span>
-          <span className="font-semibold text-foreground">Strategy Scorecard (KPI)</span>
+      {/* A. Header Halaman & Switcher Mode */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        {/* Mode Switcher Tabs (Putih Bersih) */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setActiveTab("scorecard")}
+            className={cn(
+              "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
+              activeTab === "scorecard"
+                ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
+                : "border-border text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Target className="size-3.5 text-(--ds-blue-700)" />
+            <span>1. Balanced Scorecard Unit (M2C)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("insentif")}
+            className={cn(
+              "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
+              activeTab === "insentif"
+                ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
+                : "border-border text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Calculator className="size-3.5 text-(--ds-green-700)" />
+            <span>2. Matriks Beban Kerja &amp; Insentif Petugas</span>
+          </button>
         </div>
 
-        {/* Updated timestamp & Share Button */}
-        <div className="flex items-center gap-3 text-xs">
-          <span className="text-muted-foreground">
-            Sinkronisasi Database Aktif • {selectedPeriod}
-          </span>
+        {/* Tombol Sinkronisasi Laporan Riil, Panduan Rumus & Share */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFormulaOpen(true)}
+            className="h-8 gap-1.5 text-xs bg-card"
+          >
+            <FileText className="size-3.5 text-(--ds-blue-700)" />
+            <span>Metodologi &amp; Rumus KPI</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleSyncFromRealReports}
+            disabled={syncingDb}
+            className="h-8 gap-1.5 text-xs bg-card"
+            title="Tarik nilai aktual otomatis dari laporan baca meter, geofence GPS, koreksi, dan DRD"
+          >
+            <RefreshCw className={cn("size-3.5 text-(--ds-green-700)", syncingDb && "animate-spin")} />
+            <span>Sinkronkan dari Laporan Riil</span>
+          </Button>
+
           {history.length > 0 && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleUndo}
-              className="h-7 gap-1 px-2 text-xs"
+              className="h-8 gap-1 px-2 text-xs"
               title="Batalkan perubahan terakhir (Ctrl+Z)"
             >
-              <Undo2 className="size-3" />
-              <span>Batal (Undo)</span>
+              <Undo2 className="size-3.5" />
+              <span>Undo</span>
             </Button>
           )}
-          <Button
-            type="button"
-            size="sm"
-            className="h-7 gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium px-3 text-xs"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                navigator.clipboard.writeText(window.location.href)
-                toast.success("Tautan scorecard berhasil disalin ke clipboard")
-              }
-            }}
-          >
-            <Share2 className="size-3.5" />
-            <span>Bagikan</span>
-          </Button>
         </div>
       </div>
 
-      {/* B. Kartu Utama Strategy Scorecard */}
+      {/* B. Kartu Utama Strategy Scorecard / Matriks Insentif */}
       <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card shadow-sm overflow-hidden">
         {/* Toolbar Kartu */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-3.5 sm:p-4">
           <div>
             <h1 className="text-base font-bold text-foreground">
-              Strategy Scorecard (KPI Baca Meter)
+              {activeTab === "scorecard"
+                ? "Strategy Scorecard (KPI Siklus Meter-to-Cash)"
+                : "Matriks Evaluasi KPI & Simulasi Insentif Berbasis Beban Kerja"}
             </h1>
             <p className="text-xs text-muted-foreground">
-              Target Tahunan & Realisasi Bulanan: Pencatat, Verifikasi, Closing DRD & Distribusi
+              {activeTab === "scorecard"
+                ? "Evaluasi 4 Perspektif Operasional: Pencatatan Lapangan (35%), Verifikasi V1/V2 (30%), Closing DRD (20%), dan Master Spasial (15%)"
+                : "Perhitungan objektif insentif petugas berdasarkan Indeks Beban Kerja (SL) × Skor Capaian Kinerja (Kuantitas, GPS, Kualitas & Durasi)"}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Input Search KPIs */}
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                ref={searchInputRef}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari indikator KPI atau penanggung jawab..."
-                className="h-8 w-56 pl-8 pr-7 text-xs bg-muted/40 sm:w-64"
-              />
-              <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-1 py-0.2 text-[9px] font-semibold text-muted-foreground">
-                /
-              </kbd>
-            </div>
+            {activeTab === "scorecard" && (
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari indikator KPI atau penanggung jawab..."
+                  className="h-8 w-56 pl-8 pr-7 text-xs bg-muted/40 sm:w-64"
+                />
+                <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-1 py-0.2 text-[9px] font-semibold text-muted-foreground">
+                  /
+                </kbd>
+              </div>
+            )}
 
             {/* Dropdown Periode */}
             <DropdownMenu>
@@ -395,7 +453,7 @@ export function KpiScorecardView({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="text-xs">
-                {["Sep 2026", "Agt 2026", "Jul 2026", "Q3 2026", "Target Akhir 2026"].map((p) => (
+                {["Nov 2026", "Okt 2026", "Sep 2026", "Agt 2026", "Jul 2026", "Target Akhir 2026"].map((p) => (
                   <DropdownMenuItem
                     key={p}
                     onClick={() => handleChangePeriod(p)}
@@ -407,69 +465,53 @@ export function KpiScorecardView({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Empat Tombol Ikon (Filter, Sliders, Kolom, Download) */}
-            <div className="flex items-center gap-1 border-x border-border px-1.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground hover:text-foreground"
-                title="Saring data scorecard"
-              >
-                <Filter className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground hover:text-foreground"
-                title="Penyesuaian target"
-              >
-                <SlidersHorizontal className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground hover:text-foreground"
-                title="Pilih kolom tampilan"
-              >
-                <Columns3 className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground hover:text-foreground"
-                title="Unduh laporan scorecard"
-                onClick={() => toast.success("Menyiapkan berkas laporan scorecard...")}
-              >
-                <Download className="size-3.5" />
-              </Button>
-            </div>
+            {activeTab === "scorecard" && (
+              <>
+                <div className="flex items-center gap-1 border-x border-border px-1.5">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    title="Unduh laporan scorecard"
+                    onClick={() => toast.success("Menyiapkan berkas laporan scorecard...")}
+                  >
+                    <Download className="size-3.5" />
+                  </Button>
+                </div>
 
-            {/* Tombol Hitam + Tambah KPI */}
-            <Button
-              size="sm"
-              className="h-8 gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium px-3 text-xs"
-              onClick={() => handleOpenAddKpi()}
-            >
-              <Plus className="size-3.5" />
-              <span>Tambah KPI</span>
-            </Button>
+                <Button
+                  size="sm"
+                  className="h-8 gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium px-3 text-xs"
+                  onClick={() => handleOpenAddKpi()}
+                >
+                  <Plus className="size-3.5" />
+                  <span>Tambah KPI</span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Strip Ringkasan 4 Sel */}
-        <KpiSummaryStrip summary={summary} />
+        {activeTab === "scorecard" ? (
+          <>
+            {/* Strip Ringkasan 4 Sel */}
+            <KpiSummaryStrip summary={summary} />
 
-        {/* C. Tabel KPI Scorecard */}
-        <KpiScorecardTable
-          perspectives={calculatedPerspectives}
-          summary={summary}
-          searchQuery={searchQuery}
-          onUpdateKpiValue={handleUpdateKpiValue}
-          onUpdateKpiWeight={handleUpdateKpiWeight}
-          onUpdateKpiOwner={handleUpdateKpiOwner}
-          onPasteRange={handlePasteRange}
-          onOpenAddKpi={handleOpenAddKpi}
-        />
+            {/* Tabel KPI Scorecard */}
+            <KpiScorecardTable
+              perspectives={calculatedPerspectives}
+              summary={summary}
+              searchQuery={searchQuery}
+              onUpdateKpiValue={handleUpdateKpiValue}
+              onUpdateKpiWeight={handleUpdateKpiWeight}
+              onUpdateKpiOwner={handleUpdateKpiOwner}
+              onPasteRange={handlePasteRange}
+              onOpenAddKpi={handleOpenAddKpi}
+            />
+          </>
+        ) : (
+          <KpiInsentifPetugasTab selectedPeriod={selectedPeriod} />
+        )}
       </div>
 
       {/* Sheet Add KPI */}
@@ -482,6 +524,74 @@ export function KpiScorecardView({
         preselectedObjectiveId={preselectedObjectiveId}
         onAddKpi={handleAddNewKpi}
       />
+
+      {/* Dialog Metodologi & Rumus Presentasi KPI & Insentif */}
+      <Dialog open={isFormulaOpen} onOpenChange={setIsFormulaOpen}>
+        <DialogContent className="sm:max-w-[760px] max-h-[88vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-heading-18">
+              Metodologi KPI &amp; Formulasi Insentif Berbasis Beban Kerja
+            </DialogTitle>
+            <DialogDescription className="text-copy-13">
+              Seluruh indikator KPI ditarik langsung dari 7 modul laporan operasional yang berjalan di sistem (dokumentasi lengkap tersedia di <code>docs/PRESENTASI_KPI_DAN_INSENTIF.md</code>).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 text-copy-13">
+            <div className="rounded-lg border border-border bg-(--ds-gray-100) p-3.5 space-y-2">
+              <h3 className="text-label-13 font-semibold text-foreground">
+                1. Empat Perspektif Balanced Scorecard Unit (Bobot 100%)
+              </h3>
+              <ul className="space-y-1 text-copy-12 text-muted-foreground list-disc list-inside">
+                <li>
+                  <strong className="text-foreground">Pencatatan Meter Lapangan (35%)</strong>: Read Rate Rute (40%), Kepatuhan Titik GPS &le;50m (35%), Produktivitas Harian LPS (25%).
+                </li>
+                <li>
+                  <strong className="text-foreground">Verifikasi &amp; Screening Anomali (30%)</strong>: SLA Verifikasi V1 Supervisor (40%), Resolusi Cek Fisik/Anomali (30%), Kualitas Tanpa Revisi / First-Time Right (30%).
+                </li>
+                <li>
+                  <strong className="text-foreground">Closing &amp; Penagihan DRD (20%)</strong>: Kesiapan Kunci Billing (35%), Ketepatan Waktu Closing (30%), Rasio Realisasi Kubikasi DRD (35%).
+                </li>
+                <li>
+                  <strong className="text-foreground">Master Spasial &amp; Respons Layanan (15%)</strong>: Cakupan Geotagging GPS &amp; Kontak WhatsApp Valid (50%), Tindak Lanjut Ganti Meter GWM (50%).
+                </li>
+              </ul>
+            </div>
+
+            <div className="rounded-lg border border-border bg-(--ds-gray-100) p-3.5 space-y-2">
+              <h3 className="text-label-13 font-semibold text-foreground">
+                2. Rumus Insentif Individu (Keadilan Beban Kerja × Kualitas Capaian)
+              </h3>
+              <p className="text-copy-12 text-muted-foreground">
+                Mengatasi ketimpangan antara petugas rute padat dan rute ringan serta mencegah praktik tembak angka tanpa foto/GPS:
+              </p>
+              <div className="p-2.5 rounded bg-card border border-border font-mono text-xs space-y-1">
+                <div>1. Indeks Beban = Clamp(Target SL Petugas / Rata-rata Target SL, 0.70, 1.40)</div>
+                <div>2. Skor KPI = (40% × %SL) + (25% × %GPS) + (20% × %Kualitas) + (15% × %Kecepatan)</div>
+                <div>3. Total Insentif = (Pagu Dasar + [SL Terbaca × Tarif/SL]) × Indeks Beban × Pengali Grade</div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center text-copy-12">
+                <div className="p-2 rounded bg-card border border-border">
+                  <strong className="block text-(--ds-green-800)">Grade A (&ge;90)</strong>
+                  <span className="font-mono text-xs">Pengali 110%</span>
+                </div>
+                <div className="p-2 rounded bg-card border border-border">
+                  <strong className="block text-(--ds-blue-800)">Grade B (75–89)</strong>
+                  <span className="font-mono text-xs">Pengali 100%</span>
+                </div>
+                <div className="p-2 rounded bg-card border border-border">
+                  <strong className="block text-(--ds-amber-900)">Grade C (60–74)</strong>
+                  <span className="font-mono text-xs">Pengali 65%</span>
+                </div>
+                <div className="p-2 rounded bg-card border border-border">
+                  <strong className="block text-(--ds-red-800)">Grade D (&lt;60)</strong>
+                  <span className="font-mono text-xs">Pengali 0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
