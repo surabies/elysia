@@ -180,6 +180,7 @@ export const rolePermissions = pgTable(
     modulKey: varchar('modul_key', { length: 50 }).notNull().unique(),
     modulNama: varchar('modul_nama', { length: 100 }).notNull(),
     kategori: varchar('kategori', { length: 50 }).notNull().default('OPERASIONAL'),
+    bagian: varchar('bagian', { length: 50 }).notNull().default('UMUM'),
     deskripsi: text('deskripsi'),
     urutan: numeric('urutan', { precision: 4, scale: 0 }).notNull().default('0'),
 
@@ -205,6 +206,7 @@ export const rolePermissions = pgTable(
   (table) => [
     index('role_permissions_modul_key_idx').on(table.modulKey),
     index('role_permissions_kategori_idx').on(table.kategori),
+    index('role_permissions_bagian_idx').on(table.bagian),
   ]
 );
 
@@ -219,7 +221,12 @@ export const userPermissionOverrides = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     modulKey: varchar('modul_key', { length: 50 }).notNull(),
-    granted: boolean('granted').notNull(),
+    canRead: boolean('can_read').notNull().default(true),
+    canCreate: boolean('can_create').notNull().default(false),
+    canUpdate: boolean('can_update').notNull().default(false),
+    canDelete: boolean('can_delete').notNull().default(false),
+    canPost: boolean('can_post').notNull().default(false),
+    granted: boolean('granted').notNull().default(true),
     catatan: text('catatan'),
     updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at').notNull().defaultNow(),

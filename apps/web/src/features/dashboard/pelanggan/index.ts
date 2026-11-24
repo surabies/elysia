@@ -1,5 +1,15 @@
 export * from './api';
+export * from './types';
 export { ManualAddPage } from './components/ManualAddPage';
 export { ManualAddSatuanForm } from './components/ManualAddSatuanForm';
 export { ManualAddMasalTaksasi } from './components/ManualAddMasalTaksasi';
 export { ManualAddRiwayatTable } from './components/ManualAddRiwayatTable';
+export { ValidasiKontakView } from './components/ValidasiKontakView';
+export { RingkasanKontakKpi } from './components/RingkasanKontakKpi';
+export { ModalEditKontak } from './components/ModalEditKontak';
+export { PindahTarifView } from './components/PindahTarifView';
+export { SimulasiDampakTarif } from './components/SimulasiDampakTarif';
+export { MutasiPelangganView } from './components/MutasiPelangganView';
+export { RingkasanGpsKpi } from './components/RingkasanGpsKpi';
+export { ModalGeotagging } from './components/ModalGeotagging';
+export { GeotaggingPelangganView } from './components/GeotaggingPelangganView';

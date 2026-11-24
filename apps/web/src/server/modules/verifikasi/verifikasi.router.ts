@@ -11,21 +11,21 @@ import {
   waterMeterMutasi,
   type AppRole,
 } from "@cater/db";
-import { authPlugin } from "../plugins/auth";
-import { caterVerifikasiService } from "../services/cater/cater-verifikasi.service";
-import { mandiriService } from "../services/mandiri/mandiri.service";
+import { authPlugin } from "../../plugins/auth";
+import { caterVerifikasiService } from "../../services/cater/cater-verifikasi.service";
+import { mandiriService } from "../../services/mandiri/mandiri.service";
 import {
   verifikasiGridService,
   FINAL_STATUSES,
-} from "../services/cater/verifikasi-grid.service";
-import { manualAddMasalService } from "../services/cater/manual-add-masal.service";
-import { hitungKubikasiGantiMeter } from "../domain/gwm/gwm.engine";
+} from "../../services/cater/verifikasi-grid.service";
+import { manualAddMasalService } from "../../services/cater/manual-add-masal.service";
+import { hitungKubikasiGantiMeter } from "../../domain/gwm/gwm.engine";
 import {
   apakahKondisiTaksasiOtomatis,
   PEMAKAIAN_MINIMUM_PERDIR,
-} from "../domain/taksasi/taksasi.engine";
-import { evaluasiAnomaliBaris } from "../domain/cater/anomali-evaluator";
-import { aturanAnomaliService } from "../services/cater/aturan-anomali.service";
+} from "../../domain/taksasi/taksasi.engine";
+import { evaluasiAnomaliBaris } from "../../domain/cater/anomali-evaluator";
+import { aturanAnomaliService } from "../../services/cater/aturan-anomali.service";
 
 const READ_ROLES: AppRole[] = [
   "STAFF_ADMIN_BILLING",
@@ -100,7 +100,7 @@ function maxRing(roles: readonly string[] | string[]): 1 | 2 | 3 | null {
   return null;
 }
 
-export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
+export const verifikasiRouter = new Elysia({ prefix: "/v1" })
   .use(authPlugin)
 
   .get(
@@ -1431,3 +1431,6 @@ export const verifikasiLegacyRouter = new Elysia({ prefix: "/v1" })
       }),
     },
   );
+
+export { verifikasiRouter as verifikasiLegacyRouter };
+export type VerifikasiRouter = typeof verifikasiRouter;

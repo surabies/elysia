@@ -260,7 +260,10 @@ export function ringVerif(row: {
   verifiedBy?: { name: string | null } | null
 }): { v1: string | null; v2: string | null; v3: string | null } {
   const legacy =
-    (row.isVerified || row.pembacaanId) && !row.verif1At
+    (row.isVerified || row.pembacaanId) &&
+    !row.verif1At &&
+    !row.verif2At &&
+    !row.verif3At
       ? (row.verifiedBy?.name ?? "✓")
       : null
   return {

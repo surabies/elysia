@@ -34,12 +34,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
     roles: [
       'SUPERADMIN',
-      'STAFF',
-      'STAFF_ADMIN_BILLING',
-      'VERIFIKATOR_1',
-      'VERIFIKATOR_2',
       'VERIFIKATOR_3',
-      'EXECUTIVE',
     ],
   },
   {
@@ -64,7 +59,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Senior Manager Pelayanan Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5',
-    roles: ['SENIOR_MANAGER', 'VERIFIKATOR_3'],
+    roles: ['SENIOR_MANAGER', 'EXECUTIVE'],
   },
 
   // --- BAGIAN PENCATAT METER ---
@@ -103,7 +98,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'AGUS',
   },
   {
@@ -116,7 +111,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'DADANG',
   },
   {
@@ -129,7 +124,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'DANI',
   },
   {
@@ -142,7 +137,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'DIDIN',
   },
   {
@@ -155,7 +150,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'IWAN',
   },
   {
@@ -168,7 +163,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'EDI', // Mengisi posisi rute EDI yang sudah pensiun
   },
   {
@@ -181,7 +176,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'OMAY',
   },
   {
@@ -194,7 +189,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'PERIYADI',
   },
   {
@@ -207,7 +202,7 @@ export const SEED_OFFICIAL_ROSTER: SeedAccountDef[] = [
     wilayahKerja: 'WILAYAH_5',
     jabatanNama: 'Petugas Catat Meter Wilayah 5',
     unitKerja: 'Pelayanan Wilayah 5 - Bagian Pencatat Meter',
-    roles: ['PENCATAT', 'PELAKSANA'],
+    roles: ['PENCATAT'],
     petugasId: 'RUDY',
   },
 
@@ -513,7 +508,13 @@ export async function seedAccounts(defaultPassword?: string) {
 
   const defaultHash = await getHashedPassword(effectiveDefaultPassword);
 
-  // 1. Bersihkan akun lama yang tidak ada dalam daftar resmi baru
+  // 1. Bersihkan session auth lama dan akun lama yang tidak ada dalam daftar resmi baru
+  try {
+    await db.execute(sql.raw('TRUNCATE TABLE "session" CASCADE;'));
+  } catch (e: any) {
+    // abaikan jika tabel session belum ada
+  }
+
   const officialIds = SEED_OFFICIAL_ROSTER.map((a) => a.id);
   const oldUsers = await db.select({ id: user.id }).from(user);
   const oldIdsToDelete = oldUsers
@@ -545,8 +546,9 @@ export async function seedAccounts(defaultPassword?: string) {
     await db.delete(user).where(inArray(user.id, oldIdsToDelete));
   }
 
-  // Bersihkan tabel pegawai untuk diisi ulang dengan data fresh
+  // Bersihkan tabel pegawai dan userRoles untuk diisi ulang murni sesuai SEED_OFFICIAL_ROSTER
   await db.delete(pegawai);
+  await db.delete(userRoles);
 
   let upsertedCount = 0;
 
@@ -597,21 +599,8 @@ export async function seedAccounts(defaultPassword?: string) {
         },
       });
 
-    // 3. Reset & Seed RBAC User Roles (Verifikator V1/V2 khusus Bagian Pencatat Meter)
-    await db.delete(userRoles).where(eq(userRoles.userId, acc.id));
-    const rolesToAssign = new Set<string>(acc.roles);
-
-    if (acc.bagian === 'PENCATAT_METER') {
-      if (rolesToAssign.has('SUPERVISOR')) rolesToAssign.add('VERIFIKATOR_1');
-      if (rolesToAssign.has('MANAGER')) rolesToAssign.add('VERIFIKATOR_2');
-    }
-    if (rolesToAssign.has('SENIOR_MANAGER')) rolesToAssign.add('VERIFIKATOR_3');
-    if (rolesToAssign.has('DIREKSI')) rolesToAssign.add('EXECUTIVE');
-    if (rolesToAssign.has('STAFF') && acc.bagian !== 'DISTRIBUSI') {
-      rolesToAssign.add('STAFF_ADMIN_BILLING');
-    }
-
-    for (const r of rolesToAssign) {
+    // 3. Reset & Seed RBAC User Roles (Strict sesuai deklarasi roster acc.roles)
+    for (const r of acc.roles) {
       await db.insert(userRoles).values({
         userId: acc.id,
         role: r as any,

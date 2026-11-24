@@ -414,7 +414,12 @@ export const masterRouter = new Elysia({ prefix: '/master' })
         overrides: t.Array(
           t.Object({
             modulKey: t.String(),
-            granted: t.Boolean(),
+            granted: t.Optional(t.Boolean()),
+            canRead: t.Optional(t.Boolean()),
+            canCreate: t.Optional(t.Boolean()),
+            canUpdate: t.Optional(t.Boolean()),
+            canDelete: t.Optional(t.Boolean()),
+            canPost: t.Optional(t.Boolean()),
             catatan: t.Optional(t.String()),
           })
         ),

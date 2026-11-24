@@ -64,12 +64,12 @@ export function FotoKosong({
   })
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1">
       <BingkaiPotret
         url={mockUrl}
         alt={`${label}. ${keterangan ?? "Foto on-demand dinamis."}`}
       />
-      <p className="text-center text-copy-13 text-muted-foreground">
+      <p className="text-center text-copy-13 text-muted-foreground break-words px-1">
         Simulasi foto dinamis (on-demand) — belum ada foto lapangan.
       </p>
     </div>
@@ -111,9 +111,9 @@ export function FotoBukti({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1">
       <BingkaiPotret url={url} alt={label} />
-      <p className="text-center text-copy-13 text-muted-foreground">
+      <p className="text-center text-copy-13 text-muted-foreground break-words px-1">
         Klik foto untuk perbesar, putar & zoom
       </p>
     </div>

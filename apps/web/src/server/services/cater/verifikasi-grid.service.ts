@@ -525,15 +525,10 @@ export class VerifikasiGridService {
         const point = row.titikLokasi as { x?: number; y?: number } | null;
 
         // Status-aware verification stages:
-        // verif3At HANYA aktif jika statusVerifikasi merupakan final (APPROVED_FINAL, CORRECTED_POST_VERIF, LOCKED_BILLING).
-        // Jangan pernah menampilkan V3 jika statusVerifikasi adalah SUBMITTED / DRAFT / ANOMALY!
-        const hasV3 = final && Boolean(v3);
-        const hasV2 = (final || row.statusVerifikasi === "VERIFIED_L2") && Boolean(v2 || v3);
-        const hasV1 =
-          (final ||
-            row.statusVerifikasi === "VERIFIED_L2" ||
-            row.statusVerifikasi === "VERIFIED_L1") &&
-          Boolean(v1 || v2 || v3);
+        // Setiap ring V1, V2, V3 mandiri: hanya aktif bila ring tersebut benar-benar diverifikasi.
+        const hasV3 = Boolean(v3) || (final && !v1 && !v2);
+        const hasV2 = Boolean(v2);
+        const hasV1 = Boolean(v1);
 
         return {
           id: row.id,
@@ -598,9 +593,9 @@ export class VerifikasiGridService {
             ? (latestV1?.alasan ?? row.catatan)
             : row.catatan,
           pembacaanId: final ? row.id : null,
-          verif1At: hasV1 ? toIso(v1?.createdAt ?? v2?.createdAt ?? v3?.createdAt) : null,
-          verif2At: hasV2 ? toIso(v2?.createdAt ?? v3?.createdAt) : null,
-          verif3At: hasV3 ? toIso(v3?.createdAt) : null,
+          verif1At: hasV1 && v1 ? toIso(v1.createdAt) : null,
+          verif2At: hasV2 && v2 ? toIso(v2.createdAt) : null,
+          verif3At: hasV3 && v3 ? toIso(v3.createdAt) : null,
           verif1By: hasV1 && v1 ? { name: v1.userName } : null,
           verif2By: hasV2 && v2 ? { name: v2.userName } : null,
           verif3By: hasV3 && v3 ? { name: v3.userName } : null,

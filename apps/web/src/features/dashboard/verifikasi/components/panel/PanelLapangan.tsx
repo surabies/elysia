@@ -73,7 +73,7 @@ function ProgresRing({ detail }: { detail: LaporanHarianDetail }) {
           </span>
           {b.nama ? (
             <span
-              className={`inline-flex items-center gap-1 text-label-12 font-medium ${b.warna}`}
+              className={`inline-flex max-w-full items-center gap-1 text-label-12 font-medium ${b.warna} min-w-0 flex-wrap`}
             >
               <HugeiconsIcon
                 icon={CheckmarkCircle02Icon}
@@ -81,8 +81,10 @@ function ProgresRing({ detail }: { detail: LaporanHarianDetail }) {
                 className="size-3 shrink-0"
                 aria-hidden
               />
-              {b.nama}
-              {b.tanggal ? ` · ${formatTanggal(b.tanggal)}` : ""}
+              <span className="truncate">{b.nama}</span>
+              {b.tanggal ? (
+                <span className="shrink-0 text-muted-foreground/80">{` · ${formatTanggal(b.tanggal)}`}</span>
+              ) : ""}
             </span>
           ) : (
             <span className="text-copy-13 text-muted-foreground">—</span>
@@ -177,9 +179,9 @@ export function PanelLapangan({
   const pembacaan = tentukanHasilPembacaan(detail);
 
   return (
-    <div className="flex min-w-0 flex-col gap-2.5 p-3" aria-busy={memuat}>
+    <div className="flex w-full min-w-0 flex-col gap-2.5 p-3 overflow-x-hidden" aria-busy={memuat}>
       {galat && (
-        <p role="alert" className="text-label-12 text-destructive">
+        <p role="alert" className="text-label-12 text-destructive break-words">
           {galat}
         </p>
       )}
@@ -283,7 +285,7 @@ export function PanelLapangan({
       </Seksi>
 
       {tahap === "RESMI" && (
-        <p className="text-copy-13 text-(--verif-v3)">
+        <p className="text-copy-13 text-(--verif-v3) break-words">
           Sudah menjadi pembacaan resmi
           {detail.verifiedBy?.name
             ? ` — approve final ${detail.verifiedBy.name}`
@@ -292,7 +294,7 @@ export function PanelLapangan({
         </p>
       )}
       {tahap === "DITOLAK" && (
-        <p className="text-copy-13 text-muted-foreground">
+        <p className="text-copy-13 text-muted-foreground break-words">
           Dikembalikan untuk cek ulang
           {detail.verifiedBy?.name ? ` oleh ${detail.verifiedBy.name}` : ""}
           {detail.catatanVerif ? ` — “${detail.catatanVerif}”` : ""}. Klik kanan
@@ -300,7 +302,7 @@ export function PanelLapangan({
         </p>
       )}
       {detail.catatanVerif && tahap !== "DITOLAK" && (
-        <p className="text-copy-13 text-muted-foreground">
+        <p className="text-copy-13 text-muted-foreground break-words">
           Catatan verifikasi: “{detail.catatanVerif}”
         </p>
       )}

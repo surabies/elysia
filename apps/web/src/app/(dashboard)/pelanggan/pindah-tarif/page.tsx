@@ -1,7 +1,10 @@
-import { MenuPage } from "@/components/layout/index";
+import { PindahTarifView } from "@/features/dashboard/pelanggan";
 
-export const metadata = { title: "Pindah Tarif Pelanggan" };
+export const metadata = {
+  title: "Pindah Tarif & Reklasifikasi Pelanggan",
+  description: "Perubahan golongan tarif langganan dengan simulasi dampak tagihan",
+};
 
 export default function PindahTarifPage() {
-  return <MenuPage href="/pelanggan/pindah-tarif" />;
+  return <PindahTarifView />;
 }

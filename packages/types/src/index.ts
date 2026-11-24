@@ -164,6 +164,11 @@ export interface UserPermissionOverride {
   id: string;
   userId: string;
   modulKey: string;
+  canRead: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canPost: boolean;
   granted: boolean;
   catatan?: string | null;
   updatedBy?: string | null;
@@ -174,12 +179,18 @@ export interface UserPermissionOverride {
 export interface UserEffectivePermission {
   modulKey: string;
   modulNama: string;
+  bagian: string;
   kategori: string;
   deskripsi: string;
   urutan: number;
   roleDefault: boolean;
   isOverridden: boolean;
   effectiveGranted: boolean;
+  canRead: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canPost: boolean;
   overrideCatatan?: string | null;
 }
 

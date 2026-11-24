@@ -131,16 +131,94 @@ export const cariPelangganQuerySchema = t.Object({
   limit: t.Optional(t.Numeric({ default: 30, minimum: 1, maximum: 100 })),
 });
 
+export const daftarKontakQuerySchema = t.Object({
+  q: t.Optional(t.String()),
+  status: t.Optional(
+    t.Union([
+      t.Literal('ALL'),
+      t.Literal('VALID'),
+      t.Literal('EMPTY'),
+      t.Literal('INVALID'),
+    ])
+  ),
+  ruteKode: t.Optional(t.String()),
+  page: t.Optional(t.Numeric({ default: 1, minimum: 1 })),
+  limit: t.Optional(t.Numeric({ default: 20, minimum: 5, maximum: 100 })),
+});
+
 export const detailPelangganParamsSchema = t.Object({
   nolg: t.String({ minLength: 1 }),
 });
 
 export const updateKontakPelangganBodySchema = t.Object({
-  noTelp: t.String({ minLength: 6, maxLength: 20 }),
+  noTelp: t.String({ maxLength: 25 }),
 });
 
 export const updateTarifPelangganBodySchema = t.Object({
   tarifKode: t.String({ minLength: 1 }),
+  alasan: t.Optional(t.String()),
+  noSuratPermohonan: t.Optional(t.String()),
+  nikPemohon: t.Optional(t.String()),
+  namaPemohon: t.Optional(t.String()),
+  noHpPemohon: t.Optional(t.String()),
+  tahapPindahTarif: t.Optional(t.String()),
+  petugasSurvei: t.Optional(t.String()),
+  tglSurvei: t.Optional(t.String()),
+  kesimpulanSurvei: t.Optional(t.String()),
+  fotoSurveiUrl: t.Optional(t.String()),
+  catatan: t.Optional(t.String()),
+});
+
+export const mutasiPelangganBodySchema = t.Object({
+  nama: t.Optional(t.String({ minLength: 1 })),
+  alamat: t.Optional(t.String({ minLength: 1 })),
+  rt: t.Optional(t.String()),
+  rw: t.Optional(t.String()),
+  status: t.Optional(t.String()),
+  lat: t.Optional(t.Number()),
+  lng: t.Optional(t.Number()),
+  catatan: t.Optional(t.String()),
+  // Data Mutasi Wilayah & Rute Pelayanan Lain
+  ruteKodeBaru: t.Optional(t.String()),
+  noUrutRuteBaru: t.Optional(t.Number()),
+  alasanMutasiWilayah: t.Optional(t.String()),
+  noSuratMutasiWilayah: t.Optional(t.String()),
+  // Data Syarat Berkas & Balik Nama
+  nikKtp: t.Optional(t.String()),
+  noHp: t.Optional(t.String()),
+  jenisDokumen: t.Optional(t.String()),
+  noDokumen: t.Optional(t.String()),
+  lampiranUrl: t.Optional(t.String()),
+  // Data Alur Pemutusan 3-Pihak
+  tipePemutusan: t.Optional(t.String()),
+  alasanPemutusan: t.Optional(t.String()),
+  tahapPemutusan: t.Optional(t.String()),
+  standAngkat: t.Optional(t.Number()),
+  noSegel: t.Optional(t.String()),
+  petugasEksekusi: t.Optional(t.String()),
+  tglEksekusi: t.Optional(t.String()),
+  fotoBuktiUrl: t.Optional(t.String()),
+});
+
+// 11b. Validasi Titik Koordinat GPS / Geotagging Pelanggan
+export const daftarGpsQuerySchema = t.Object({
+  q: t.Optional(t.String()),
+  status: t.Optional(
+    t.Union([
+      t.Literal('ALL'),
+      t.Literal('BER_GPS'),
+      t.Literal('TANPA_GPS'),
+    ])
+  ),
+  ruteKode: t.Optional(t.String()),
+  page: t.Optional(t.Numeric({ default: 1, minimum: 1 })),
+  limit: t.Optional(t.Numeric({ default: 20, minimum: 5, maximum: 100 })),
+});
+
+export const updateGpsBodySchema = t.Object({
+  lat: t.Number({ minimum: -90, maximum: 90 }),
+  lng: t.Number({ minimum: -180, maximum: 180 }),
+  catatan: t.Optional(t.String()),
 });
 
 // 12. Monitoring Progress & Analitik Cater (Menu 5.2, 5.3, 5.5, 5.7)

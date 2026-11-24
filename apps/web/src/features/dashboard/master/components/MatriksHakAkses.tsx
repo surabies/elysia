@@ -14,6 +14,16 @@ import {
   UserCheck,
   RotateCcw,
   Check,
+  CheckCircle2,
+  Lock,
+  Eye,
+  Plus,
+  Edit,
+  Trash2,
+  Sparkles,
+  Building2,
+  Layers,
+  HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -48,63 +58,83 @@ export interface MatriksHakAksesProps {
 }
 
 type MainTabMode = 'ROLE_MATRIX' | 'USER_OVERRIDE';
-type KategoriFilter =
+
+type BagianFilter =
   | 'SEMUA'
-  | 'VERIFIKASI'
-  | 'OPERASIONAL'
-  | 'BILLING'
-  | 'RPM'
-  | 'DISTRIBUSI'
+  | 'PENCATAT_METER'
   | 'LANGGANAN'
+  | 'DISTRIBUSI'
+  | 'RPM'
   | 'PENAGIHAN'
-  | 'MASTER';
+  | 'UMUM';
 
-/** Penamaan Modul Singkat & Padat Sesuai Kebutuhan Enterprise Vercel Grid */
-const SHORT_MODUL_NAMES: Record<string, string> = {
-  monitoring_gis: 'GIS',
-  verif_ring1: 'V1',
-  verif_ring2: 'V2',
-  verif_ring3: 'V3',
-  verif_mandiri: 'Mandiri',
-  manual_add: 'ADD',
-  koreksi_stand: 'Koreksi',
-  closing_drd: 'Tutup Bulan',
-  laporan_drd: 'Laporan',
-  pengaduan_air: 'Pengaduan',
-  rpm_ganti_meter: 'GWM',
-  rpm_tera_kalibrasi: 'Tera',
-  distribusi_gis_pipa: 'Pipa',
-  distribusi_dma_tekanan: 'Tekanan',
-  langganan_pasang_baru: 'Pasang Baru',
-  langganan_mutasi_tarif: 'Mutasi',
-  penagihan_piutang_sp: 'SP',
-  master_konfigurasi: 'Master Data',
-};
-
-interface HierarkiRowDef {
-  key: keyof Pick<
-    MatriksHakAksesItem,
-    | 'superadmin'
-    | 'direksi'
-    | 'seniorManager'
-    | 'manager'
-    | 'supervisor'
-    | 'staff'
-    | 'pelaksana'
-  >;
-  nama: string;
-  tingkat: string;
-  isRoot?: boolean;
+interface BagianMeta {
+  id: BagianFilter;
+  label: string;
+  shortLabel: string;
+  badgeVariant: 'green-subtle' | 'blue-subtle' | 'purple-subtle' | 'red-subtle' | 'amber-subtle' | 'gray-subtle';
+  deskripsi: string;
 }
 
-const HIERARKI_ROWS: HierarkiRowDef[] = [
-  { key: 'superadmin', nama: 'Super Admin', tingkat: 'Pusat', isRoot: true },
-  { key: 'direksi', nama: 'Direksi', tingkat: 'Tingkat 1' },
-  { key: 'seniorManager', nama: 'Senior Manager', tingkat: 'Tingkat 2' },
-  { key: 'manager', nama: 'Manager', tingkat: 'Tingkat 3' },
-  { key: 'supervisor', nama: 'Supervisor', tingkat: 'Tingkat 4' },
-  { key: 'staff', nama: 'Staf', tingkat: 'Tingkat 5' },
-  { key: 'pelaksana', nama: 'Pelaksana', tingkat: 'Tingkat 6' },
+const BAGIAN_METAS: Record<BagianFilter, BagianMeta> = {
+  SEMUA: {
+    id: 'SEMUA',
+    label: 'Semua Bagian & Departemen',
+    shortLabel: 'Semua',
+    badgeVariant: 'gray-subtle',
+    deskripsi: 'Seluruh 18 modul operasional terdaftar lintas departemen',
+  },
+  PENCATAT_METER: {
+    id: 'PENCATAT_METER',
+    label: 'Bagian Pencatat Meter',
+    shortLabel: 'Pencatat Meter',
+    badgeVariant: 'green-subtle',
+    deskripsi: 'Monitoring GIS, pembacaan meter mandiri & 3-ring verifikasi lapangan',
+  },
+  LANGGANAN: {
+    id: 'LANGGANAN',
+    label: 'Bagian Hubungan Langganan',
+    shortLabel: 'Langganan',
+    badgeVariant: 'blue-subtle',
+    deskripsi: 'Pengaduan & tiket pelanggan, pasang baru, mutasi wilayah & golongan tarif',
+  },
+  DISTRIBUSI: {
+    id: 'DISTRIBUSI',
+    label: 'Bagian Distribusi / Sub Zona',
+    shortLabel: 'Distribusi',
+    badgeVariant: 'purple-subtle',
+    deskripsi: 'GIS jaringan pipa, valve, penataan DMA & logger tekanan air',
+  },
+  RPM: {
+    id: 'RPM',
+    label: 'Bagian Rehabilitasi & Pemeliharaan Meter (RPM)',
+    shortLabel: 'RPM',
+    badgeVariant: 'red-subtle',
+    deskripsi: 'Penggantian meteran air fisik (GWM), uji akurasi & kalibrasi tera lab',
+  },
+  PENAGIHAN: {
+    id: 'PENAGIHAN',
+    label: 'Bagian Penagihan & Rekening',
+    shortLabel: 'Penagihan',
+    badgeVariant: 'amber-subtle',
+    deskripsi: 'Monitoring piutang rekening, penerbitan surat peringatan (SP) & penertiban',
+  },
+  UMUM: {
+    id: 'UMUM',
+    label: 'Direksi, Eksekutif & Tata Kelola IT',
+    shortLabel: 'Umum & Direksi',
+    badgeVariant: 'gray-subtle',
+    deskripsi: 'Master data akun pegawai, parameter konfigurasi sistem & pengawasan eksekutif',
+  },
+};
+
+const BAGIAN_ORDER: BagianFilter[] = [
+  'PENCATAT_METER',
+  'LANGGANAN',
+  'DISTRIBUSI',
+  'RPM',
+  'PENAGIHAN',
+  'UMUM',
 ];
 
 interface UserItem {
@@ -138,7 +168,7 @@ export function MatriksHakAkses({
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [selectedKategori, setSelectedKategori] = React.useState<KategoriFilter>('SEMUA');
+  const [selectedBagian, setSelectedBagian] = React.useState<BagianFilter>('SEMUA');
 
   // --- STATE KUSTOMISASI PENGGUNA (USER OVERRIDE) ---
   const [userList, setUserList] = React.useState<UserItem[]>([]);
@@ -148,6 +178,10 @@ export function MatriksHakAkses({
   const [originalUserPerms, setOriginalUserPerms] = React.useState<UserEffectivePermission[]>([]);
   const [loadingUserPerms, setLoadingUserPerms] = React.useState(false);
   const [savingUserPerms, setSavingUserPerms] = React.useState(false);
+
+  // In-Memory Permissions Cache untuk Menghindari Lag saat Ganti Pegawai
+  const userPermsCacheRef = React.useRef<Map<string, UserEffectivePermission[]>>(new Map());
+  const [isPendingTransition, startTransition] = React.useTransition();
 
   // Wewenang edit: Superadmin atau pimpinan
   const bisaEdit = React.useMemo(() => {
@@ -197,21 +231,37 @@ export function MatriksHakAkses({
     }
   }, [selectedUserId, initialUserId]);
 
-  // Load Hak Akses Efektif Pengguna Terpilih
-  const fetchUserPermissions = React.useCallback(async (targetUserId: string) => {
-    if (!targetUserId) return;
-    setLoadingUserPerms(true);
-    try {
-      const data = await masterApi.otorisasi.getUserOverrides(targetUserId);
-      setUserPerms(data);
-      setOriginalUserPerms(JSON.parse(JSON.stringify(data)));
-    } catch (err) {
-      console.error('Failed to load user permissions:', err);
-      toast.error('Gagal memuat hak akses pengguna.');
-    } finally {
-      setLoadingUserPerms(false);
-    }
-  }, []);
+  // Load Hak Akses Efektif Pengguna Terpilih (dengan Cache Memori)
+  const fetchUserPermissions = React.useCallback(
+    async (targetUserId: string, silentRevalidate = false) => {
+      if (!targetUserId) return;
+
+      // Cek apakah data sudah ada di cache untuk tampilan instan tanpa lag
+      const cached = userPermsCacheRef.current.get(targetUserId);
+      if (cached && !silentRevalidate) {
+        setUserPerms(cached);
+        setOriginalUserPerms(JSON.parse(JSON.stringify(cached)));
+        // Lakukan silent revalidasi di background
+      }
+
+      if (!cached) {
+        setLoadingUserPerms(true);
+      }
+
+      try {
+        const data = await masterApi.otorisasi.getUserOverrides(targetUserId);
+        userPermsCacheRef.current.set(targetUserId, data);
+        setUserPerms(data);
+        setOriginalUserPerms(JSON.parse(JSON.stringify(data)));
+      } catch (err) {
+        console.error('Failed to load user permissions:', err);
+        if (!cached) toast.error('Gagal memuat hak akses pengguna.');
+      } finally {
+        setLoadingUserPerms(false);
+      }
+    },
+    []
+  );
 
   React.useEffect(() => {
     fetchMatrix();
@@ -220,6 +270,13 @@ export function MatriksHakAkses({
   React.useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  // Pilihan Pengguna Berubah: gunakan startTransition untuk kelancaran rendering
+  const handleSelectUser = (newUserId: string) => {
+    startTransition(() => {
+      setSelectedUserId(newUserId);
+    });
+  };
 
   React.useEffect(() => {
     if (selectedUserId) {
@@ -298,7 +355,7 @@ export function MatriksHakAkses({
   // Simpan Perubahan Matriks Role ke Database
   const saveChanges = async () => {
     if (!bisaEdit) {
-      toast.error('Anda tidak memiliki wewenang untuk menyimpan perubahan otorisasi.');
+      toast.error('Akses Dibatasi: Anda tidak memiliki wewenang menyimpan perubahan.');
       return;
     }
 
@@ -306,7 +363,7 @@ export function MatriksHakAkses({
     try {
       const json = await masterApi.otorisasi.saveMatrix(changedItems);
       if (json.success) {
-        toast.success('Matriks hak akses berhasil diperbarui!');
+        toast.success(`Berhasil menyimpan ${changedItems.length} modul perizinan!`);
         setOriginalMatrix(JSON.parse(JSON.stringify(matrix)));
       } else {
         toast.error(json.error ?? 'Gagal menyimpan perubahan matriks.');
@@ -319,42 +376,134 @@ export function MatriksHakAkses({
     }
   };
 
-  // Toggle Override Hak Akses Pengguna Tertentu
-  const toggleUserPermission = (modulKey: string) => {
+  // Toggle Aksi Granular Pengguna Tertentu (canRead, canCreate, canUpdate, canDelete, canPost)
+  const toggleUserAction = (
+    modulKey: string,
+    action: 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete' | 'canPost'
+  ) => {
     if (!bisaEdit) {
       toast.error('Akses Dibatasi: Hanya Superadmin atau pimpinan yang dapat memodifikasi hak akses.');
       return;
     }
 
-    setUserPerms((prev) =>
-      prev.map((item) => {
+    setUserPerms((prev) => {
+      const nextList = prev.map((item) => {
         if (item.modulKey !== modulKey) return item;
-        const nextEffective = !item.effectiveGranted;
+        const nextVal = !item[action];
+        const nextItem = {
+          ...item,
+          [action]: nextVal,
+          isOverridden: true,
+          overrideCatatan: 'Kustom aksi oleh Admin',
+        };
+        nextItem.effectiveGranted =
+          nextItem.canRead ||
+          nextItem.canCreate ||
+          nextItem.canUpdate ||
+          nextItem.canDelete ||
+          nextItem.canPost;
+        return nextItem;
+      });
+      // Update cache lokal
+      if (selectedUserId) {
+        userPermsCacheRef.current.set(selectedUserId, nextList);
+      }
+      return nextList;
+    });
+  };
+
+  // Beri Semua Aksi untuk 1 Modul
+  const grantAllActionsForModule = (modulKey: string) => {
+    if (!bisaEdit) return;
+    setUserPerms((prev) => {
+      const nextList = prev.map((item) => {
+        if (item.modulKey !== modulKey) return item;
         return {
           ...item,
+          canRead: true,
+          canCreate: true,
+          canUpdate: true,
+          canDelete: true,
+          canPost: true,
           isOverridden: true,
-          effectiveGranted: nextEffective,
-          overrideCatatan: 'Kustom khusus oleh Admin',
+          effectiveGranted: true,
+          overrideCatatan: 'Akses penuh modul oleh Admin',
         };
-      })
-    );
+      });
+      if (selectedUserId) userPermsCacheRef.current.set(selectedUserId, nextList);
+      return nextList;
+    });
+    toast.success('Semua wewenang modul diaktifkan.');
   };
 
   // Kembalikan Izin Modul Pengguna ke Default Jabatan
   const resetSingleUserPermission = (modulKey: string) => {
     if (!bisaEdit) return;
-    setUserPerms((prev) =>
-      prev.map((item) => {
+    const orig = originalUserPerms.find((p) => p.modulKey === modulKey);
+    setUserPerms((prev) => {
+      const nextList = prev.map((item) => {
         if (item.modulKey !== modulKey) return item;
         return {
           ...item,
           isOverridden: false,
+          canRead: orig ? orig.canRead : item.roleDefault,
+          canCreate: orig ? orig.canCreate : false,
+          canUpdate: orig ? orig.canUpdate : false,
+          canDelete: orig ? orig.canDelete : false,
+          canPost: orig ? orig.canPost : false,
           effectiveGranted: item.roleDefault,
           overrideCatatan: null,
         };
-      })
-    );
-    toast.info(`Modul ${SHORT_MODUL_NAMES[modulKey] || modulKey} dikembalikan ke aturan bawaan.`);
+      });
+      if (selectedUserId) userPermsCacheRef.current.set(selectedUserId, nextList);
+      return nextList;
+    });
+    toast.info('Modul dikembalikan ke wewenang bawaan jabatan.');
+  };
+
+  // Beri Semua Hak Akses Lintas Bagian (Super User Override)
+  const grantAllModules = () => {
+    if (!bisaEdit) return;
+    setUserPerms((prev) => {
+      const nextList = prev.map((item) => ({
+        ...item,
+        canRead: true,
+        canCreate: true,
+        canUpdate: true,
+        canDelete: true,
+        canPost: true,
+        isOverridden: true,
+        effectiveGranted: true,
+        overrideCatatan: 'Akses penuh seluruh modul (Super User)',
+      }));
+      if (selectedUserId) userPermsCacheRef.current.set(selectedUserId, nextList);
+      return nextList;
+    });
+    toast.success('Seluruh 18 modul berhasil diberikan wewenang penuh!');
+  };
+
+  // Reset Semua Modul ke Default Bawaan Jabatan
+  const resetAllToDefault = () => {
+    if (!bisaEdit) return;
+    setUserPerms((prev) => {
+      const nextList = prev.map((item) => {
+        const orig = originalUserPerms.find((p) => p.modulKey === item.modulKey);
+        return {
+          ...item,
+          isOverridden: false,
+          canRead: orig ? orig.canRead : item.roleDefault,
+          canCreate: orig ? orig.canCreate : false,
+          canUpdate: orig ? orig.canUpdate : false,
+          canDelete: orig ? orig.canDelete : false,
+          canPost: orig ? orig.canPost : false,
+          effectiveGranted: item.roleDefault,
+          overrideCatatan: null,
+        };
+      });
+      if (selectedUserId) userPermsCacheRef.current.set(selectedUserId, nextList);
+      return nextList;
+    });
+    toast.info('Seluruh modul dikembalikan ke wewenang bawaan jabatan.');
   };
 
   // Simpan Kustomisasi Pengguna (User Overrides)
@@ -367,14 +516,20 @@ export function MatriksHakAkses({
         .filter((p) => p.isOverridden)
         .map((p) => ({
           modulKey: p.modulKey,
+          canRead: p.canRead,
+          canCreate: p.canCreate,
+          canUpdate: p.canUpdate,
+          canDelete: p.canDelete,
+          canPost: p.canPost,
           granted: p.effectiveGranted,
           catatan: p.overrideCatatan || 'Kustom khusus pengguna',
         }));
 
       const json = await masterApi.otorisasi.saveUserOverrides(selectedUserId, overridesToSave);
       if (json.success) {
-        toast.success('Hak akses kustom pengguna berhasil disimpan!');
+        toast.success('Hak akses kustom pengguna berhasil disimpan ke database!');
         setOriginalUserPerms(JSON.parse(JSON.stringify(userPerms)));
+        userPermsCacheRef.current.set(selectedUserId, JSON.parse(JSON.stringify(userPerms)));
       } else {
         toast.error(json.error ?? 'Gagal menyimpan hak akses pengguna.');
       }
@@ -386,132 +541,104 @@ export function MatriksHakAkses({
     }
   };
 
-  // Filter modul berdasarkan kategori dan search query
+  // Filter Modul Berdasarkan Bagian dan Search Query (Role Matrix)
   const filteredMatrix = React.useMemo(() => {
     return matrix.filter((item) => {
-      const matchesKategori =
-        selectedKategori === 'SEMUA' || item.kategori === selectedKategori;
-      const shortName = SHORT_MODUL_NAMES[item.modulKey] || item.modulNama;
+      const b = item.bagian || 'UMUM';
+      const matchesBagian = selectedBagian === 'SEMUA' || b === selectedBagian;
       const q = searchQuery.trim().toLowerCase();
       const matchesSearch =
         q === '' ||
-        shortName.toLowerCase().includes(q) ||
+        item.modulKey.toLowerCase().includes(q) ||
         item.modulNama.toLowerCase().includes(q) ||
         (item.deskripsi && item.deskripsi.toLowerCase().includes(q));
-      return matchesKategori && matchesSearch;
+      return matchesBagian && matchesSearch;
     });
-  }, [matrix, selectedKategori, searchQuery]);
+  }, [matrix, selectedBagian, searchQuery]);
+
+  // Filter Hak Akses Pengguna Berdasarkan Bagian dan Search Query (User Override)
+  const filteredUserPerms = React.useMemo(() => {
+    return userPerms.filter((p) => {
+      const b = p.bagian || 'UMUM';
+      const matchesBagian = selectedBagian === 'SEMUA' || b === selectedBagian;
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        q === '' ||
+        p.modulKey.toLowerCase().includes(q) ||
+        p.modulNama.toLowerCase().includes(q) ||
+        (p.deskripsi && p.deskripsi.toLowerCase().includes(q));
+      return matchesBagian && matchesSearch;
+    });
+  }, [userPerms, selectedBagian, searchQuery]);
 
   const selectedUserObj = React.useMemo(() => {
     return userList.find((u) => u.id === selectedUserId);
   }, [userList, selectedUserId]);
 
-  const countPerKategori = React.useMemo(() => {
+  // Hitung jumlah modul per bagian
+  const countPerBagian = React.useMemo(() => {
     const counts: Record<string, number> = {
       SEMUA: matrix.length,
-      VERIFIKASI: 0,
-      OPERASIONAL: 0,
-      BILLING: 0,
-      RPM: 0,
-      DISTRIBUSI: 0,
+      PENCATAT_METER: 0,
       LANGGANAN: 0,
+      DISTRIBUSI: 0,
+      RPM: 0,
       PENAGIHAN: 0,
-      MASTER: 0,
+      UMUM: 0,
     };
     for (const item of matrix) {
-      if (item.kategori in counts) {
-        counts[item.kategori]++;
+      const b = item.bagian || 'UMUM';
+      if (b in counts) {
+        counts[b]++;
       }
     }
     return counts;
   }, [matrix]);
 
-  const navCategories = React.useMemo(
-    () => [
-      { id: 'SEMUA' as KategoriFilter, label: 'Semua', count: countPerKategori.SEMUA },
-      { id: 'VERIFIKASI' as KategoriFilter, label: 'Verifikasi', count: countPerKategori.VERIFIKASI },
-      { id: 'OPERASIONAL' as KategoriFilter, label: 'Operasional', count: countPerKategori.OPERASIONAL },
-      { id: 'BILLING' as KategoriFilter, label: 'Billing', count: countPerKategori.BILLING },
-      { id: 'RPM' as KategoriFilter, label: 'RPM', count: countPerKategori.RPM },
-      { id: 'DISTRIBUSI' as KategoriFilter, label: 'Distribusi', count: countPerKategori.DISTRIBUSI },
-      { id: 'LANGGANAN' as KategoriFilter, label: 'Langganan', count: countPerKategori.LANGGANAN },
-      { id: 'PENAGIHAN' as KategoriFilter, label: 'Penagihan', count: countPerKategori.PENAGIHAN },
-      { id: 'MASTER' as KategoriFilter, label: 'Master', count: countPerKategori.MASTER },
-    ],
-    [countPerKategori]
-  );
-
-  const getCategoryDot = (kategori: string) => {
-    switch (kategori) {
-      case 'VERIFIKASI':
-        return 'bg-amber-500';
-      case 'BILLING':
-        return 'bg-blue-500';
-      case 'MASTER':
-        return 'bg-purple-500';
-      case 'OPERASIONAL':
-        return 'bg-emerald-500';
-      case 'RPM':
-        return 'bg-rose-500';
-      case 'DISTRIBUSI':
-        return 'bg-cyan-500';
-      case 'LANGGANAN':
-        return 'bg-orange-500';
-      case 'PENAGIHAN':
-        return 'bg-indigo-500';
-      default:
-        return 'bg-foreground/50';
-    }
-  };
-
-  // Map user permissions untuk lookup cepat per modulKey
-  const userPermsMap = React.useMemo(() => {
-    const map = new Map<string, UserEffectivePermission>();
-    for (const p of userPerms) {
-      map.set(p.modulKey, p);
-    }
-    return map;
-  }, [userPerms]);
-
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 lg:p-8 max-w-[1700px] mx-auto w-full pb-28">
       {/* 1. Header Toolbar Dashboard */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3.5">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="size-4 text-foreground" />
+            <ShieldCheck className="size-4.5 text-foreground" />
             <h1 className="text-heading-18 text-foreground tracking-tight font-semibold">
-              Hak Akses Dinamis RBAC
+              Matriks Hak Akses & Otorisasi RBAC
             </h1>
-            <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-border">
-              Enterprise
+            <Badge variant="pill" size="sm" className="font-mono text-label-11">
+              Enterprise 3-Lapisan
             </Badge>
           </div>
-          <p className="text-copy-12 text-muted-foreground">
-            Matriks otorisasi modul per tingkatan jabatan resmi dan kustomisasi wewenang akun perorangan.
+          <p className="text-copy-13 text-muted-foreground">
+            Struktur wewenang hierarkis berbasis Bagian/Departemen, jabatan struktural resmi, serta override granular 5 aksi perorangan.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono border border-border bg-muted/20 text-muted-foreground">
+          <Badge
+            variant={bisaEdit ? 'green-subtle' : 'gray-subtle'}
+            size="sm"
+            className="font-mono font-medium"
+          >
             <span
               className={cn(
-                'size-1.5 rounded-full',
-                bisaEdit ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/50'
+                'size-1.5 rounded-full mr-1.5',
+                bisaEdit ? 'bg-(--ds-green-700) animate-pulse' : 'bg-muted-foreground'
               )}
             />
-            <span>{bisaEdit ? 'Mode Edit' : 'Hanya Baca'}</span>
-          </div>
+            <span>{bisaEdit ? 'Mode Otorisasi Aktif' : 'Hanya Baca'}</span>
+          </Badge>
 
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
+              userPermsCacheRef.current.clear();
               fetchMatrix();
               if (selectedUserId) fetchUserPermissions(selectedUserId);
             }}
             disabled={loading || loadingUserPerms}
-            className="h-8 gap-1.5 font-mono text-label-12 border-border"
+            className="h-8 gap-1.5 text-label-12 border-border"
           >
             <RefreshCw className={cn('size-3.5', (loading || loadingUserPerms) && 'animate-spin')} />
             <span>Segarkan</span>
@@ -519,36 +646,36 @@ export function MatriksHakAkses({
         </div>
       </div>
 
-      {/* 2. Unified Toolbar Panel: View Switcher, Search, & Categories Filter */}
-      <div className="flex flex-col gap-3 bg-card border border-border rounded-lg p-3 shadow-2xs">
+      {/* 2. Unified Toolbar Panel: View Switcher, Search, & Bagian Tabs */}
+      <div className="flex flex-col gap-3 bg-card border border-border rounded-lg p-3.5 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* View Switcher: Segmented Control */}
-          <div className="inline-flex p-0.5 rounded-md border border-border bg-muted/30 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActiveTabMode('ROLE_MATRIX')}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1 rounded text-[12px] font-mono font-medium transition-all cursor-pointer',
-                activeTabMode === 'ROLE_MATRIX'
-                  ? 'bg-card text-foreground font-semibold shadow-2xs border border-border/80'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <Shield className="size-3.5" />
-              <span>Berdasarkan Jabatan</span>
-            </button>
+          <div className="inline-flex p-0.5 rounded-md border border-border bg-muted/40 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTabMode('USER_OVERRIDE')}
               className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1 rounded text-[12px] font-mono font-medium transition-all cursor-pointer',
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-label-12 font-medium transition-all cursor-pointer',
                 activeTabMode === 'USER_OVERRIDE'
-                  ? 'bg-card text-foreground font-semibold shadow-2xs border border-border/80'
+                  ? 'bg-card text-foreground font-semibold shadow-xs border border-border/80'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <SlidersHorizontal className="size-3.5" />
-              <span>Kustomisasi Perorangan</span>
+              <span>Kustomisasi Pengguna (Granular 5 Aksi)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTabMode('ROLE_MATRIX')}
+              className={cn(
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-label-12 font-medium transition-all cursor-pointer',
+                activeTabMode === 'ROLE_MATRIX'
+                  ? 'bg-card text-foreground font-semibold shadow-xs border border-border/80'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Shield className="size-3.5" />
+              <span>Bawaan Jabatan (Hierarki Role)</span>
             </button>
           </div>
 
@@ -558,8 +685,8 @@ export function MatriksHakAkses({
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari modul..."
-              className="pl-8 pr-7 h-8 font-sans text-copy-12 bg-background border-border"
+              placeholder="Cari nama atau kunci modul..."
+              className="pl-8 pr-7 h-8 text-copy-12 bg-background border-border"
             />
             {searchQuery && (
               <button
@@ -573,28 +700,31 @@ export function MatriksHakAkses({
           </div>
         </div>
 
-        {/* Filter Kategori Modul Horizontal */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-border/60 -mb-0.5">
-          <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider shrink-0 mr-1">
-            Modul:
+        {/* Filter Bagian (Departemen Scope) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pt-1.5 border-t border-border/60">
+          <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+            <Layers className="size-3" />
+            <span>Bagian:</span>
           </span>
-          {navCategories.map((cat) => {
-            const isActive = selectedKategori === cat.id;
+          {(['SEMUA', ...BAGIAN_ORDER] as BagianFilter[]).map((tabId) => {
+            const meta = BAGIAN_METAS[tabId];
+            const isActive = selectedBagian === tabId;
+            const count = countPerBagian[tabId] ?? 0;
             return (
               <button
-                key={cat.id}
+                key={tabId}
                 type="button"
-                onClick={() => setSelectedKategori(cat.id)}
+                onClick={() => setSelectedBagian(tabId)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono transition-colors shrink-0 cursor-pointer',
+                  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-label-12 transition-colors shrink-0 cursor-pointer',
                   isActive
                     ? 'bg-foreground text-background font-medium'
                     : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted'
                 )}
               >
-                <span>{cat.label}</span>
-                <span className={cn('text-[10px] opacity-75', isActive ? 'text-background' : 'text-muted-foreground')}>
-                  {cat.count}
+                <span>{meta.shortLabel}</span>
+                <span className={cn('text-label-11 px-1 rounded', isActive ? 'text-background bg-foreground/20' : 'text-muted-foreground')}>
+                  {count}
                 </span>
               </button>
             );
@@ -602,379 +732,524 @@ export function MatriksHakAkses({
         </div>
       </div>
 
-      {/* 3. Sub-Panel Khusus Mode Kustomisasi Perorangan */}
+      {/* 3. Panel Khusus Mode Kustomisasi Pengguna (User Override) */}
       {activeTabMode === 'USER_OVERRIDE' && (
-        <Card className="rounded-lg border border-border bg-card p-3 shadow-2xs space-y-3">
+        <Card className="rounded-lg border border-border bg-card p-3.5 shadow-2xs space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <UserCheck className="size-4 text-emerald-500 shrink-0" />
+              <UserCheck className="size-4 text-(--ds-green-700) shrink-0" />
               <div className="space-y-0.5">
                 <span className="text-label-13 font-semibold text-foreground block">
-                  Pilih Akun Pegawai
+                  Pilih Akun Pegawai untuk Dikonfigurasi
                 </span>
-                <span className="text-copy-11 text-muted-foreground block">
-                  Ceklis pada baris Kustomisasi Efektif akan menimpa aturan default jabatan pegawai bersangkutan.
+                <span className="text-copy-12 text-muted-foreground block">
+                  Wewenang kustom perorangan akan meng-override hak akses bawaan jabatannya secara instan.
                 </span>
               </div>
             </div>
 
-            <div className="w-full sm:w-80 shrink-0">
-              <Select
-                value={selectedUserId}
-                onValueChange={(val) => setSelectedUserId(val)}
-              >
-                <SelectTrigger className="h-8 w-full bg-background border-border font-sans text-copy-12">
-                  <SelectValue placeholder="Pilih akun pegawai..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {userList.map((u) => (
-                    <SelectItem key={u.id} value={u.id} className="text-copy-12 font-sans">
-                      {u.name || u.email} · {u.role} · {u.bagian?.replace(/_/g, ' ') || 'Umum'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="w-full sm:w-80 shrink-0">
+                <Select
+                  value={selectedUserId}
+                  onValueChange={handleSelectUser}
+                >
+                  <SelectTrigger className="h-8 w-full bg-background border-border text-copy-12">
+                    <SelectValue placeholder="Pilih akun pegawai..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {userList.map((u) => {
+                      const userBag = (u.bagian ?? 'UMUM').toUpperCase() as BagianFilter;
+                      const badge = BAGIAN_METAS[userBag] ?? BAGIAN_METAS.UMUM;
+                      return (
+                        <SelectItem key={u.id} value={u.id} className="text-copy-12">
+                          <div className="flex items-center justify-between gap-2 w-full">
+                            <span className="font-medium text-foreground">{u.name || u.email}</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">({badge.shortLabel})</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {bisaEdit && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={grantAllModules}
+                    className="h-8 text-label-12 gap-1 border-border text-foreground hover:bg-muted"
+                    title="Beri akses penuh ke seluruh 18 modul lintas bagian"
+                  >
+                    <Sparkles className="size-3 text-(--ds-amber-700)" />
+                    <span>Akses Penuh Semua</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetAllToDefault}
+                    className="h-8 text-label-12 gap-1 border-border text-muted-foreground hover:text-foreground"
+                    title="Kembalikan seluruh modul ke wewenang bawaan jabatan"
+                  >
+                    <RotateCcw className="size-3" />
+                    <span>Reset Bawaan</span>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
           {selectedUserObj && (
-            <div className="flex flex-wrap items-center gap-3 rounded border border-border/60 bg-muted/20 px-3 py-1.5 text-xs font-mono">
+            <div className="flex flex-wrap items-center gap-3 rounded border border-border/60 bg-muted/20 px-3 py-1.5 text-copy-12">
               <div>
-                <span className="text-muted-foreground">Nama:</span>{' '}
-                <span className="font-semibold text-foreground">{selectedUserObj.name || '-'}</span>
+                <span className="text-muted-foreground">Pegawai:</span>{' '}
+                <strong className="text-foreground">{selectedUserObj.name || '-'}</strong>
               </div>
-              <div>
-                <span className="text-muted-foreground">Email:</span>{' '}
-                <span className="text-foreground">{selectedUserObj.email}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Peran:</span>{' '}
-                <Badge variant="outline" className="font-mono text-[10px] ml-1">
-                  {selectedUserObj.role}
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Bagian:</span>{' '}
+                <Badge
+                  variant={
+                    BAGIAN_METAS[(selectedUserObj.bagian?.toUpperCase() as BagianFilter) || 'UMUM']?.badgeVariant ||
+                    'gray-subtle'
+                  }
+                  size="sm"
+                >
+                  {selectedUserObj.bagian ? selectedUserObj.bagian.replace(/_/g, ' ') : 'Umum'}
                 </Badge>
               </div>
-              {selectedUserObj.bagian && (
-                <div>
-                  <span className="text-muted-foreground">Bagian:</span>{' '}
-                  <span className="text-foreground">{selectedUserObj.bagian.replace(/_/g, ' ')}</span>
-                </div>
-              )}
-              {selectedUserObj.wilayahKerja && (
-                <div>
-                  <span className="text-muted-foreground">Wilayah:</span>{' '}
-                  <span className="text-foreground">{selectedUserObj.wilayahKerja.replace(/_/g, ' ')}</span>
-                </div>
-              )}
               <div>
                 <span className="text-muted-foreground">Jabatan:</span>{' '}
-                <span className="text-foreground">{selectedUserObj.jabatan || 'Staf Operasional'}</span>
+                <span className="text-foreground font-mono">{selectedUserObj.jabatan || selectedUserObj.role}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Wilayah:</span>{' '}
+                <span className="text-foreground font-mono">{selectedUserObj.wilayahKerja?.replace(/_/g, ' ') || 'Pusat'}</span>
               </div>
             </div>
           )}
         </Card>
       )}
 
-      {/* 4. Panel Tabel TanStack Enterprise: 1 Baris per Row/Kolom Gaya Vercel */}
+      {/* Indikator Loading Transisi Tipis yang Halus (Zero Layout Shift) */}
+      {(loadingUserPerms || isPendingTransition) && (
+        <div className="h-0.5 w-full bg-primary/20 overflow-hidden rounded-full">
+          <div className="h-full bg-primary animate-pulse w-full" />
+        </div>
+      )}
+
+      {/* 4. Tabel Matriks Otorisasi Sesuai Mode */}
       <Card className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
-        {loading || (activeTabMode === 'USER_OVERRIDE' && loadingUserPerms) ? (
+        {loading ? (
           <div className="flex flex-col items-center justify-center gap-2 py-20 text-muted-foreground">
             <Spinner className="size-5 text-foreground" />
-            <span className="text-label-12 font-mono">Memuat matriks otorisasi...</span>
+            <span className="text-label-12 font-mono">Memuat wewenang modul dari database...</span>
           </div>
-        ) : filteredMatrix.length === 0 ? (
+        ) : (activeTabMode === 'USER_OVERRIDE' ? filteredUserPerms.length === 0 : filteredMatrix.length === 0) ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-muted-foreground">
             <AlertCircle className="size-6 text-muted-foreground/60" />
-            <p className="text-label-13 font-medium text-foreground">Tidak ada modul yang cocok.</p>
+            <p className="text-label-13 font-medium text-foreground">
+              Tidak ada modul yang cocok pada bagian & pencarian ini.
+            </p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table className="w-full border-collapse">
-              {/* Header Tabel: Modul Pendek & Ringkas (1 Baris) */}
-              <TableHeader>
-                <TableRow className="border-b border-border bg-muted/40 hover:bg-muted/40 h-9">
-                  <TableHead className="w-[200px] min-w-[200px] max-w-[200px] text-label-11 uppercase font-mono tracking-wider text-foreground font-semibold py-2 pl-3 sticky left-0 z-20 bg-muted/95 backdrop-blur-xs border-r border-border">
-                    Akun
+        ) : activeTabMode === 'USER_OVERRIDE' ? (
+          /* TAMPILAN TABEL KUSTOMISASI PENGGUNA (KOLOM BADGE BAGIAN & STICKY HEADER) */
+          <div className="overflow-x-auto max-h-[680px] relative">
+            <Table className={cn('w-full border-collapse', (loadingUserPerms || isPendingTransition) && 'opacity-65 transition-opacity')}>
+              <TableHeader className="sticky top-0 z-20 bg-muted/95 backdrop-blur-sm border-b border-border shadow-xs">
+                <TableRow className="border-b border-border hover:bg-transparent h-9.5">
+                  <TableHead className="w-[260px] text-label-11 uppercase font-mono tracking-wider text-foreground font-semibold py-2 pl-4">
+                    Modul Sistem
                   </TableHead>
-                  {filteredMatrix.map((item) => {
-                    const shortName = SHORT_MODUL_NAMES[item.modulKey] || item.modulNama;
-                    return (
-                      <TableHead
-                        key={item.modulKey}
-                        className="text-center px-2 min-w-[95px] max-w-[125px] py-2 text-label-11 font-mono uppercase tracking-wider text-muted-foreground font-semibold border-l border-border/40 whitespace-nowrap"
-                        title={`${item.modulNama} · ${item.kategori}`}
-                      >
-                        <div className="inline-flex items-center justify-center gap-1.5 w-full">
-                          <span className={cn('size-1.5 rounded-full shrink-0', getCategoryDot(item.kategori))} />
-                          <span className="font-semibold text-foreground truncate">{shortName}</span>
-                        </div>
-                      </TableHead>
-                    );
-                  })}
+                  <TableHead className="w-[140px] text-label-11 uppercase font-mono tracking-wider text-foreground font-semibold py-2">
+                    Bagian
+                  </TableHead>
+                  <TableHead className="w-[240px] text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2">
+                    Deskripsi Operasional
+                  </TableHead>
+                  <TableHead className="w-[85px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    <span className="inline-flex items-center gap-1">
+                      <Eye className="size-3 text-muted-foreground" />
+                      <span>Lihat</span>
+                    </span>
+                  </TableHead>
+                  <TableHead className="w-[85px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    <span className="inline-flex items-center gap-1">
+                      <Plus className="size-3 text-muted-foreground" />
+                      <span>Buat</span>
+                    </span>
+                  </TableHead>
+                  <TableHead className="w-[85px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    <span className="inline-flex items-center gap-1">
+                      <Edit className="size-3 text-muted-foreground" />
+                      <span>Edit</span>
+                    </span>
+                  </TableHead>
+                  <TableHead className="w-[85px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    <span className="inline-flex items-center gap-1">
+                      <Trash2 className="size-3 text-muted-foreground" />
+                      <span>Hapus</span>
+                    </span>
+                  </TableHead>
+                  <TableHead className="w-[95px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    <span className="inline-flex items-center gap-1 text-(--ds-amber-700)">
+                      <Lock className="size-3" />
+                      <span>Posting</span>
+                    </span>
+                  </TableHead>
+                  <TableHead className="w-[110px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    Status
+                  </TableHead>
+                  <TableHead className="w-[130px] text-right text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 pr-4">
+                    Aksi Cepat
+                  </TableHead>
                 </TableRow>
               </TableHeader>
-
-              {/* Body Tabel: 1 Baris per Row */}
               <TableBody>
-                {/* A. TAMPILAN BERDASARKAN JABATAN */}
-                {activeTabMode === 'ROLE_MATRIX' &&
-                  HIERARKI_ROWS.map((role) => (
+                {filteredUserPerms.map((perm) => {
+                  const bagMeta = BAGIAN_METAS[(perm.bagian as BagianFilter) || 'UMUM'] ?? BAGIAN_METAS.UMUM;
+                  return (
                     <TableRow
-                      key={role.key}
-                      className="border-b border-border/70 hover:bg-muted/20 transition-colors h-9"
+                      key={perm.modulKey}
+                      className="border-b border-border/70 hover:bg-muted/20 transition-colors h-10"
                     >
-                      <TableCell className="py-1.5 pl-3 sticky left-0 z-10 bg-card border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">
-                        <div className="flex items-center justify-between pr-2">
-                          <span className="text-label-12 font-medium text-foreground truncate">
-                            {role.nama}
+                      {/* 1. Modul Info */}
+                      <TableCell className="py-2 pl-4">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-label-13 font-semibold text-foreground">
+                            {perm.modulNama}
                           </span>
-                          <span className="font-mono text-[10px] text-muted-foreground shrink-0">
-                            {role.tingkat}
+                          <span className="font-mono text-label-11 text-muted-foreground">
+                            {perm.modulKey}
                           </span>
                         </div>
                       </TableCell>
-                      {filteredMatrix.map((item) => {
-                        const isAllowed = role.isRoot ? true : Boolean(item[role.key]);
-                        return (
-                          <TableCell
-                            key={item.modulKey}
-                            className="text-center align-middle px-2 py-1.5 border-l border-border/40 whitespace-nowrap"
-                          >
-                            <div className="flex items-center justify-center">
-                              <Checkbox
-                                checked={isAllowed}
-                                onCheckedChange={() =>
-                                  !role.isRoot && togglePermission(item.modulKey, role.key)
-                                }
-                                disabled={!bisaEdit || role.isRoot || saving}
-                                className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
-                                aria-label={`Izin ${role.nama} modul ${item.modulNama}`}
-                              />
-                            </div>
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
 
-                {/* B. TAMPILAN KUSTOMISASI PERORANGAN (PEGAWAI TERPILIH) */}
-                {activeTabMode === 'USER_OVERRIDE' && (
-                  <>
-                    {/* Baris 1: Bawaan Jabatan (Readonly Default) */}
-                    <TableRow className="border-b border-border/60 bg-muted/15 h-9">
-                      <TableCell className="py-1.5 pl-3 sticky left-0 z-10 bg-muted/30 border-r border-border whitespace-nowrap">
-                        <div className="flex items-center justify-between pr-2">
-                          <span className="text-label-12 font-medium text-muted-foreground">
-                            Bawaan Jabatan
-                          </span>
-                          <Badge variant="outline" className="text-[9px] font-mono px-1 py-0">
-                            Default
+                      {/* 2. Kolom Badge Bagian Terpisah */}
+                      <TableCell className="py-2">
+                        <Badge variant={bagMeta.badgeVariant} size="sm" className="font-medium">
+                          {bagMeta.shortLabel}
+                        </Badge>
+                      </TableCell>
+
+                      {/* 3. Deskripsi */}
+                      <TableCell className="py-2 text-copy-12 text-muted-foreground">
+                        {perm.deskripsi}
+                      </TableCell>
+
+                      {/* 4. Aksi: Lihat (canRead) */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={perm.canRead}
+                            onCheckedChange={() => toggleUserAction(perm.modulKey, 'canRead')}
+                            disabled={!bisaEdit || savingUserPerms}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                            aria-label={`Izin lihat ${perm.modulNama}`}
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 5. Aksi: Buat (canCreate) */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={perm.canCreate}
+                            onCheckedChange={() => toggleUserAction(perm.modulKey, 'canCreate')}
+                            disabled={!bisaEdit || savingUserPerms}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                            aria-label={`Izin buat ${perm.modulNama}`}
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 6. Aksi: Edit (canUpdate) */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={perm.canUpdate}
+                            onCheckedChange={() => toggleUserAction(perm.modulKey, 'canUpdate')}
+                            disabled={!bisaEdit || savingUserPerms}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                            aria-label={`Izin edit ${perm.modulNama}`}
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 7. Aksi: Hapus (canDelete) */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={perm.canDelete}
+                            onCheckedChange={() => toggleUserAction(perm.modulKey, 'canDelete')}
+                            disabled={!bisaEdit || savingUserPerms}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-(--ds-red-700) data-[state=checked]:border-(--ds-red-700)"
+                            aria-label={`Izin hapus ${perm.modulNama}`}
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 8. Aksi: Posting (canPost) */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={perm.canPost}
+                            onCheckedChange={() => toggleUserAction(perm.modulKey, 'canPost')}
+                            disabled={!bisaEdit || savingUserPerms}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-(--ds-amber-700) data-[state=checked]:border-(--ds-amber-700)"
+                            aria-label={`Izin posting ${perm.modulNama}`}
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 9. Status Otoritas (Geist Badge) */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        {perm.isOverridden ? (
+                          <Badge variant="amber-subtle" size="sm" className="font-mono font-semibold">
+                            Kustom
                           </Badge>
+                        ) : (
+                          <Badge variant="gray-subtle" size="sm" className="font-mono">
+                            Bawaan
+                          </Badge>
+                        )}
+                      </TableCell>
+
+                      {/* 10. Aksi Cepat Baris */}
+                      <TableCell className="py-2 text-right pr-4">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => grantAllActionsForModule(perm.modulKey)}
+                            disabled={!bisaEdit || savingUserPerms}
+                            className="h-6 px-1.5 text-label-11 font-mono text-muted-foreground hover:text-foreground"
+                          >
+                            Penuh
+                          </Button>
+                          {perm.isOverridden && (
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              onClick={() => resetSingleUserPermission(perm.modulKey)}
+                              disabled={!bisaEdit || savingUserPerms}
+                              className="h-6 px-1.5 text-label-11 font-mono text-(--ds-amber-700) hover:text-(--ds-amber-800)"
+                            >
+                              Reset
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
-                      {filteredMatrix.map((item) => {
-                        const perm = userPermsMap.get(item.modulKey);
-                        const isAllowed = perm ? perm.roleDefault : false;
-                        return (
-                          <TableCell
-                            key={item.modulKey}
-                            className="text-center align-middle px-2 py-1.5 border-l border-border/40 whitespace-nowrap"
-                          >
-                            <div className="flex items-center justify-center">
-                              {isAllowed ? (
-                                <Check className="size-3.5 text-emerald-500" />
-                              ) : (
-                                <span className="text-[11px] font-mono text-muted-foreground/40">-</span>
-                              )}
-                            </div>
-                          </TableCell>
-                        );
-                      })}
                     </TableRow>
-
-                    {/* Baris 2: Kustomisasi Efektif (Interactive Checkbox) */}
-                    <TableRow className="border-b border-border hover:bg-muted/20 transition-colors h-9">
-                      <TableCell className="py-1.5 pl-3 sticky left-0 z-10 bg-card border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">
-                        <div className="flex items-center justify-between pr-2">
-                          <span className="text-label-12 font-semibold text-foreground">
-                            Izin Kustom
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          /* TAMPILAN TABEL MATRIKS ROLE BAWAAN JABATAN (KOLOM BADGE BAGIAN & STICKY HEADER) */
+          <div className="overflow-x-auto max-h-[680px] relative">
+            <Table className="w-full border-collapse">
+              <TableHeader className="sticky top-0 z-20 bg-muted/95 backdrop-blur-sm border-b border-border shadow-xs">
+                <TableRow className="border-b border-border hover:bg-transparent h-9.5">
+                  <TableHead className="w-[260px] text-label-11 uppercase font-mono tracking-wider text-foreground font-semibold py-2 pl-4">
+                    Modul Sistem
+                  </TableHead>
+                  <TableHead className="w-[140px] text-label-11 uppercase font-mono tracking-wider text-foreground font-semibold py-2">
+                    Bagian
+                  </TableHead>
+                  <TableHead className="w-[240px] text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2">
+                    Deskripsi Operasional
+                  </TableHead>
+                  <TableHead className="w-[85px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    Superadmin
+                  </TableHead>
+                  <TableHead className="w-[85px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    Direksi
+                  </TableHead>
+                  <TableHead className="w-[100px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    Senior Mgr
+                  </TableHead>
+                  <TableHead className="w-[90px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    Manager
+                  </TableHead>
+                  <TableHead className="w-[90px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    Supervisor
+                  </TableHead>
+                  <TableHead className="w-[85px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40">
+                    Staf
+                  </TableHead>
+                  <TableHead className="w-[85px] text-center text-label-11 uppercase font-mono tracking-wider text-muted-foreground py-2 border-l border-border/40 pr-4">
+                    Pelaksana
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMatrix.map((item) => {
+                  const bagMeta = BAGIAN_METAS[(item.bagian as BagianFilter) || 'UMUM'] ?? BAGIAN_METAS.UMUM;
+                  return (
+                    <TableRow
+                      key={item.modulKey}
+                      className="border-b border-border/70 hover:bg-muted/20 transition-colors h-10"
+                    >
+                      {/* 1. Modul Info */}
+                      <TableCell className="py-2 pl-4">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-label-13 font-semibold text-foreground">
+                            {item.modulNama}
                           </span>
-                          <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                            Aktif
+                          <span className="font-mono text-label-11 text-muted-foreground">
+                            {item.modulKey}
                           </span>
                         </div>
                       </TableCell>
-                      {filteredMatrix.map((item) => {
-                        const perm = userPermsMap.get(item.modulKey);
-                        const isAllowed = perm ? perm.effectiveGranted : false;
-                        const isOverridden = perm ? perm.isOverridden : false;
-                        return (
-                          <TableCell
-                            key={item.modulKey}
-                            className="text-center align-middle px-2 py-1.5 border-l border-border/40 whitespace-nowrap relative"
-                          >
-                            <div className="flex items-center justify-center gap-1">
-                              <Checkbox
-                                checked={isAllowed}
-                                onCheckedChange={() => toggleUserPermission(item.modulKey)}
-                                disabled={!bisaEdit || savingUserPerms}
-                                className={cn(
-                                  'size-4 cursor-pointer',
-                                  isOverridden
-                                    ? 'data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600'
-                                    : 'data-[state=checked]:bg-foreground data-[state=checked]:border-foreground'
-                                )}
-                                aria-label={`Toggle kustom modul ${item.modulNama}`}
-                              />
-                              {isOverridden && (
-                                <span
-                                  className="size-1 rounded-full bg-amber-500 absolute top-1 right-1"
-                                  title="Izin kustom menimpa wewenang default"
-                                />
-                              )}
-                            </div>
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
 
-                    {/* Baris 3: Status / Aksi Reset */}
-                    <TableRow className="border-b border-border/40 bg-muted/5 h-8">
-                      <TableCell className="py-1 pl-3 sticky left-0 z-10 bg-card border-r border-border whitespace-nowrap">
-                        <span className="text-[11px] font-mono text-muted-foreground">
-                          Status Modul
-                        </span>
+                      {/* 2. Kolom Badge Bagian Terpisah */}
+                      <TableCell className="py-2">
+                        <Badge variant={bagMeta.badgeVariant} size="sm" className="font-medium">
+                          {bagMeta.shortLabel}
+                        </Badge>
                       </TableCell>
-                      {filteredMatrix.map((item) => {
-                        const perm = userPermsMap.get(item.modulKey);
-                        const isOverridden = perm ? perm.isOverridden : false;
-                        return (
-                          <TableCell
-                            key={item.modulKey}
-                            className="text-center align-middle px-1 py-1 border-l border-border/40 whitespace-nowrap"
-                          >
-                            {isOverridden ? (
-                              <button
-                                type="button"
-                                onClick={() => resetSingleUserPermission(item.modulKey)}
-                                className="text-[10px] font-mono text-amber-500 hover:text-amber-600 underline cursor-pointer"
-                                title="Kembalikan ke aturan bawaan jabatan"
-                              >
-                                Reset
-                              </button>
-                            ) : (
-                              <span className="text-[10px] font-mono text-muted-foreground/50">Bawaan</span>
-                            )}
-                          </TableCell>
-                        );
-                      })}
+
+                      {/* 3. Deskripsi */}
+                      <TableCell className="py-2 text-copy-12 text-muted-foreground">
+                        {item.deskripsi}
+                      </TableCell>
+
+                      {/* 4. Superadmin */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={item.superadmin}
+                            onCheckedChange={() => togglePermission(item.modulKey, 'superadmin')}
+                            disabled={!bisaEdit || saving}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 5. Direksi */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={item.direksi}
+                            onCheckedChange={() => togglePermission(item.modulKey, 'direksi')}
+                            disabled={!bisaEdit || saving}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 6. Senior Manager */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={item.seniorManager}
+                            onCheckedChange={() => togglePermission(item.modulKey, 'seniorManager')}
+                            disabled={!bisaEdit || saving}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 7. Manager */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={item.manager}
+                            onCheckedChange={() => togglePermission(item.modulKey, 'manager')}
+                            disabled={!bisaEdit || saving}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 8. Supervisor */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={item.supervisor}
+                            onCheckedChange={() => togglePermission(item.modulKey, 'supervisor')}
+                            disabled={!bisaEdit || saving}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 9. Staff */}
+                      <TableCell className="py-2 text-center border-l border-border/40">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={item.staff}
+                            onCheckedChange={() => togglePermission(item.modulKey, 'staff')}
+                            disabled={!bisaEdit || saving}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* 10. Pelaksana */}
+                      <TableCell className="py-2 text-center border-l border-border/40 pr-4">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={item.pelaksana}
+                            onCheckedChange={() => togglePermission(item.modulKey, 'pelaksana')}
+                            disabled={!bisaEdit || saving}
+                            className="size-4 cursor-pointer data-[state=checked]:bg-foreground data-[state=checked]:border-foreground"
+                          />
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </>
-                )}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         )}
       </Card>
 
-      {/* 5. Floating Action Docks: Simpan Perubahan */}
-      {/* Dock Simpan Matriks Role Jabatan */}
-      {activeTabMode === 'ROLE_MATRIX' && hasChanges && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4 animate-in fade-in slide-in-from-bottom-3 duration-150">
-          <Card className="rounded-lg border border-border bg-background/95 backdrop-blur-md p-3 shadow-xl flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 pl-1">
-              <span className="size-2 rounded-full bg-amber-500 animate-ping" />
-              <div className="text-label-12">
-                <p className="font-semibold text-foreground">
-                  {changedItems.length} modul mengalami perubahan izin
-                </p>
-                <p className="text-muted-foreground text-copy-11">
-                  Tekan simpan untuk memperbarui otorisasi ke database.
-                </p>
-              </div>
-            </div>
+      {/* 5. Floating Bottom Save Bar (Geist Toast Dock) */}
+      {(hasChanges || hasUserPermChanges) && bisaEdit && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card border border-border px-4 py-2.5 rounded-lg shadow-xl animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-(--ds-amber-700) animate-pulse" />
+            <span className="text-label-13 font-semibold text-foreground">
+              {activeTabMode === 'USER_OVERRIDE'
+                ? 'Terdapat modifikasi hak akses pengguna belum tersimpan'
+                : `${changedItems.length} modul matriks jabatan telah diubah`}
+            </span>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={discardChanges}
-                disabled={saving}
-                className="h-7 px-2.5 font-mono text-label-11 border-border"
-              >
-                Batal
-              </Button>
-              <Button
-                size="sm"
-                onClick={saveChanges}
-                disabled={saving}
-                className="h-7 px-3 gap-1.5 font-mono text-label-11 bg-foreground text-background hover:bg-foreground/90 font-medium"
-              >
-                {saving ? (
-                  <>
-                    <Spinner className="size-3" />
-                    Menyimpan...
-                  </>
-                ) : (
-                  <>
-                    <Save className="size-3" />
-                    Simpan
-                  </>
-                )}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Dock Simpan Kustomisasi Izin Pegawai */}
-      {activeTabMode === 'USER_OVERRIDE' && hasUserPermChanges && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4 animate-in fade-in slide-in-from-bottom-3 duration-150">
-          <Card className="rounded-lg border border-border bg-background/95 backdrop-blur-md p-3 shadow-xl flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 pl-1">
-              <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
-              <div className="text-label-12">
-                <p className="font-semibold text-foreground">
-                  Perubahan izin untuk {selectedUserObj?.name || 'Pegawai'}
-                </p>
-                <p className="text-muted-foreground text-copy-11">
-                  Izin kustom akan langsung aktif bagi akun ini.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setUserPerms(JSON.parse(JSON.stringify(originalUserPerms)));
-                  toast.info('Perubahan kustom dibatalkan.');
-                }}
-                disabled={savingUserPerms}
-                className="h-7 px-2.5 font-mono text-label-11 border-border"
-              >
-                Batal
-              </Button>
-              <Button
-                size="sm"
-                onClick={saveUserPermissions}
-                disabled={savingUserPerms}
-                className="h-7 px-3 gap-1.5 font-mono text-label-11 bg-emerald-600 text-white hover:bg-emerald-500 font-medium"
-              >
-                {savingUserPerms ? (
-                  <>
-                    <Spinner className="size-3" />
-                    Menyimpan...
-                  </>
-                ) : (
-                  <>
-                    <Save className="size-3" />
-                    Simpan
-                  </>
-                )}
-              </Button>
-            </div>
-          </Card>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={activeTabMode === 'USER_OVERRIDE' ? resetAllToDefault : discardChanges}
+              disabled={saving || savingUserPerms}
+              className="h-8 text-label-12"
+            >
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              onClick={activeTabMode === 'USER_OVERRIDE' ? saveUserPermissions : saveChanges}
+              disabled={saving || savingUserPerms}
+              className="h-8 gap-1.5 text-label-12 bg-(--ds-green-700) hover:bg-(--ds-green-800) text-white font-medium"
+            >
+              {saving || savingUserPerms ? (
+                <>
+                  <Spinner className="size-3.5 text-white" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="size-3.5" />
+                  <span>Simpan Perubahan ke Database</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -68,7 +68,7 @@ export function Seksi({
     <Collapsible
       open={buka}
       onOpenChange={setBuka}
-      className="min-w-0 border-b border-border/60 last:border-b-0"
+      className="w-full min-w-0 border-b border-border/60 last:border-b-0"
     >
       <CollapsibleTrigger
         className={cn(
@@ -76,7 +76,7 @@ export function Seksi({
           KELAS_JUDUL_PANEL,
         )}
       >
-        <span className="font-semibold tracking-tight">{judul}</span>
+        <span className="font-semibold tracking-tight truncate">{judul}</span>
         <HugeiconsIcon
           icon={ArrowDown01Icon}
           strokeWidth={2}
@@ -84,7 +84,7 @@ export function Seksi({
           aria-hidden
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="min-w-0 px-0.5 pb-3">{children}</CollapsibleContent>
+      <CollapsibleContent className="w-full min-w-0 px-0.5 pb-3 overflow-hidden">{children}</CollapsibleContent>
     </Collapsible>
   );
 }
@@ -113,7 +113,7 @@ export function InfoPelanggan({
   ];
   return (
     <div className="flex min-w-0 flex-col gap-1.5 rounded-md bg-muted/40 p-2.5">
-      <p className="min-w-0 text-copy-14 leading-snug font-semibold wrap-break-word text-foreground">
+      <p className="min-w-0 text-copy-14 leading-snug font-semibold break-words [overflow-wrap:anywhere] text-foreground">
         {nama}
       </p>
       <dl className="divide-y divide-border/60 border-t border-border/60 text-copy-13">
@@ -122,12 +122,12 @@ export function InfoPelanggan({
           .map((b) => (
             <div
               key={b.label}
-              className="grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-2 py-1"
+              className="grid grid-cols-[4.25rem_minmax(0,1fr)] items-start gap-2 py-1"
             >
               <dt className={KELAS_TEKS_META}>{b.label}</dt>
               <dd
                 className={cn(
-                  "min-w-0 wrap-break-word text-foreground",
+                  "min-w-0 break-words [overflow-wrap:anywhere] text-foreground",
                   b.mono && "font-mono",
                 )}
               >

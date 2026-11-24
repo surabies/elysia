@@ -1,7 +1,10 @@
-import { MenuPage } from "@/components/layout/index"
+import { ValidasiKontakView } from "@/features/dashboard/pelanggan";
 
-export const metadata = { title: "No HP Pel" }
+export const metadata = {
+  title: "Validasi Kontak & No HP Pelanggan",
+  description: "Manajemen dan verifikasi nomor seluler serta WhatsApp pelanggan",
+};
 
 export default function Page() {
-  return <MenuPage href="/pelanggan/no-hp" />
+  return <ValidasiKontakView />;
 }

@@ -144,19 +144,17 @@ export const navGroups: NavGroup[] = [
 
   // ==========================================================================
   // SEKSI 2: PENCATATAN METER (Pilar 1: Pembacaan, Verifikasi Lapangan, Rute)
+  // Eksklusif untuk Bagian Pencatat Meter & IT Root
   // ==========================================================================
   {
     id: "pencatatan-meter",
     title: "Pencatatan Meter",
     roles: [
       "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
       "VERIFIKATOR_1",
       "VERIFIKATOR_2",
       "VERIFIKATOR_3",
       "PENCATAT",
-      "PELAKSANA",
     ],
     items: [
       {
@@ -166,13 +164,10 @@ export const navGroups: NavGroup[] = [
         keywords: ["monitoring", "baca meter", "cater", "pencatatan", "target"],
         roles: [
           "SUPERADMIN",
-          "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
           "PENCATAT",
-          "PELAKSANA",
         ],
       },
       {
@@ -182,13 +177,10 @@ export const navGroups: NavGroup[] = [
         keywords: ["capaian", "target", "realisasi", "lps", "kubikasi", "tahunan"],
         roles: [
           "SUPERADMIN",
-          "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
           "PENCATAT",
-          "PELAKSANA",
         ],
       },
       {
@@ -196,7 +188,7 @@ export const navGroups: NavGroup[] = [
         href: "/cater/simulasi",
         description: "Uji coba pembacaan meter, validasi foto, dan deteksi deviasi.",
         keywords: ["simulasi", "sandbox", "test", "cater"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2", "VERIFIKATOR_3"],
       },
       {
         title: "Verifikasi CHN",
@@ -205,7 +197,6 @@ export const navGroups: NavGroup[] = [
         keywords: ["verifikasi", "baca petugas", "chn", "lapangan", "approval"],
         roles: [
           "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
@@ -218,7 +209,6 @@ export const navGroups: NavGroup[] = [
         keywords: ["cek foto", "foto meter", "bukti fisik", "kamera", "audit foto"],
         roles: [
           "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
@@ -232,7 +222,6 @@ export const navGroups: NavGroup[] = [
         keywords: ["anomali", "ekstrim", "pemakaian nol", "lonjakan", "kubikasi"],
         roles: [
           "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
@@ -245,8 +234,6 @@ export const navGroups: NavGroup[] = [
         keywords: ["audit", "anomali", "rekonsiliasi", "kategori", "ssot", "konfirmasi"],
         roles: [
           "SUPERADMIN",
-          "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
           "VERIFIKATOR_3",
@@ -259,7 +246,6 @@ export const navGroups: NavGroup[] = [
         keywords: ["progres petugas", "produktivitas", "kinerja", "cater", "evaluasi"],
         roles: [
           "SUPERADMIN",
-          "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
           "VERIFIKATOR_2",
           "PENCATAT",
@@ -272,9 +258,9 @@ export const navGroups: NavGroup[] = [
         keywords: ["progres wilayah", "capaian", "zona", "persentase"],
         roles: [
           "SUPERADMIN",
-          "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
           "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
         ],
       },
       {
@@ -282,35 +268,35 @@ export const navGroups: NavGroup[] = [
         href: "/cater/ganti-meter",
         description: "Pencatatan penggantian water meter fisik dan stand angkat.",
         keywords: ["ganti meter", "gwm", "meter rusak", "meter macet", "stand angkat"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2", "VERIFIKATOR_3"],
       },
       {
         title: "Kode Kelainan",
         href: "/master/kelainan",
         description: "Master 17 kode jenis kelainan fisik water meter dan tindakan.",
         keywords: ["kelainan", "kode kelainan", "meter rusak", "anomali meter"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
+        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2"],
       },
       {
         title: "Pemetaan Rute",
         href: "/master/pemetaan-petugas",
         description: "Penugasan area kerja dan rute Daftar Pembacaan Meter (DPM).",
         keywords: ["pemetaan", "rute", "dpm", "penugasan petugas"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
+        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2"],
       },
       {
         title: "Mutasi Rute",
         href: "/rute/mutasi",
         description: "Pindahkan satu pelanggan ke rute baca dan nomor urut baru.",
         keywords: ["mutasi rute", "pindah rute", "urut rute", "mutasi pelanggan"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2"],
       },
       {
         title: "Penggabungan Rute",
         href: "/rute/penggabungan",
         description: "Gabungkan atau pindahkan pelanggan dari satu rute baca ke rute petugas lain.",
         keywords: ["penggabungan rute", "kelola rute", "transfer rute", "pindah banyak"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2"],
       },
     ],
   },
@@ -325,9 +311,9 @@ export const navGroups: NavGroup[] = [
       "SUPERADMIN",
       "EXECUTIVE",
       "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
+      "SENIOR_MANAGER",
+      "MANAGER",
+      "STAFF",
     ],
     items: [
       {
@@ -339,9 +325,9 @@ export const navGroups: NavGroup[] = [
           "SUPERADMIN",
           "EXECUTIVE",
           "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
+          "SENIOR_MANAGER",
+          "MANAGER",
+          "STAFF",
         ],
       },
       {
@@ -349,21 +335,21 @@ export const navGroups: NavGroup[] = [
         href: "/progres/koreksi",
         description: "Koreksi angka stand meter dan penyesuaian kubikasi rekening berjalan.",
         keywords: ["koreksi", "koreksi stand", "edit stand", "revisi kubikasi"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
         title: "Manual ADD",
         href: "/pelanggan/manual-add",
         description: "Input stand meter manual atau taksasi rata-rata untuk rumah terkunci.",
         keywords: ["manual add", "taksasi", "input manual", "meter terkunci"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
         title: "Hitung Rata-Rata",
         href: "/meter/hitung-rata-rata",
         description: "Kalkulasi otomatis pemakaian air berdasarkan histori 3 bulan terakhir.",
         keywords: ["hitung rata rata", "rata 3 bulan", "kalkulasi taksasi"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
         title: "Konsol Tutup Bulan",
@@ -377,6 +363,8 @@ export const navGroups: NavGroup[] = [
 
   // ==========================================================================
   // SEKSI 4: LANGGANAN (Pilar 3: Pelanggan, Layanan Mandiri, Pengaduan)
+  // Eksklusif untuk Bagian Langganan, Pemasaran, Distribusi & Direksi
+  // (Pencatat Meter & Verifikator dilarang mengubah master data pelanggan)
   // ==========================================================================
   {
     id: "langganan",
@@ -384,12 +372,11 @@ export const navGroups: NavGroup[] = [
     roles: [
       "SUPERADMIN",
       "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-      "VERIFIKATOR_2",
-      "VERIFIKATOR_3",
-      "PENCATAT",
+      "SENIOR_MANAGER",
+      "MANAGER",
+      "STAFF",
       "PELAKSANA",
+      "STAFF_ADMIN_BILLING",
     ],
     items: [
       {
@@ -400,12 +387,11 @@ export const navGroups: NavGroup[] = [
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
-          "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
-          "PENCATAT",
+          "SENIOR_MANAGER",
+          "MANAGER",
+          "STAFF",
           "PELAKSANA",
+          "STAFF_ADMIN_BILLING",
         ],
       },
       {
@@ -415,10 +401,10 @@ export const navGroups: NavGroup[] = [
         keywords: ["lapor mandiri", "baca pelanggan", "mandiri", "self reading", "stand konsumen"],
         roles: [
           "SUPERADMIN",
+          "MANAGER",
+          "STAFF",
+          "PELAKSANA",
           "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
         ],
       },
       {
@@ -430,9 +416,6 @@ export const navGroups: NavGroup[] = [
           "SUPERADMIN",
           "EXECUTIVE",
           "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
           "PELAKSANA",
           "DIREKSI",
           "SENIOR_MANAGER",
@@ -450,9 +433,6 @@ export const navGroups: NavGroup[] = [
           "SUPERADMIN",
           "EXECUTIVE",
           "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
           "PELAKSANA",
           "DIREKSI",
           "SENIOR_MANAGER",
@@ -470,9 +450,6 @@ export const navGroups: NavGroup[] = [
           "SUPERADMIN",
           "EXECUTIVE",
           "STAFF_ADMIN_BILLING",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "VERIFIKATOR_3",
           "PELAKSANA",
           "DIREKSI",
           "SENIOR_MANAGER",
@@ -486,21 +463,52 @@ export const navGroups: NavGroup[] = [
         href: "/pelanggan/mutasi",
         description: "Pengelolaan mutasi nama kepemilikan, alamat, dan data dinas.",
         keywords: ["mutasi pelanggan", "ubah nama", "balik nama", "administrasi"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: [
+          "SUPERADMIN",
+          "MANAGER",
+          "STAFF",
+          "PELAKSANA",
+          "STAFF_ADMIN_BILLING",
+        ],
+      },
+      {
+        title: "Titik GPS & Geotag",
+        href: "/pelanggan/titik-gps",
+        description: "Pemetaan koordinat spasial PostGIS pelanggan yang belum memiliki titik lokasi.",
+        keywords: ["geotag", "titik gps", "koordinat", "gis", "postgis", "spasial"],
+        roles: [
+          "SUPERADMIN",
+          "MANAGER",
+          "STAFF",
+          "PELAKSANA",
+          "STAFF_ADMIN_BILLING",
+        ],
       },
       {
         title: "Pindah Tarif",
         href: "/pelanggan/pindah-tarif",
         description: "Reklasifikasi golongan tarif langganan pelanggan.",
         keywords: ["pindah tarif", "reklasifikasi", "golongan langganan", "kategori tarif"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        roles: [
+          "SUPERADMIN",
+          "MANAGER",
+          "STAFF",
+          "PELAKSANA",
+          "STAFF_ADMIN_BILLING",
+        ],
       },
       {
         title: "Validasi Kontak",
         href: "/pelanggan/no-hp",
         description: "Pembaruan nomor telepon dan WhatsApp untuk notifikasi rekening.",
         keywords: ["no hp", "kontak pelanggan", "whatsapp", "telepon"],
-        roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "PENCATAT"],
+        roles: [
+          "SUPERADMIN",
+          "MANAGER",
+          "STAFF",
+          "PELAKSANA",
+          "STAFF_ADMIN_BILLING",
+        ],
       },
     ],
   },

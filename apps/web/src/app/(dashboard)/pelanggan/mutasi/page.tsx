@@ -1,7 +1,10 @@
-import { MenuPage } from "@/components/layout/index"
+import { MutasiPelangganView } from "@/features/dashboard/pelanggan";
 
-export const metadata = { title: "Mutasi & Perubahan" }
+export const metadata = {
+  title: "Mutasi & Administrasi Pelanggan",
+  description: "Layanan balik nama, perubahan alamat & GPS, serta status sambungan pelanggan",
+};
 
 export default function MutasiPelangganPage() {
-  return <MenuPage href="/pelanggan/mutasi" />
+  return <MutasiPelangganView />;
 }

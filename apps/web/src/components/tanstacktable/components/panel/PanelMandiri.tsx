@@ -208,9 +208,9 @@ export function PanelMandiri({
   const pakai = pemakaianCatat ?? detail.pemakaian ?? detail.pembacaan?.pemakaianRiil ?? null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-2.5 p-3" aria-busy={memuatDetail}>
+    <div className="flex w-full min-w-0 flex-col gap-2.5 p-3 overflow-x-hidden" aria-busy={memuatDetail}>
       {galat && (
-        <p role="alert" className="text-label-12 text-destructive">
+        <p role="alert" className="text-label-12 text-destructive break-words">
           {galat}
         </p>
       )}
@@ -268,7 +268,7 @@ export function PanelMandiri({
       </Seksi>
 
       {detail.status === "DIVERIFIKASI" && (
-        <p className="text-copy-13 text-(--verif-v2)">
+        <p className="text-copy-13 text-(--verif-v2) break-words">
           Laporan sudah diverifikasi; proses ini hanya menyimpan koreksi stand
           dan tidak menerbitkan pembacaan resmi.
           {detail.verifiedBy?.name
@@ -278,7 +278,7 @@ export function PanelMandiri({
         </p>
       )}
       {detail.status === "DIGUNAKAN" && (
-        <p className="text-copy-13 text-(--verif-v3)">
+        <p className="text-copy-13 text-(--verif-v3) break-words">
           Sudah menjadi pembacaan resmi
           {detail.verifiedBy?.name
             ? ` — diverifikasi ${detail.verifiedBy.name}`
@@ -287,7 +287,7 @@ export function PanelMandiri({
         </p>
       )}
       {detail.status === "DITOLAK" && (
-        <p className="text-copy-13 text-muted-foreground">
+        <p className="text-copy-13 text-muted-foreground break-words">
           Ditolak
           {detail.verifiedBy?.name ? ` oleh ${detail.verifiedBy.name}` : ""}
           {detail.alasanDitolak ? ` — “${detail.alasanDitolak}”` : ""}.

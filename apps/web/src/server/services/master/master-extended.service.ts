@@ -82,6 +82,7 @@ export interface MatriksHakAksesItem {
   modulNama: string;
   modul?: string; // kompatibilitas label
   kategori: string;
+  bagian: string; // 'PENCATAT_METER' | 'LANGGANAN' | 'DISTRIBUSI' | 'RPM' | 'PENAGIHAN' | 'UMUM'
   deskripsi: string;
   urutan?: number;
   superadmin: boolean;
@@ -101,11 +102,13 @@ export interface MatriksHakAksesItem {
 }
 
 const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
+  // --- Modul Bagian Pencatat Meter (CATER) ---
   {
     modulKey: 'monitoring_gis',
     modulNama: 'GIS & Monitoring Cater',
     kategori: 'OPERASIONAL',
-    deskripsi: 'Live tracking & progres rute',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Live tracking & progres rute baca meter',
     urutan: 1,
     superadmin: true,
     direksi: true,
@@ -124,7 +127,8 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'verif_ring1',
     modulNama: 'Verifikasi Ring 1',
     kategori: 'VERIFIKASI',
-    deskripsi: 'Screening anomali & survei ulang',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Screening anomali foto meter & instruksi cek ulang',
     urutan: 2,
     superadmin: true,
     direksi: true,
@@ -143,7 +147,8 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'verif_ring2',
     modulNama: 'Verifikasi Ring 2',
     kategori: 'VERIFIKASI',
-    deskripsi: 'Approval deviasi cabang wilayah',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Approval deviasi pemakaian air tingkat cabang',
     urutan: 3,
     superadmin: true,
     direksi: true,
@@ -162,7 +167,8 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'verif_ring3',
     modulNama: 'Verifikasi Ring 3',
     kategori: 'VERIFIKASI',
-    deskripsi: 'Pengesahan final billing DRD',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Pengesahan final pelepasan data ke billing DRD',
     urutan: 4,
     superadmin: true,
     direksi: true,
@@ -181,7 +187,8 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'verif_mandiri',
     modulNama: 'Verifikasi Mandiri',
     kategori: 'VERIFIKASI',
-    deskripsi: 'Validasi lapor meter warga',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Validasi lapor angka meter mandiri warga',
     urutan: 5,
     superadmin: true,
     direksi: true,
@@ -200,7 +207,8 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'manual_add',
     modulNama: 'Manual ADD & Taksasi',
     kategori: 'OPERASIONAL',
-    deskripsi: 'Input darurat & taksasi rute',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Input darurat angka meter & taksasi rute',
     urutan: 6,
     superadmin: true,
     direksi: false,
@@ -219,7 +227,8 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'koreksi_stand',
     modulNama: 'Koreksi Stand Meter',
     kategori: 'OPERASIONAL',
-    deskripsi: 'Revisi angka stand & audit trail',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Revisi angka stand pasca-verifikasi & audit trail',
     urutan: 7,
     superadmin: true,
     direksi: false,
@@ -238,7 +247,8 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'closing_drd',
     modulNama: 'Tutup Periode & DRD',
     kategori: 'BILLING',
-    deskripsi: 'Kunci periode & buat DRD',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Kunci periode pembacaan meter & pembentukan DRD',
     urutan: 8,
     superadmin: true,
     direksi: false,
@@ -257,7 +267,8 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'laporan_drd',
     modulNama: 'Laporan & Analitik',
     kategori: 'BILLING',
-    deskripsi: 'Rekapitulasi rekening & analitik',
+    bagian: 'PENCATAT_METER',
+    deskripsi: 'Rekapitulasi pembacaan meter & performa petugas',
     urutan: 9,
     superadmin: true,
     direksi: true,
@@ -272,11 +283,13 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     verifikator3: true,
     executive: true,
   },
+  // --- Modul Bagian Hubungan Langganan (Hublang / Pemasaran) ---
   {
     modulKey: 'pengaduan_air',
-    modulNama: 'Pengaduan & Tiket',
-    kategori: 'OPERASIONAL',
-    deskripsi: 'Keluhan pelanggan & tindak lanjut',
+    modulNama: 'Pengaduan & Tiket Layanan',
+    kategori: 'LANGGANAN',
+    bagian: 'LANGGANAN',
+    deskripsi: 'Keluhan pelanggan, pipa bocor & tindak lanjut layanan',
     urutan: 10,
     superadmin: true,
     direksi: true,
@@ -286,56 +299,38 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     staff: true,
     pelaksana: true,
     staffBilling: true,
-    verifikator1: true,
-    verifikator2: true,
-    verifikator3: true,
-    executive: true,
-  },
-  {
-    modulKey: 'master_konfigurasi',
-    modulNama: 'Master Data & Akun',
-    kategori: 'MASTER',
-    deskripsi: 'Kelola user, rute & tarif',
-    urutan: 11,
-    superadmin: true,
-    direksi: true,
-    seniorManager: false,
-    manager: false,
-    supervisor: false,
-    staff: true,
-    pelaksana: false,
-    staffBilling: true,
     verifikator1: false,
     verifikator2: false,
     verifikator3: false,
     executive: false,
   },
-  // --- Modul Bagian RPM (Rekening & Pengendalian Meter) ---
   {
-    modulKey: 'rpm_ganti_meter',
-    modulNama: 'Penggantian Meter (GWM)',
-    kategori: 'RPM',
-    deskripsi: 'Input & validasi fisik meter baru/rusak',
-    urutan: 12,
+    modulKey: 'langganan_pasang_baru',
+    modulNama: 'Pasang Sambungan Baru (PB)',
+    kategori: 'LANGGANAN',
+    bagian: 'LANGGANAN',
+    deskripsi: 'Survei teknis & persetujuan sambungan langganan baru',
+    urutan: 11,
     superadmin: true,
     direksi: true,
     seniorManager: true,
     manager: true,
     supervisor: true,
     staff: true,
-    pelaksana: true,
-    staffBilling: true,
+    pelaksana: false,
+    staffBilling: false,
     verifikator1: false,
     verifikator2: false,
     verifikator3: false,
     executive: false,
   },
   {
-    modulKey: 'rpm_tera_kalibrasi',
-    modulNama: 'Uji Akurasi & Tera Meter',
-    kategori: 'RPM',
-    deskripsi: 'Pengujian meteran air & kalibrasi lab',
-    urutan: 13,
+    modulKey: 'langganan_mutasi_tarif',
+    modulNama: 'Mutasi Golongan, Wilayah & Balik Nama',
+    kategori: 'LANGGANAN',
+    bagian: 'LANGGANAN',
+    deskripsi: 'Perubahan tarif pelanggan, balik nama, mutasi wilayah & alur pemutusan',
+    urutan: 12,
     superadmin: true,
     direksi: true,
     seniorManager: true,
@@ -354,8 +349,9 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'distribusi_gis_pipa',
     modulNama: 'GIS Jaringan Pipa & Valve',
     kategori: 'DISTRIBUSI',
-    deskripsi: 'Pemetaan pipa transmisi & katup distribusi',
-    urutan: 14,
+    bagian: 'DISTRIBUSI',
+    deskripsi: 'Pemetaan pipa transmisi, katup & titik bocor',
+    urutan: 13,
     superadmin: true,
     direksi: true,
     seniorManager: true,
@@ -373,7 +369,29 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'distribusi_dma_tekanan',
     modulNama: 'Monitoring DMA & Tekanan Air',
     kategori: 'DISTRIBUSI',
-    deskripsi: 'Logger tekanan air sub zona & indikasi bocor',
+    bagian: 'DISTRIBUSI',
+    deskripsi: 'Logger tekanan air sub zona & indikasi anomali',
+    urutan: 14,
+    superadmin: true,
+    direksi: true,
+    seniorManager: true,
+    manager: true,
+    supervisor: true,
+    staff: true,
+    pelaksana: false,
+    staffBilling: false,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
+  // --- Modul Bagian RPM (Rehabilitasi & Pemeliharaan Meter) ---
+  {
+    modulKey: 'rpm_ganti_meter',
+    modulNama: 'Penggantian Meter (GWM)',
+    kategori: 'RPM',
+    bagian: 'RPM',
+    deskripsi: 'Input & validasi fisik meter air baru/rusak',
     urutan: 15,
     superadmin: true,
     direksi: true,
@@ -381,39 +399,20 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     manager: true,
     supervisor: true,
     staff: true,
-    pelaksana: false,
-    staffBilling: false,
+    pelaksana: true,
+    staffBilling: true,
     verifikator1: false,
     verifikator2: false,
     verifikator3: false,
     executive: false,
   },
-  // --- Modul Bagian Langganan (Hublang) ---
   {
-    modulKey: 'langganan_pasang_baru',
-    modulNama: 'Pasang Sambungan Baru (PB)',
-    kategori: 'LANGGANAN',
-    deskripsi: 'Survei teknis & persetujuan sambungan baru',
+    modulKey: 'rpm_tera_kalibrasi',
+    modulNama: 'Uji Akurasi & Tera Meter',
+    kategori: 'RPM',
+    bagian: 'RPM',
+    deskripsi: 'Pengujian meteran air & kalibrasi lab meter',
     urutan: 16,
-    superadmin: true,
-    direksi: true,
-    seniorManager: true,
-    manager: true,
-    supervisor: true,
-    staff: true,
-    pelaksana: false,
-    staffBilling: false,
-    verifikator1: false,
-    verifikator2: false,
-    verifikator3: false,
-    executive: false,
-  },
-  {
-    modulKey: 'langganan_mutasi_tarif',
-    modulNama: 'Mutasi Golongan & Balik Nama',
-    kategori: 'LANGGANAN',
-    deskripsi: 'Perubahan tarif pelanggan & status kepemilikan',
-    urutan: 17,
     superadmin: true,
     direksi: true,
     seniorManager: true,
@@ -432,13 +431,35 @@ const DEFAULT_MATRIKS_RBAC: Omit<MatriksHakAksesItem, 'id' | 'updatedAt'>[] = [
     modulKey: 'penagihan_piutang_sp',
     modulNama: 'Piutang & Surat Peringatan (SP)',
     kategori: 'PENAGIHAN',
-    deskripsi: 'Monitoring tunggakan & cetak surat segel',
-    urutan: 18,
+    bagian: 'PENAGIHAN',
+    deskripsi: 'Monitoring tunggakan & penerbitan surat peringatan/segel',
+    urutan: 17,
     superadmin: true,
     direksi: true,
     seniorManager: true,
     manager: true,
     supervisor: true,
+    staff: true,
+    pelaksana: false,
+    staffBilling: true,
+    verifikator1: false,
+    verifikator2: false,
+    verifikator3: false,
+    executive: false,
+  },
+  // --- Modul Bagian Direksi & Umum (IT / Tata Kelola Pusat) ---
+  {
+    modulKey: 'master_konfigurasi',
+    modulNama: 'Master Data & Pengguna',
+    kategori: 'MASTER',
+    bagian: 'UMUM',
+    deskripsi: 'Kelola akun pegawai, master tarif & otorisasi sistem',
+    urutan: 18,
+    superadmin: true,
+    direksi: true,
+    seniorManager: false,
+    manager: false,
+    supervisor: false,
     staff: true,
     pelaksana: false,
     staffBilling: true,
@@ -585,17 +606,17 @@ export class MasterExtendedService {
 
     const ROLE_PRIORITY: Record<string, number> = {
       SUPERADMIN: 100,
-      DIREKSI: 90,
+      DIREKSI: 95,
       EXECUTIVE: 90,
+      VERIFIKATOR_3: 85,
       SENIOR_MANAGER: 80,
-      VERIFIKATOR_3: 80,
+      VERIFIKATOR_2: 75,
       MANAGER: 70,
-      VERIFIKATOR_2: 70,
+      VERIFIKATOR_1: 65,
       SUPERVISOR: 60,
-      VERIFIKATOR_1: 60,
+      STAFF_ADMIN_BILLING: 55,
       STAFF: 50,
-      STAFF_ADMIN_BILLING: 50,
-      PENCATAT: 40,
+      PENCATAT: 45,
       PELAKSANA: 30,
       USER: 10,
     };
@@ -918,6 +939,7 @@ export class MasterExtendedService {
       ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "supervisor" boolean NOT NULL DEFAULT false;
       ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "staff" boolean NOT NULL DEFAULT false;
       ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "pelaksana" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "role_permissions" ADD COLUMN IF NOT EXISTS "bagian" varchar(50) NOT NULL DEFAULT 'UMUM';
 
       -- Sinkronkan data awal dari kolom legacy jika kolom baru masih bernilai false semua
       UPDATE "role_permissions" SET
@@ -932,12 +954,22 @@ export class MasterExtendedService {
         "id" text PRIMARY KEY,
         "user_id" text NOT NULL,
         "modul_key" varchar(50) NOT NULL,
-        "granted" boolean NOT NULL,
+        "can_read" boolean NOT NULL DEFAULT true,
+        "can_create" boolean NOT NULL DEFAULT false,
+        "can_update" boolean NOT NULL DEFAULT false,
+        "can_delete" boolean NOT NULL DEFAULT false,
+        "can_post" boolean NOT NULL DEFAULT false,
+        "granted" boolean NOT NULL DEFAULT true,
         "catatan" text,
         "updated_by" text,
         "created_at" timestamp NOT NULL DEFAULT now(),
         "updated_at" timestamp NOT NULL DEFAULT now()
       );
+      ALTER TABLE "user_permission_overrides" ADD COLUMN IF NOT EXISTS "can_read" boolean NOT NULL DEFAULT true;
+      ALTER TABLE "user_permission_overrides" ADD COLUMN IF NOT EXISTS "can_create" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "user_permission_overrides" ADD COLUMN IF NOT EXISTS "can_update" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "user_permission_overrides" ADD COLUMN IF NOT EXISTS "can_delete" boolean NOT NULL DEFAULT false;
+      ALTER TABLE "user_permission_overrides" ADD COLUMN IF NOT EXISTS "can_post" boolean NOT NULL DEFAULT false;
       CREATE INDEX IF NOT EXISTS "user_permission_overrides_user_id_idx" ON "user_permission_overrides" ("user_id");
       CREATE INDEX IF NOT EXISTS "user_permission_overrides_modul_key_idx" ON "user_permission_overrides" ("modul_key");
     `);
@@ -949,44 +981,47 @@ export class MasterExtendedService {
   async getMatriksOtorisasi(): Promise<MatriksHakAksesItem[]> {
     await this.ensureRolePermissionsTable();
 
-    let rows = await db
+    // Selalu pastikan seluruh modul resmi dari DEFAULT_MATRIKS_RBAC terdaftar di database
+    for (const item of DEFAULT_MATRIKS_RBAC) {
+      await db
+        .insert(rolePermissions)
+        .values({
+          id: `perm-${item.modulKey}`,
+          modulKey: item.modulKey,
+          modulNama: item.modulNama,
+          kategori: item.kategori,
+          bagian: item.bagian,
+          deskripsi: item.deskripsi,
+          urutan: String(item.urutan),
+          superadmin: item.superadmin,
+          direksi: item.direksi,
+          seniorManager: item.seniorManager,
+          manager: item.manager,
+          supervisor: item.supervisor,
+          staff: item.staff,
+          pelaksana: item.pelaksana,
+          staffBilling: item.staffBilling ?? item.staff,
+          verifikator1: item.verifikator1 ?? item.supervisor,
+          verifikator2: item.verifikator2 ?? item.manager,
+          verifikator3: item.verifikator3 ?? item.seniorManager,
+          executive: item.executive ?? item.direksi,
+        })
+        .onConflictDoUpdate({
+          target: rolePermissions.modulKey,
+          set: {
+            bagian: item.bagian,
+            kategori: item.kategori,
+            modulNama: item.modulNama,
+            deskripsi: item.deskripsi,
+            urutan: String(item.urutan),
+          },
+        });
+    }
+
+    const rows = await db
       .select()
       .from(rolePermissions)
       .orderBy(asc(rolePermissions.urutan));
-
-    if (rows.length === 0) {
-      // Inisialisasi default items jika tabel masih kosong
-      for (const item of DEFAULT_MATRIKS_RBAC) {
-        await db
-          .insert(rolePermissions)
-          .values({
-            id: `perm-${item.modulKey}`,
-            modulKey: item.modulKey,
-            modulNama: item.modulNama,
-            kategori: item.kategori,
-            deskripsi: item.deskripsi,
-            urutan: String(item.urutan),
-            superadmin: item.superadmin,
-            direksi: item.direksi,
-            seniorManager: item.seniorManager,
-            manager: item.manager,
-            supervisor: item.supervisor,
-            staff: item.staff,
-            pelaksana: item.pelaksana,
-            staffBilling: item.staffBilling ?? item.staff,
-            verifikator1: item.verifikator1 ?? item.supervisor,
-            verifikator2: item.verifikator2 ?? item.manager,
-            verifikator3: item.verifikator3 ?? item.seniorManager,
-            executive: item.executive ?? item.direksi,
-          })
-          .onConflictDoNothing();
-      }
-
-      rows = await db
-        .select()
-        .from(rolePermissions)
-        .orderBy(asc(rolePermissions.urutan));
-    }
 
     return rows.map((r) => {
       const direksi = r.direksi ?? r.executive ?? false;
@@ -1002,6 +1037,7 @@ export class MasterExtendedService {
         modulNama: r.modulNama,
         modul: r.modulNama,
         kategori: r.kategori,
+        bagian: r.bagian ?? 'UMUM',
         deskripsi: r.deskripsi ?? '',
         urutan: Number(r.urutan),
         superadmin: r.superadmin,
@@ -1130,10 +1166,20 @@ export class MasterExtendedService {
 
   /**
    * 9. Simpan / Perbarui Override Izin Khusus Pengguna (Si A)
+   * Mendukung granularitas 5 aksi: canRead, canCreate, canUpdate, canDelete, canPost
    */
   async setUserPermissionOverrides(
     userId: string,
-    overrides: { modulKey: string; granted: boolean; catatan?: string }[],
+    overrides: {
+      modulKey: string;
+      granted?: boolean;
+      canRead?: boolean;
+      canCreate?: boolean;
+      canUpdate?: boolean;
+      canDelete?: boolean;
+      canPost?: boolean;
+      catatan?: string;
+    }[],
     updatedBy?: string
   ): Promise<{ success: boolean; count: number }> {
     await this.ensureRolePermissionsTable();
@@ -1159,10 +1205,22 @@ export class MasterExtendedService {
           )
         );
 
+      const canRead = ov.canRead ?? ov.granted ?? true;
+      const canCreate = ov.canCreate ?? false;
+      const canUpdate = ov.canUpdate ?? false;
+      const canDelete = ov.canDelete ?? false;
+      const canPost = ov.canPost ?? false;
+      const granted = ov.granted ?? (canRead || canPost);
+
       await db.insert(userPermissionOverrides).values({
         userId,
         modulKey: ov.modulKey,
-        granted: ov.granted,
+        canRead,
+        canCreate,
+        canUpdate,
+        canDelete,
+        canPost,
+        granted,
         catatan: ov.catatan ?? null,
         updatedBy: validUpdatedBy,
         createdAt: new Date(),
@@ -1191,7 +1249,7 @@ export class MasterExtendedService {
 
   /**
    * 11. Dapatkan Daftar Izin Efektif Lengkap untuk Pengguna Tertentu (Si A)
-   * Menggabungkan wewenang bawaan jabatannya dengan custom override perorangan
+   * Menggabungkan wewenang bawaan jabatannya dengan custom override perorangan (5 aksi operasional)
    */
   async getUserEffectivePermissions(userId: string): Promise<UserEffectivePermission[]> {
     await this.ensureRolePermissionsTable();
@@ -1243,55 +1301,101 @@ export class MasterExtendedService {
 
     return matrix.map((m) => {
       // Deteksi kepemilikan bagian modul (Dapur Departemen)
-      let modulBagian = 'UMUM';
-      if (m.modulKey.startsWith('rpm_') || m.kategori === 'RPM') modulBagian = 'RPM';
-      else if (m.modulKey.startsWith('distribusi_') || m.kategori === 'DISTRIBUSI') modulBagian = 'DISTRIBUSI';
-      else if (m.modulKey.startsWith('langganan_') || m.kategori === 'LANGGANAN') modulBagian = 'LANGGANAN';
-      else if (m.modulKey.startsWith('penagihan_') || m.kategori === 'PENAGIHAN' || m.kategori === 'BILLING') modulBagian = 'PENAGIHAN';
-      else if (m.kategori === 'VERIFIKASI' || m.modulKey.includes('cater') || m.modulKey.includes('stand') || m.modulKey.includes('gis')) {
-        modulBagian = 'PENCATAT_METER';
-      }
+      const modulBagian = m.bagian || 'UMUM';
 
-      // Hitung izin default berdasarkan role / level dan batas sekat dapur
-      let roleDefault = false;
-      if (isSuperadmin) {
-        roleDefault = true;
-      } else if (isDireksi && m.direksi) {
-        roleDefault = true;
-      } else if (isSeniorManager && m.seniorManager) {
-        // Senior Manager membawahi 5 bagian di pelayanan wilayahnya
-        roleDefault = true;
-      } else {
-        // Manager, Supervisor, Staff, Pelaksana:
-        // Cek apakah modul ini sesuai dapur bagiannya atau berstatus UMUM
-        const cocokBagian =
-          userBagian === 'UMUM' ||
-          modulBagian === 'UMUM' ||
-          userBagian === modulBagian;
+      // Hitung kesesuaian bagian (sekat departemen)
+      const cocokBagian =
+        userBagian === 'UMUM' ||
+        modulBagian === 'UMUM' ||
+        userBagian === modulBagian;
 
-        if (cocokBagian) {
-          if (isManager && m.manager) roleDefault = true;
-          else if (isSupervisor && m.supervisor) roleDefault = true;
-          else if (isStaff && m.staff) roleDefault = true;
-          else if (isPelaksana && m.pelaksana) roleDefault = true;
+      // 1. Tentukan hak aksi default jabatan jika berada dalam bagian yang cocok
+      let defaultRead = false;
+      let defaultCreate = false;
+      let defaultUpdate = false;
+      let defaultDelete = false;
+      let defaultPost = false;
+
+      if (isSuperadmin || isDireksi) {
+        defaultRead = true;
+        defaultCreate = true;
+        defaultUpdate = true;
+        defaultDelete = true;
+        defaultPost = true;
+      } else if (isSeniorManager) {
+        if (m.seniorManager) {
+          defaultRead = true;
+          defaultCreate = true;
+          defaultUpdate = true;
+          defaultDelete = false;
+          defaultPost = true;
+        }
+      } else if (cocokBagian) {
+        if (isManager && m.manager) {
+          defaultRead = true;
+          defaultCreate = true;
+          defaultUpdate = true;
+          defaultDelete = true;
+          defaultPost = true;
+        } else if (isSupervisor && m.supervisor) {
+          defaultRead = true;
+          defaultCreate = true;
+          defaultUpdate = true;
+          defaultDelete = false;
+          defaultPost = true;
+        } else if (isStaff && m.staff) {
+          defaultRead = true;
+          defaultCreate = true;
+          defaultUpdate = true;
+          defaultDelete = false;
+          defaultPost = false;
+        } else if (isPelaksana && m.pelaksana) {
+          defaultRead = true;
+          defaultCreate = true;
+          defaultUpdate = false;
+          defaultDelete = false;
+          defaultPost = false;
         }
       }
 
-      // Evaluasi apakah ada custom override khusus untuk Si A (Kustomisasi Dinamis Superadmin)
-      // Override selalu memenangkan aturan default dapur!
+      const roleDefault = defaultRead || defaultPost;
+
+      // 2. Evaluasi override khusus Si A (Kustomisasi Perorangan)
       const override = overrideMap.get(m.modulKey);
       const isOverridden = !!override;
-      const effectiveGranted = isSuperadmin ? true : isOverridden ? override.granted : roleDefault;
+
+      let canRead = isSuperadmin ? true : isOverridden ? override.canRead : defaultRead;
+      let canCreate = isSuperadmin ? true : isOverridden ? override.canCreate : defaultCreate;
+      let canUpdate = isSuperadmin ? true : isOverridden ? override.canUpdate : defaultUpdate;
+      let canDelete = isSuperadmin ? true : isOverridden ? override.canDelete : defaultDelete;
+      let canPost = isSuperadmin ? true : isOverridden ? override.canPost : defaultPost;
+
+      // Kompatibilitas legacy: jika record lama hanya punya granted=true tapi semua can_* false
+      if (isOverridden && override.granted && !canRead && !canCreate && !canUpdate && !canDelete && !canPost) {
+        canRead = true;
+      }
+
+      const effectiveGranted = isSuperadmin
+        ? true
+        : isOverridden
+        ? override.granted || canRead || canPost
+        : roleDefault;
 
       return {
         modulKey: m.modulKey,
         modulNama: m.modulNama,
+        bagian: modulBagian,
         kategori: m.kategori,
         deskripsi: m.deskripsi,
         urutan: m.urutan ?? 0,
         roleDefault,
         isOverridden,
         effectiveGranted,
+        canRead,
+        canCreate,
+        canUpdate,
+        canDelete,
+        canPost,
         overrideCatatan: override?.catatan ?? null,
       };
     });

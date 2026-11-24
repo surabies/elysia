@@ -29,9 +29,13 @@ import {
   urutkanRuteBodySchema,
   gabungRuteBodySchema,
   cariPelangganQuerySchema,
+  daftarKontakQuerySchema,
   detailPelangganParamsSchema,
   updateKontakPelangganBodySchema,
   updateTarifPelangganBodySchema,
+  mutasiPelangganBodySchema,
+  daftarGpsQuerySchema,
+  updateGpsBodySchema,
   thblParamsSchema,
   ikhtisarQuerySchema,
   mapGeoJsonQuerySchema,
@@ -406,6 +410,39 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     }
   )
 
+  // 14b. Pelanggan - Daftar & KPI Validasi Kontak (Menu 3.4 No HP Pel)
+  .get(
+    '/pelanggan/kontak',
+    async ({ query, set }) => {
+      try {
+        const result = await pelangganService.getDaftarValidasiKontak({
+          q: query.q,
+          status: query.status as any,
+          ruteKode: query.ruteKode,
+          page: query.page,
+          limit: query.limit,
+        });
+        return { success: true, ...result };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: [
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+        'EXECUTIVE',
+        'PENCATAT',
+        'PELAKSANA',
+        'USER',
+      ],
+      query: daftarKontakQuerySchema,
+    }
+  )
+
   // 15. Pelanggan - Detail Profil & Histori (Menu 3.3)
   .get(
     '/pelanggan/:nolg',
@@ -457,7 +494,8 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
     '/pelanggan/:nolg/tarif',
     async ({ params: { nolg }, body, set }) => {
       try {
-        const result = await pelangganService.updateGolonganTarif(nolg, body.tarifKode);
+        const { tarifKode, ...options } = body;
+        const result = await pelangganService.updateGolonganTarif(nolg, tarifKode, options);
         return { success: true, ...result };
       } catch (err: any) {
         set.status = err.message.includes('tidak ditemukan') ? 404 : 400;
@@ -465,9 +503,100 @@ export const caterRouter = new Elysia({ prefix: '/cater' })
       }
     },
     {
-      requireRole: ['STAFF_ADMIN_BILLING', 'VERIFIKATOR_2', 'VERIFIKATOR_3'],
+      requireRole: [
+        'SUPERADMIN',
+        'MANAGER',
+        'STAFF',
+        'PELAKSANA',
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+      ],
       params: detailPelangganParamsSchema,
       body: updateTarifPelangganBodySchema,
+    }
+  )
+
+  // 17b. Pelanggan - Mutasi Data Master Pelanggan (Menu 3.1)
+  .patch(
+    '/pelanggan/:nolg/mutasi',
+    async ({ params: { nolg }, body, user, set }) => {
+      try {
+        const result = await pelangganService.mutasiPelanggan({
+          nolg,
+          operatorNama: user?.name ?? 'Admin Langganan',
+          ...body,
+        });
+        return { success: true, ...result };
+      } catch (err: any) {
+        set.status = err.message.includes('tidak ditemukan') ? 404 : 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: ['SUPERADMIN', 'MANAGER', 'STAFF', 'PELAKSANA', 'STAFF_ADMIN_BILLING'],
+      params: detailPelangganParamsSchema,
+      body: mutasiPelangganBodySchema,
+    }
+  )
+
+  // 17c. Pelanggan - Daftar Validasi Koordinat GPS / Geotagging
+  .get(
+    '/pelanggan/geotag',
+    async ({ query, set }) => {
+      try {
+        const data = await pelangganService.getDaftarValidasiGps(query);
+        return { success: true, ...data };
+      } catch (err: any) {
+        set.status = 500;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: [
+        'SUPERADMIN',
+        'EXECUTIVE',
+        'SENIOR_MANAGER',
+        'MANAGER',
+        'SUPERVISOR',
+        'STAFF',
+        'PELAKSANA',
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+        'VERIFIKATOR_2',
+        'VERIFIKATOR_3',
+      ],
+      query: daftarGpsQuerySchema,
+    }
+  )
+
+  // 17d. Pelanggan - Pemutakhiran Titik Koordinat GPS (Quick Geotag)
+  .patch(
+    '/pelanggan/:nolg/geotag',
+    async ({ params: { nolg }, body, user, set }) => {
+      try {
+        const result = await pelangganService.updateTitikGps(nolg, body.lat, body.lng, {
+          operatorNama: user?.name ?? 'Petugas Geotag',
+          catatan: body.catatan,
+        });
+        return { success: true, ...result };
+      } catch (err: any) {
+        set.status = err.message.includes('tidak ditemukan') ? 404 : 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: [
+        'SUPERADMIN',
+        'MANAGER',
+        'SUPERVISOR',
+        'STAFF',
+        'PELAKSANA',
+        'STAFF_ADMIN_BILLING',
+        'VERIFIKATOR_1',
+      ],
+      params: detailPelangganParamsSchema,
+      body: updateGpsBodySchema,
     }
   )
 

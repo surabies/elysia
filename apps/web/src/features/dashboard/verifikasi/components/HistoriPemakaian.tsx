@@ -53,13 +53,13 @@ export function HistoriPemakaian({
   const histori = rows ? [...rows].reverse() : [];
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1 overflow-x-auto">
       <table className="w-full table-fixed border-collapse text-copy-13 tabular-nums">
         <thead className="text-muted-foreground">
           <tr>
             <th
               scope="col"
-              className="w-17 px-1.5 py-1 text-left text-label-12 font-medium"
+              className="w-16 px-1 py-1 text-left text-label-12 font-medium"
             >
               Periode
             </th>
@@ -77,7 +77,7 @@ export function HistoriPemakaian({
             </th>
             <th
               scope="col"
-              className="w-12 px-1 py-1 text-center text-label-12 font-medium"
+              className="w-11 px-1 py-1 text-center text-label-12 font-medium"
             >
               Pakai
             </th>
@@ -85,16 +85,16 @@ export function HistoriPemakaian({
         </thead>
         <tbody className="divide-y divide-border/60">
           <tr className="bg-accent/40 font-medium text-foreground">
-            <th scope="row" className="px-1.5 py-1 text-left font-medium">
+            <th scope="row" className="px-1 py-1 text-left font-medium truncate">
               {formatPeriodeRingkas(terkini.periode)}
             </th>
-            <td className="px-1 py-1 text-center">
+            <td className="px-1 py-1 text-center truncate">
               {angka(terkini.standAwal)}
             </td>
-            <td className="px-1 py-1 text-center">
+            <td className="px-1 py-1 text-center truncate">
               {angka(terkini.standAkhir)}
             </td>
-            <td className="px-1 py-1 text-center">{angka(terkini.pakai)}</td>
+            <td className="px-1 py-1 text-center truncate">{angka(terkini.pakai)}</td>
           </tr>
           {histori.map((row) => {
             const periode = new Date(row.periode);
@@ -102,16 +102,16 @@ export function HistoriPemakaian({
               periode.getUTCFullYear() * 100 + periode.getUTCMonth() + 1;
             return (
               <tr key={row.id} className="text-muted-foreground">
-                <th scope="row" className="px-1.5 py-1 text-left font-normal">
+                <th scope="row" className="px-1 py-1 text-left font-normal truncate">
                   {formatPeriodeRingkas(thbl)}
                 </th>
-                <td className="px-1 py-1 text-center">
+                <td className="px-1 py-1 text-center truncate">
                   {angka(row.standLalu)}
                 </td>
-                <td className="px-1 py-1 text-center">
+                <td className="px-1 py-1 text-center truncate">
                   {angka(row.standAkhir)}
                 </td>
-                <td className="px-1 py-1 text-center">
+                <td className="px-1 py-1 text-center truncate">
                   {angka(row.pemakaianM3)}
                 </td>
               </tr>
@@ -120,9 +120,9 @@ export function HistoriPemakaian({
         </tbody>
       </table>
       {catatan && (
-        <p className="text-label-11 text-muted-foreground">{catatan}</p>
+        <p className="text-label-11 text-muted-foreground break-words">{catatan}</p>
       )}
-      {galat && <p className="text-label-12 text-destructive">{galat}</p>}
+      {galat && <p className="text-label-12 text-destructive break-words">{galat}</p>}
     </div>
   );
 }

@@ -131,7 +131,7 @@ export function FotoSebelumnya({
   });
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex w-full min-w-0 flex-col gap-1.5">
       <TabFoto
         varian="panel"
         item={[

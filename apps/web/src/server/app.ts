@@ -12,7 +12,7 @@ import { mandiriModule } from "./modules/mandiri";
 import { gwmModule } from "./modules/gwm";
 import { pengaduanModule, pengaduanV1Module } from "./modules/pengaduan";
 import { publikModule, publicModule } from "./modules/publik";
-import { verifikasiLegacyRouter } from "./modules/verifikasi-legacy.router";
+import { verifikasiModule } from "./modules/verifikasi";
 import { drdModule } from "./modules/drd";
 import { masterRouter } from "./modules/master/master.router";
 import { kpiModule } from "./modules/kpi";
@@ -53,6 +53,6 @@ export const app = new Elysia({ prefix: "/api" })
   .use(broadcastModule)
   .use(importModule)
   .use(aturanAnomaliRouter)
-  .use(verifikasiLegacyRouter);
+  .use(verifikasiModule);
 
 export type App = typeof app;

@@ -34,7 +34,7 @@ apps/web/src/features/dashboard/<fitur>/
 |---|---|---|---|---|
 | 1 | **Rute Baca & Mutasi** | `features/dashboard/rute/api.ts` | `ruteApi` | `MutasiRuteView.tsx`, `PenggabunganRuteView.tsx`, `PindahRuteDialog.tsx` |
 | 2 | **Master Data** | `features/dashboard/master/api.ts` | `masterApi` | `PemetaanPetugasRute.tsx`, `KelolaPetugas.tsx`, `KelolaUrutanRute.tsx`, `KelolaKodeKelainan.tsx`, `KelolaManajemenUser.tsx`, `MatriksHakAkses.tsx` |
-| 3 | **Pelanggan & Manual ADD** | `features/dashboard/pelanggan/api.ts` | `manualAddApi` | `ManualAddPage.tsx`, `ManualAddSatuanForm.tsx`, `ManualAddMasalTaksasi.tsx`, `ManualAddRiwayatTable.tsx` |
+| 3 | **Pelanggan & Manual ADD** | `features/dashboard/pelanggan/api.ts` | `manualAddApi`, `pelangganApi` | `ManualAddPage.tsx`, `ManualAddSatuanForm.tsx`, `ManualAddMasalTaksasi.tsx`, `ManualAddRiwayatTable.tsx`, `ValidasiKontakView.tsx`, `ModalEditKontak.tsx`, `PindahTarifView.tsx`, `SimulasiDampakTarif.tsx`, `MutasiPelangganView.tsx` |
 | 4 | **Capaian Pencatatan** | `features/dashboard/cater/capaian/api.ts` | `capaianApi` | `CapaianPencatatanView.tsx` |
 | 5 | **KPI Scorecard** | `features/dashboard/kpi/api.ts` | `kpiApi` | `KpiScorecardView.tsx` |
 
@@ -81,11 +81,12 @@ Daftar modul yang perlu dimigrasikan ke pola `api.ts` pada tahap berikutnya:
 
 ---
 
-## 3. Penjelasan Khusus: `verifikasi-legacy.router.ts` vs `ApiDashboard.ts`
+## 3. Penjelasan Khusus: `verifikasi.router.ts` vs `ApiDashboard.ts`
 
-### A. `apps/web/src/server/modules/verifikasi-legacy.router.ts` (Backend)
+### A. `apps/web/src/server/modules/verifikasi/` (Backend Module)
+* **Lokasi**: `apps/web/src/server/modules/verifikasi/verifikasi.router.ts` (diekspor via `index.ts` sebagai `verifikasiModule`)
 * **Peran**: Router backend ElysiaJS yang menangani seluruh API dengan prefix `/api/v1/*` untuk alur verifikasi baca meter dan laporan harian.
-* **Mengapa disebut "Legacy"?**: Router ini mengadopsi spesifikasi API v1 dari sistem sebelumnya agar kompatibel dengan modul grid verifikasi tanpa harus merombak kontrak data tabel.
+* **Mengapa Sempat Bernama "verifikasi-legacy"?:** Router ini awalnya dibuat saat refactor AG Grid ke TanStack Table untuk mengadopsi spesifikasi API v1 dari sistem sebelumnya agar kompatibel dengan modul grid verifikasi tanpa harus merombak kontrak data tabel. Sekarang telah distandardisasi dan dipindahkan ke dalam foldernya sendiri `server/modules/verifikasi/`.
 * **Fitur Utama yang Ditangani**:
   1. `/api/v1/laporan-harian`: Endpoint data grid tak hingga (*infinite scroll / pagination*) untuk hasil pembacaan meter petugas lapangan, filter anomali, status verifikasi (Ring 1, 2, 3), dan pencarian pelanggan.
   2. `/api/v1/laporan-mandiri`: Endpoint data grid untuk pembacaan mandiri oleh konsumen via aplikasi mobile/web publik beserta foto meter dan verifikasi geofencing GPS.
@@ -110,7 +111,7 @@ Keduanya merupakan pasangan langsung (*client-server pair*):
 [ApiDashboard.ts (ambilList / ambilSatu / kirimJson)]
                  │
                  ▼ HTTP GET/POST ke /api/v1/...
-[verifikasi-legacy.router.ts (Elysia Backend Router)]
+[modules/verifikasi/ (verifikasiModule / verifikasi.router.ts)]
                  │
                  ▼
 [verifikasiGridService & PostgreSQL Database]

@@ -14,6 +14,7 @@
 //   Batal Baca Ulang → kembalikan baris DITOLAK ke antrean
 // Pembacaan resmi baru dibuat saat V3 — lihat laporan-harian.router.ts.
 import * as React from "react"
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { ViewOffIcon } from "@/features/dashboard/shared/icons/ikon-lucide"
 import {
   AlertDialog,
@@ -197,6 +198,10 @@ export function VerifikasiLapangan({
   // laporan, jadi id-nya TIDAK ADA di /laporan-harian/:id.
   const [tab, setTab] = React.useState<"laporan" | "belum">("laporan")
   const [ringkasanTerbuka, setRingkasanTerbuka] = React.useState(true)
+  const [panelTerbuka, setPanelTerbuka] = React.useState(true)
+  const togglePanel = React.useCallback(() => {
+    setPanelTerbuka((v) => !v)
+  }, [])
   const onBarisDimuat = React.useCallback((ada: boolean) => {
     setBarisDimuat(true)
     setAdaBaris(ada)
@@ -670,16 +675,23 @@ export function VerifikasiLapangan({
       {/* TATA LETAK FULL FLUID: panel detail KIRI (terbuka di ukuran paling kecil —
           defaultSize = minSize), tabel KANAN yang butuh lebar. Mengisi ruang layar penuh
           secara fluid tanpa container/breadcrumb. */}
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-row gap-3 p-3 overflow-hidden">
+      <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-row gap-3 p-3 overflow-hidden">
         {/* Panel Kiri: Detail Laporan (resizable persis seperti sidebar) */}
         <aside
-          style={{ width: `${panelWidth}px`, minWidth: `${panelWidth}px` }}
+          style={{
+            width: panelTerbuka ? `${panelWidth}px` : undefined,
+            minWidth: panelTerbuka ? `${panelWidth}px` : undefined,
+          }}
           className={cn(
             KELAS_PANEL_DETAIL,
-            "relative shrink-0",
+            "relative shrink-0 z-20",
+            panelTerbuka ? "overflow-visible" : "",
             isResizing
               ? "transition-none select-none"
-              : "transition-[width] duration-150 ease-out"
+              : "transition-[width,opacity] duration-200 ease-in-out",
+            panelTerbuka
+              ? "shrink-0 opacity-100"
+              : "pointer-events-none lg:w-0 lg:min-w-0 lg:opacity-0 lg:!overflow-hidden lg:border-none lg:-mr-3"
           )}
         >
           {/* Judul DI LUAR wadah bergulir supaya garis atasnya tidak terpotong. */}
@@ -694,7 +706,7 @@ export function VerifikasiLapangan({
               />
             )}
           </div>
-          <div className="sidebar-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div className="sidebar-scroll relative min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
             {tab === "belum" ? (
               <PanelKosong
                 icon={ViewOffIcon}
@@ -722,20 +734,87 @@ export function VerifikasiLapangan({
           <div
             aria-hidden="true"
             onMouseDown={handleMouseDown}
-            className="hidden lg:block absolute top-0 -right-2 h-full w-4 cursor-col-resize z-50 select-none"
-          />
+            className="group/handle hidden lg:block absolute top-0 -right-2 h-full w-4 cursor-col-resize z-50 select-none"
+          >
+            {/* Tombol Collapse di tengah handle (persis DashboardShell) */}
+            <button
+              type="button"
+              aria-label="Tutup panel detail"
+              title="Tutup panel detail"
+              onClick={(e) => {
+                e.stopPropagation()
+                togglePanel()
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation()
+              }}
+              className={cn(
+                "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                "size-6 rounded-full border border-border bg-card",
+                "grid place-content-center cursor-pointer transition-opacity duration-150",
+                "opacity-0 group-hover/handle:opacity-100 focus-visible:opacity-100 shadow-xs",
+                "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800",
+                isResizing && "!opacity-0 pointer-events-none"
+              )}
+            >
+              <ChevronLeft className="size-3.5 text-muted-foreground" />
+            </button>
+          </div>
         </aside>
 
-        {/* Panel Kanan: Tabel Laporan & Ringkasan */}
-        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
-              <RingkasanVerifikasi
-                stats={stats}
-                periode={periode ?? null}
-                terbuka={ringkasanTerbuka}
-              />
+        {/* Floating Expand Handle di tepi kiri layar saat Panel Kiri disembunyikan (persis DashboardShell) */}
+        {!panelTerbuka && (
+          <div
+            aria-hidden="true"
+            className="group/handle-left hidden lg:block absolute inset-y-0 left-0 w-5 z-50 select-none"
+          >
+            <button
+              type="button"
+              aria-label="Buka panel detail"
+              title="Buka panel detail"
+              onClick={togglePanel}
+              className={cn(
+                "absolute left-1.5 top-1/2 -translate-y-1/2 z-50",
+                "size-6 rounded-full border border-border bg-card",
+                "grid place-content-center cursor-pointer transition-opacity duration-150",
+                "opacity-0 group-hover/handle-left:opacity-100 focus-visible:opacity-100 shadow-xs",
+                "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800"
+              )}
+            >
+              <ChevronRight className="size-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        )}
 
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <PanelTabel
+        {/* Panel Kanan: Tabel Laporan & Ringkasan */}
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-3">
+          <RingkasanVerifikasi
+            stats={stats}
+            periode={periode ?? null}
+            terbuka={ringkasanTerbuka}
+            onToggle={() => setRingkasanTerbuka((v) => !v)}
+          />
+
+          <div className="relative group/table-top flex min-h-0 min-w-0 flex-1 flex-col">
+            {!ringkasanTerbuka && (
+              <button
+                type="button"
+                aria-label="Tampilkan kartu ringkasan"
+                title="Tampilkan kartu ringkasan"
+                onClick={() => setRingkasanTerbuka(true)}
+                className={cn(
+                  "absolute -top-3 right-4 z-30",
+                  "size-6 rounded-full border border-border bg-card",
+                  "grid place-content-center cursor-pointer transition-opacity duration-150",
+                  "opacity-0 pointer-events-none group-hover/table-top:opacity-100 group-hover/table-top:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto shadow-xs",
+                  "hover:bg-neutral-100 hover:border-neutral-400 dark:hover:bg-neutral-800"
+                )}
+              >
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </button>
+            )}
+
+            <PanelTabel
                   periodes={stats?.periodes ?? []}
                   pencatats={pencatats}
                   rutes={rutes}

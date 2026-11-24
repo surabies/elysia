@@ -75,7 +75,7 @@ export interface KelolaManajemenUserProps {
 interface RoleDefinition {
   id: string;
   nama: string;
-  kategori: 'SUPERADMIN' | 'VERIFIKATOR' | 'BILLING' | 'OPERASIONAL' | 'USER';
+  kategori: 'SUPERADMIN' | 'MANAJEMEN' | 'VERIFIKATOR' | 'BILLING' | 'OPERASIONAL' | 'USER';
   ringLabel?: string;
   deskripsi: string;
   ringLevel?: number;
@@ -92,81 +92,58 @@ const ROLE_DEFINITIONS: RoleDefinition[] = [
   {
     id: 'DIREKSI',
     nama: 'Direksi',
-    kategori: 'VERIFIKATOR',
-    ringLabel: 'Executive Override',
+    kategori: 'MANAJEMEN',
+    ringLabel: 'Direksi Eksekutif',
     ringLevel: 5,
     deskripsi: 'Executive dashboard, analitik pendapatan, dan hak override tertinggi',
   },
   {
     id: 'SENIOR_MANAGER',
     nama: 'Senior Manager',
-    kategori: 'VERIFIKATOR',
-    ringLabel: 'Pengesahan Final',
+    kategori: 'MANAJEMEN',
+    ringLabel: 'Senior Manager',
     ringLevel: 4,
-    deskripsi: 'Pengesahan final pelepasan data pembacaan meter sebelum masuk ke DRD billing',
+    deskripsi: 'Pimpinan divisi, monitoring operasional lintas unit, dan pengesahan',
   },
   {
     id: 'MANAGER',
     nama: 'Manager',
-    kategori: 'VERIFIKATOR',
-    ringLabel: 'Approval Deviasi',
+    kategori: 'MANAJEMEN',
+    ringLabel: 'Manager Unit/Bagian',
     ringLevel: 3,
-    deskripsi: 'Validasi deviasi pemakaian dan approval anomali pelanggan tingkat cabang',
+    deskripsi: 'Pimpinan bagian teknis (Langganan, Distribusi, RPM, Billing)',
   },
   {
     id: 'SUPERVISOR',
     nama: 'Supervisor',
-    kategori: 'VERIFIKATOR',
-    ringLabel: 'Screening Awal',
+    kategori: 'MANAJEMEN',
+    ringLabel: 'Supervisor Unit',
     ringLevel: 2,
-    deskripsi: 'Penyaringan awal bukti foto meter, koreksi rute jalan, dan penugasan lapangan',
-  },
-  {
-    id: 'STAFF',
-    nama: 'Staf',
-    kategori: 'BILLING',
-    ringLabel: 'Staf Operasional',
-    deskripsi: 'Koreksi stand pasca-verifikasi, input manual ADD, closing periode, dan DRD',
-  },
-  {
-    id: 'PELAKSANA',
-    nama: 'Pelaksana',
-    kategori: 'OPERASIONAL',
-    ringLabel: 'Staf Lapangan',
-    deskripsi: 'Staf pelaksana lapangan untuk teknis pipa, tera meter, survei, dan pencatatan meter',
-  },
-  // Alias Legacy untuk kompatibilitas data lama
-  {
-    id: 'EXECUTIVE',
-    nama: 'Direksi Eksekutif',
-    kategori: 'VERIFIKATOR',
-    ringLabel: 'Executive Override',
-    ringLevel: 5,
-    deskripsi: 'Executive dashboard, analitik pendapatan, dan hak override verifikasi',
+    deskripsi: 'Pengawas operasional lapangan teknis dan unit kerja',
   },
   {
     id: 'VERIFIKATOR_3',
-    nama: 'Senior Manager Verifikator 3',
+    nama: 'Senior Verifikator (Ring 3)',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 3 Final',
-    ringLevel: 4,
-    deskripsi: 'Pengesahan final pelepasan data pembacaan meter sebelum masuk ke DRD billing',
+    ringLevel: 3,
+    deskripsi: 'Pengesahan final pelepasan data pembacaan meter sebelum masuk ke DRD billing (Pencatat Meter)',
   },
   {
     id: 'VERIFIKATOR_2',
-    nama: 'Manager Verifikator 2',
+    nama: 'Manager Verifikator (Ring 2)',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 2 Approval',
-    ringLevel: 3,
-    deskripsi: 'Validasi deviasi pemakaian dan approval anomali pelanggan tingkat cabang',
+    ringLevel: 2,
+    deskripsi: 'Validasi deviasi pemakaian dan approval anomali pelanggan (Pencatat Meter)',
   },
   {
     id: 'VERIFIKATOR_1',
-    nama: 'Supervisor Verifikator 1',
+    nama: 'Supervisor Verifikator (Ring 1)',
     kategori: 'VERIFIKATOR',
     ringLabel: 'Ring 1 Screening',
-    ringLevel: 2,
-    deskripsi: 'Penyaringan awal bukti foto meter, koreksi rute jalan, dan instruksi cek ulang',
+    ringLevel: 1,
+    deskripsi: 'Penyaringan awal bukti foto meter dan koreksi rute jalan (Pencatat Meter)',
   },
   {
     id: 'STAFF_ADMIN_BILLING',
@@ -174,6 +151,36 @@ const ROLE_DEFINITIONS: RoleDefinition[] = [
     kategori: 'BILLING',
     ringLabel: 'Operasional Billing',
     deskripsi: 'Koreksi stand pasca-verifikasi, input manual ADD, closing periode, dan DRD',
+  },
+  {
+    id: 'STAFF',
+    nama: 'Staf Administrasi',
+    kategori: 'BILLING',
+    ringLabel: 'Staf Kantor',
+    deskripsi: 'Staf pelayanan administrasi langganan, billing, dan penagihan',
+  },
+  {
+    id: 'PENCATAT',
+    nama: 'Petugas Pencatat Meter',
+    kategori: 'OPERASIONAL',
+    ringLabel: 'Mobile Cater',
+    deskripsi: 'Petugas lapangan pembacaan angka meter air fisik dan dokumentasi foto',
+  },
+  {
+    id: 'PELAKSANA',
+    nama: 'Pelaksana / Teknisi Lapangan',
+    kategori: 'OPERASIONAL',
+    ringLabel: 'Teknisi Lapangan',
+    deskripsi: 'Staf pelaksana teknis distribusi pipa, tera meter RPM, dan perbaikan',
+  },
+  // Alias Legacy untuk kompatibilitas data lama
+  {
+    id: 'EXECUTIVE',
+    nama: 'Direksi Eksekutif',
+    kategori: 'MANAJEMEN',
+    ringLabel: 'Executive Override',
+    ringLevel: 5,
+    deskripsi: 'Executive dashboard, analitik pendapatan, dan hak override tertinggi',
   },
   {
     id: 'USER',
@@ -184,8 +191,9 @@ const ROLE_DEFINITIONS: RoleDefinition[] = [
   },
 ];
 
-type FilterCategory = 'ALL' | 'SUPERADMIN' | 'VERIFIKATOR' | 'BILLING' | 'OPERASIONAL' | 'USER';
+type FilterCategory = 'ALL' | 'VERIFIKATOR' | 'MANAJEMEN' | 'OPERASIONAL' | 'BILLING' | 'SUPERADMIN' | 'USER';
 type StatusFilter = 'ALL' | 'AKTIF' | 'NONAKTIF';
+type BagianFilterUser = 'ALL' | 'PENCATAT_METER' | 'LANGGANAN' | 'DISTRIBUSI' | 'RPM' | 'PENAGIHAN' | 'UMUM';
 
 export function KelolaManajemenUser({
   userRole = 'USER',
@@ -195,6 +203,7 @@ export function KelolaManajemenUser({
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
   const [categoryFilter, setCategoryFilter] = React.useState<FilterCategory>('ALL');
+  const [bagianFilter, setBagianFilter] = React.useState<BagianFilterUser>('ALL');
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('ALL');
 
   // Modal State
@@ -380,12 +389,25 @@ export function KelolaManajemenUser({
   // Ringkasan Statistik
   const stats = React.useMemo(() => {
     const total = users.length;
-    const superadminCount = users.filter((u) => u.role === 'SUPERADMIN' || u.roles?.includes('SUPERADMIN')).length;
+    const superadminCount = users.filter((u) => u.role === 'SUPERADMIN' || Boolean(u.roles?.includes('SUPERADMIN'))).length;
+    // Verifikator Ring: HANYA untuk Wiska (V3), Deni (V2), Mamat (V1) di Bagian Pencatat Meter
     const verifikatorCount = users.filter((u) =>
-      ['EXECUTIVE', 'VERIFIKATOR_3', 'VERIFIKATOR_2', 'VERIFIKATOR_1', 'DIREKSI', 'SENIOR_MANAGER', 'MANAGER', 'SUPERVISOR'].includes(u.role)
+      u.role.startsWith('VERIFIKATOR_') || Boolean(u.roles?.some((r) => r.startsWith('VERIFIKATOR_')))
     ).length;
-    const billingCount = users.filter((u) => ['STAFF_ADMIN_BILLING', 'STAFF'].includes(u.role)).length;
-    const lapanganCount = users.filter((u) => ['PENCATAT', 'PELAKSANA'].includes(u.role)).length;
+    // Manajemen & Pimpinan: Direksi, Senior Manager, Manager Bagian, Supervisor non-verifikator
+    const manajemenCount = users.filter((u) =>
+      ['DIREKSI', 'SENIOR_MANAGER', 'MANAGER', 'SUPERVISOR', 'EXECUTIVE'].includes(u.role) &&
+      !u.role.startsWith('VERIFIKATOR_') &&
+      !u.roles?.some((r) => r.startsWith('VERIFIKATOR_'))
+    ).length;
+    const billingCount = users.filter((u) =>
+      ['STAFF_ADMIN_BILLING', 'STAFF'].includes(u.role) &&
+      !u.roles?.some((r) => r.startsWith('VERIFIKATOR_'))
+    ).length;
+    const lapanganCount = users.filter((u) =>
+      ['PENCATAT', 'PELAKSANA'].includes(u.role) &&
+      !u.roles?.some((r) => r.startsWith('VERIFIKATOR_'))
+    ).length;
     const userCount = users.filter((u) => u.role === 'USER').length;
     const aktifCount = users.filter((u) => u.status === 'AKTIF').length;
 
@@ -393,6 +415,7 @@ export function KelolaManajemenUser({
       total,
       superadminCount,
       verifikatorCount,
+      manajemenCount,
       billingCount,
       lapanganCount,
       userCount,
@@ -405,10 +428,11 @@ export function KelolaManajemenUser({
   const navTabs = React.useMemo(
     () => [
       { id: 'ALL' as FilterCategory, label: 'Semua Akun', count: stats.total },
-      { id: 'SUPERADMIN' as FilterCategory, label: 'Super Admin', count: stats.superadminCount },
       { id: 'VERIFIKATOR' as FilterCategory, label: 'Verifikator Ring', count: stats.verifikatorCount },
-      { id: 'BILLING' as FilterCategory, label: 'Staf Billing', count: stats.billingCount },
+      { id: 'MANAJEMEN' as FilterCategory, label: 'Pimpinan & Manager', count: stats.manajemenCount },
       { id: 'OPERASIONAL' as FilterCategory, label: 'Staf Lapangan', count: stats.lapanganCount },
+      { id: 'BILLING' as FilterCategory, label: 'Staf Administrasi', count: stats.billingCount },
+      { id: 'SUPERADMIN' as FilterCategory, label: 'Super Admin', count: stats.superadminCount },
       { id: 'USER' as FilterCategory, label: 'Pelanggan Mandiri', count: stats.userCount },
     ],
     [stats]
@@ -431,24 +455,39 @@ export function KelolaManajemenUser({
       if (categoryFilter === 'SUPERADMIN') {
         matchCat = u.role === 'SUPERADMIN' || Boolean(u.roles?.includes('SUPERADMIN'));
       } else if (categoryFilter === 'VERIFIKATOR') {
-        matchCat = ['EXECUTIVE', 'VERIFIKATOR_3', 'VERIFIKATOR_2', 'VERIFIKATOR_1', 'DIREKSI', 'SENIOR_MANAGER', 'MANAGER', 'SUPERVISOR'].includes(u.role);
+        matchCat = u.role.startsWith('VERIFIKATOR_') || Boolean(u.roles?.some((r) => r.startsWith('VERIFIKATOR_')));
+      } else if (categoryFilter === 'MANAJEMEN') {
+        matchCat =
+          ['DIREKSI', 'SENIOR_MANAGER', 'MANAGER', 'SUPERVISOR', 'EXECUTIVE'].includes(u.role) &&
+          !u.role.startsWith('VERIFIKATOR_') &&
+          !u.roles?.some((r) => r.startsWith('VERIFIKATOR_'));
       } else if (categoryFilter === 'BILLING') {
-        matchCat = ['STAFF_ADMIN_BILLING', 'STAFF'].includes(u.role);
+        matchCat =
+          ['STAFF_ADMIN_BILLING', 'STAFF'].includes(u.role) &&
+          !u.roles?.some((r) => r.startsWith('VERIFIKATOR_'));
       } else if (categoryFilter === 'OPERASIONAL') {
-        matchCat = ['PENCATAT', 'PELAKSANA'].includes(u.role);
+        matchCat =
+          ['PENCATAT', 'PELAKSANA'].includes(u.role) &&
+          !u.roles?.some((r) => r.startsWith('VERIFIKATOR_'));
       } else if (categoryFilter === 'USER') {
         matchCat = u.role === 'USER';
       }
 
-      // 3. Status
+      // 3. Filter Bagian
+      let matchBagian = true;
+      if (bagianFilter !== 'ALL') {
+        matchBagian = u.bagian === bagianFilter;
+      }
+
+      // 4. Status
       let matchStatus = true;
       if (statusFilter !== 'ALL') {
         matchStatus = u.status === statusFilter;
       }
 
-      return matchSearch && matchCat && matchStatus;
+      return matchSearch && matchCat && matchBagian && matchStatus;
     });
-  }, [users, search, categoryFilter, statusFilter]);
+  }, [users, search, categoryFilter, bagianFilter, statusFilter]);
 
   // Helper Initials Avatar
   const getInitials = (nama?: string | null, email?: string) => {
@@ -465,8 +504,9 @@ export function KelolaManajemenUser({
     return 'US';
   };
 
-  // Helper Badge Peran: Hanya aksen dot dan teks bersih (Tanpa box / pill)
-  const renderRoleBadge = (role: string) => {
+  // Helper Badge Peran: Aksen dot, teks bersih, dan indikator Ring verifikator
+  const renderRoleBadge = (userItem: UserManagementItem) => {
+    const role = userItem.role;
     let dotColor = 'bg-muted-foreground/60';
     let label = role;
 
@@ -475,9 +515,22 @@ export function KelolaManajemenUser({
         dotColor = 'bg-foreground';
         label = 'SUPERADMIN';
         break;
+      case 'DIREKSI':
       case 'EXECUTIVE':
         dotColor = 'bg-purple-500';
-        label = 'EXECUTIVE';
+        label = 'DIREKSI';
+        break;
+      case 'SENIOR_MANAGER':
+        dotColor = 'bg-rose-500';
+        label = 'SENIOR MANAGER';
+        break;
+      case 'MANAGER':
+        dotColor = 'bg-blue-600';
+        label = 'MANAGER';
+        break;
+      case 'SUPERVISOR':
+        dotColor = 'bg-sky-500';
+        label = 'SUPERVISOR';
         break;
       case 'VERIFIKATOR_3':
         dotColor = 'bg-amber-500';
@@ -491,14 +544,20 @@ export function KelolaManajemenUser({
         dotColor = 'bg-sky-500';
         label = 'RING 1 SUPERVISOR';
         break;
-      case 'STAFF':
       case 'STAFF_ADMIN_BILLING':
         dotColor = 'bg-indigo-500';
-        label = 'STAF';
+        label = 'STAF BILLING';
+        break;
+      case 'STAFF':
+        dotColor = 'bg-indigo-400';
+        label = 'STAF ADMIN';
         break;
       case 'PENCATAT':
-      case 'PELAKSANA':
         dotColor = 'bg-emerald-500';
+        label = 'PENCATAT METER';
+        break;
+      case 'PELAKSANA':
+        dotColor = 'bg-teal-500';
         label = 'PELAKSANA';
         break;
       default:
@@ -506,11 +565,32 @@ export function KelolaManajemenUser({
         label = role;
     }
 
+    const hasV3 = userItem.roles?.includes('VERIFIKATOR_3');
+    const hasV2 = userItem.roles?.includes('VERIFIKATOR_2');
+    const hasV1 = userItem.roles?.includes('VERIFIKATOR_1');
+
     return (
-      <span className="inline-flex items-center gap-2 text-[12px] font-mono text-foreground font-medium whitespace-nowrap">
-        <span className={cn('size-1.5 rounded-full shrink-0', dotColor)} />
-        <span>{label}</span>
-      </span>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center gap-2 text-[12px] font-mono text-foreground font-medium whitespace-nowrap">
+          <span className={cn('size-1.5 rounded-full shrink-0', dotColor)} />
+          <span>{label}</span>
+        </span>
+        {hasV3 && role !== 'VERIFIKATOR_3' && (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
+            Ring 3
+          </span>
+        )}
+        {hasV2 && role !== 'VERIFIKATOR_2' && (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20">
+            Ring 2
+          </span>
+        )}
+        {hasV1 && role !== 'VERIFIKATOR_1' && (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-sky-500/10 text-sky-600 border border-sky-500/20">
+            Ring 1
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -640,6 +720,20 @@ export function KelolaManajemenUser({
           </div>
         </Card>
 
+        {/* Pimpinan & Manager */}
+        <Card className="p-4 border-border bg-card/60 rounded-lg flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-label-12 text-muted-foreground font-medium">Pimpinan & Manager</span>
+            <Users className="size-4 text-blue-500/70" />
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-heading-24 font-mono font-semibold text-foreground">
+              {stats.manajemenCount}
+            </span>
+            <span className="text-copy-12 text-muted-foreground">direksi & unit</span>
+          </div>
+        </Card>
+
         {/* Petugas Lapangan */}
         <Card className="p-4 border-border bg-card/60 rounded-lg flex flex-col justify-between">
           <div className="flex items-center justify-between">
@@ -650,7 +744,7 @@ export function KelolaManajemenUser({
             <span className="text-heading-24 font-mono font-semibold text-foreground">
               {stats.lapanganCount}
             </span>
-            <span className="text-copy-12 text-muted-foreground">pembaca meter</span>
+            <span className="text-copy-12 text-muted-foreground">cater & teknisi</span>
           </div>
         </Card>
 
@@ -693,45 +787,69 @@ export function KelolaManajemenUser({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-label-12 text-muted-foreground font-mono">Status Akun:</span>
-          <div className="flex items-center rounded-md border border-border p-0.5 bg-muted/30">
-            <button
-              type="button"
-              onClick={() => setStatusFilter('ALL')}
-              className={cn(
-                'px-2.5 py-1 text-label-11 font-mono rounded transition-colors',
-                statusFilter === 'ALL'
-                  ? 'bg-card text-foreground font-semibold shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Filter Bagian (Departemen Scope) */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-label-12 text-muted-foreground font-mono">Bagian:</span>
+            <Select
+              value={bagianFilter}
+              onValueChange={(val: any) => setBagianFilter(val)}
             >
-              Semua
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('AKTIF')}
-              className={cn(
-                'px-2.5 py-1 text-label-11 font-mono rounded transition-colors',
-                statusFilter === 'AKTIF'
-                  ? 'bg-card text-emerald-600 dark:text-emerald-400 font-semibold shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Aktif
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('NONAKTIF')}
-              className={cn(
-                'px-2.5 py-1 text-label-11 font-mono rounded transition-colors',
-                statusFilter === 'NONAKTIF'
-                  ? 'bg-card text-rose-600 dark:text-rose-400 font-semibold shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Nonaktif
-            </button>
+              <SelectTrigger className="h-8 w-44 bg-card border-border font-sans text-copy-12">
+                <SelectValue placeholder="Semua Bagian" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Semua Bagian</SelectItem>
+                <SelectItem value="PENCATAT_METER">Pencatat Meter</SelectItem>
+                <SelectItem value="LANGGANAN">Hubungan Langganan</SelectItem>
+                <SelectItem value="DISTRIBUSI">Distribusi</SelectItem>
+                <SelectItem value="RPM">RPM</SelectItem>
+                <SelectItem value="PENAGIHAN">Penagihan</SelectItem>
+                <SelectItem value="UMUM">Direksi & Umum</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-label-12 text-muted-foreground font-mono">Status:</span>
+            <div className="flex items-center rounded-md border border-border p-0.5 bg-muted/30">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('ALL')}
+                className={cn(
+                  'px-2.5 py-1 text-label-11 font-mono rounded transition-colors',
+                  statusFilter === 'ALL'
+                    ? 'bg-card text-foreground font-semibold shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Semua
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('AKTIF')}
+                className={cn(
+                  'px-2.5 py-1 text-label-11 font-mono rounded transition-colors',
+                  statusFilter === 'AKTIF'
+                    ? 'bg-card text-emerald-600 dark:text-emerald-400 font-semibold shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Aktif
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('NONAKTIF')}
+                className={cn(
+                  'px-2.5 py-1 text-label-11 font-mono rounded transition-colors',
+                  statusFilter === 'NONAKTIF'
+                    ? 'bg-card text-rose-600 dark:text-rose-400 font-semibold shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Nonaktif
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -751,13 +869,14 @@ export function KelolaManajemenUser({
           <p className="text-copy-13 text-muted-foreground max-w-sm mx-auto">
             Coba gunakan kata kunci pencarian lain atau ubah filter peranan dan status.
           </p>
-          {(search || categoryFilter !== 'ALL' || statusFilter !== 'ALL') && (
+          {(search || categoryFilter !== 'ALL' || bagianFilter !== 'ALL' || statusFilter !== 'ALL') && (
             <Button
               variant="outline"
               size="xs"
               onClick={() => {
                 setSearch('');
                 setCategoryFilter('ALL');
+                setBagianFilter('ALL');
                 setStatusFilter('ALL');
               }}
               className="mt-2 font-mono text-label-12"
@@ -820,7 +939,7 @@ export function KelolaManajemenUser({
 
                     {/* 3. Peran RBAC (Hanya Aksen Dot & Text) */}
                     <TableCell className="py-3">
-                      {renderRoleBadge(userItem.role)}
+                      {renderRoleBadge(userItem)}
                     </TableCell>
 
                     {/* 4. Jabatan (Dedicated Separate Column) */}
