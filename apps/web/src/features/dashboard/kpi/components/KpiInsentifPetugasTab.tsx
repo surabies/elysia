@@ -61,6 +61,10 @@ export function KpiInsentifPetugasTab({
       const res = await kpiApi.getEvaluasiInsentif(selectedPeriod);
       if (res) {
         setData(res);
+        if (res.aturan) {
+          setInsentifDasar(res.aturan.insentifDasar);
+          setTarifPerSl(res.aturan.tarifPerSl);
+        }
       }
     } catch (err: any) {
       toast.error(err.message || "Gagal memuat matriks evaluasi insentif");

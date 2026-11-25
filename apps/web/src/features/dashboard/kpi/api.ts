@@ -69,6 +69,80 @@ export const kpiApi = {
     return json.data;
   },
 
+  /** Mengambil daftar pemilik (owner) real dari database */
+  async getOwners() {
+    const res = await fetch("/api/kpi/owners");
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat daftar pemilik");
+    }
+    return json.data ?? [];
+  },
+
+  /** Mengambil konfigurasi aturan insentif perusahaan */
+  async getAturanInsentif(periode: string) {
+    const res = await fetch(
+      `/api/kpi/aturan-insentif?periode=${encodeURIComponent(periode)}`
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat aturan insentif");
+    }
+    return json.data;
+  },
+
+  /** Menyimpan perubahan aturan insentif perusahaan */
+  async updateAturanInsentif(data: any) {
+    const res = await fetch("/api/kpi/aturan-insentif", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal menyimpan aturan insentif");
+    }
+    return json.data;
+  },
+
+  /** Mengambil alokasi beban kerja dan penugasan seluruh petugas */
+  async getAlokasiBeban(periode: string) {
+    const res = await fetch(
+      `/api/kpi/alokasi-beban?periode=${encodeURIComponent(periode)}`
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat alokasi beban petugas");
+    }
+    return json.data;
+  },
+
+  /** Memperbarui alokasi beban kerja personel tertentu */
+  async updateAlokasiPetugas(
+    petugasId: string,
+    data: {
+      periode: string;
+      targetSlPenugasan?: number | null;
+      faktorKesulitanMedan?: number;
+      statusTugas?: string;
+      catatan?: string | null;
+    }
+  ) {
+    const res = await fetch(
+      `/api/kpi/alokasi-beban/${encodeURIComponent(petugasId)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui alokasi petugas");
+    }
+    return json;
+  },
+
   /** Memperbarui penanggung jawab (owner) KPI */
   async updatePemilik(
     kpiId: string,

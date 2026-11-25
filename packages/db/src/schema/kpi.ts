@@ -82,7 +82,7 @@ export const kpiRealisasi = pgTable(
     indikatorId: varchar("indikator_id", { length: 100 })
       .notNull()
       .references(() => kpiIndikator.id, { onDelete: "cascade" }),
-    periode: varchar("periode", { length: 30 }).notNull(), // misal "Sep 2026"
+    periode: varchar("periode", { length: 30 }).notNull(), // misal "Nov 2026" atau "202611"
     nilaiAktual: doublePrecision("nilai_aktual"), // null jika "not reported"
     sparkline: text("sparkline"), // JSON array string
     catatan: text("catatan"),
@@ -93,6 +93,67 @@ export const kpiRealisasi = pgTable(
     uniqueIndex("kpi_realisasi_indikator_periode_idx").on(
       table.indikatorId,
       table.periode
+    ),
+  ]
+)
+
+/**
+ * 5. Pengaturan Parameter Rumusan & Kebijakan Insentif Bulanan (Perumda Air Minum)
+ */
+export const kpiAturanInsentif = pgTable(
+  "kpi_aturan_insentif",
+  {
+    id: varchar("id", { length: 100 }).primaryKey(), // misal "aturan-202611" atau "global"
+    periode: varchar("periode", { length: 30 }).notNull(), // "202611" atau "Nov 2026"
+    insentifDasar: integer("insentif_dasar").notNull().default(500000), // Rp 500.000
+    tarifPerSl: integer("tarif_per_sl").notNull().default(400), // Rp 400/SL
+    bobotCapaianSl: integer("bobot_capaian_sl").notNull().default(40), // 40%
+    bobotAkurasiGps: integer("bobot_akurasi_gps").notNull().default(25), // 25%
+    bobotKualitasBaca: integer("bobot_kualitas_baca").notNull().default(20), // 20%
+    bobotKecepatan: integer("bobot_kecepatan").notNull().default(15), // 15%
+    targetDurasiDetik: integer("target_durasi_detik").notNull().default(45), // <= 45 detik
+    thresholdGradeA: integer("threshold_grade_a").notNull().default(90),
+    thresholdGradeB: integer("threshold_grade_b").notNull().default(75),
+    thresholdGradeC: integer("threshold_grade_c").notNull().default(60),
+    pengaliGradeA: doublePrecision("pengali_grade_a").notNull().default(1.1),
+    pengaliGradeB: doublePrecision("pengali_grade_b").notNull().default(1.0),
+    pengaliGradeC: doublePrecision("pengali_grade_c").notNull().default(0.65),
+    minIndeksBeban: doublePrecision("min_indeks_beban").notNull().default(0.7),
+    maxIndeksBeban: doublePrecision("max_indeks_beban").notNull().default(1.4),
+    catatan: text("catatan"),
+    updatedBy: varchar("updated_by", { length: 100 }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("kpi_aturan_insentif_periode_idx").on(table.periode),
+  ]
+)
+
+/**
+ * 6. Alokasi Beban Kerja & Penugasan Personel Lapangan per Periode
+ */
+export const kpiAlokasiBebanPetugas = pgTable(
+  "kpi_alokasi_beban_petugas",
+  {
+    id: varchar("id", { length: 120 }).primaryKey(), // `${periode}_${petugasId}`
+    periode: varchar("periode", { length: 30 }).notNull(), // "202611"
+    petugasId: varchar("petugas_id", { length: 50 }).notNull(),
+    targetSlPenugasan: integer("target_sl_penugasan"), // override target SL spesifik jika ada
+    faktorKesulitanMedan: doublePrecision("faktor_kesulitan_medan")
+      .notNull()
+      .default(1.0), // 0.8 s/d 1.5 pengali topografi
+    statusTugas: varchar("status_tugas", { length: 30 })
+      .notNull()
+      .default("AKTIF"), // 'AKTIF' | 'CUTI' | 'SAKIT' | 'BANTUAN_KHUSUS'
+    catatan: text("catatan"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("kpi_alokasi_beban_petugas_periode_petugas_idx").on(
+      table.periode,
+      table.petugasId
     ),
   ]
 )

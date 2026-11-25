@@ -4,14 +4,17 @@ import {
   kpiObjektif,
   kpiIndikator,
   kpiRealisasi,
+  kpiAturanInsentif,
+  kpiAlokasiBebanPetugas,
   pelanggan,
   caterBacaMeter,
   petugasCater,
   ruteCater,
   periodePenagihan,
   waterMeterMutasi,
+  user,
 } from "@cater/db"
-import { eq, asc, sql } from "drizzle-orm"
+import { eq, asc, sql, or, and } from "drizzle-orm"
 import type {
   Perspective,
   Objective,
@@ -72,13 +75,22 @@ export function konversiPeriodeKeThbl(periode: string): string {
  * dari PostgreSQL sesuai periode yang dipilih.
  */
 export async function dapatkanPerspektifScorecard(
-  periode = "Sep 2026"
+  periode = "Nov 2026"
 ): Promise<Perspective[]> {
+  const thbl = konversiPeriodeKeThbl(periode)
   const [perspRows, objRows, indRows, realRows] = await Promise.all([
     db.select().from(kpiPerspektif).orderBy(asc(kpiPerspektif.urutan)),
     db.select().from(kpiObjektif).orderBy(asc(kpiObjektif.urutan)),
     db.select().from(kpiIndikator).orderBy(asc(kpiIndikator.urutan)),
-    db.select().from(kpiRealisasi).where(eq(kpiRealisasi.periode, periode)),
+    db
+      .select()
+      .from(kpiRealisasi)
+      .where(
+        or(
+          eq(kpiRealisasi.periode, periode),
+          eq(kpiRealisasi.periode, thbl)
+        )
+      ),
   ])
 
   const perspektifList = dapatkanBaris(perspRows)
@@ -88,7 +100,10 @@ export async function dapatkanPerspektifScorecard(
 
   const realisasiMap = new Map<string, any>()
   realisasiList.forEach((r) => {
-    realisasiMap.set(r.indikatorId, r)
+    const existing = realisasiMap.get(r.indikatorId)
+    if (!existing || r.periode === periode) {
+      realisasiMap.set(r.indikatorId, r)
+    }
   })
 
   const kpisPerObjektif = new Map<string, KpiItem[]>()
@@ -106,6 +121,10 @@ export async function dapatkanPerspektifScorecard(
       } catch {
         // Fallback to baseline
       }
+    } else if (val !== null) {
+      const step1 = Number((ind.baseline + (val - ind.baseline) * 0.35).toFixed(1))
+      const step2 = Number((ind.baseline + (val - ind.baseline) * 0.7).toFixed(1))
+      sparkline = [ind.baseline, step1, step2, val]
     }
 
     const owner: KpiOwner = {
@@ -316,6 +335,7 @@ export interface InsentifPetugasItem {
   noHp: string | null
   jumlahRute: number
   ruteList: string[]
+  targetRuteStandar: number
   targetSL: number
   realisasiSL: number
   totalM3: number
@@ -326,11 +346,53 @@ export interface InsentifPetugasItem {
   rataDurasiDetik: number
   totalAnomali: number
   totalRevisi: number
+  faktorKesulitanMedan: number
+  statusTugas: string
   indeksBebanKerja: number
   skorKpiAkhir: number
   grade: "A" | "B" | "C" | "D"
   labelGrade: string
   pengaliGrade: number
+}
+
+export interface AturanInsentifData {
+  id?: string
+  periode: string
+  insentifDasar: number
+  tarifPerSl: number
+  bobotCapaianSl: number
+  bobotAkurasiGps: number
+  bobotKualitasBaca: number
+  bobotKecepatan: number
+  targetDurasiDetik: number
+  thresholdGradeA: number
+  thresholdGradeB: number
+  thresholdGradeC: number
+  pengaliGradeA: number
+  pengaliGradeB: number
+  pengaliGradeC: number
+  minIndeksBeban: number
+  maxIndeksBeban: number
+  catatan?: string | null
+}
+
+export const ATURAN_INSENTIF_DEFAULT: Omit<AturanInsentifData, "periode"> = {
+  insentifDasar: 500000,
+  tarifPerSl: 400,
+  bobotCapaianSl: 40,
+  bobotAkurasiGps: 25,
+  bobotKualitasBaca: 20,
+  bobotKecepatan: 15,
+  targetDurasiDetik: 45,
+  thresholdGradeA: 90,
+  thresholdGradeB: 75,
+  thresholdGradeC: 60,
+  pengaliGradeA: 1.1,
+  pengaliGradeB: 1.0,
+  pengaliGradeC: 0.65,
+  minIndeksBeban: 0.7,
+  maxIndeksBeban: 1.4,
+  catatan: "Formula Standar Berdasarkan SK Direksi M2C",
 }
 
 export interface EvaluasiInsentifResult {
@@ -347,26 +409,317 @@ export interface EvaluasiInsentifResult {
     countGradeD: number
   }
   items: InsentifPetugasItem[]
+  aturan: AturanInsentifData
+}
+
+/**
+ * MENGAMBIL PARAMETER ATURAN INSENTIF AKTIF DARI DATABASE
+ */
+export async function dapatkanAturanInsentif(
+  periodeInput = "202611"
+): Promise<AturanInsentifData> {
+  const thbl = konversiPeriodeKeThbl(periodeInput)
+  const rows = await db
+    .select()
+    .from(kpiAturanInsentif)
+    .where(
+      or(
+        eq(kpiAturanInsentif.periode, thbl),
+        eq(kpiAturanInsentif.periode, periodeInput)
+      )
+    )
+    .limit(1)
+
+  if (rows.length > 0 && rows[0]) {
+    const r = rows[0]
+    return {
+      id: r.id,
+      periode: r.periode,
+      insentifDasar: r.insentifDasar,
+      tarifPerSl: r.tarifPerSl,
+      bobotCapaianSl: r.bobotCapaianSl,
+      bobotAkurasiGps: r.bobotAkurasiGps,
+      bobotKualitasBaca: r.bobotKualitasBaca,
+      bobotKecepatan: r.bobotKecepatan,
+      targetDurasiDetik: r.targetDurasiDetik,
+      thresholdGradeA: r.thresholdGradeA,
+      thresholdGradeB: r.thresholdGradeB,
+      thresholdGradeC: r.thresholdGradeC,
+      pengaliGradeA: r.pengaliGradeA,
+      pengaliGradeB: r.pengaliGradeB,
+      pengaliGradeC: r.pengaliGradeC,
+      minIndeksBeban: r.minIndeksBeban,
+      maxIndeksBeban: r.maxIndeksBeban,
+      catatan: r.catatan,
+    }
+  }
+
+  return {
+    ...ATURAN_INSENTIF_DEFAULT,
+    periode: thbl,
+  }
+}
+
+/**
+ * SIMPAN ATAU PERBARUI ATURAN INSENTIF PERUSAHAAN (CRUD)
+ */
+export async function simpanAturanInsentif(
+  periodeInput: string,
+  data: Partial<AturanInsentifData>,
+  updatedBy = "admin"
+): Promise<AturanInsentifData> {
+  const thbl = konversiPeriodeKeThbl(periodeInput)
+  const id = `aturan-${thbl}`
+
+  const values = {
+    id,
+    periode: thbl,
+    insentifDasar: data.insentifDasar ?? 500000,
+    tarifPerSl: data.tarifPerSl ?? 400,
+    bobotCapaianSl: data.bobotCapaianSl ?? 40,
+    bobotAkurasiGps: data.bobotAkurasiGps ?? 25,
+    bobotKualitasBaca: data.bobotKualitasBaca ?? 20,
+    bobotKecepatan: data.bobotKecepatan ?? 15,
+    targetDurasiDetik: data.targetDurasiDetik ?? 45,
+    thresholdGradeA: data.thresholdGradeA ?? 90,
+    thresholdGradeB: data.thresholdGradeB ?? 75,
+    thresholdGradeC: data.thresholdGradeC ?? 60,
+    pengaliGradeA: data.pengaliGradeA ?? 1.1,
+    pengaliGradeB: data.pengaliGradeB ?? 1.0,
+    pengaliGradeC: data.pengaliGradeC ?? 0.65,
+    minIndeksBeban: data.minIndeksBeban ?? 0.7,
+    maxIndeksBeban: data.maxIndeksBeban ?? 1.4,
+    catatan: data.catatan ?? "Pembaruan kebijakan insentif M2C",
+    updatedBy,
+    updatedAt: new Date(),
+  }
+
+  await db
+    .insert(kpiAturanInsentif)
+    .values(values)
+    .onConflictDoUpdate({
+      target: kpiAturanInsentif.periode,
+      set: values,
+    })
+
+  return dapatkanAturanInsentif(thbl)
+}
+
+export interface AlokasiPetugasItem {
+  petugasId: string
+  nama: string
+  noHp: string | null
+  jumlahRute: number
+  ruteList: string[]
+  targetRuteStandar: number
+  targetSlPenugasan: number | null
+  targetEfektif: number
+  faktorKesulitanMedan: number
+  statusTugas: "AKTIF" | "CUTI" | "SAKIT" | "BANTUAN_KHUSUS"
+  catatan: string | null
+}
+
+/**
+ * MENGAMBIL DAFTAR ALOKASI BEBAN KERJA & TARGET PENUGASAN PETUGAS LAPANGAN (CRUD)
+ */
+export async function dapatkanAlokasiBebanPetugas(
+  periodeInput = "202611"
+): Promise<{ thbl: string; items: AlokasiPetugasItem[] }> {
+  const thbl = konversiPeriodeKeThbl(periodeInput)
+
+  const [petugasList, routes, targetPerRute, alokasiRows] = await Promise.all([
+    db.select().from(petugasCater).orderBy(asc(petugasCater.nama)),
+    db.select().from(ruteCater),
+    db
+      .select({
+        ruteKode: pelanggan.ruteKode,
+        total: sql<number>`count(*)::int`,
+      })
+      .from(pelanggan)
+      .groupBy(pelanggan.ruteKode),
+    db
+      .select()
+      .from(kpiAlokasiBebanPetugas)
+      .where(
+        or(
+          eq(kpiAlokasiBebanPetugas.periode, thbl),
+          eq(kpiAlokasiBebanPetugas.periode, periodeInput)
+        )
+      ),
+  ])
+
+  const targetMap = new Map(targetPerRute.map((r) => [r.ruteKode, r.total]))
+  const alokasiMap = new Map(alokasiRows.map((a) => [a.petugasId, a]))
+
+  const items: AlokasiPetugasItem[] = petugasList.map((p) => {
+    const assignedRoutes = routes.filter((r) => r.pencatatDefault === p.id)
+    const targetRuteStandar = assignedRoutes.reduce(
+      (acc, r) => acc + (targetMap.get(r.kode) ?? 0),
+      0
+    )
+    const alokasi = alokasiMap.get(p.id)
+    const targetSlPenugasan = alokasi?.targetSlPenugasan ?? null
+    const faktorKesulitanMedan = alokasi?.faktorKesulitanMedan ?? 1.0
+    const statusTugas =
+      (alokasi?.statusTugas as any) || (p.aktif ? "AKTIF" : "CUTI")
+    const catatan = alokasi?.catatan ?? null
+
+    const targetEfektif =
+      targetSlPenugasan !== null && targetSlPenugasan > 0
+        ? targetSlPenugasan
+        : targetRuteStandar
+
+    return {
+      petugasId: p.id,
+      nama: p.nama,
+      noHp: p.noHp,
+      jumlahRute: assignedRoutes.length,
+      ruteList: assignedRoutes.map((r) => r.kode),
+      targetRuteStandar,
+      targetSlPenugasan,
+      targetEfektif,
+      faktorKesulitanMedan,
+      statusTugas,
+      catatan,
+    }
+  })
+
+  return { thbl, items }
+}
+
+/**
+ * SIMPAN ALOKASI BEBAN KERJA & TARGET PETUGAS (CRUD)
+ */
+export async function simpanAlokasiBebanPetugas(
+  periodeInput: string,
+  petugasId: string,
+  data: {
+    targetSlPenugasan?: number | null
+    faktorKesulitanMedan?: number
+    statusTugas?: string
+    catatan?: string | null
+  }
+) {
+  const thbl = konversiPeriodeKeThbl(periodeInput)
+  const id = `${thbl}_${petugasId}`
+
+  const values = {
+    id,
+    periode: thbl,
+    petugasId,
+    targetSlPenugasan: data.targetSlPenugasan ?? null,
+    faktorKesulitanMedan: data.faktorKesulitanMedan ?? 1.0,
+    statusTugas: data.statusTugas ?? "AKTIF",
+    catatan: data.catatan ?? null,
+    updatedAt: new Date(),
+  }
+
+  await db
+    .insert(kpiAlokasiBebanPetugas)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [
+        kpiAlokasiBebanPetugas.periode,
+        kpiAlokasiBebanPetugas.petugasId,
+      ],
+      set: values,
+    })
+
+  return { success: true, id }
+}
+
+/**
+ * MENGAMBIL DAFTAR PEMILIK (OWNER) KPI REAL DARI DATABASE
+ */
+export async function dapatkanDaftarPemilikKpi(): Promise<KpiOwner[]> {
+  const [indOwners, petRows, userRows] = await Promise.all([
+    db
+      .select({
+        id: kpiIndikator.pemilikId,
+        name: kpiIndikator.pemilikNama,
+        initials: kpiIndikator.pemilikInisial,
+      })
+      .from(kpiIndikator),
+    db
+      .select({
+        id: petugasCater.id,
+        nama: petugasCater.nama,
+      })
+      .from(petugasCater)
+      .where(eq(petugasCater.aktif, true)),
+    db
+      .select({
+        id: user.id,
+        name: user.name,
+      })
+      .from(user),
+  ])
+
+  const map = new Map<string, KpiOwner>()
+
+  // 1. Pemilik eksisting dari indikator
+  indOwners.forEach((o) => {
+    if (o.id && !map.has(o.id)) {
+      map.set(o.id, {
+        id: o.id,
+        name: o.name,
+        initials: o.initials || o.name.slice(0, 2).toUpperCase(),
+      })
+    }
+  })
+
+  // 2. Petugas Lapangan
+  petRows.forEach((p) => {
+    const pId = `user-cater-${p.id.toLowerCase()}`
+    if (!map.has(pId)) {
+      const parts = p.nama.split(" ")
+      const initials =
+        parts.length > 1
+          ? `${parts[0]![0]}${parts[1]![0]}`.toUpperCase()
+          : p.nama.slice(0, 2).toUpperCase()
+      map.set(pId, {
+        id: pId,
+        name: `${p.nama} (Petugas Lapangan)`,
+        initials,
+      })
+    }
+  })
+
+  // 3. User sistem / Verifikator / Manager
+  userRows.forEach((u) => {
+    if (u.id && !map.has(u.id)) {
+      const parts = u.name.split(" ")
+      const initials =
+        parts.length > 1
+          ? `${parts[0]![0]}${parts[1]![0]}`.toUpperCase()
+          : u.name.slice(0, 2).toUpperCase()
+      map.set(u.id, {
+        id: u.id,
+        name: u.name,
+        initials,
+      })
+    }
+  })
+
+  return Array.from(map.values())
 }
 
 /**
  * MENGHITUNG MATRIKS KPI & PARAMETER INSENTIF BERBASIS BEBAN KERJA DAN CAPAIAN TARGET
- * Mengambil data riil seluruh petugas dari database untuk periode THBL.
+ * Mengintegrasikan konfigurasi rumus dinamis dan alokasi beban kerja per petugas.
  */
 export async function dapatkanEvaluasiInsentifPetugas(
   thblInput = "202611"
 ): Promise<EvaluasiInsentifResult> {
   const thbl = konversiPeriodeKeThbl(thblInput)
 
-  const [periodeInfo] = await db
-    .select({ status: periodePenagihan.status })
-    .from(periodePenagihan)
-    .where(eq(periodePenagihan.periode, thbl))
-
-  const isLocked = periodeInfo?.status === "TERKUNCI"
-
-  const [listPetugas, routes, targetPerRute, readingsPerPetugas] =
+  const [periodeInfo, aturan, listPetugas, routes, targetPerRute, readingsPerPetugas, alokasiRows] =
     await Promise.all([
+      db
+        .select({ status: periodePenagihan.status })
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.periode, thbl)),
+      dapatkanAturanInsentif(thbl),
       db
         .select()
         .from(petugasCater)
@@ -394,12 +747,23 @@ export async function dapatkanEvaluasiInsentifPetugas(
         .from(caterBacaMeter)
         .where(eq(caterBacaMeter.thbl, thbl))
         .groupBy(caterBacaMeter.petugasId),
+      db
+        .select()
+        .from(kpiAlokasiBebanPetugas)
+        .where(
+          or(
+            eq(kpiAlokasiBebanPetugas.periode, thbl),
+            eq(kpiAlokasiBebanPetugas.periode, thblInput)
+          )
+        ),
     ])
 
+  const isLocked = periodeInfo[0]?.status === "TERKUNCI"
   const targetMap = new Map(targetPerRute.map((r) => [r.ruteKode, r.total]))
   const readingMap = new Map(readingsPerPetugas.map((r) => [r.petugasId, r]))
+  const alokasiMap = new Map(alokasiRows.map((a) => [a.petugasId, a]))
 
-  // Hitung target SL per petugas terlebih dahulu untuk menemukan Rata-rata Beban Kerja
+  // Hitung target SL per petugas dengan mempertimbangkan custom override
   const rawPetugas = listPetugas.map((p) => {
     const assignedRoutes = routes.filter((r) => r.pencatatDefault === p.id)
     const reading = readingMap.get(p.id)
@@ -408,18 +772,31 @@ export async function dapatkanEvaluasiInsentifPetugas(
       (acc, r) => acc + (targetMap.get(r.kode) ?? 0),
       0
     )
-    const targetSL = isLocked
-      ? Math.max(realisasiSL, assignedTarget)
-      : assignedTarget > 0
-      ? assignedTarget
-      : realisasiSL
+
+    const alokasi = alokasiMap.get(p.id)
+    const customTarget = alokasi?.targetSlPenugasan
+    const faktorKesulitanMedan = alokasi?.faktorKesulitanMedan ?? 1.0
+    const statusTugas =
+      alokasi?.statusTugas || (p.aktif ? "AKTIF" : "CUTI")
+
+    let targetSL: number
+    if (customTarget !== null && customTarget !== undefined && customTarget > 0) {
+      targetSL = customTarget
+    } else if (isLocked) {
+      targetSL = Math.max(realisasiSL, assignedTarget)
+    } else {
+      targetSL = assignedTarget > 0 ? assignedTarget : realisasiSL
+    }
 
     return {
       petugas: p,
       ruteList: assignedRoutes.map((r) => r.kode),
+      targetRuteStandar: assignedTarget,
       targetSL,
       realisasiSL,
       reading,
+      faktorKesulitanMedan,
+      statusTugas,
     }
   })
 
@@ -439,106 +816,131 @@ export async function dapatkanEvaluasiInsentifPetugas(
       : 1000
 
   const evaluated: Omit<InsentifPetugasItem, "peringkat">[] =
-    listToEvaluate.map(({ petugas, ruteList, targetSL, realisasiSL, reading }) => {
-      // 1. Capaian Kuantitas SL (0 - 100%)
-      const capaianSlPersen =
-        targetSL > 0
-          ? Number(Math.min(100, (realisasiSL / targetSL) * 100).toFixed(1))
-          : realisasiSL > 0
-          ? 100
-          : 0
-
-      // 2. Akurasi GPS Geofence <= 50m (0 - 100%)
-      const gpsTracked = reading?.totalGpsTracked ?? 0
-      const gpsValid = reading?.totalGpsValid ?? 0
-      const akurasiGpsPersen =
-        gpsTracked > 0
-          ? Number(Math.min(100, (gpsValid / gpsTracked) * 100).toFixed(1))
-          : realisasiSL > 0
-          ? 94.0
-          : 0
-
-      // 3. Kualitas Bacaan Tanpa Revisi/Anomali (0 - 100%)
-      const totalRevisi = reading?.totalRevisi ?? 0
-      const totalAnomali = reading?.totalAnomali ?? 0
-      const penaltiKualitas =
-        realisasiSL > 0
-          ? ((totalRevisi * 1.5 + totalAnomali * 0.5) / realisasiSL) * 100
-          : 0
-      const kualitasBacaPersen =
-        realisasiSL > 0
-          ? Number(Math.max(50, Math.min(100, 100 - penaltiKualitas)).toFixed(1))
-          : 0
-
-      // 4. Skor Kecepatan & Disiplin Durasi Baca (Target ideal <= 45 detik/SL)
-      const rataDurasiDetik = reading?.avgDurasi ?? 38
-      const skorKecepatanPersen =
-        realisasiSL > 0
-          ? rataDurasiDetik <= 40
-            ? 100
-            : rataDurasiDetik <= 60
-            ? 90
-            : 78
-          : 0
-
-      // Indeks Beban Kerja (Rasio Target SL petugas terhadap rata-rata perusahaan, dibatasi 0.70x s/d 1.40x)
-      const rawRatio = targetSL > 0 ? targetSL / rataTargetSL : 1.0
-      const indeksBebanKerja = Number(
-        Math.max(0.7, Math.min(1.4, rawRatio)).toFixed(2)
-      )
-
-      // Skor Komposit KPI Individu:
-      // 40% Capaian SL + 25% Akurasi GPS + 20% Kualitas Tanpa Revisi + 15% Kecepatan
-      const skorKpiAkhir = Number(
-        (
-          0.4 * capaianSlPersen +
-          0.25 * akurasiGpsPersen +
-          0.2 * kualitasBacaPersen +
-          0.15 * skorKecepatanPersen
-        ).toFixed(1)
-      )
-
-      let grade: InsentifPetugasItem["grade"] = "D"
-      let labelGrade = "Pembinaan"
-      let pengaliGrade = 0
-
-      if (skorKpiAkhir >= 90) {
-        grade = "A"
-        labelGrade = "Sangat Baik"
-        pengaliGrade = 1.1
-      } else if (skorKpiAkhir >= 75) {
-        grade = "B"
-        labelGrade = "Baik (On Target)"
-        pengaliGrade = 1.0
-      } else if (skorKpiAkhir >= 60) {
-        grade = "C"
-        labelGrade = "Cukup"
-        pengaliGrade = 0.65
-      }
-
-      return {
-        petugasId: petugas.id,
-        nama: petugas.nama,
-        noHp: petugas.noHp,
-        jumlahRute: ruteList.length,
+    listToEvaluate.map(
+      ({
+        petugas,
         ruteList,
+        targetRuteStandar,
         targetSL,
         realisasiSL,
-        totalM3: reading?.totalM3 ?? 0,
-        capaianSlPersen,
-        akurasiGpsPersen,
-        kualitasBacaPersen,
-        skorKecepatanPersen,
-        rataDurasiDetik,
-        totalAnomali,
-        totalRevisi,
-        indeksBebanKerja,
-        skorKpiAkhir,
-        grade,
-        labelGrade,
-        pengaliGrade,
+        reading,
+        faktorKesulitanMedan,
+        statusTugas,
+      }) => {
+        // 1. Capaian Kuantitas SL (0 - 100%)
+        const capaianSlPersen =
+          targetSL > 0
+            ? Number(Math.min(100, (realisasiSL / targetSL) * 100).toFixed(1))
+            : realisasiSL > 0
+            ? 100
+            : 0
+
+        // 2. Akurasi GPS Geofence <= 50m (0 - 100%)
+        const gpsTracked = reading?.totalGpsTracked ?? 0
+        const gpsValid = reading?.totalGpsValid ?? 0
+        const akurasiGpsPersen =
+          gpsTracked > 0
+            ? Number(Math.min(100, (gpsValid / gpsTracked) * 100).toFixed(1))
+            : realisasiSL > 0
+            ? 94.0
+            : 0
+
+        // 3. Kualitas Bacaan Tanpa Revisi/Anomali (0 - 100%)
+        const totalRevisi = reading?.totalRevisi ?? 0
+        const totalAnomali = reading?.totalAnomali ?? 0
+        const penaltiKualitas =
+          realisasiSL > 0
+            ? ((totalRevisi * 1.5 + totalAnomali * 0.5) / realisasiSL) * 100
+            : 0
+        const kualitasBacaPersen =
+          realisasiSL > 0
+            ? Number(
+                Math.max(50, Math.min(100, 100 - penaltiKualitas)).toFixed(1)
+              )
+            : 0
+
+        // 4. Skor Kecepatan & Disiplin Durasi Baca
+        const rataDurasiDetik = reading?.avgDurasi ?? 38
+        const skorKecepatanPersen =
+          realisasiSL > 0
+            ? rataDurasiDetik <= aturan.targetDurasiDetik
+              ? 100
+              : rataDurasiDetik <= aturan.targetDurasiDetik + 20
+              ? 85
+              : 70
+            : 0
+
+        // Indeks Beban Kerja: Rasio Target SL dikalikan faktor kesulitan medan rute
+        const rawRatio =
+          targetSL > 0
+            ? (targetSL / rataTargetSL) * faktorKesulitanMedan
+            : 1.0
+        const indeksBebanKerja = Number(
+          Math.max(
+            aturan.minIndeksBeban,
+            Math.min(aturan.maxIndeksBeban, rawRatio)
+          ).toFixed(2)
+        )
+
+        // Skor Komposit KPI Individu Berdasarkan Bobot Aturan Aktif
+        const skorKpiAkhir = Number(
+          (
+            (aturan.bobotCapaianSl / 100) * capaianSlPersen +
+            (aturan.bobotAkurasiGps / 100) * akurasiGpsPersen +
+            (aturan.bobotKualitasBaca / 100) * kualitasBacaPersen +
+            (aturan.bobotKecepatan / 100) * skorKecepatanPersen
+          ).toFixed(1)
+        )
+
+        let grade: InsentifPetugasItem["grade"] = "D"
+        let labelGrade = "Pembinaan"
+        let pengaliGrade = 0
+
+        if (statusTugas === "CUTI" || statusTugas === "SAKIT") {
+          grade = "C"
+          labelGrade = statusTugas === "CUTI" ? "Izin / Cuti Resmi" : "Sakit"
+          pengaliGrade = 0.5
+        } else if (skorKpiAkhir >= aturan.thresholdGradeA) {
+          grade = "A"
+          labelGrade = "Sangat Baik"
+          pengaliGrade = aturan.pengaliGradeA
+        } else if (skorKpiAkhir >= aturan.thresholdGradeB) {
+          grade = "B"
+          labelGrade = "Baik (On Target)"
+          pengaliGrade = aturan.pengaliGradeB
+        } else if (skorKpiAkhir >= aturan.thresholdGradeC) {
+          grade = "C"
+          labelGrade = "Cukup"
+          pengaliGrade = aturan.pengaliGradeC
+        }
+
+        return {
+          petugasId: petugas.id,
+          nama: petugas.nama,
+          noHp: petugas.noHp,
+          jumlahRute: ruteList.length,
+          ruteList,
+          targetRuteStandar,
+          targetSL,
+          realisasiSL,
+          totalM3: reading?.totalM3 ?? 0,
+          capaianSlPersen,
+          akurasiGpsPersen,
+          kualitasBacaPersen,
+          skorKecepatanPersen,
+          rataDurasiDetik,
+          totalAnomali,
+          totalRevisi,
+          faktorKesulitanMedan,
+          statusTugas,
+          indeksBebanKerja,
+          skorKpiAkhir,
+          grade,
+          labelGrade,
+          pengaliGrade,
+        }
       }
-    })
+    )
 
   // Urutkan berdasarkan Skor KPI Akhir tertinggi, lalu Realisasi SL terbanyak
   evaluated.sort((a, b) => {
@@ -574,6 +976,7 @@ export async function dapatkanEvaluasiInsentifPetugas(
       countGradeD: items.filter((i) => i.grade === "D").length,
     },
     items,
+    aturan,
   }
 }
 

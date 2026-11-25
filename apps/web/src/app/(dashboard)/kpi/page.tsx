@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 import { KpiScorecardView } from "@/features/dashboard/kpi"
-import { dapatkanPerspektifScorecard } from "@/server/services/kpi/kpi.service"
+import {
+  dapatkanPerspektifScorecard,
+  dapatkanDaftarPemilikKpi,
+} from "@/server/services/kpi/kpi.service"
 
 export const metadata: Metadata = {
   title: "Strategy Scorecard (KPI) | M2C Tirtawening",
@@ -9,11 +12,16 @@ export const metadata: Metadata = {
 }
 
 export default async function KpiPage() {
-  const initialPerspectives = await dapatkanPerspektifScorecard("Sep 2026")
+  const [initialPerspectives, initialOwners] = await Promise.all([
+    dapatkanPerspektifScorecard("Nov 2026"),
+    dapatkanDaftarPemilikKpi(),
+  ])
+
   return (
     <KpiScorecardView
       initialPerspectives={initialPerspectives}
-      initialPeriod="Sep 2026"
+      initialOwners={initialOwners}
+      initialPeriod="Nov 2026"
     />
   )
 }

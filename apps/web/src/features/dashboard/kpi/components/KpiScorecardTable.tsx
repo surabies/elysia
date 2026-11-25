@@ -25,7 +25,6 @@ import {
   getStatusStyling,
   parseKpiInputValue,
 } from "../lib/KpiCalculations"
-import { KPI_OWNERS } from "../data/KpiMockData"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +36,7 @@ interface KpiScorecardTableProps {
   perspectives: CalculatedPerspective[]
   summary: CompanyScorecardSummary
   searchQuery: string
+  availableOwners?: KpiOwner[]
   onUpdateKpiValue: (kpiId: string, newValue: number | null) => void
   onUpdateKpiWeight: (kpiId: string, newWeight: number) => void
   onUpdateKpiOwner: (kpiId: string, newOwner: KpiOwner) => void
@@ -104,6 +104,7 @@ export function KpiScorecardTable({
   perspectives,
   summary,
   searchQuery,
+  availableOwners,
   onUpdateKpiValue,
   onUpdateKpiWeight,
   onUpdateKpiOwner,
@@ -413,8 +414,11 @@ export function KpiScorecardTable({
                                         <ChevronDown className="size-2.5 text-muted-foreground shrink-0" />
                                       </button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start" className="w-36 text-xs">
-                                      {Object.values(KPI_OWNERS).map((owner) => (
+                                    <DropdownMenuContent align="start" className="w-48 max-h-60 overflow-y-auto text-xs">
+                                      {(availableOwners && availableOwners.length > 0
+                                        ? availableOwners
+                                        : [kpi.owner]
+                                      ).map((owner) => (
                                         <DropdownMenuItem
                                           key={owner.id}
                                           onClick={() => onUpdateKpiOwner(kpi.id, owner)}
@@ -423,7 +427,7 @@ export function KpiScorecardTable({
                                           <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-semibold">
                                             {owner.initials}
                                           </span>
-                                          <span>{owner.name}</span>
+                                          <span className="truncate">{owner.name}</span>
                                         </DropdownMenuItem>
                                       ))}
                                     </DropdownMenuContent>

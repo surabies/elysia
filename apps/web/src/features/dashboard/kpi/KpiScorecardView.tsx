@@ -35,28 +35,35 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { kpiApi } from "./api"
 import type { KpiItem, KpiOwner, Perspective } from "./types/KpiTypes"
-import { INITIAL_SCORECARD_PERSPECTIVES, KPI_OWNERS } from "./data/KpiMockData"
 import { calculateCompanySummary } from "./lib/KpiCalculations"
 import type { ParsedNewKpi } from "./lib/KpiFormValidation"
 import { KpiSummaryStrip } from "./components/KpiSummaryStrip"
 import { KpiScorecardTable } from "./components/KpiScorecardTable"
 import { AddKpiSheet } from "./components/AddKpiSheet"
 import { KpiInsentifPetugasTab } from "./components/KpiInsentifPetugasTab"
+import { KpiPengaturanInsentifTab } from "./components/KpiPengaturanInsentifTab"
 
 interface KpiScorecardViewProps {
   initialPerspectives?: Perspective[]
+  initialOwners?: KpiOwner[]
   initialPeriod?: string
 }
 
 export function KpiScorecardView({
   initialPerspectives,
-  initialPeriod = "Sep 2026",
+  initialOwners,
+  initialPeriod = "Nov 2026",
 }: KpiScorecardViewProps = {}) {
-  const [activeTab, setActiveTab] = React.useState<"scorecard" | "insentif">("scorecard")
+  const [activeTab, setActiveTab] = React.useState<
+    "scorecard" | "insentif" | "pengaturan"
+  >("scorecard")
   const [perspectives, setPerspectives] = React.useState<Perspective[]>(
     initialPerspectives && initialPerspectives.length > 0
       ? initialPerspectives
-      : INITIAL_SCORECARD_PERSPECTIVES
+      : []
+  )
+  const [ownersList, setOwnersList] = React.useState<KpiOwner[]>(
+    initialOwners && initialOwners.length > 0 ? initialOwners : []
   )
   const [history, setHistory] = React.useState<Perspective[][]>([])
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -67,9 +74,23 @@ export function KpiScorecardView({
   const [preselectedObjectiveId, setPreselectedObjectiveId] = React.useState<string | null>(null)
   const searchInputRef = React.useRef<HTMLInputElement | null>(null)
 
-  const ownersList = React.useMemo<KpiOwner[]>(() => {
-    return Object.values(KPI_OWNERS)
-  }, [])
+  // Ambil pemilik riil jika belum diisi dari SSR
+  React.useEffect(() => {
+    if (ownersList.length === 0) {
+      kpiApi.getOwners().then((owners) => {
+        if (owners && owners.length > 0) setOwnersList(owners)
+      }).catch(() => {})
+    }
+  }, [ownersList.length])
+
+  // Ambil data perspektif riil dari API jika awal kosong
+  React.useEffect(() => {
+    if (perspectives.length === 0) {
+      kpiApi.getByPeriode(selectedPeriod).then((data) => {
+        if (data && data.length > 0) setPerspectives(data)
+      }).catch(() => {})
+    }
+  }, [perspectives.length, selectedPeriod])
 
   // Hitung metrik dinamis
   const { calculatedPerspectives, summary } = React.useMemo(() => {
@@ -366,6 +387,20 @@ export function KpiScorecardView({
             <Calculator className="size-3.5 text-(--ds-green-700)" />
             <span>2. Matriks Beban Kerja &amp; Insentif Petugas</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("pengaturan")}
+            className={cn(
+              "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
+              activeTab === "pengaturan"
+                ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
+                : "border-border text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <SlidersHorizontal className="size-3.5 text-(--ds-amber-700)" />
+            <span>3. Pengaturan Rumusan &amp; Alokasi Beban</span>
+          </button>
         </div>
 
         {/* Tombol Sinkronisasi Laporan Riil, Panduan Rumus & Share */}
@@ -502,6 +537,7 @@ export function KpiScorecardView({
               perspectives={calculatedPerspectives}
               summary={summary}
               searchQuery={searchQuery}
+              availableOwners={ownersList}
               onUpdateKpiValue={handleUpdateKpiValue}
               onUpdateKpiWeight={handleUpdateKpiWeight}
               onUpdateKpiOwner={handleUpdateKpiOwner}
@@ -509,8 +545,20 @@ export function KpiScorecardView({
               onOpenAddKpi={handleOpenAddKpi}
             />
           </>
-        ) : (
+        ) : activeTab === "insentif" ? (
           <KpiInsentifPetugasTab selectedPeriod={selectedPeriod} />
+        ) : (
+          <KpiPengaturanInsentifTab
+            selectedPeriod={selectedPeriod}
+            onUpdated={() => {
+              kpiApi
+                .getByPeriode(selectedPeriod)
+                .then((data) => {
+                  if (data && data.length > 0) setPerspectives(data)
+                })
+                .catch(() => {})
+            }}
+          />
         )}
       </div>
 
