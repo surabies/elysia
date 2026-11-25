@@ -146,7 +146,7 @@ export function PanelTabel({
   /// "periode yang punya laporan": tepat setelah buka bulan baru, daftar kerja
   /// sudah terbit tapi belum ada satu pun laporan, dan bulan itu tidak akan
   /// muncul di dropdown kalau sumbernya laporan.
-  const { periodeKerja, daftar: daftarPeriode } = usePeriodeKerja();
+  const { periodeKerja, daftar: daftarPeriode, siap: periodeSiap } = usePeriodeKerja();
   const periodePilihan =
     daftarPeriode.length > 0 ? daftarPeriode.map((d) => d.periode) : periodes;
   /// Penyesuaian saat render, BUKAN useEffect — pola resmi React untuk
@@ -167,6 +167,8 @@ export function PanelTabel({
   }, [filter.periode]);
 
   React.useEffect(() => {
+    // Tahan fetch awal dengan periode: null saat periodeKerja masih dimuat agar tidak mengambil seluruh database
+    if (!periodeSiap && filter.periode === null) return;
     let batal = false;
     // Penanda "memuat" harus dinyalakan tepat sebelum permintaan berangkat.
     sedangMemuatRef.current = true;
@@ -223,7 +225,7 @@ export function PanelTabel({
     return () => {
       batal = true;
     };
-  }, [tab, filter, refreshKey, onRowsLoaded]);
+  }, [tab, filter, refreshKey, onRowsLoaded, periodeSiap]);
 
   React.useEffect(() => {
     if (tab !== "laporan" || sedangMemuatRef.current || rows.length === 0)

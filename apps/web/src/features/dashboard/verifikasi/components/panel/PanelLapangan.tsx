@@ -276,7 +276,7 @@ export function PanelLapangan({
         <ProgresRing detail={detail} />
       </Seksi>
 
-      <Seksi judul="Lokasi Pelanggan">
+      <Seksi judul="Lokasi Pelanggan" awalBuka={false}>
         <PetaLokasi
           langsung
           lat={detail.pelanggan?.geoLat}
