@@ -33,6 +33,11 @@ const DEFAULT_BANDUNG: [number, number] = [107.60981, -6.914744];
 // ~0.000018 derajat ≈ 2 meter di ekuator (Bandung ~6.9° LS)
 const STEP_2M = 0.000018;
 
+export interface PetaPinpointGpsHandle {
+  snapToParcel: () => void;
+  nudge: (dLat: number, dLng: number) => void;
+}
+
 export interface PetaPinpointGpsProps {
   lat: number | null;
   lng: number | null;
@@ -71,14 +76,20 @@ function calculateDistanceMeters(lat1: number, lng1: number, lat2: number, lng2:
   return Math.hypot(dLat, dLng);
 }
 
-export function PetaPinpointGps({
-  lat,
-  lng,
-  accuracy,
-  onChange,
-  onRecenterGps,
-  mapHeightClassName = 'h-72 sm:h-[380px]',
-}: PetaPinpointGpsProps) {
+export const PetaPinpointGps = React.forwardRef<
+  PetaPinpointGpsHandle,
+  PetaPinpointGpsProps
+>(function PetaPinpointGps(
+  {
+    lat,
+    lng,
+    accuracy,
+    onChange,
+    onRecenterGps,
+    mapHeightClassName = 'h-72 sm:h-[380px]',
+  },
+  ref
+) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const mapRef = React.useRef<maplibregl.Map | null>(null);
   const isInternalMoveRef = React.useRef(false);
@@ -406,6 +417,11 @@ export function PetaPinpointGps({
     }
   };
 
+  React.useImperativeHandle(ref, () => ({
+    snapToParcel: handleSnapToParcel,
+    nudge: handleNudge,
+  }));
+
   return (
     <div className="flex flex-col gap-2 h-full">
       {/* Kanvas Peta dengan Target Crosshair di Tengah */}
@@ -561,39 +577,21 @@ export function PetaPinpointGps({
         </div>
       </div>
 
-      {/* Panel Geser Mikro & Magnetic Snapping Persil */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-(--ds-gray-100) px-3 py-2 shrink-0">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant={isSnapped ? 'secondary' : 'default'}
-            size="xs"
-            onClick={handleSnapToParcel}
-            className={cn(
-              'h-7 px-2.5 font-medium gap-1.5 shadow-xs transition-colors',
-              isSnapped
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'bg-(--ds-blue-700) hover:bg-(--ds-blue-800) text-white'
-            )}
-            title="Kunci otomatis ke batas muka dinding/pagar persil bangunan terdekat"
-          >
-            <Magnet className="size-3.5" />
-            <span>{isSnapped ? `Terkunci (±${snapDist?.toFixed(1)}m)` : 'Snap Muka Persil'}</span>
-          </Button>
-
-          <div className="text-copy-12 text-muted-foreground hidden sm:block">
-            <span className="text-foreground font-medium">Geser Mikro (±2m):</span>
-          </div>
+      {/* Panel Kontrol Geser Mikro (±2m) */}
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-(--ds-gray-100) px-3 py-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 text-copy-12 text-muted-foreground">
+          <span className="text-foreground font-medium">Geser Mikro (±2m):</span>
+          <span className="hidden sm:inline text-[11px]">(Presisi Titik Meter)</span>
         </div>
 
-        <div className="grid grid-cols-4 gap-1 w-full sm:w-auto">
+        <div className="grid grid-cols-4 gap-1">
           <Button
             type="button"
             variant="outline"
             size="xs"
             onClick={() => handleNudge(0, -STEP_2M)}
             title="Geser Barat 2 meter"
-            className="h-7 px-2 bg-card justify-center"
+            className="h-7 px-2.5 bg-card justify-center font-medium"
           >
             <ChevronLeft className="size-3.5" />
             <span>Barat</span>
@@ -604,7 +602,7 @@ export function PetaPinpointGps({
             size="xs"
             onClick={() => handleNudge(STEP_2M, 0)}
             title="Geser Utara 2 meter"
-            className="h-7 px-2 bg-card justify-center"
+            className="h-7 px-2.5 bg-card justify-center font-medium"
           >
             <ChevronUp className="size-3.5" />
             <span>Utara</span>
@@ -615,7 +613,7 @@ export function PetaPinpointGps({
             size="xs"
             onClick={() => handleNudge(-STEP_2M, 0)}
             title="Geser Selatan 2 meter"
-            className="h-7 px-2 bg-card justify-center"
+            className="h-7 px-2.5 bg-card justify-center font-medium"
           >
             <ChevronDown className="size-3.5" />
             <span>Selatan</span>
@@ -626,7 +624,7 @@ export function PetaPinpointGps({
             size="xs"
             onClick={() => handleNudge(0, STEP_2M)}
             title="Geser Timur 2 meter"
-            className="h-7 px-2 bg-card justify-center"
+            className="h-7 px-2.5 bg-card justify-center font-medium"
           >
             <span>Timur</span>
             <ChevronRight className="size-3.5" />
@@ -635,4 +633,4 @@ export function PetaPinpointGps({
       </div>
     </div>
   );
-}
+});
