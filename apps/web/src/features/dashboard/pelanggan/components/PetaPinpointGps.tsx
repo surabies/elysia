@@ -141,7 +141,7 @@ export function PetaPinpointGps({
       container: containerRef.current,
       center: initialCenter,
       zoom: validCoord ? 18.5 : 13.5,
-      maxZoom: 20,
+      maxZoom: 19,
       minZoom: 10,
       attributionControl: false,
       style: {
@@ -155,18 +155,9 @@ export function PetaPinpointGps({
             tileSize: 256,
             maxzoom: 19,
           },
-          'satellite-labels': {
-            type: 'raster',
-            tiles: [
-              'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-            ],
-            tileSize: 256,
-            maxzoom: 19,
-          },
           osm: {
             type: 'raster',
             tiles: [
-              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
               'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             ],
             tileSize: 256,
@@ -185,12 +176,6 @@ export function PetaPinpointGps({
             id: 'satellite-layer',
             type: 'raster',
             source: 'satellite',
-            layout: { visibility: 'visible' },
-          },
-          {
-            id: 'satellite-labels-layer',
-            type: 'raster',
-            source: 'satellite-labels',
             layout: { visibility: 'visible' },
           },
           {
@@ -268,6 +253,17 @@ export function PetaPinpointGps({
       });
     });
 
+    // Abaikan error missing tile 404 agar tidak memunculkan popup error ke UI
+    map.on('error', (e) => {
+      if (
+        e.error?.message?.includes('404') ||
+        (e as any).status === 404 ||
+        e.error?.message?.includes('Ajax error')
+      ) {
+        return;
+      }
+    });
+
     return () => {
       observer.disconnect();
       map.remove();
@@ -309,9 +305,6 @@ export function PetaPinpointGps({
     const isSat = basemap === 'satellite';
     if (map.getLayer('satellite-layer')) {
       map.setLayoutProperty('satellite-layer', 'visibility', isSat ? 'visible' : 'none');
-    }
-    if (map.getLayer('satellite-labels-layer')) {
-      map.setLayoutProperty('satellite-labels-layer', 'visibility', isSat ? 'visible' : 'none');
     }
     if (map.getLayer('osm-layer')) {
       map.setLayoutProperty('osm-layer', 'visibility', !isSat ? 'visible' : 'none');

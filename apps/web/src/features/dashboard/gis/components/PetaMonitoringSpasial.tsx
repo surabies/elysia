@@ -113,7 +113,7 @@ export function PetaMonitoringSpasial() {
         typeof window !== 'undefined' &&
         typeof (maplibre as any).setWorkerUrl === 'function'
       ) {
-        (maplibre as any).setWorkerUrl('/maplibre-gl-worker.js');
+        (maplibre as any).setWorkerUrl('/api/maplibre-worker');
       }
 
       if (!isMounted || !mapContainerRef.current) return;
@@ -121,6 +121,8 @@ export function PetaMonitoringSpasial() {
       if (!mapRef.current) {
         const map = new maplibre.Map({
           container: mapContainerRef.current,
+          maxZoom: 18.5,
+          minZoom: 10,
           style: {
             version: 8,
             sources: {
@@ -143,6 +145,17 @@ export function PetaMonitoringSpasial() {
           },
           center: [107.6191, -6.9175],
           zoom: 13,
+        });
+
+        // Tangkap dan abaikan missing tile 404 agar tidak memicu dialog Ajax error saat zoom
+        map.on('error', (e) => {
+          if (
+            e.error?.message?.includes('404') ||
+            (e as any).status === 404 ||
+            e.error?.message?.includes('Ajax error')
+          ) {
+            return;
+          }
         });
 
         map.addControl(
