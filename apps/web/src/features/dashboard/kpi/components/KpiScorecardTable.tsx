@@ -4,9 +4,7 @@ import * as React from "react"
 import {
   ChevronDown,
   ChevronRight,
-  MoreVertical,
   Plus,
-  Minus,
   ArrowUp,
   ArrowDown,
   ArrowRight,
@@ -52,6 +50,16 @@ interface KpiScorecardTableProps {
   onUpdateKpiValue: (kpiId: string, newValue: number | null) => void
   onUpdateKpiWeight: (kpiId: string, newWeight: number) => void
   onUpdateKpiOwner: (kpiId: string, newOwner: KpiOwner) => void
+  onUpdateKpiDetail?: (
+    kpiId: string,
+    data: {
+      nama?: string
+      bobot?: number
+      baseline?: number
+      target?: number
+      arah?: "higher" | "lower"
+    }
+  ) => void
   onPasteRange: (
     startKpiId: string,
     field: "value" | "weight",
@@ -139,6 +147,7 @@ export function KpiScorecardTable({
   onUpdateKpiValue,
   onUpdateKpiWeight,
   onUpdateKpiOwner,
+  onUpdateKpiDetail,
   onPasteRange,
   onAddKpiInline,
 }: KpiScorecardTableProps) {
@@ -150,15 +159,16 @@ export function KpiScorecardTable({
     Record<string, boolean>
   >({})
 
-  // Inline editing state untuk baris eksisting: { kpiId, field: "value" | "weight" }
+  // Inline editing state untuk setiap cell baris eksisting:
+  // field: "name" | "value" | "weight" | "baseline" | "target"
   const [editingCell, setEditingCell] = React.useState<{
     kpiId: string
-    field: "value" | "weight"
+    field: "name" | "value" | "weight" | "baseline" | "target"
   } | null>(null)
   const [editValueText, setEditValueText] = React.useState("")
   const inputRef = React.useRef<HTMLInputElement | null>(null)
 
-  // State Inline Tambah KPI Baru
+  // State Inline Tambah KPI Baru (muncul di baris paling bawah saat klik +)
   const [addingInObjectiveId, setAddingInObjectiveId] = React.useState<
     string | null
   >(null)
@@ -171,9 +181,6 @@ export function KpiScorecardTable({
   const [newKpiDirection, setNewKpiDirection] = React.useState<
     "higher" | "lower"
   >("higher")
-  const [newKpiFormat, setNewKpiFormat] = React.useState<
-    "percent" | "decimal" | "currency"
-  >("percent")
   const [savingInline, setSavingInline] = React.useState(false)
 
   const togglePerspective = (id: string) => {
@@ -184,7 +191,7 @@ export function KpiScorecardTable({
     setCollapsedObjectives((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  // Fokus ke input saat mulai edit baris eksisting
+  // Fokus ke input saat mulai edit cell inline
   React.useEffect(() => {
     if (editingCell && inputRef.current) {
       inputRef.current.focus()
@@ -192,18 +199,28 @@ export function KpiScorecardTable({
     }
   }, [editingCell])
 
-  const handleStartEdit = (kpi: CalculatedKpi, field: "value" | "weight") => {
+  const handleStartEdit = (
+    kpi: CalculatedKpi,
+    field: "name" | "value" | "weight" | "baseline" | "target"
+  ) => {
     setEditingCell({ kpiId: kpi.id, field })
-    if (field === "value") {
+    if (field === "name") {
+      setEditValueText(kpi.name)
+    } else if (field === "value") {
       setEditValueText(kpi.value !== null ? String(kpi.value) : "")
-    } else {
+    } else if (field === "weight") {
       setEditValueText(String(kpi.weight))
+    } else if (field === "baseline") {
+      setEditValueText(String(kpi.baseline))
+    } else if (field === "target") {
+      setEditValueText(String(kpi.target))
     }
   }
 
   const handleCommitEdit = (kpi: CalculatedKpi) => {
     if (!editingCell) return
     const { field } = editingCell
+
     if (field === "value") {
       const parsed = parseKpiInputValue(
         editValueText,
@@ -211,10 +228,25 @@ export function KpiScorecardTable({
         kpi.unitMultiplier
       )
       onUpdateKpiValue(kpi.id, parsed)
-    } else {
+    } else if (field === "weight") {
       const parsed = parseFloat(editValueText.replace(/[%]/g, "").trim())
       if (!isNaN(parsed) && parsed >= 0) {
         onUpdateKpiWeight(kpi.id, Math.round(parsed))
+      }
+    } else if (field === "name") {
+      const trimmed = editValueText.trim()
+      if (trimmed && trimmed !== kpi.name && onUpdateKpiDetail) {
+        onUpdateKpiDetail(kpi.id, { nama: trimmed })
+      }
+    } else if (field === "baseline") {
+      const parsed = parseFloat(editValueText.trim())
+      if (!isNaN(parsed) && onUpdateKpiDetail) {
+        onUpdateKpiDetail(kpi.id, { baseline: parsed })
+      }
+    } else if (field === "target") {
+      const parsed = parseFloat(editValueText.trim())
+      if (!isNaN(parsed) && onUpdateKpiDetail) {
+        onUpdateKpiDetail(kpi.id, { target: parsed })
       }
     }
     setEditingCell(null)
@@ -249,9 +281,8 @@ export function KpiScorecardTable({
     }
   }
 
-  // Handler Mulai Tambah KPI Inline
+  // Handler Mulai Tambah KPI Inline di baris paling bawah
   const handleStartInlineAdd = (objectiveId: string) => {
-    // Pastikan grup sasaran terbuka jika sebelumnya tertutup
     setCollapsedObjectives((prev) => ({ ...prev, [objectiveId]: false }))
     setAddingInObjectiveId(objectiveId)
     setNewKpiName("")
@@ -262,10 +293,9 @@ export function KpiScorecardTable({
     setNewKpiValue("")
     setNewKpiTarget("100")
     setNewKpiDirection("higher")
-    setNewKpiFormat("percent")
   }
 
-  // Handler Simpan KPI Inline ke Database
+  // Handler Simpan Baris Baru
   const handleSaveInlineKpi = async (objectiveId: string) => {
     if (!newKpiName.trim()) {
       toast.error("Nama indikator KPI wajib diisi")
@@ -274,9 +304,7 @@ export function KpiScorecardTable({
 
     setSavingInline(true)
     try {
-      const selectedOwner = availableOwners.find(
-        (o) => o.id === newKpiOwnerId
-      )
+      const selectedOwner = availableOwners.find((o) => o.id === newKpiOwnerId)
       if (onAddKpiInline) {
         await onAddKpiInline({
           name: newKpiName.trim(),
@@ -287,7 +315,7 @@ export function KpiScorecardTable({
           baseline: Number(newKpiBaseline) || 0,
           target: Number(newKpiTarget) || 100,
           value: newKpiValue.trim() !== "" ? Number(newKpiValue) : null,
-          format: newKpiFormat,
+          format: "percent",
           ownerDetails: selectedOwner
             ? { name: selectedOwner.name, initials: selectedOwner.initials }
             : undefined,
@@ -314,10 +342,13 @@ export function KpiScorecardTable({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
         <table className="w-full min-w-[1060px] border-collapse text-left text-[12px] tabular-nums select-none">
-          {/* Header Tabel Sticky */}
+          {/* Header Tabel Sticky dengan Kolom Pertama (Tahapan Siklus M2C) */}
           <thead className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur-sm text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             <tr>
-              <th className="min-w-[320px] border-r border-border p-2.5">
+              <th className="w-[180px] border-r border-border p-2.5">
+                Tahapan Siklus M2C
+              </th>
+              <th className="min-w-[240px] border-r border-border p-2.5">
                 Sasaran &amp; Indikator KPI
               </th>
               <th className="w-[140px] border-r border-border p-2.5">
@@ -338,14 +369,11 @@ export function KpiScorecardTable({
               <th className="w-[70px] border-r border-border p-2.5 text-right">
                 Selisih
               </th>
-              <th className="w-[105px] border-r border-border p-2.5">Tren</th>
-              <th className="w-[120px] border-r border-border p-2.5">
+              <th className="w-[100px] border-r border-border p-2.5">Tren</th>
+              <th className="w-[115px] border-r border-border p-2.5">
                 Wilayah Perhatian
               </th>
-              <th className="w-[80px] border-r border-border p-2.5 text-center">
-                Capaian
-              </th>
-              <th className="w-[40px] p-2.5 text-center" aria-label="Aksi" />
+              <th className="w-[80px] p-2.5 text-center">Capaian</th>
             </tr>
           </thead>
 
@@ -373,11 +401,11 @@ export function KpiScorecardTable({
 
               return (
                 <React.Fragment key={perspective.id}>
-                  {/* 1. Baris Group Level 1: PERSPEKTIF (Lebar sama & sejajar dengan kolom tabel) */}
+                  {/* 1. Baris Group Level 1: PERSPEKTIF (Lebar sama & sejajar dengan daftar di bawahnya) */}
                   <tr className="bg-muted/70 font-semibold border-y border-border hover:bg-muted/80 transition-colors">
-                    {/* Col 1: Nama Perspektif dengan Tombol Arrow */}
-                    <td className="border-r border-border px-3 py-2 text-foreground">
-                      <div className="flex items-center gap-2">
+                    {/* Col 1: Nama Perspektif & Tombol Collapse Arrow */}
+                    <td className="border-r border-border px-2.5 py-1.5 text-foreground">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => togglePerspective(perspective.id)}
@@ -389,34 +417,33 @@ export function KpiScorecardTable({
                           }
                         >
                           {isPerspectiveCollapsed ? (
-                            <ChevronRight className="size-4" />
+                            <ChevronRight className="size-3.5" />
                           ) : (
-                            <ChevronDown className="size-4" />
+                            <ChevronDown className="size-3.5" />
                           )}
                         </button>
-                        <span className="font-bold text-[12px] tracking-tight">
+                        <span className="font-bold text-[12px] truncate">
                           {perspective.name}
                         </span>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] px-1.5 py-0 font-normal border-border bg-background"
-                        >
-                          Bobot {perspective.scoreWeightPercent}%
-                        </Badge>
                       </div>
                     </td>
 
-                    {/* Col 2: Aktor / Unit */}
-                    <td className="border-r border-border px-2.5 py-1.5 text-[11px] text-muted-foreground font-medium">
-                      Unit Bisnis M2C
+                    {/* Col 2: Keterangan Singkat */}
+                    <td className="border-r border-border px-3 py-1.5 text-[11px] text-muted-foreground font-normal">
+                      Bobot {perspective.scoreWeightPercent}% • {perspective.totalKpiCount} Indikator
                     </td>
 
-                    {/* Col 3: Bobot Perspektif */}
+                    {/* Col 3: Unit */}
+                    <td className="border-r border-border px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                      Unit M2C
+                    </td>
+
+                    {/* Col 4: Bobot Total */}
                     <td className="border-r border-border px-2 py-1.5 text-right font-bold text-foreground text-[11px]">
                       {perspective.scoreWeightPercent}%
                     </td>
 
-                    {/* Col 4 - 8: Baseline, Realisasi, Target, Selisih, Tren (Garis Grid Rapi) */}
+                    {/* Col 5 - 8: Grid Kolom Baseline s/d Selisih */}
                     <td className="border-r border-border px-2 py-1.5 text-right text-muted-foreground text-[11px]">
                       -
                     </td>
@@ -429,11 +456,13 @@ export function KpiScorecardTable({
                     <td className="border-r border-border px-2 py-1.5 text-right text-muted-foreground text-[11px]">
                       -
                     </td>
+
+                    {/* Col 9: Tren */}
                     <td className="border-r border-border px-2 py-1.5 text-[11px] text-muted-foreground">
                       -
                     </td>
 
-                    {/* Col 9: Status Wilayah / Indikator Kritis */}
+                    {/* Col 10: Wilayah / Kritis */}
                     <td className="border-r border-border px-2.5 py-1.5 text-[11px]">
                       {perspective.offTrackCount > 0 ? (
                         <span className="inline-flex items-center rounded px-1.5 py-0.2 text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900">
@@ -446,18 +475,15 @@ export function KpiScorecardTable({
                       )}
                     </td>
 
-                    {/* Col 10: Capaian Skor Perspektif */}
+                    {/* Col 11: Capaian Skor Perspektif */}
                     <td
-                      className={`border-r border-border px-2 py-1.5 text-center font-bold text-xs ${pStyling.bgClass} ${pStyling.textClass}`}
+                      className={`px-2 py-1.5 text-center font-bold text-xs ${pStyling.bgClass} ${pStyling.textClass}`}
                     >
                       {perspective.score !== null ? `${perspective.score}%` : "-"}
                     </td>
-
-                    {/* Col 11: Aksi */}
-                    <td className="p-1.5" />
                   </tr>
 
-                  {/* 2. Baris Group Level 2: SASARAN (OBJECTIVE) & DAFTAR KPI DI BAWAHNYA */}
+                  {/* 2. Baris Group Level 2: SASARAN (OBJECTIVE) */}
                   {!isPerspectiveCollapsed &&
                     filteredObjectives.map((objective) => {
                       const isObjCollapsed =
@@ -468,11 +494,11 @@ export function KpiScorecardTable({
 
                       return (
                         <React.Fragment key={objective.id}>
-                          {/* Baris Sasaran (Objective Header) */}
-                          <tr className="bg-muted/30 font-medium border-t border-border hover:bg-muted/40 transition-colors">
-                            {/* Col 1: Arrow + Icon Plus di Kolom Pertama + Nama Sasaran */}
-                            <td className="border-r border-border px-3 py-1.5">
-                              <div className="flex items-center gap-1.5 pl-4">
+                          {/* Header Baris Sasaran: Icon Arrow & Icon Plus di Kolom Pertama */}
+                          <tr className="bg-muted/40 font-medium border-t border-border hover:bg-muted/50 transition-colors">
+                            {/* Col 1: Icon Arrow + Icon Plus di Kolom Pertama */}
+                            <td className="border-r border-border px-2.5 py-1.5">
+                              <div className="flex items-center gap-1.5">
                                 {/* Arrow Chevron */}
                                 <button
                                   type="button"
@@ -493,279 +519,65 @@ export function KpiScorecardTable({
                                   )}
                                 </button>
 
-                                {/* Icon Plus di kolom pertama seperti icon arrow */}
+                                {/* Icon Plus di Kolom Pertama seperti Icon Arrow */}
                                 <button
                                   type="button"
                                   onClick={() =>
                                     handleStartInlineAdd(objective.id)
                                   }
                                   className="flex size-4.5 items-center justify-center rounded border border-border/80 bg-background text-muted-foreground hover:text-sky-600 hover:border-sky-500 transition-colors cursor-pointer"
-                                  title="Tambah baris KPI baru secara inline di sasaran ini"
+                                  title="Tambah baris KPI baru di paling bawah sasaran ini"
                                 >
                                   <Plus className="size-3" />
                                 </button>
 
-                                <span className="font-semibold text-foreground text-[12px]">
-                                  {objective.name}
-                                </span>
-                                <span className="font-normal text-muted-foreground text-[11px]">
-                                  ({objective.kpis.length} indikator)
+                                <span className="text-[11px] font-semibold text-muted-foreground truncate">
+                                  {objective.kpis.length} Indikator
                                 </span>
                               </div>
                             </td>
 
-                            {/* Col 2 - 9: Garis Grid Sesuai Struktur Tabel */}
-                            <td className="border-r border-border px-2 py-1 text-[11px] text-muted-foreground">
-                              —
-                            </td>
-                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
-                              —
-                            </td>
-                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
-                              —
-                            </td>
-                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
-                              —
-                            </td>
-                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
-                              —
-                            </td>
-                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
-                              —
-                            </td>
-                            <td className="border-r border-border px-2 py-1 text-[11px] text-muted-foreground">
-                              —
-                            </td>
-                            <td className="border-r border-border px-2 py-1 text-[11px] text-muted-foreground">
-                              —
+                            {/* Col 2: Judul Sasaran */}
+                            <td
+                              colSpan={8}
+                              className="border-r border-border px-3 py-1.5 font-semibold text-foreground text-[12px]"
+                            >
+                              {objective.name}
                             </td>
 
-                            {/* Col 10: Progress Capaian Sasaran */}
+                            {/* Col 10: Wilayah */}
+                            <td className="border-r border-border px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                              Semua
+                            </td>
+
+                            {/* Col 11: Capaian Sasaran */}
                             <td
-                              className={`border-r border-border px-2 py-1 text-center font-bold tabular-nums text-xs ${objStyling.bgClass} ${objStyling.textClass}`}
+                              className={`px-2 py-1 text-center font-bold tabular-nums text-xs ${objStyling.bgClass} ${objStyling.textClass}`}
                             >
                               {objective.progress !== null
                                 ? `${objective.progress}%`
                                 : "-"}
                             </td>
-
-                            {/* Col 11: Aksi */}
-                            <td className="p-1 text-center" />
                           </tr>
 
-                          {/* 3. Baris Input INLINE Tambah KPI Baru (Muncul Sesuai Relevansi Sasaran) */}
-                          {!isObjCollapsed && isAddingHere && (
-                            <tr className="bg-sky-50/50 dark:bg-sky-950/20 border-t border-sky-300 dark:border-sky-800 transition-colors">
-                              {/* Col 1: Input Nama KPI Baru & Arah */}
-                              <td className="border-r border-border px-3 py-1.5">
-                                <div className="flex items-center gap-1.5 pl-10">
-                                  <Input
-                                    autoFocus
-                                    placeholder="Ketik nama indikator KPI baru..."
-                                    value={newKpiName}
-                                    onChange={(e) =>
-                                      setNewKpiName(e.target.value)
-                                    }
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        e.preventDefault()
-                                        void handleSaveInlineKpi(objective.id)
-                                      } else if (e.key === "Escape") {
-                                        handleCancelInlineAdd()
-                                      }
-                                    }}
-                                    className="h-7 text-xs bg-background"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setNewKpiDirection((d) =>
-                                        d === "higher" ? "lower" : "higher"
-                                      )
-                                    }
-                                    className="p-1 rounded text-muted-foreground hover:text-foreground shrink-0 border border-border bg-card"
-                                    title={
-                                      newKpiDirection === "higher"
-                                        ? "Arah: Lebih tinggi lebih baik (↑)"
-                                        : "Arah: Lebih rendah lebih baik (↓)"
-                                    }
-                                  >
-                                    {newKpiDirection === "higher" ? (
-                                      <ArrowUp className="size-3 text-emerald-600" />
-                                    ) : (
-                                      <ArrowDown className="size-3 text-amber-600" />
-                                    )}
-                                  </button>
-                                </div>
-                              </td>
-
-                              {/* Col 2: Dropdown Pemilik */}
-                              <td className="border-r border-border px-2 py-1">
-                                <Select
-                                  value={newKpiOwnerId}
-                                  onValueChange={setNewKpiOwnerId}
-                                >
-                                  <SelectTrigger className="h-7 text-xs bg-background">
-                                    <SelectValue placeholder="Pilih pemilik" />
-                                  </SelectTrigger>
-                                  <SelectContent className="text-xs max-h-56">
-                                    {availableOwners.map((owner) => (
-                                      <SelectItem
-                                        key={owner.id}
-                                        value={owner.id}
-                                      >
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-bold">
-                                            {owner.initials}
-                                          </span>
-                                          <span className="truncate">
-                                            {owner.name}
-                                          </span>
-                                        </div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </td>
-
-                              {/* Col 3: Input Bobot % */}
-                              <td className="border-r border-border px-2 py-1 text-right">
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max="100"
-                                  value={newKpiWeight}
-                                  onChange={(e) =>
-                                    setNewKpiWeight(e.target.value)
-                                  }
-                                  className="h-7 text-xs text-right font-mono font-semibold text-sky-600 bg-background"
-                                />
-                              </td>
-
-                              {/* Col 4: Input Baseline */}
-                              <td className="border-r border-border px-2 py-1 text-right">
-                                <Input
-                                  type="number"
-                                  value={newKpiBaseline}
-                                  onChange={(e) =>
-                                    setNewKpiBaseline(e.target.value)
-                                  }
-                                  className="h-7 text-xs text-right font-mono bg-background"
-                                />
-                              </td>
-
-                              {/* Col 5: Input Nilai Realisasi */}
-                              <td className="border-r border-border px-2 py-1 text-right">
-                                <Input
-                                  type="number"
-                                  placeholder="-"
-                                  value={newKpiValue}
-                                  onChange={(e) =>
-                                    setNewKpiValue(e.target.value)
-                                  }
-                                  className="h-7 text-xs text-right font-mono font-semibold text-sky-600 bg-background"
-                                />
-                              </td>
-
-                              {/* Col 6: Input Target */}
-                              <td className="border-r border-border px-2 py-1 text-right">
-                                <Input
-                                  type="number"
-                                  value={newKpiTarget}
-                                  onChange={(e) =>
-                                    setNewKpiTarget(e.target.value)
-                                  }
-                                  className="h-7 text-xs text-right font-mono bg-background"
-                                />
-                              </td>
-
-                              {/* Col 7: Selisih Pratinjau */}
-                              <td className="border-r border-border px-2 py-1 text-right text-muted-foreground font-mono text-xs">
-                                {newKpiValue !== "" && newKpiBaseline !== ""
-                                  ? (
-                                      Number(newKpiValue) -
-                                      Number(newKpiBaseline)
-                                    ).toFixed(1)
-                                  : "-"}
-                              </td>
-
-                              {/* Col 8: Selector Format Satuan */}
-                              <td className="border-r border-border px-2 py-1">
-                                <Select
-                                  value={newKpiFormat}
-                                  onValueChange={(val: any) =>
-                                    setNewKpiFormat(val)
-                                  }
-                                >
-                                  <SelectTrigger className="h-7 text-[11px] bg-background">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="text-xs">
-                                    <SelectItem value="percent">
-                                      Persentase (%)
-                                    </SelectItem>
-                                    <SelectItem value="decimal">
-                                      Angka Desimal
-                                    </SelectItem>
-                                    <SelectItem value="currency">
-                                      Mata Uang (Rp)
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </td>
-
-                              {/* Col 9: Wilayah */}
-                              <td className="border-r border-border px-2.5 py-1 text-[11px] text-muted-foreground italic">
-                                Semua Wilayah
-                              </td>
-
-                              {/* Col 10: Status Pratinjau */}
-                              <td className="border-r border-border px-2 py-1 text-center">
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] px-1 py-0 text-sky-600 border-sky-300 dark:border-sky-800"
-                                >
-                                  Baris Baru
-                                </Badge>
-                              </td>
-
-                              {/* Col 11: Tombol Simpan & Batal */}
-                              <td className="px-1 py-1 text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      void handleSaveInlineKpi(objective.id)
-                                    }
-                                    disabled={savingInline}
-                                    className="p-1 rounded text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-950 transition-colors"
-                                    title="Simpan baris KPI ini (Enter)"
-                                  >
-                                    <Check className="size-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={handleCancelInlineAdd}
-                                    disabled={savingInline}
-                                    className="p-1 rounded text-red-500 hover:bg-red-100 dark:hover:bg-red-950 transition-colors"
-                                    title="Batalkan penambahan (Esc)"
-                                  >
-                                    <X className="size-3.5" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-
-                          {/* 4. Baris-baris KPI Eksisting di Bawah Objective */}
+                          {/* 3. Baris-baris KPI Eksisting (Semua Aksi Inline di Cell Masing-Masing) */}
                           {!isObjCollapsed &&
                             objective.kpis.map((kpi) => {
+                              const isEditingName =
+                                editingCell?.kpiId === kpi.id &&
+                                editingCell?.field === "name"
                               const isEditingValue =
                                 editingCell?.kpiId === kpi.id &&
                                 editingCell?.field === "value"
                               const isEditingWeight =
                                 editingCell?.kpiId === kpi.id &&
                                 editingCell?.field === "weight"
+                              const isEditingBaseline =
+                                editingCell?.kpiId === kpi.id &&
+                                editingCell?.field === "baseline"
+                              const isEditingTarget =
+                                editingCell?.kpiId === kpi.id &&
+                                editingCell?.field === "target"
                               const kpiStyling = getStatusStyling(kpi.status)
 
                               return (
@@ -773,31 +585,70 @@ export function KpiScorecardTable({
                                   key={kpi.id}
                                   className="h-7 hover:bg-muted/20 transition-colors border-t border-border/40"
                                 >
-                                  {/* Col 1: Nama KPI (Indented pl-10) */}
-                                  <td className="border-r border-border/60 px-3 py-1.5">
-                                    <div className="flex items-center gap-1.5 pl-10">
-                                      <span className="truncate font-medium text-foreground">
-                                        {kpi.name}
-                                      </span>
-                                      <span
-                                        className="text-muted-foreground/80 shrink-0"
-                                        title={
-                                          kpi.direction === "higher"
-                                            ? "Higher is better (↑)"
-                                            : "Lower is better (↓)"
-                                        }
-                                      >
-                                        {kpi.direction === "higher" ? (
-                                          <ArrowUp className="size-3 text-emerald-600" />
-                                        ) : (
-                                          <ArrowDown className="size-3 text-amber-600" />
-                                        )}
-                                      </span>
-                                    </div>
+                                  {/* Col 1: Tahapan Siklus M2C (Garis Grid Rapi) */}
+                                  <td className="border-r border-border/60 px-2.5 py-1.5 text-[11px] text-muted-foreground truncate">
+                                    {perspective.name.split(" ")[0]}
                                   </td>
 
-                                  {/* Col 2: Owner with Avatar & Dropdown */}
-                                  <td className="border-r border-border/60 px-2.5 py-1">
+                                  {/* Col 2: Nama KPI (Inline Edit Langsung di Cell) */}
+                                  <td
+                                    onClick={() =>
+                                      handleStartEdit(kpi, "name")
+                                    }
+                                    className="border-r border-border/60 px-3 py-1.5 cursor-pointer"
+                                  >
+                                    {isEditingName ? (
+                                      <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={editValueText}
+                                        onChange={(e) =>
+                                          setEditValueText(e.target.value)
+                                        }
+                                        onBlur={() => handleCommitEdit(kpi)}
+                                        onKeyDown={(e) =>
+                                          handleKeyDown(e, kpi)
+                                        }
+                                        className="w-full rounded border border-sky-500 bg-background px-1.5 py-0 text-xs font-medium text-foreground focus:outline-none"
+                                      />
+                                    ) : (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="truncate font-medium text-foreground hover:underline">
+                                          {kpi.name}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            const nextArah =
+                                              kpi.direction === "higher"
+                                                ? "lower"
+                                                : "higher"
+                                            if (onUpdateKpiDetail) {
+                                              onUpdateKpiDetail(kpi.id, {
+                                                arah: nextArah,
+                                              })
+                                            }
+                                          }}
+                                          className="text-muted-foreground/80 hover:text-foreground shrink-0 p-0.5"
+                                          title={`Arah: ${
+                                            kpi.direction === "higher"
+                                              ? "Lebih tinggi lebih baik (klik untuk ubah)"
+                                              : "Lebih rendah lebih baik (klik untuk ubah)"
+                                          }`}
+                                        >
+                                          {kpi.direction === "higher" ? (
+                                            <ArrowUp className="size-3 text-emerald-600" />
+                                          ) : (
+                                            <ArrowDown className="size-3 text-amber-600" />
+                                          )}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* Col 3: Owner (Dropdown Inline Langsung di Cell) */}
+                                  <td className="border-r border-border/60 px-2 py-1">
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                         <button
@@ -805,7 +656,7 @@ export function KpiScorecardTable({
                                           className="flex w-full items-center justify-between gap-1 rounded px-1 py-0.5 text-left text-[11px] hover:bg-muted/60"
                                         >
                                           <span className="flex items-center gap-1.5 truncate">
-                                            <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700 text-[9px] font-semibold text-zinc-700 dark:text-zinc-200">
+                                            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700 text-[9px] font-semibold text-zinc-700 dark:text-zinc-200">
                                               {kpi.owner.initials}
                                             </span>
                                             <span className="truncate">
@@ -842,7 +693,7 @@ export function KpiScorecardTable({
                                     </DropdownMenu>
                                   </td>
 
-                                  {/* Col 3: Weight (Editable Blue Figure) */}
+                                  {/* Col 4: Bobot (Inline Edit Langsung di Cell) */}
                                   <td
                                     onClick={() =>
                                       handleStartEdit(kpi, "weight")
@@ -864,7 +715,7 @@ export function KpiScorecardTable({
                                         onPaste={(e) =>
                                           handlePaste(e, kpi.id, "weight")
                                         }
-                                        className="w-full rounded border border-sky-500 bg-background px-1 py-0 text-right text-xs font-semibold text-sky-600 focus:outline-none"
+                                        className="w-full rounded border border-sky-500 bg-background px-1 py-0 text-right text-xs font-semibold text-sky-600 focus:outline-none font-mono"
                                       />
                                     ) : (
                                       <span className="font-semibold text-sky-600 dark:text-sky-400 hover:underline">
@@ -873,18 +724,42 @@ export function KpiScorecardTable({
                                     )}
                                   </td>
 
-                                  {/* Col 4: Baseline */}
-                                  <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground">
-                                    {formatKpiNumber(
-                                      kpi.baseline,
-                                      kpi.format,
-                                      {
-                                        unitMultiplier: kpi.unitMultiplier,
-                                      }
+                                  {/* Col 5: Baseline (Inline Edit Langsung di Cell) */}
+                                  <td
+                                    onClick={() =>
+                                      handleStartEdit(kpi, "baseline")
+                                    }
+                                    className="border-r border-border/60 px-2 py-1 text-right cursor-pointer text-muted-foreground"
+                                  >
+                                    {isEditingBaseline ? (
+                                      <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={editValueText}
+                                        onChange={(e) =>
+                                          setEditValueText(e.target.value)
+                                        }
+                                        onBlur={() => handleCommitEdit(kpi)}
+                                        onKeyDown={(e) =>
+                                          handleKeyDown(e, kpi)
+                                        }
+                                        className="w-full rounded border border-sky-500 bg-background px-1 py-0 text-right text-xs font-mono focus:outline-none"
+                                      />
+                                    ) : (
+                                      <span className="hover:underline">
+                                        {formatKpiNumber(
+                                          kpi.baseline,
+                                          kpi.format,
+                                          {
+                                            unitMultiplier:
+                                              kpi.unitMultiplier,
+                                          }
+                                        )}
+                                      </span>
                                     )}
                                   </td>
 
-                                  {/* Col 5: Realisasi (Editable Blue Figure) */}
+                                  {/* Col 6: Realisasi (Inline Edit Langsung di Cell) */}
                                   <td
                                     onClick={() =>
                                       handleStartEdit(kpi, "value")
@@ -906,7 +781,7 @@ export function KpiScorecardTable({
                                         onPaste={(e) =>
                                           handlePaste(e, kpi.id, "value")
                                         }
-                                        className="w-full rounded border border-sky-500 bg-background px-1 py-0 text-right text-xs font-semibold text-sky-600 focus:outline-none"
+                                        className="w-full rounded border border-sky-500 bg-background px-1 py-0 text-right text-xs font-semibold text-sky-600 focus:outline-none font-mono"
                                       />
                                     ) : (
                                       <span
@@ -916,29 +791,62 @@ export function KpiScorecardTable({
                                             : "text-muted-foreground"
                                         }`}
                                       >
-                                        {formatKpiNumber(kpi.value, kpi.format, {
-                                          unitMultiplier: kpi.unitMultiplier,
-                                        })}
+                                        {formatKpiNumber(
+                                          kpi.value,
+                                          kpi.format,
+                                          {
+                                            unitMultiplier:
+                                              kpi.unitMultiplier,
+                                          }
+                                        )}
                                       </span>
                                     )}
                                   </td>
 
-                                  {/* Col 6: Target */}
-                                  <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground">
-                                    {formatKpiNumber(kpi.target, kpi.format, {
-                                      unitMultiplier: kpi.unitMultiplier,
-                                    })}
+                                  {/* Col 7: Target (Inline Edit Langsung di Cell) */}
+                                  <td
+                                    onClick={() =>
+                                      handleStartEdit(kpi, "target")
+                                    }
+                                    className="border-r border-border/60 px-2 py-1 text-right cursor-pointer text-muted-foreground"
+                                  >
+                                    {isEditingTarget ? (
+                                      <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={editValueText}
+                                        onChange={(e) =>
+                                          setEditValueText(e.target.value)
+                                        }
+                                        onBlur={() => handleCommitEdit(kpi)}
+                                        onKeyDown={(e) =>
+                                          handleKeyDown(e, kpi)
+                                        }
+                                        className="w-full rounded border border-sky-500 bg-background px-1 py-0 text-right text-xs font-mono focus:outline-none"
+                                      />
+                                    ) : (
+                                      <span className="hover:underline">
+                                        {formatKpiNumber(
+                                          kpi.target,
+                                          kpi.format,
+                                          {
+                                            unitMultiplier:
+                                              kpi.unitMultiplier,
+                                          }
+                                        )}
+                                      </span>
+                                    )}
                                   </td>
 
-                                  {/* Col 7: Selisih (To Go) */}
+                                  {/* Col 8: Selisih (To Go) */}
                                   <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground">
                                     {formatKpiNumber(kpi.toGo, kpi.format, {
                                       unitMultiplier: kpi.unitMultiplier,
                                     })}
                                   </td>
 
-                                  {/* Col 8: Tren with Sparkline & Delta */}
-                                  <td className="border-r border-border/60 px-2.5 py-1">
+                                  {/* Col 9: Tren with Sparkline & Delta */}
+                                  <td className="border-r border-border/60 px-2 py-1">
                                     <div className="flex items-center gap-2">
                                       <MiniSparkline
                                         data={kpi.change.sparkline}
@@ -947,25 +855,14 @@ export function KpiScorecardTable({
                                     </div>
                                   </td>
 
-                                  {/* Col 9: Wilayah / Cabang Perhatian */}
+                                  {/* Col 10: Wilayah / Cabang Perhatian */}
                                   <td className="border-r border-border/60 px-2.5 py-1">
                                     {kpi.laggingMarket ? (
-                                      <div className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px] font-medium bg-muted/70">
+                                      <div className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-muted/70">
                                         <span className="text-xs">📍</span>
-                                        <span className="font-semibold text-foreground">
+                                        <span className="font-semibold text-foreground truncate">
                                           {kpi.laggingMarket.countryName ||
                                             kpi.laggingMarket.countryCode}
-                                        </span>
-                                        <span
-                                          className={`rounded px-1 text-[10px] ${
-                                            kpi.laggingMarket.progress >= 70
-                                              ? "text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300"
-                                              : kpi.laggingMarket.progress >= 45
-                                              ? "text-amber-700 bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300"
-                                              : "text-rose-700 bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300"
-                                          }`}
-                                        >
-                                          {kpi.laggingMarket.progress}%
                                         </span>
                                       </div>
                                     ) : (
@@ -975,53 +872,194 @@ export function KpiScorecardTable({
                                     )}
                                   </td>
 
-                                  {/* Col 10: Capaian Progress */}
+                                  {/* Col 11: Capaian Progress */}
                                   <td
-                                    className={`border-r border-border/60 px-2 py-1 text-center font-bold tabular-nums ${kpiStyling.bgClass} ${kpiStyling.textClass}`}
+                                    className={`px-2 py-1 text-center font-bold tabular-nums text-xs ${kpiStyling.bgClass} ${kpiStyling.textClass}`}
                                   >
                                     {kpi.progress !== null
                                       ? `${kpi.progress}%`
                                       : "-"}
                                   </td>
-
-                                  {/* Col 11: Menu Aksi Baris */}
-                                  <td className="px-1 py-1 text-center">
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <button
-                                          type="button"
-                                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                                          title="Aksi baris"
-                                        >
-                                          <MoreVertical className="size-3.5" />
-                                        </button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent
-                                        align="end"
-                                        className="w-44 text-xs"
-                                      >
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            handleStartEdit(kpi, "value")
-                                          }
-                                          className="cursor-pointer"
-                                        >
-                                          Ubah Nilai Realisasi
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            handleStartEdit(kpi, "weight")
-                                          }
-                                          className="cursor-pointer"
-                                        >
-                                          Ubah Bobot Kontribusi
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </td>
                                 </tr>
                               )
                             })}
+
+                          {/* 4. BARIS DI PALING BAWAH SAAT KLIK (+) PADA OBJECTIVE INI */}
+                          {!isObjCollapsed && isAddingHere && (
+                            <tr className="bg-sky-50/50 dark:bg-sky-950/20 border-t-2 border-sky-400 dark:border-sky-700 transition-colors">
+                              {/* Col 1: Tahapan Siklus M2C */}
+                              <td className="border-r border-border px-2.5 py-1 text-[11px] text-sky-600 font-semibold truncate">
+                                + Input Baru
+                              </td>
+
+                              {/* Col 2: Input Nama KPI Baru */}
+                              <td className="border-r border-border px-2 py-1">
+                                <Input
+                                  autoFocus
+                                  placeholder="Nama indikator KPI baru..."
+                                  value={newKpiName}
+                                  onChange={(e) =>
+                                    setNewKpiName(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      void handleSaveInlineKpi(objective.id)
+                                    } else if (e.key === "Escape") {
+                                      handleCancelInlineAdd()
+                                    }
+                                  }}
+                                  className="h-7 text-xs bg-background"
+                                />
+                              </td>
+
+                              {/* Col 3: Dropdown Pemilik Inline */}
+                              <td className="border-r border-border px-1.5 py-1">
+                                <Select
+                                  value={newKpiOwnerId}
+                                  onValueChange={setNewKpiOwnerId}
+                                >
+                                  <SelectTrigger className="h-7 text-xs bg-background">
+                                    <SelectValue placeholder="Pilih pemilik" />
+                                  </SelectTrigger>
+                                  <SelectContent className="text-xs max-h-56">
+                                    {availableOwners.map((owner) => (
+                                      <SelectItem
+                                        key={owner.id}
+                                        value={owner.id}
+                                      >
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-bold">
+                                            {owner.initials}
+                                          </span>
+                                          <span className="truncate">
+                                            {owner.name}
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+
+                              {/* Col 4: Input Bobot % */}
+                              <td className="border-r border-border px-1.5 py-1 text-right">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max="100"
+                                  value={newKpiWeight}
+                                  onChange={(e) =>
+                                    setNewKpiWeight(e.target.value)
+                                  }
+                                  className="h-7 text-xs text-right font-mono font-semibold text-sky-600 bg-background"
+                                />
+                              </td>
+
+                              {/* Col 5: Input Baseline */}
+                              <td className="border-r border-border px-1.5 py-1 text-right">
+                                <Input
+                                  type="number"
+                                  value={newKpiBaseline}
+                                  onChange={(e) =>
+                                    setNewKpiBaseline(e.target.value)
+                                  }
+                                  className="h-7 text-xs text-right font-mono bg-background"
+                                />
+                              </td>
+
+                              {/* Col 6: Input Realisasi */}
+                              <td className="border-r border-border px-1.5 py-1 text-right">
+                                <Input
+                                  type="number"
+                                  placeholder="-"
+                                  value={newKpiValue}
+                                  onChange={(e) =>
+                                    setNewKpiValue(e.target.value)
+                                  }
+                                  className="h-7 text-xs text-right font-mono font-semibold text-sky-600 bg-background"
+                                />
+                              </td>
+
+                              {/* Col 7: Input Target */}
+                              <td className="border-r border-border px-1.5 py-1 text-right">
+                                <Input
+                                  type="number"
+                                  value={newKpiTarget}
+                                  onChange={(e) =>
+                                    setNewKpiTarget(e.target.value)
+                                  }
+                                  className="h-7 text-xs text-right font-mono bg-background"
+                                />
+                              </td>
+
+                              {/* Col 8: Selisih Pratinjau */}
+                              <td className="border-r border-border px-2 py-1 text-right text-muted-foreground font-mono text-xs">
+                                {newKpiValue !== "" && newKpiBaseline !== ""
+                                  ? (
+                                      Number(newKpiValue) -
+                                      Number(newKpiBaseline)
+                                    ).toFixed(1)
+                                  : "-"}
+                              </td>
+
+                              {/* Col 9: Toggle Arah */}
+                              <td className="border-r border-border px-1.5 py-1 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setNewKpiDirection((d) =>
+                                      d === "higher" ? "lower" : "higher"
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-border bg-background text-[11px] text-muted-foreground hover:text-foreground"
+                                  title="Klik untuk ubah arah target"
+                                >
+                                  {newKpiDirection === "higher" ? (
+                                    <ArrowUp className="size-3 text-emerald-600" />
+                                  ) : (
+                                    <ArrowDown className="size-3 text-amber-600" />
+                                  )}
+                                  <span>
+                                    {newKpiDirection === "higher"
+                                      ? "Naik"
+                                      : "Turun"}
+                                  </span>
+                                </button>
+                              </td>
+
+                              {/* Col 10: Wilayah */}
+                              <td className="border-r border-border px-2 py-1 text-[11px] text-muted-foreground italic">
+                                Semua
+                              </td>
+
+                              {/* Col 11: Aksi Simpan / Batal Langsung di Cell */}
+                              <td className="p-1 text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void handleSaveInlineKpi(objective.id)
+                                    }
+                                    disabled={savingInline}
+                                    className="p-1 rounded text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-950 transition-colors"
+                                    title="Simpan baris KPI ini (Enter)"
+                                  >
+                                    <Check className="size-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleCancelInlineAdd}
+                                    disabled={savingInline}
+                                    className="p-1 rounded text-red-500 hover:bg-red-100 dark:hover:bg-red-950 transition-colors"
+                                    title="Batal (Esc)"
+                                  >
+                                    <X className="size-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
                         </React.Fragment>
                       )
                     })}
@@ -1035,12 +1073,11 @@ export function KpiScorecardTable({
             <tr>
               <td className="border-r border-border p-2.5">
                 <div className="font-bold uppercase tracking-wider text-[11px]">
-                  TOTAL CAPAIAN SKOR M2C
+                  TOTAL SKOR M2C
                 </div>
-                <div className="text-[10px] font-normal text-muted-foreground">
-                  {summary.kpisOnTrackCount} dari {summary.totalScoredKpis} KPI
-                  sesuai target
-                </div>
+              </td>
+              <td className="border-r border-border p-2.5 text-muted-foreground">
+                {summary.kpisOnTrackCount} dari {summary.totalScoredKpis} KPI sesuai target
               </td>
               <td className="border-r border-border p-2.5 text-muted-foreground">
                 Semua Aktor
@@ -1063,24 +1100,18 @@ export function KpiScorecardTable({
               <td className="border-r border-border p-2.5">
                 <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
                   <MiniSparkline data={[58, 59, 59.5, 60.2, 60.8, 61]} />
-                  <span>+{summary.ptsChangeSinceLastMonth} poin bln lalu</span>
+                  <span>+{summary.ptsChangeSinceLastMonth} poin</span>
                 </div>
               </td>
               <td className="border-r border-border p-2.5">
                 <div className="inline-flex items-center gap-1 text-muted-foreground font-medium">
                   <span>📍</span>
-                  <span>Semua wilayah aktif</span>
+                  <span>Semua wilayah</span>
                 </div>
               </td>
-              <td className="border-r border-border p-2.5 text-center bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
-                <div className="text-sm font-bold">
-                  {summary.companyScore}%
-                </div>
-                <div className="text-[9px] uppercase font-semibold">
-                  Perhatian
-                </div>
+              <td className="p-2.5 text-center bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                <div className="text-sm font-bold">{summary.companyScore}%</div>
               </td>
-              <td className="p-2.5" />
             </tr>
           </tfoot>
         </table>
@@ -1092,8 +1123,7 @@ export function KpiScorecardTable({
           <span className="font-semibold text-sky-600 dark:text-sky-400">
             Angka biru
           </span>{" "}
-          adalah input realisasi bulanan. Klik cell untuk mengedit langsung, paste
-          dari Excel, atau tekan{" "}
+          adalah input realisasi bulanan. Seluruh cell (Nama, Pemilik, Bobot, Baseline, Realisasi, Target) dapat diedit inline langsung di cell masing-masing, atau tekan{" "}
           <kbd className="rounded border border-border bg-muted px-1 text-[10px]">
             Ctrl+Z
           </kbd>{" "}

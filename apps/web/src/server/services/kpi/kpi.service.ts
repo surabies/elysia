@@ -1101,3 +1101,31 @@ export async function perbaruiPemilikKpi(
 
   return true
 }
+
+/**
+ * Memperbarui detail atribut KPI (nama, baseline, target, bobot, arah) secara inline
+ */
+export async function perbaruiKpiDetail(
+  kpiId: string,
+  data: {
+    nama?: string
+    bobot?: number
+    baseline?: number
+    target?: number
+    arah?: "higher" | "lower"
+  }
+): Promise<boolean> {
+  const updateData: any = { updatedAt: new Date() }
+  if (data.nama !== undefined) updateData.nama = data.nama
+  if (data.bobot !== undefined) updateData.bobot = data.bobot
+  if (data.baseline !== undefined) updateData.baseline = data.baseline
+  if (data.target !== undefined) updateData.target = data.target
+  if (data.arah !== undefined) updateData.arah = data.arah
+
+  await db
+    .update(kpiIndikator)
+    .set(updateData)
+    .where(eq(kpiIndikator.id, kpiId))
+
+  return true
+}

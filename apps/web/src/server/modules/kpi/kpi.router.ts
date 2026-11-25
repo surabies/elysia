@@ -6,6 +6,7 @@ import {
   perbaruiNilaiAktualKpi,
   perbaruiBobotKpi,
   perbaruiPemilikKpi,
+  perbaruiKpiDetail,
   sinkronisasiKpiDariDatabaseRiil,
   dapatkanEvaluasiInsentifPetugas,
   dapatkanAturanInsentif,
@@ -370,6 +371,32 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
         pemilikId: t.String(),
         pemilikNama: t.String(),
         pemilikInisial: t.String(),
+      }),
+    }
+  )
+
+  // 6. Update Detail Atribut KPI (nama, bobot, baseline, target, arah) secara Inline
+  .patch(
+    "/:id",
+    async ({ params, body, set }) => {
+      try {
+        await perbaruiKpiDetail(params.id, body as any)
+        return { success: true, message: "Detail KPI berhasil diperbarui" }
+      } catch (err: any) {
+        set.status = 500
+        return { success: false, error: err.message }
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      body: t.Object({
+        nama: t.Optional(t.String()),
+        bobot: t.Optional(t.Number()),
+        baseline: t.Optional(t.Number()),
+        target: t.Optional(t.Number()),
+        arah: t.Optional(t.String()),
       }),
     }
   )

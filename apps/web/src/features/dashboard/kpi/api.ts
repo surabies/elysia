@@ -95,6 +95,29 @@ export const kpiApi = {
     return json.data;
   },
 
+  /** Memperbarui atribut detail KPI (nama, bobot, baseline, target, arah) secara inline */
+  async updateKpiDetail(
+    kpiId: string,
+    data: {
+      nama?: string;
+      bobot?: number;
+      baseline?: number;
+      target?: number;
+      arah?: "higher" | "lower";
+    }
+  ) {
+    const res = await fetch(`/api/kpi/${encodeURIComponent(kpiId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui atribut KPI");
+    }
+    return json.data;
+  },
+
   /** Mengambil daftar pemilik (owner) real dari database */
   async getOwners() {
     const res = await fetch("/api/kpi/owners");
