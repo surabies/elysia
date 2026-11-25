@@ -6,19 +6,15 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   Plus,
   Minus,
-  Layers,
   Crosshair,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Magnet,
-  CheckCircle2,
   RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 if (
@@ -34,7 +30,6 @@ const DEFAULT_BANDUNG: [number, number] = [107.60981, -6.914744];
 const STEP_2M = 0.000018;
 
 export interface PetaPinpointGpsHandle {
-  snapToParcel: () => void;
   nudge: (dLat: number, dLng: number) => void;
 }
 
@@ -42,38 +37,10 @@ export interface PetaPinpointGpsProps {
   lat: number | null;
   lng: number | null;
   accuracy?: number | null;
-  onChange: (
-    lat: number,
-    lng: number,
-    meta?: { isSnapped?: boolean; snapDistance?: number }
-  ) => void;
+  onChange: (lat: number, lng: number) => void;
   onRecenterGps?: () => void;
   /** Kelas tinggi kustom untuk kanvas peta (mis. h-full di mode mobile app atau h-[420px] di dialog desktop) */
   mapHeightClassName?: string;
-}
-
-/** Proyeksi titik ke ruas garis A-B */
-function projectPointToSegment(
-  px: number,
-  py: number,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number
-): { x: number; y: number } {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  if (dx === 0 && dy === 0) return { x: x1, y: y1 };
-  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
-  return { x: x1 + t * dx, y: y1 + t * dy };
-}
-
-/** Jarak Euclidean dalam satuan meter */
-function calculateDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const cosLat = Math.cos((lat1 * Math.PI) / 180);
-  const dLat = (lat2 - lat1) * 111139;
-  const dLng = (lng2 - lng1) * 111139 * cosLat;
-  return Math.hypot(dLat, dLng);
 }
 
 export const PetaPinpointGps = React.forwardRef<
@@ -100,11 +67,6 @@ export const PetaPinpointGps = React.forwardRef<
   }, [onChange]);
 
   const [basemap, setBasemap] = React.useState<'satellite' | 'street'>('satellite');
-  const [showParcels, setShowParcels] = React.useState(true);
-  const [isSnapped, setIsSnapped] = React.useState(false);
-  const [snapDist, setSnapDist] = React.useState<number | null>(null);
-  const [loadingParcels, setLoadingParcels] = React.useState(false);
-  const parcelsRef = React.useRef<any>(null);
 
   const validCoord =
     lat !== null &&
@@ -119,37 +81,6 @@ export const PetaPinpointGps = React.forwardRef<
   const initialCenter: [number, number] = validCoord
     ? [lng!, lat!]
     : DEFAULT_BANDUNG;
-
-  // Fungsi memuat poligon persil kadaster di sekitar koordinat
-  const loadParcels = React.useCallback(async (cLat: number, cLng: number) => {
-    try {
-      setLoadingParcels(true);
-      const res = await fetch(`/api/places/cadastral-parcels?lat=${cLat}&lng=${cLng}&radius=200`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.success && data.features) {
-        parcelsRef.current = data;
-        const map = mapRef.current;
-        if (map) {
-          const applyParcels = () => {
-            const src = map.getSource('parcels') as maplibregl.GeoJSONSource;
-            if (src) {
-              src.setData(data);
-            }
-          };
-          if (map.isStyleLoaded()) {
-            applyParcels();
-          } else {
-            map.once('load', applyParcels);
-          }
-        }
-      }
-    } catch {
-      // Abaikan bila network timeout
-    } finally {
-      setLoadingParcels(false);
-    }
-  }, []);
 
   // Inisialisasi MapLibre
   React.useEffect(() => {
@@ -181,13 +112,6 @@ export const PetaPinpointGps = React.forwardRef<
             tileSize: 256,
             maxzoom: 18,
           },
-          parcels: {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: [],
-            },
-          },
         },
         layers: [
           {
@@ -210,46 +134,11 @@ export const PetaPinpointGps = React.forwardRef<
             },
             layout: { visibility: 'none' },
           },
-          {
-            id: 'parcels-fill',
-            type: 'fill',
-            source: 'parcels',
-            paint: {
-              'fill-color': '#06b6d4',
-              'fill-opacity': 0.16,
-            },
-            layout: { visibility: 'visible' },
-          },
-          {
-            id: 'parcels-line',
-            type: 'line',
-            source: 'parcels',
-            paint: {
-              'line-color': '#0891b2',
-              'line-width': 1.6,
-              'line-opacity': 0.85,
-            },
-            layout: { visibility: 'visible' },
-          },
-          {
-            id: 'parcels-frontage',
-            type: 'line',
-            source: 'parcels',
-            paint: {
-              'line-color': '#2563eb',
-              'line-width': 2.8,
-            },
-            layout: { visibility: 'visible' },
-          },
         ],
       },
     });
 
     mapRef.current = map;
-
-    map.on('load', () => {
-      loadParcels(initialCenter[1], initialCenter[0]);
-    });
 
     const observer = new ResizeObserver(() => {
       map.resize();
@@ -262,12 +151,10 @@ export const PetaPinpointGps = React.forwardRef<
         isInternalMoveRef.current = false;
         return;
       }
-      setIsSnapped(false);
       const center = map.getCenter();
       onChangeRef.current(
         Number(center.lat.toFixed(7)),
-        Number(center.lng.toFixed(7)),
-        { isSnapped: false }
+        Number(center.lng.toFixed(7))
       );
     });
 
@@ -315,15 +202,10 @@ export const PetaPinpointGps = React.forwardRef<
         zoom: Math.max(map.getZoom(), 18.5),
         duration: 350,
       });
-
-      // Jika perpindahan cukup jauh (> ~60 meter), refresh poligon persil kadaster di lokasi baru
-      if (diffLat > 0.0005 || diffLng > 0.0005) {
-        loadParcels(lat!, lng!);
-      }
     }
-  }, [lat, lng, validCoord, loadParcels]);
+  }, [lat, lng, validCoord]);
 
-  // Ganti basemap Satelit vs Jalan (OSM) dan Layer Persil
+  // Ganti basemap Satelit vs Jalan (OSM)
   React.useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -335,90 +217,18 @@ export const PetaPinpointGps = React.forwardRef<
     if (map.getLayer('osm-layer')) {
       map.setLayoutProperty('osm-layer', 'visibility', !isSat ? 'visible' : 'none');
     }
-    const pVis = showParcels ? 'visible' : 'none';
-    if (map.getLayer('parcels-fill')) {
-      map.setLayoutProperty('parcels-fill', 'visibility', pVis);
-    }
-    if (map.getLayer('parcels-line')) {
-      map.setLayoutProperty('parcels-line', 'visibility', pVis);
-    }
-    if (map.getLayer('parcels-frontage')) {
-      map.setLayoutProperty('parcels-frontage', 'visibility', pVis);
-    }
-  }, [basemap, showParcels]);
+  }, [basemap]);
 
   // Geser mikro (Micro-Nudge ±2 meter)
   const handleNudge = (dLat: number, dLng: number) => {
-    setIsSnapped(false);
     const baseLat = validCoord ? lat! : DEFAULT_BANDUNG[1];
     const baseLng = validCoord ? lng! : DEFAULT_BANDUNG[0];
     const nextLat = Number((baseLat + dLat).toFixed(7));
     const nextLng = Number((baseLng + dLng).toFixed(7));
-    onChange(nextLat, nextLng, { isSnapped: false });
-  };
-
-  // Algoritma Snapping ke garis muka dinding/pagar persil terdekat
-  const handleSnapToParcel = () => {
-    const curLat = validCoord ? lat! : DEFAULT_BANDUNG[1];
-    const curLng = validCoord ? lng! : DEFAULT_BANDUNG[0];
-    const features = parcelsRef.current?.features || [];
-
-    if (features.length === 0) {
-      toast.info('Memuat data persil, silakan klik kembali dalam 1 detik...');
-      loadParcels(curLat, curLng);
-      return;
-    }
-
-    let closestDist = Infinity;
-    let closestPoint: { lat: number; lng: number } | null = null;
-    let targetName = '';
-
-    for (const feat of features) {
-      const frontage = feat.properties?.frontageLine;
-      const ring = feat.geometry?.coordinates?.[0];
-      const segments: Array<[number[], number[]]> = [];
-
-      if (frontage && frontage.length >= 2) {
-        segments.push([frontage[0], frontage[1]]);
-      } else if (ring && ring.length >= 2) {
-        for (let i = 0; i < ring.length - 1; i++) {
-          segments.push([ring[i], ring[i + 1]]);
-        }
-      }
-
-      for (const [pA, pB] of segments) {
-        const proj = projectPointToSegment(curLng, curLat, pA[0], pA[1], pB[0], pB[1]);
-        const dist = calculateDistanceMeters(curLat, curLng, proj.y, proj.x);
-        if (dist < closestDist) {
-          closestDist = dist;
-          closestPoint = { lat: Number(proj.y.toFixed(7)), lng: Number(proj.x.toFixed(7)) };
-          targetName = feat.properties?.nama || '';
-        }
-      }
-    }
-
-    if (closestPoint && closestDist <= 35) {
-      setIsSnapped(true);
-      setSnapDist(closestDist);
-      isInternalMoveRef.current = true;
-      mapRef.current?.easeTo({
-        center: [closestPoint.lng, closestPoint.lat],
-        zoom: Math.max(mapRef.current.getZoom(), 18.5),
-        duration: 300,
-      });
-      onChange(closestPoint.lat, closestPoint.lng, { isSnapped: true, snapDistance: closestDist });
-      toast.success(
-        `🧲 Terkunci ke batas persil meteran terdekat (${closestDist.toFixed(1)}m)${targetName ? ` - ${targetName}` : ''}`
-      );
-    } else {
-      toast.info(
-        'Tidak ada titik persil pelanggan dalam radius 35m. Gunakan tombol panah Geser Mikro (±2m) untuk menempatkan titik tepat di atap meteran.'
-      );
-    }
+    onChange(nextLat, nextLng);
   };
 
   React.useImperativeHandle(ref, () => ({
-    snapToParcel: handleSnapToParcel,
     nudge: handleNudge,
   }));
 
@@ -439,9 +249,7 @@ export const PetaPinpointGps = React.forwardRef<
           <div
             className={cn(
               'rounded-full border transition-all duration-300 flex items-center justify-center',
-              isSnapped
-                ? 'size-12 border-emerald-500/80 bg-emerald-500/20'
-                : accuracy && accuracy <= 8
+              accuracy && accuracy <= 8
                 ? 'size-12 border-(--ds-green-600)/70 bg-(--ds-green-500)/15'
                 : accuracy && accuracy <= 20
                 ? 'size-16 border-(--ds-amber-600)/70 bg-(--ds-amber-500)/15'
@@ -453,41 +261,24 @@ export const PetaPinpointGps = React.forwardRef<
             <div
               className={cn(
                 'px-2 py-0.5 rounded-md font-mono text-[10px] font-semibold shadow-sm whitespace-nowrap mb-0.5 flex items-center gap-1',
-                isSnapped
-                  ? 'bg-emerald-600 text-white'
-                  : accuracy && accuracy <= 8
+                accuracy && accuracy <= 8
                   ? 'bg-emerald-600 text-white'
                   : accuracy && accuracy <= 20
                   ? 'bg-amber-600 text-white'
                   : 'bg-foreground text-background'
               )}
             >
-              {isSnapped ? (
-                <>
-                  <Magnet className="size-2.5 text-white" />
-                  <span>Terkunci Persil (±{snapDist?.toFixed(1)}m)</span>
-                </>
-              ) : accuracy !== null ? (
+              {accuracy !== null ? (
                 <span>Akurasi ±{accuracy}m</span>
               ) : (
                 <span>Titik Meter</span>
               )}
             </div>
-            <div
-              className={cn(
-                'size-3.5 rounded-full border-2 border-white shadow-md',
-                isSnapped ? 'bg-emerald-600' : 'bg-(--ds-blue-700)'
-              )}
-            />
+            <div className="size-3.5 rounded-full border-2 border-white shadow-md bg-(--ds-blue-700)" />
             <div className="w-0.5 h-2 bg-white shadow-xs" />
           </div>
           {/* Titik pusat persis di koordinat */}
-          <div
-            className={cn(
-              'absolute size-1.5 rounded-full bg-white ring-2',
-              isSnapped ? 'ring-emerald-600' : 'ring-(--ds-blue-700)'
-            )}
-          />
+          <div className="absolute size-1.5 rounded-full bg-white ring-2 ring-(--ds-blue-700)" />
         </div>
 
         {/* Menu Tab Basemap (Satelit / Peta Jalan) - Segmented Control Rapi */}
@@ -560,8 +351,7 @@ export const PetaPinpointGps = React.forwardRef<
                 zoom: 18.5,
                 duration: 350,
               });
-              onChangeRef.current(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0], { isSnapped: false });
-              loadParcels(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0]);
+              onChangeRef.current(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0]);
               toast.info('Peta dipusatkan kembali ke Bandung (Jawa Barat)');
             }}
             className="size-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-(--ds-gray-100) cursor-pointer"

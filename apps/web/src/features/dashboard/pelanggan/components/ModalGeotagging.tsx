@@ -25,7 +25,6 @@ import {
   Sparkles,
   RotateCcw,
   ArrowLeft,
-  Magnet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -33,7 +32,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileNavOptional } from '@/components/layout';
 import { pelangganApi } from '../api';
 import type { PelangganGpsItem } from '../types';
-import { PetaPinpointGps, type PetaPinpointGpsHandle } from './PetaPinpointGps';
+import { PetaPinpointGps } from './PetaPinpointGps';
 import { parseClipboardCoordinates } from '../utils/coordParser';
 
 interface GpsSample {
@@ -89,9 +88,6 @@ export function ModalGeotagging({
   const [sampleCount, setSampleCount] = React.useState(0);
   const [gettingLocation, setGettingLocation] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
-  const [isSnapped, setIsSnapped] = React.useState(false);
-  const [snapDistance, setSnapDistance] = React.useState<number | null>(null);
-  const mapHandleRef = React.useRef<PetaPinpointGpsHandle>(null);
 
   const watchIdRef = React.useRef<number | null>(null);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,8 +115,6 @@ export function ModalGeotagging({
       setCatatan('');
       setAccuracy(pelanggan.lat != null && pelanggan.lng != null ? 3 : null);
       setSampleCount(0);
-      setIsSnapped(false);
-      setSnapDistance(null);
     } else {
       stopWatchGps();
       setGettingLocation(false);
@@ -233,7 +227,6 @@ export function ModalGeotagging({
         setLat(pastedLat);
         setLng(pastedLng);
         setAccuracy(3); // Set estimasi akurasi satelit presisi tinggi ±3m
-        setIsSnapped(false);
 
         let descMsg = 'Peta otomatis dipusatkan ke titik koordinat dari clipboard Anda.';
         if (parsed.format === 'swapped-decimal') {
@@ -270,20 +263,9 @@ export function ModalGeotagging({
     }
   };
 
-  const handleMapCoordChange = (
-    newLat: number,
-    newLng: number,
-    meta?: { isSnapped?: boolean; snapDistance?: number }
-  ) => {
+  const handleMapCoordChange = (newLat: number, newLng: number) => {
     setLat(String(newLat));
     setLng(String(newLng));
-    if (meta?.isSnapped) {
-      setIsSnapped(true);
-      setSnapDistance(meta.snapDistance ?? null);
-    } else {
-      setIsSnapped(false);
-      setSnapDistance(null);
-    }
   };
 
   const handleSimpan = async (e: React.FormEvent) => {
@@ -297,15 +279,10 @@ export function ModalGeotagging({
 
     try {
       setSaving(true);
-      const snapNote = isSnapped && snapDistance !== null
-        ? `[Snapped Muka Persil ±${snapDistance.toFixed(1)}m]`
-        : '';
-      const mergedCatatan = [catatan.trim(), snapNote].filter(Boolean).join(' ');
-
       const res = await pelangganApi.updateGps(pelanggan.nolg, {
         lat: parsedLat,
         lng: parsedLng,
-        catatan: mergedCatatan || undefined,
+        catatan: catatan.trim() || undefined,
       });
 
       toast.success(res.message || 'Titik koordinat GPS berhasil disimpan');
@@ -370,19 +347,9 @@ export function ModalGeotagging({
           )}
         </header>
 
-        {isSnapped && (
-          <div className="px-3 py-1 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center justify-between text-[11px] font-mono text-emerald-700 dark:text-emerald-300 shrink-0">
-            <span className="flex items-center gap-1 font-semibold">
-              🧲 Terkunci Garis Muka Persil
-            </span>
-            <span>Koreksi: &plusmn;{snapDistance?.toFixed(1)}m</span>
-          </div>
-        )}
-
         {/* 2. Area Peta Satelit Utama (Mengisi Sebagian Besar Layar Mobile) */}
         <div className="flex-1 min-h-0 p-2.5 flex flex-col">
           <PetaPinpointGps
-            ref={mapHandleRef}
             lat={isValidCoord ? parsedLat : null}
             lng={isValidCoord ? parsedLng : null}
             accuracy={accuracy}
@@ -480,33 +447,17 @@ export function ModalGeotagging({
             className="text-copy-13 h-9"
           />
 
-          {/* Tombol Aksi Sejajar: Batal, Snap Persil, dan Simpan GPS */}
+          {/* Tombol Aksi Sejajar: Batal dan Simpan GPS */}
           <div className="flex items-center gap-2 pt-1">
             <Button
               type="button"
               variant="outline"
               size="md"
-              className="h-11 px-3 text-label-12 font-medium"
+              className="w-28 h-11 px-3 text-label-12 font-medium"
               onClick={() => onOpenChange(false)}
               disabled={saving}
             >
               Batal
-            </Button>
-            <Button
-              type="button"
-              variant={isSnapped ? 'secondary' : 'outline'}
-              size="md"
-              className={cn(
-                'h-11 px-3 text-label-12 gap-1.5 font-medium border-border',
-                isSnapped
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                  : 'text-foreground hover:bg-(--ds-gray-100)'
-              )}
-              onClick={() => mapHandleRef.current?.snapToParcel()}
-              title="Kunci titik ke batas persil meter terdekat"
-            >
-              <Magnet className="size-4" />
-              <span>{isSnapped ? `Terkunci (±${snapDistance?.toFixed(1)}m)` : 'Snap Persil'}</span>
             </Button>
             <Button
               type="submit"
@@ -557,11 +508,6 @@ export function ModalGeotagging({
                 </DialogDescription>
               </div>
               <div className="flex items-center gap-2">
-                {isSnapped && (
-                  <Badge variant="green-subtle" size="md" className="font-mono rounded-md">
-                    🧲 Snapped Muka Persil (&plusmn;{snapDistance?.toFixed(1)}m)
-                  </Badge>
-                )}
                 <Badge variant={pelanggan.hasGps ? 'green-subtle' : 'amber-subtle'} size="md" className="rounded-md">
                   {pelanggan.hasGps ? 'Sudah Ber-GPS' : 'Belum Ada GPS'}
                 </Badge>
@@ -574,7 +520,6 @@ export function ModalGeotagging({
             {/* KOLOM KIRI: Peta Satelit & Micro-Nudge */}
             <div className="lg:col-span-7">
               <PetaPinpointGps
-                ref={mapHandleRef}
                 lat={isValidCoord ? parsedLat : null}
                 lng={isValidCoord ? parsedLng : null}
                 accuracy={accuracy}
@@ -768,53 +713,34 @@ export function ModalGeotagging({
             </div>
           </div>
 
-          <DialogFooter className="border-t border-border pt-3 flex flex-row items-center justify-between gap-2 sm:justify-between">
+          <DialogFooter className="border-t border-border pt-3 flex flex-row items-center justify-end gap-2 sm:justify-end">
             <Button
               type="button"
-              variant={isSnapped ? 'secondary' : 'outline'}
+              variant="outline"
               size="md"
-              className={cn(
-                'gap-1.5 font-medium border-border',
-                isSnapped
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                  : 'text-foreground hover:bg-(--ds-gray-100)'
-              )}
-              onClick={() => mapHandleRef.current?.snapToParcel()}
-              title="Kunci otomatis ke batas muka dinding/pagar persil bangunan terdekat"
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
             >
-              <Magnet className="size-4" />
-              <span>{isSnapped ? `Terkunci Muka Persil (±${snapDistance?.toFixed(1)}m)` : 'Snap Muka Persil'}</span>
+              Batal
             </Button>
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="md"
-                onClick={() => onOpenChange(false)}
-                disabled={saving}
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                size="md"
-                className="gap-1.5 bg-(--ds-blue-700) hover:bg-(--ds-blue-800) text-white"
-                disabled={saving || !isValidCoord}
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    <span>Menyimpan...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="size-4" />
-                    <span>Simpan Titik GPS</span>
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              size="md"
+              className="gap-1.5 bg-(--ds-blue-700) hover:bg-(--ds-blue-800) text-white"
+              disabled={saving || !isValidCoord}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="size-4" />
+                  <span>Simpan Titik GPS</span>
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
