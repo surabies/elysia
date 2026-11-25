@@ -101,7 +101,7 @@ function petaBaris(r: BarisApi): BarisMandiriTabel {
   const terverifikasi = r.status === "DIVERIFIKASI" || r.status === "DIGUNAKAN";
   const resmi =
     terverifikasi &&
-    (r.status === "DIGUNAKAN" || r.pembacaanId != null || r.pembacaan != null);
+    (r.status === "DIGUNAKAN" || r.pembacaanId != null || r.sudahDitagih);
   const standAwal = r.standAwal ?? r.pembacaan?.standLalu ?? null;
   const pemakaian =
     standAwal != null && r.standDilaporkan != null

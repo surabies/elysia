@@ -960,7 +960,12 @@ export class VerifikasiGridService {
           verifiedBy: row.verifiedBy ? { name: null } : null,
           verifiedByRole: null,
           sudahTahapPetugas: Boolean(
-            row.caterMandiriId && row.caterMandiriId === row.id,
+            row.caterId &&
+            row.caterStatus &&
+            (row.caterStatus === "VERIFIED_L2" ||
+             row.caterStatus === "VERIFIED_L3" ||
+             row.caterStatus === "POSTED_DRD" ||
+             row.caterStatus === "LOCKED_BILLING")
           ),
           sudahDitagih: final,
           isVerified: row.status === "APPROVED",

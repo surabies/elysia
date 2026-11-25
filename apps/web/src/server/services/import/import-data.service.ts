@@ -19,6 +19,7 @@ import {
   db,
   pelanggan,
   caterBacaMeter,
+  caterMandiriPelanggan,
   caterVerifikasiLog,
   waterMeter,
   daftarCatat,
@@ -1033,6 +1034,7 @@ export class ImportDataService {
                     ketCatat: sql`excluded.ket_catat`,
                     sumberCatat: sql`excluded.sumber_catat`,
                     statusVerifikasi: 'SUBMITTED',
+                    caterMandiriId: null,
                     stmlRevisi: null,
                     stmaRevisi: null,
                     pakaiM3Revisi: null,
@@ -1070,6 +1072,25 @@ export class ImportDataService {
                 await tx.insert(caterVerifikasiLog).values(auditLogItems.slice(i, i + CHUNK_SIZE));
               }
             }
+
+            // Reset status laporan mandiri warga yang beririsan dengan batch yang ditimpa ini
+            // agar tidak menggantung sebagai APPROVED sementara pembacaan resminya telah digantikan petugas
+            await tx
+              .update(caterMandiriPelanggan)
+              .set({
+                statusVerifikasi: 'PENDING',
+                alasanPenolakan: null,
+                verifiedBy: null,
+                verifiedAt: null,
+                updatedAt: new Date(),
+              })
+              .where(
+                and(
+                  eq(caterMandiriPelanggan.thbl, thbl),
+                  inArray(caterMandiriPelanggan.nolg, batchNolgs),
+                  eq(caterMandiriPelanggan.statusVerifikasi, 'APPROVED')
+                )
+              );
 
             results.updated += existingCount;
             results.created += uniqueBatch.length - existingCount;

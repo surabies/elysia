@@ -252,8 +252,7 @@ export function VerifikasiMandiri({
     )
     const tertahanTahapPetugas = Boolean(
       baris.sudahTahapPetugas ||
-      baris.verif3At != null ||
-      baris.pembacaan != null
+      baris.sudahDitagih
     )
     const bolehUnverify =
       bisaAksi &&
