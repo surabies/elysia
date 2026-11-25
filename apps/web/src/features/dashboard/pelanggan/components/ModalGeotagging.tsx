@@ -224,15 +224,24 @@ export function ModalGeotagging({
       const text = await navigator.clipboard.readText();
       const match = text.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
       if (match) {
-        setLat(match[1]!);
-        setLng(match[2]!);
+        const pastedLat = match[1]!;
+        const pastedLng = match[2]!;
+        setLat(pastedLat);
+        setLng(pastedLng);
         setAccuracy(null);
-        toast.success('Koordinat berhasil ditempel dari papan klip');
+        setIsSnapped(false);
+        toast.success(`Koordinat ditempel: ${pastedLat}, ${pastedLng}`, {
+          description: 'Peta otomatis dipusatkan ke titik koordinat dari clipboard Anda.',
+        });
       } else {
-        toast.error('Format koordinat tidak dikenali. Gunakan format: -6.914744, 107.609810');
+        toast.error('Format koordinat di clipboard tidak dikenali', {
+          description: 'Salin teks koordinat dari Google Maps atau WhatsApp (Format: -6.914744, 107.609810).',
+        });
       }
     } catch {
-      toast.error('Tidak dapat mengakses clipboard browser');
+      toast.error('Tidak dapat mengakses clipboard browser', {
+        description: 'Pastikan izin akses papan klip (clipboard) diizinkan pada pengaturan browser Anda.',
+      });
     }
   };
 
@@ -603,6 +612,7 @@ export function ModalGeotagging({
                       type="button"
                       onClick={handlePasteKoordinat}
                       className="inline-flex items-center gap-1 text-label-12 text-(--ds-blue-700) hover:underline cursor-pointer"
+                      title="Tempel teks koordinat (lat, lng) yang Anda copy dari Google Maps / WhatsApp"
                     >
                       <ClipboardPaste className="size-3" />
                       <span>Tempel Clipboard</span>
