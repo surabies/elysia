@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Magnet,
   CheckCircle2,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -149,17 +150,25 @@ export function PetaPinpointGps({
           satellite: {
             type: 'raster',
             tiles: [
-              'https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-              'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-              'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-              'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             ],
             tileSize: 256,
-            maxzoom: 20,
+            maxzoom: 19,
+          },
+          'satellite-labels': {
+            type: 'raster',
+            tiles: [
+              'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            maxzoom: 19,
           },
           osm: {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tiles: [
+              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            ],
             tileSize: 256,
             maxzoom: 19,
           },
@@ -176,6 +185,12 @@ export function PetaPinpointGps({
             id: 'satellite-layer',
             type: 'raster',
             source: 'satellite',
+            layout: { visibility: 'visible' },
+          },
+          {
+            id: 'satellite-labels-layer',
+            type: 'raster',
+            source: 'satellite-labels',
             layout: { visibility: 'visible' },
           },
           {
@@ -291,19 +306,15 @@ export function PetaPinpointGps({
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
+    const isSat = basemap === 'satellite';
     if (map.getLayer('satellite-layer')) {
-      map.setLayoutProperty(
-        'satellite-layer',
-        'visibility',
-        basemap === 'satellite' ? 'visible' : 'none'
-      );
+      map.setLayoutProperty('satellite-layer', 'visibility', isSat ? 'visible' : 'none');
+    }
+    if (map.getLayer('satellite-labels-layer')) {
+      map.setLayoutProperty('satellite-labels-layer', 'visibility', isSat ? 'visible' : 'none');
     }
     if (map.getLayer('osm-layer')) {
-      map.setLayoutProperty(
-        'osm-layer',
-        'visibility',
-        basemap === 'street' ? 'visible' : 'none'
-      );
+      map.setLayoutProperty('osm-layer', 'visibility', !isSat ? 'visible' : 'none');
     }
     const pVis = showParcels ? 'visible' : 'none';
     if (map.getLayer('parcels-fill')) {
@@ -512,6 +523,55 @@ export function PetaPinpointGps({
               </button>
             </>
           )}
+          <div className="h-px w-full bg-border" />
+          <button
+            type="button"
+            onClick={() => {
+              isInternalMoveRef.current = true;
+              mapRef.current?.easeTo({
+                center: DEFAULT_BANDUNG,
+                zoom: 18.5,
+                duration: 350,
+              });
+              onChangeRef.current(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0], { isSnapped: false });
+              loadParcels(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0]);
+              toast.info('Peta dipusatkan kembali ke Bandung (Jawa Barat)');
+            }}
+            className="size-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-(--ds-gray-100) cursor-pointer"
+            title="Reset Peta ke Bandung"
+          >
+            <RotateCcw className="size-3.5" />
+          </button>
+        </div>
+
+        {/* Peringatan jika koordinat jatuh di samudra/laut di luar batas Indonesia */}
+        {validCoord && (lat! > 12 || lat! < -12 || lng! < 94 || lng! > 142) && (
+          <div className="absolute top-12 inset-x-2 z-20 flex justify-center">
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/90 text-amber-950 px-3 py-1.5 text-[11px] font-medium shadow-md backdrop-blur-xs flex items-center gap-2">
+              <span>⚠️ Titik koordinat ({lat?.toFixed(4)}, {lng?.toFixed(4)}) berada di luar wilayah Indonesia (samudra).</span>
+              <button
+                type="button"
+                onClick={() => {
+                  isInternalMoveRef.current = true;
+                  mapRef.current?.easeTo({
+                    center: DEFAULT_BANDUNG,
+                    zoom: 18.5,
+                    duration: 350,
+                  });
+                  onChangeRef.current(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0], { isSnapped: false });
+                  loadParcels(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0]);
+                }}
+                className="underline font-semibold cursor-pointer hover:text-black"
+              >
+                Kembali ke Bandung
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Info Koordinat Aktif di Kiri Bawah */}
+        <div className="pointer-events-none absolute bottom-2 left-2 z-10 hidden sm:flex items-center gap-1.5 rounded bg-black/75 px-2 py-0.5 text-[10px] font-mono text-white backdrop-blur-xs">
+          <span>{validCoord ? `${lat?.toFixed(6)}, ${lng?.toFixed(6)}` : `${DEFAULT_BANDUNG[1]}, ${DEFAULT_BANDUNG[0]}`}</span>
         </div>
 
         {/* Petunjuk Geser Peta di Bawah */}

@@ -235,6 +235,8 @@ export function ModalGeotagging({
         let descMsg = 'Peta otomatis dipusatkan ke titik koordinat dari clipboard Anda.';
         if (parsed.format === 'swapped-decimal') {
           descMsg = 'Format terdeteksi bujur-lintang terbalik dan telah otomatis disesuaikan.';
+        } else if (parsed.format === 'auto-south') {
+          descMsg = 'Koordinat lintang Pulau Jawa terdeteksi tanpa tanda minus dan telah otomatis dikoreksi ke Lintang Selatan (-).';
         } else if (parsed.format === 'url') {
           descMsg = 'Koordinat berhasil diekstrak langsung dari tautan/URL Google Maps.';
         } else if (parsed.format === 'dms') {

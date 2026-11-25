@@ -1,16 +1,18 @@
 /**
  * Utilitas parser koordinat GPS yang tangguh untuk membaca berbagai format salinan teks:
  * - URL Google Maps (@lat,lng, query q=lat,lng, query=lat,lng, dsb.)
- * - Derajat Menit Detik (DMS): 6°54'53.1"S 107°36'35.3"E
+ * - Derajat Menit Detik (DMS): 6°54'53.1"S 107°36'35.3"E atau 6°54'53.1" 107°36'35.3"
  * - Degree Decimal Minutes (DDM): 6°54.885'S 107°36.588'E
- * - Format desimal standar: -6.914744, 107.609810
+ * - Format desimal standar titik: -6.914744, 107.609810
+ * - Format desimal koma: -6,914744, 107,609810 atau -6,914744 107,609810
  * - Format terbalik (lng, lat): 107.609810, -6.914744 -> Otomatis ditukar (auto-swap) agar latitude valid.
+ * - Auto-koreksi tanda minus Jawa/Indonesia Selatan: jika 6.914744, 107.609810 tertulis tanpa minus.
  */
 
 export interface ParsedCoordinate {
   lat: number;
   lng: number;
-  format: 'url' | 'dms' | 'decimal' | 'swapped-decimal';
+  format: 'url' | 'dms' | 'decimal' | 'swapped-decimal' | 'auto-south';
   originalInput: string;
 }
 
@@ -51,7 +53,7 @@ function parseDmsPart(dmsStr: string): number | null {
 }
 
 /**
- * Validasi dan auto-swap latitude & longitude jika tertukar
+ * Validasi dan auto-swap latitude & longitude jika tertukar atau tanda minus tertinggal
  */
 function normalizeAndValidateCoords(
   rawLat: number,
@@ -64,18 +66,26 @@ function normalizeAndValidateCoords(
   let lng = rawLng;
   let finalFormat: ParsedCoordinate['format'] = format;
 
-  // Deteksi jika koordinat tertukar (lng, lat)
-  // Kasus 1: Nilai lat berada di luar batas [-90, 90], tetapi lng berada di dalam batas
-  // Kasus 2: Area Indonesia: Lintang (-11 s/d 6), Bujur (95 s/d 141)
+  // 1. Deteksi jika koordinat tertukar (lng, lat)
+  // Kasus: Bujur Indonesia 95-141 tertukar di posisi pertama, Lintang -11 s/d 6 di posisi kedua
   const isLatOutOfRange = Math.abs(lat) > 90 && Math.abs(lng) <= 90;
   const isLikelyIndonesiaSwapped =
-    lat >= 95 && lat <= 141 && lng >= -11 && lng <= 6;
+    lat >= 95 && lat <= 141 && lng >= -11 && lng <= 11;
 
   if (isLatOutOfRange || isLikelyIndonesiaSwapped) {
     const temp = lat;
     lat = lng;
     lng = temp;
     finalFormat = 'swapped-decimal';
+  }
+
+  // 2. Deteksi wilayah Pulau Jawa / Indonesia Selatan yang lupa tanda minus:
+  // Lintang Pulau Jawa berada di 5.5° LS s/d 9.0° LS (antara -5.5 s/d -9.0).
+  // Jika pengguna menyalin "6.914744, 107.609810" (positif 6.9 di bujur 105-115),
+  // titik tersebut jatuh di Laut Cina Selatan/Natuna. Kita auto-koreksi ke minus (-).
+  if (lat > 5.0 && lat < 9.5 && lng >= 105.0 && lng <= 116.0) {
+    lat = -lat;
+    finalFormat = 'auto-south';
   }
 
   // Cek validitas bola bumi akhir
@@ -93,7 +103,7 @@ function normalizeAndValidateCoords(
 
 export function parseClipboardCoordinates(text: string): ParsedCoordinate | null {
   if (!text || typeof text !== 'string') return null;
-  const cleaned = text.trim();
+  let cleaned = text.trim();
   if (!cleaned) return null;
 
   // 1. URL Google Maps: @-6.914744,107.60981
@@ -126,7 +136,6 @@ export function parseClipboardCoordinates(text: string): ParsedCoordinate | null
 
   // 3. Format DMS (contoh: 6°54'53.1"S 107°36'35.3"E)
   if (cleaned.includes('°') || /[NSEW]/i.test(cleaned)) {
-    // Pisahkan dua bagian DMS berdasarkan koma atau pemisah arah N/S dan E/W
     const dmsParts = cleaned.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
     if (dmsParts.length >= 2) {
       const latVal = parseDmsPart(dmsParts[0]!);
@@ -139,7 +148,6 @@ export function parseClipboardCoordinates(text: string): ParsedCoordinate | null
         }
       }
     } else {
-      // Coba regex split antara N/S dan E/W
       const singleLineDms = cleaned.match(/(.+?[NSns])\s*(.+?[EWew])/);
       if (singleLineDms) {
         const latVal = parseDmsPart(singleLineDms[1]!);
@@ -155,7 +163,20 @@ export function parseClipboardCoordinates(text: string): ParsedCoordinate | null
     }
   }
 
-  // 4. Standar Desimal: "lat, lng" atau "lat lng" atau "lat/lng"
+  // 4. Standar Desimal Koma Indonesia (misal: -6,914744, 107,609810 atau -6,914744 107,609810)
+  // Deteksi pola angka dengan koma desimal
+  const commaMatch = cleaned.match(/(-?\d+),(\d{4,})[,\s/;\t]+(-?\d+),(\d{4,})/);
+  if (commaMatch) {
+    const latNum = parseFloat(`${commaMatch[1]}.${commaMatch[2]}`);
+    const lngNum = parseFloat(`${commaMatch[3]}.${commaMatch[4]}`);
+    const res = normalizeAndValidateCoords(latNum, lngNum, 'decimal');
+    if (res) {
+      res.originalInput = cleaned;
+      return res;
+    }
+  }
+
+  // 5. Standar Desimal Titik: "lat, lng" atau "lat lng" atau "lat/lng"
   const decMatch = cleaned.match(/(-?\d+\.\d+)[,\s/;\t]+(-?\d+\.\d+)/);
   if (decMatch) {
     const res = normalizeAndValidateCoords(
