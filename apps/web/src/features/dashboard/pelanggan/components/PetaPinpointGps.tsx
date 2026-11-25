@@ -12,8 +12,12 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Magnet,
+  CheckCircle2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 if (
@@ -32,10 +36,38 @@ export interface PetaPinpointGpsProps {
   lat: number | null;
   lng: number | null;
   accuracy?: number | null;
-  onChange: (lat: number, lng: number) => void;
+  onChange: (
+    lat: number,
+    lng: number,
+    meta?: { isSnapped?: boolean; snapDistance?: number }
+  ) => void;
   onRecenterGps?: () => void;
   /** Kelas tinggi kustom untuk kanvas peta (mis. h-full di mode mobile app atau h-[420px] di dialog desktop) */
   mapHeightClassName?: string;
+}
+
+/** Proyeksi titik ke ruas garis A-B */
+function projectPointToSegment(
+  px: number,
+  py: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): { x: number; y: number } {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  if (dx === 0 && dy === 0) return { x: x1, y: y1 };
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
+  return { x: x1 + t * dx, y: y1 + t * dy };
+}
+
+/** Jarak Euclidean dalam satuan meter */
+function calculateDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const cosLat = Math.cos((lat1 * Math.PI) / 180);
+  const dLat = (lat2 - lat1) * 111139;
+  const dLng = (lng2 - lng1) * 111139 * cosLat;
+  return Math.hypot(dLat, dLng);
 }
 
 export function PetaPinpointGps({
@@ -56,6 +88,11 @@ export function PetaPinpointGps({
   }, [onChange]);
 
   const [basemap, setBasemap] = React.useState<'satellite' | 'street'>('satellite');
+  const [showParcels, setShowParcels] = React.useState(true);
+  const [isSnapped, setIsSnapped] = React.useState(false);
+  const [snapDist, setSnapDist] = React.useState<number | null>(null);
+  const [loadingParcels, setLoadingParcels] = React.useState(false);
+  const parcelsRef = React.useRef<any>(null);
 
   const validCoord =
     lat !== null &&
@@ -70,6 +107,30 @@ export function PetaPinpointGps({
   const initialCenter: [number, number] = validCoord
     ? [lng!, lat!]
     : DEFAULT_BANDUNG;
+
+  // Fungsi memuat poligon persil kadaster di sekitar koordinat
+  const loadParcels = React.useCallback(async (cLat: number, cLng: number) => {
+    try {
+      setLoadingParcels(true);
+      const res = await fetch(`/api/places/cadastral-parcels?lat=${cLat}&lng=${cLng}&radius=160`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.success && data.features) {
+        parcelsRef.current = data;
+        const map = mapRef.current;
+        if (map && map.isStyleLoaded()) {
+          const src = map.getSource('parcels') as maplibregl.GeoJSONSource;
+          if (src) {
+            src.setData(data);
+          }
+        }
+      }
+    } catch {
+      // Abaikan bila network timeout
+    } finally {
+      setLoadingParcels(false);
+    }
+  }, []);
 
   // Inisialisasi MapLibre
   React.useEffect(() => {
@@ -99,6 +160,13 @@ export function PetaPinpointGps({
             tileSize: 256,
             maxzoom: 19,
           },
+          parcels: {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: [],
+            },
+          },
         },
         layers: [
           {
@@ -113,11 +181,46 @@ export function PetaPinpointGps({
             source: 'osm',
             layout: { visibility: 'none' },
           },
+          {
+            id: 'parcels-fill',
+            type: 'fill',
+            source: 'parcels',
+            paint: {
+              'fill-color': '#06b6d4',
+              'fill-opacity': 0.16,
+            },
+            layout: { visibility: 'visible' },
+          },
+          {
+            id: 'parcels-line',
+            type: 'line',
+            source: 'parcels',
+            paint: {
+              'line-color': '#0891b2',
+              'line-width': 1.6,
+              'line-opacity': 0.85,
+            },
+            layout: { visibility: 'visible' },
+          },
+          {
+            id: 'parcels-frontage',
+            type: 'line',
+            source: 'parcels',
+            paint: {
+              'line-color': '#2563eb',
+              'line-width': 2.8,
+            },
+            layout: { visibility: 'visible' },
+          },
         ],
       },
     });
 
     mapRef.current = map;
+
+    map.on('load', () => {
+      loadParcels(initialCenter[1], initialCenter[0]);
+    });
 
     const observer = new ResizeObserver(() => {
       map.resize();
@@ -130,10 +233,12 @@ export function PetaPinpointGps({
         isInternalMoveRef.current = false;
         return;
       }
+      setIsSnapped(false);
       const center = map.getCenter();
       onChangeRef.current(
         Number(center.lat.toFixed(7)),
-        Number(center.lng.toFixed(7))
+        Number(center.lng.toFixed(7)),
+        { isSnapped: false }
       );
     });
 
@@ -173,7 +278,7 @@ export function PetaPinpointGps({
     }
   }, [lat, lng, validCoord]);
 
-  // Ganti basemap Satelit vs Jalan (OSM)
+  // Ganti basemap Satelit vs Jalan (OSM) dan Layer Persil
   React.useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -192,15 +297,80 @@ export function PetaPinpointGps({
         basemap === 'street' ? 'visible' : 'none'
       );
     }
-  }, [basemap]);
+    const pVis = showParcels ? 'visible' : 'none';
+    if (map.getLayer('parcels-fill')) {
+      map.setLayoutProperty('parcels-fill', 'visibility', pVis);
+    }
+    if (map.getLayer('parcels-line')) {
+      map.setLayoutProperty('parcels-line', 'visibility', pVis);
+    }
+    if (map.getLayer('parcels-frontage')) {
+      map.setLayoutProperty('parcels-frontage', 'visibility', pVis);
+    }
+  }, [basemap, showParcels]);
 
   // Geser mikro (Micro-Nudge ±2 meter)
   const handleNudge = (dLat: number, dLng: number) => {
+    setIsSnapped(false);
     const baseLat = validCoord ? lat! : DEFAULT_BANDUNG[1];
     const baseLng = validCoord ? lng! : DEFAULT_BANDUNG[0];
     const nextLat = Number((baseLat + dLat).toFixed(7));
     const nextLng = Number((baseLng + dLng).toFixed(7));
-    onChange(nextLat, nextLng);
+    onChange(nextLat, nextLng, { isSnapped: false });
+  };
+
+  // Algoritma Snapping ke garis muka dinding/pagar persil terdekat
+  const handleSnapToParcel = () => {
+    const curLat = validCoord ? lat! : DEFAULT_BANDUNG[1];
+    const curLng = validCoord ? lng! : DEFAULT_BANDUNG[0];
+    const features = parcelsRef.current?.features || [];
+
+    if (features.length === 0) {
+      toast.info('Memuat data persil, silakan klik kembali dalam 1 detik...');
+      loadParcels(curLat, curLng);
+      return;
+    }
+
+    let closestDist = Infinity;
+    let closestPoint: { lat: number; lng: number } | null = null;
+
+    for (const feat of features) {
+      const frontage = feat.properties?.frontageLine;
+      const ring = feat.geometry?.coordinates?.[0];
+      const segments: Array<[number[], number[]]> = [];
+
+      if (frontage && frontage.length >= 2) {
+        segments.push([frontage[0], frontage[1]]);
+      } else if (ring && ring.length >= 2) {
+        for (let i = 0; i < ring.length - 1; i++) {
+          segments.push([ring[i], ring[i + 1]]);
+        }
+      }
+
+      for (const [pA, pB] of segments) {
+        const proj = projectPointToSegment(curLng, curLat, pA[0], pA[1], pB[0], pB[1]);
+        const dist = calculateDistanceMeters(curLat, curLng, proj.y, proj.x);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestPoint = { lat: Number(proj.y.toFixed(7)), lng: Number(proj.x.toFixed(7)) };
+        }
+      }
+    }
+
+    if (closestPoint && closestDist <= 20) {
+      setIsSnapped(true);
+      setSnapDist(closestDist);
+      isInternalMoveRef.current = true;
+      mapRef.current?.easeTo({
+        center: [closestPoint.lng, closestPoint.lat],
+        zoom: Math.max(mapRef.current.getZoom(), 18.5),
+        duration: 300,
+      });
+      onChange(closestPoint.lat, closestPoint.lng, { isSnapped: true, snapDistance: closestDist });
+      toast.success(`🧲 Terkunci ke batas muka dinding persil (Koreksi: ${closestDist.toFixed(1)}m)`);
+    } else {
+      toast.error('Tidak ada batas persil dalam radius 20 meter. Geser peta lebih dekat ke bangunan.');
+    }
   };
 
   return (
@@ -220,7 +390,9 @@ export function PetaPinpointGps({
           <div
             className={cn(
               'rounded-full border transition-all duration-300 flex items-center justify-center',
-              accuracy && accuracy <= 8
+              isSnapped
+                ? 'size-12 border-emerald-500/80 bg-emerald-500/20'
+                : accuracy && accuracy <= 8
                 ? 'size-12 border-(--ds-green-600)/70 bg-(--ds-green-500)/15'
                 : accuracy && accuracy <= 20
                 ? 'size-16 border-(--ds-amber-600)/70 bg-(--ds-amber-500)/15'
@@ -229,17 +401,35 @@ export function PetaPinpointGps({
           />
           {/* Pin & Titik Sasaran */}
           <div className="absolute flex flex-col items-center -translate-y-3">
-            <div className="px-1.5 py-0.5 rounded bg-foreground text-background font-mono text-[10px] font-semibold shadow-sm whitespace-nowrap mb-0.5">
-              Titik Meter
+            <div
+              className={cn(
+                'px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold shadow-sm whitespace-nowrap mb-0.5 flex items-center gap-1',
+                isSnapped
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-foreground text-background'
+              )}
+            >
+              {isSnapped && <Magnet className="size-2.5 text-white" />}
+              <span>{isSnapped ? `Terkunci Muka Persil (±${snapDist?.toFixed(1)}m)` : 'Titik Meter'}</span>
             </div>
-            <div className="size-3.5 rounded-full bg-(--ds-blue-700) border-2 border-white shadow-md" />
+            <div
+              className={cn(
+                'size-3.5 rounded-full border-2 border-white shadow-md',
+                isSnapped ? 'bg-emerald-600' : 'bg-(--ds-blue-700)'
+              )}
+            />
             <div className="w-0.5 h-2 bg-white shadow-xs" />
           </div>
           {/* Titik pusat persis di koordinat */}
-          <div className="absolute size-1.5 rounded-full bg-white ring-2 ring-(--ds-blue-700)" />
+          <div
+            className={cn(
+              'absolute size-1.5 rounded-full bg-white ring-2',
+              isSnapped ? 'ring-emerald-600' : 'ring-(--ds-blue-700)'
+            )}
+          />
         </div>
 
-        {/* Toggle Basemap (Satelit / Peta Jalan) di Kiri Atas */}
+        {/* Toggle Basemap (Satelit / Peta Jalan / Persil) di Kiri Atas */}
         <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 rounded-md border border-border bg-card/95 p-0.5 shadow-sm backdrop-blur-xs">
           <button
             type="button"
@@ -265,6 +455,20 @@ export function PetaPinpointGps({
             )}
           >
             <span>Peta Jalan</span>
+          </button>
+          <div className="h-4 w-px bg-border" />
+          <button
+            type="button"
+            onClick={() => setShowParcels(!showParcels)}
+            className={cn(
+              'px-2 py-1 rounded text-label-11 font-medium transition-colors cursor-pointer flex items-center gap-1',
+              showParcels
+                ? 'bg-(--ds-blue-600) text-white'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            title="Tampilkan / Sembunyikan Layer Garis Poligon Persil & Bangunan"
+          >
+            <span>Persil</span>
           </button>
         </div>
 
@@ -310,11 +514,29 @@ export function PetaPinpointGps({
         </div>
       </div>
 
-      {/* Panel Geser Mikro (Micro-Nudge ±2 Meter) untuk Koreksi Drift GPS */}
+      {/* Panel Geser Mikro & Magnetic Snapping Persil */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-(--ds-gray-100) px-3 py-2 shrink-0">
-        <div className="text-copy-12 text-muted-foreground">
-          <strong className="text-foreground font-medium">Geser Halus (±2m):</strong>{' '}
-          <span className="hidden sm:inline">Koreksi jika titik GPS loncat</span>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant={isSnapped ? 'secondary' : 'default'}
+            size="xs"
+            onClick={handleSnapToParcel}
+            className={cn(
+              'h-7 px-2.5 font-medium gap-1.5 shadow-xs transition-colors',
+              isSnapped
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                : 'bg-(--ds-blue-700) hover:bg-(--ds-blue-800) text-white'
+            )}
+            title="Kunci otomatis ke batas muka dinding/pagar persil bangunan terdekat"
+          >
+            <Magnet className="size-3.5" />
+            <span>{isSnapped ? `Terkunci (±${snapDist?.toFixed(1)}m)` : 'Snap Muka Persil'}</span>
+          </Button>
+
+          <div className="text-copy-12 text-muted-foreground hidden sm:block">
+            <span className="text-foreground font-medium">Geser Mikro (±2m):</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-1 w-full sm:w-auto">

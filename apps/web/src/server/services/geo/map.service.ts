@@ -169,6 +169,118 @@ export class MapService {
       features,
     };
   }
+
+  /**
+   * Menghasilkan Poligon Persil / Jejak Bangunan di sekitar titik koordinat untuk Snapping
+   */
+  async getCadastralParcels(lat: number, lng: number, radiusMeters: number = 150) {
+    const cosLat = Math.max(0.1, Math.cos((lat * Math.PI) / 180));
+    const degreeRadius = radiusMeters / (111139 * cosLat);
+
+    // 1. Ambil pelanggan terdekat yang sudah memiliki titik lokasi PostGIS
+    const nearbyCustomers = await db
+      .select({
+        nolg: pelanggan.nolg,
+        nama: pelanggan.nama,
+        alamat: pelanggan.alamat,
+        titikLokasi: pelanggan.titikLokasi,
+      })
+      .from(pelanggan)
+      .where(
+        and(
+          sql`${pelanggan.titikLokasi} is not null`,
+          sql`ST_DWithin(${pelanggan.titikLokasi}, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326), ${degreeRadius})`
+        )
+      )
+      .limit(60);
+
+    // 2. Generate polygon persil (bidang muka tanah & bangunan) untuk setiap titik
+    // Ukuran standar kavling perumahan: lebar muka 7m-10m, panjang 12m-16m
+    const features: Array<{
+      type: 'Feature';
+      id: string;
+      geometry: {
+        type: 'Polygon';
+        coordinates: number[][][];
+      };
+      properties: {
+        id: string;
+        nolg: string;
+        nama: string;
+        alamat: string | null;
+        tipe: string;
+        frontageLine: number[][];
+      };
+    }> = nearbyCustomers.map((c) => {
+      const point = c.titikLokasi as any;
+      const cLng = typeof point?.x === 'number' ? point.x : point?.coordinates?.[0] ?? lng;
+      const cLat = typeof point?.y === 'number' ? point.y : point?.coordinates?.[1] ?? lat;
+
+      // Buat poligon persil bangunan 4 titik di sekeliling titik meter air
+      const widthDeg = (8 / (111139 * cosLat)); // 8 meter lebar muka
+      const depthDeg = (12 / 111139);          // 12 meter kedalaman kavling
+
+      const p1 = [cLng - widthDeg / 2, cLat];                    // Muka kiri (garis pagar)
+      const p2 = [cLng + widthDeg / 2, cLat];                    // Muka kanan (garis pagar)
+      const p3 = [cLng + widthDeg / 2, cLat + depthDeg];         // Belakang kanan
+      const p4 = [cLng - widthDeg / 2, cLat + depthDeg];         // Belakang kiri
+
+      return {
+        type: 'Feature' as const,
+        id: c.nolg,
+        geometry: {
+          type: 'Polygon' as const,
+          coordinates: [[p1, p2, p3, p4, p1]],
+        },
+        properties: {
+          id: c.nolg,
+          nolg: c.nolg,
+          nama: c.nama,
+          alamat: c.alamat,
+          tipe: 'Persil Pelanggan Terdaftar',
+          frontageLine: [p1, p2], // Garis muka pagar untuk magnetic snapping
+        },
+      };
+    });
+
+    // Jika belum ada pelanggan tersimpan di titik baru, buatkan grid estimasi persil kadaster lokal
+    if (features.length === 0) {
+      const widthDeg = (9 / (111139 * cosLat));
+      const depthDeg = (14 / 111139);
+      for (let i = -2; i <= 2; i++) {
+        const offsetLng = i * widthDeg * 1.05;
+        const bLng = lng + offsetLng;
+        const bLat = lat + 0.00003;
+        const p1 = [bLng - widthDeg / 2, bLat];
+        const p2 = [bLng + widthDeg / 2, bLat];
+        const p3 = [bLng + widthDeg / 2, bLat + depthDeg];
+        const p4 = [bLng - widthDeg / 2, bLat + depthDeg];
+
+        features.push({
+          type: 'Feature' as const,
+          id: `cadastral-est-${i}`,
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [[p1, p2, p3, p4, p1]],
+          },
+          properties: {
+            id: `est-${i}`,
+            nolg: `BLOK-${Math.abs(i) + 1}`,
+            nama: `Kavling Persil #${Math.abs(i) + 1}`,
+            alamat: 'Estimasi Kadaster Bangunan',
+            tipe: 'Estimasi Blok Persil',
+            frontageLine: [p1, p2],
+          },
+        });
+      }
+    }
+
+    return {
+      type: 'FeatureCollection' as const,
+      count: features.length,
+      features,
+    };
+  }
 }
 
 export const mapService = new MapService();

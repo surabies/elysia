@@ -45,6 +45,24 @@ export const geoModule = new Elysia({ prefix: '/places' })
       }),
     }
   )
+  // Poligon Persil & Jejak Bangunan untuk Magnetic Snapping
+  .get(
+    '/cadastral-parcels',
+    async ({ query }) => {
+      const lat = Number(query.lat);
+      const lng = Number(query.lng);
+      const radius = query.radius ? Number(query.radius) : 150;
+      const data = await mapService.getCadastralParcels(lat, lng, radius);
+      return { success: true, ...data };
+    },
+    {
+      query: t.Object({
+        lat: t.Numeric(),
+        lng: t.Numeric(),
+        radius: t.Optional(t.Numeric()),
+      }),
+    }
+  )
   // 1. Proximity search (must be declared before :id to prevent shadowing)
   .get(
     '/nearby',

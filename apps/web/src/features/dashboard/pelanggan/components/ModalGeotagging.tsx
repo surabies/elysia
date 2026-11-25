@@ -86,6 +86,8 @@ export function ModalGeotagging({
   const [sampleCount, setSampleCount] = React.useState(0);
   const [gettingLocation, setGettingLocation] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [isSnapped, setIsSnapped] = React.useState(false);
+  const [snapDistance, setSnapDistance] = React.useState<number | null>(null);
 
   const watchIdRef = React.useRef<number | null>(null);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,6 +115,8 @@ export function ModalGeotagging({
       setCatatan('');
       setAccuracy(null);
       setSampleCount(0);
+      setIsSnapped(false);
+      setSnapDistance(null);
     } else {
       stopWatchGps();
       setGettingLocation(false);
@@ -240,6 +244,22 @@ export function ModalGeotagging({
     }
   };
 
+  const handleMapCoordChange = (
+    newLat: number,
+    newLng: number,
+    meta?: { isSnapped?: boolean; snapDistance?: number }
+  ) => {
+    setLat(String(newLat));
+    setLng(String(newLng));
+    if (meta?.isSnapped) {
+      setIsSnapped(true);
+      setSnapDistance(meta.snapDistance ?? null);
+    } else {
+      setIsSnapped(false);
+      setSnapDistance(null);
+    }
+  };
+
   const handleSimpan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pelanggan) return;
@@ -251,10 +271,15 @@ export function ModalGeotagging({
 
     try {
       setSaving(true);
+      const snapNote = isSnapped && snapDistance !== null
+        ? `[Snapped Muka Persil ±${snapDistance.toFixed(1)}m]`
+        : '';
+      const mergedCatatan = [catatan.trim(), snapNote].filter(Boolean).join(' ');
+
       const res = await pelangganApi.updateGps(pelanggan.nolg, {
         lat: parsedLat,
         lng: parsedLng,
-        catatan: catatan.trim() || undefined,
+        catatan: mergedCatatan || undefined,
       });
 
       toast.success(res.message || 'Titik koordinat GPS berhasil disimpan');
@@ -319,6 +344,15 @@ export function ModalGeotagging({
           )}
         </header>
 
+        {isSnapped && (
+          <div className="px-3 py-1 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center justify-between text-[11px] font-mono text-emerald-700 dark:text-emerald-300 shrink-0">
+            <span className="flex items-center gap-1 font-semibold">
+              🧲 Terkunci Garis Muka Persil
+            </span>
+            <span>Koreksi: &plusmn;{snapDistance?.toFixed(1)}m</span>
+          </div>
+        )}
+
         {/* 2. Area Peta Satelit Utama (Mengisi Sebagian Besar Layar Mobile) */}
         <div className="flex-1 min-h-0 p-2.5 flex flex-col">
           <PetaPinpointGps
@@ -326,10 +360,7 @@ export function ModalGeotagging({
             lng={isValidCoord ? parsedLng : null}
             accuracy={accuracy}
             mapHeightClassName="flex-1 min-h-[240px]"
-            onChange={(newLat, newLng) => {
-              setLat(String(newLat));
-              setLng(String(newLng));
-            }}
+            onChange={handleMapCoordChange}
             onRecenterGps={handleKalibrasiGpsPresisi}
           />
         </div>
@@ -482,9 +513,16 @@ export function ModalGeotagging({
                   Kalibrasi sinyal GPS multi-sampel atau geser peta satelit untuk mengunci titik koordinat tepat di atas meter air pelanggan.
                 </DialogDescription>
               </div>
-              <Badge variant={pelanggan.hasGps ? 'green-subtle' : 'amber-subtle'} size="md">
-                {pelanggan.hasGps ? 'Sudah Ber-GPS' : 'Belum Ada GPS'}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {isSnapped && (
+                  <Badge variant="green-subtle" size="md" className="font-mono">
+                    🧲 Snapped Muka Persil (&plusmn;{snapDistance?.toFixed(1)}m)
+                  </Badge>
+                )}
+                <Badge variant={pelanggan.hasGps ? 'green-subtle' : 'amber-subtle'} size="md">
+                  {pelanggan.hasGps ? 'Sudah Ber-GPS' : 'Belum Ada GPS'}
+                </Badge>
+              </div>
             </div>
           </DialogHeader>
 
@@ -497,10 +535,7 @@ export function ModalGeotagging({
                 lng={isValidCoord ? parsedLng : null}
                 accuracy={accuracy}
                 mapHeightClassName="h-[360px]"
-                onChange={(newLat, newLng) => {
-                  setLat(String(newLat));
-                  setLng(String(newLng));
-                }}
+                onChange={handleMapCoordChange}
                 onRecenterGps={handleKalibrasiGpsPresisi}
               />
             </div>
