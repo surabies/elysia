@@ -165,7 +165,7 @@ export function PenampilFoto({
         }
       }}
       className={cn(
-        "relative flex touch-none items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/20 dark:bg-neutral-950 outline-none focus-visible:ring-2 focus-visible:ring-ring select-none",
+        "relative flex h-full w-full min-h-0 min-w-0 touch-none items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/20 dark:bg-neutral-950 outline-none focus-visible:ring-2 focus-visible:ring-ring select-none",
         skala > 1
           ? menyeret
             ? "cursor-grabbing"
@@ -281,7 +281,7 @@ export function FotoZoom({
     <PenampilFoto
       url={url}
       label={label}
-      className={cn("h-full min-h-64 w-full bg-muted/20 dark:bg-neutral-950", className)}
+      className={cn("h-full min-h-0 w-full flex-1 bg-muted/20 dark:bg-neutral-950", className)}
     />
   );
 }

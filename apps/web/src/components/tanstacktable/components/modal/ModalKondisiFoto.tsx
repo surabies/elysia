@@ -4,10 +4,9 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
+import { formatPeriode } from "@/features/public"
 import { ambilSatu, ApiError } from "@/features/dashboard/shared/api/api-dashboard"
-import { PilihSatu } from "../DialogVerifikasi"
-import { BarisTumpuk, KerangkaModal, KotakBaca } from "../KerangkaModal"
-import { TabFoto } from "../foto/TabFoto"
+import { DialogVerifikasi, PilihSatu } from "../DialogVerifikasi"
 import type { LaporanHarianDetail } from "../../types"
 import type { DataKoreksi } from "./ModalKoreksi"
 import { resolveFotoUrl } from "@/lib/foto-resolver"
@@ -83,57 +82,24 @@ export function ModalKondisiFoto({
     }
   }
 
+  const judul = detail
+    ? `Kondisi Foto & Lapangan — ${detail.pelanggan?.nama ?? detail.namaPelanggan ?? data.pelanggan}`
+    : `Kondisi Foto dan Lapangan — ${data.pelanggan}`
+
+  const subjudul = detail
+    ? `${formatPeriode(detail.periode)} · ${detail.pencatat?.namaLapangan ?? "Pencatat tidak diketahui"}`
+    : `Periode ${data.periode}`
+
   return (
-    <KerangkaModal
+    <DialogVerifikasi
       buka
       onBuka={(buka) => !buka && !menyimpan && onTutup()}
-      judul="Kondisi Foto dan Lapangan"
-      subjudul={`${data.pelanggan} · periode ${data.periode}`}
-      lebar="sm"
-      footer={
-        <>
-          <Button
-            variant="outline"
-            size="default"
-            onClick={onTutup}
-            disabled={menyimpan}
-          >
-            Batal
-          </Button>
-          <Button
-            size="default"
-            onClick={() => void simpan()}
-            disabled={menyimpan || !detail}
-          >
-            {menyimpan && <Spinner className="size-3.5" />}
-            Simpan Penilaian
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4">
-        {galat && (
-          <p
-            role="alert"
-            className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-copy-13 text-destructive"
-          >
-            {galat}
-          </p>
-        )}
-        <BarisTumpuk label="Pelanggan">
-          <KotakBaca nilai={data.pelanggan} />
-        </BarisTumpuk>
-        <BarisTumpuk label="Periode">
-          <KotakBaca nilai={data.periode} />
-        </BarisTumpuk>
-        {galatMuat ? (
-          <p role="alert" className="text-copy-13 text-destructive">
-            {galatMuat}
-          </p>
-        ) : detail ? (
-          <TabFoto
-            varian="zoom"
-            item={[
+      judul={judul}
+      subjudul={subjudul}
+      fotoLabel="Foto meter"
+      fotos={
+        detail
+          ? [
               {
                 kunci: "stand",
                 label: "Stand meter",
@@ -173,40 +139,105 @@ export function ModalKondisiFoto({
                 }),
                 keteranganKosong: "Petugas tidak mengirim foto rumah/persil.",
               },
-            ]}
-          />
-        ) : (
-          <p role="status" className="text-copy-13 text-muted-foreground">
+            ]
+          : undefined
+      }
+      footer={
+        <div className="flex flex-col gap-2">
+          <Button
+            size="default"
+            className="w-full"
+            disabled={menyimpan || !detail}
+            onClick={() => void simpan()}
+          >
+            {menyimpan && <Spinner className="size-3.5 mr-2" />}
+            Simpan Penilaian
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            className="w-full border-border hover:bg-muted text-foreground"
+            disabled={menyimpan}
+            onClick={onTutup}
+          >
+            Tutup
+          </Button>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        {galat && (
+          <p
+            role="alert"
+            className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-copy-13 text-destructive"
+          >
+            {galat}
+          </p>
+        )}
+        {galatMuat && (
+          <p role="alert" className="text-copy-13 text-destructive">
+            {galatMuat}
+          </p>
+        )}
+        {!detail && !galatMuat && (
+          <p className="text-copy-13 text-muted-foreground" role="status">
             <Spinner className="mr-2 inline size-4" />
             Memuat foto dan detail laporan…
           </p>
         )}
-        <p className="text-copy-13 text-muted-foreground">
-          Penilaian disimpan ke riwayat audit dan tidak mengubah stand atau
-          status verifikasi.
-        </p>
-        <BarisTumpuk label="Kondisi foto sesuai?">
-          <PilihSatu
-            ariaLabel="Kondisi foto sesuai"
-            value={sesuai}
-            onChange={(v) => setSesuai(v as "ya" | "tidak")}
-            opsi={[
-              { value: "ya", label: "Ya" },
-              { value: "tidak", label: "Tidak" },
-            ]}
-          />
-        </BarisTumpuk>
-        <BarisTumpuk label="Keterangan" htmlFor="kondisi-foto-ket">
-          <Textarea
-            id="kondisi-foto-ket"
-            rows={3}
-            value={keterangan}
-            onChange={(e) => setKeterangan(e.target.value)}
-            placeholder="Mis. foto buram, segel rusak, meter tertutup"
-            maxLength={500}
-          />
-        </BarisTumpuk>
+        {detail && (
+          <>
+            <div className="p-3 rounded-lg bg-muted/40 border border-border text-label-12 space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">No. Sambungan:</span>
+                <span className="font-mono font-medium">{detail.nomorLangganan}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Stand Meter:</span>
+                <span className="font-mono font-bold text-foreground">
+                  {detail.standAkhir?.toLocaleString("id-ID") ?? "—"} m³
+                </span>
+              </div>
+            </div>
+
+            <p className="text-label-12 text-muted-foreground">
+              Penilaian disimpan ke riwayat audit dan tidak mengubah stand atau status verifikasi.
+            </p>
+
+            <div className="space-y-1.5">
+              <label className="text-label-13 font-medium text-foreground">
+                Kondisi foto sesuai?
+              </label>
+              <PilihSatu
+                ariaLabel="Kondisi foto sesuai"
+                value={sesuai}
+                onChange={(v) => setSesuai(v as "ya" | "tidak")}
+                opsi={[
+                  { value: "ya", label: "Ya (Sesuai)" },
+                  { value: "tidak", label: "Tidak (Tidak Sesuai / Buram / Anomali)" },
+                ]}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="kondisi-foto-ket" className="text-label-13 font-medium text-foreground">
+                Keterangan
+              </label>
+              <Textarea
+                id="kondisi-foto-ket"
+                rows={3}
+                value={keterangan}
+                onChange={(e) => setKeterangan(e.target.value)}
+                placeholder="Mis. foto buram, segel rusak, meter tertutup..."
+                maxLength={500}
+              />
+              <p className="text-right text-label-12 text-muted-foreground">
+                {keterangan.length}/500
+              </p>
+            </div>
+          </>
+        )}
       </div>
-    </KerangkaModal>
+    </DialogVerifikasi>
   )
 }

@@ -80,9 +80,9 @@ export function ModalMandiri({
             {mengirim && <Spinner className="size-3.5" />} Tolak laporan
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="default"
-            className="w-full"
+            className="w-full border-border hover:bg-muted text-foreground"
             disabled={mengirim}
             onClick={() => setModeTolak(false)}
           >

@@ -176,9 +176,9 @@ export function ModalCekUlang({
             Kirim untuk baca ulang
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="default"
-            className="w-full"
+            className="w-full border-border hover:bg-muted text-foreground"
             disabled={mengirim}
             onClick={onTutup}
           >

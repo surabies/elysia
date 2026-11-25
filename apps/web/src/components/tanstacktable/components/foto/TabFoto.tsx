@@ -9,6 +9,7 @@
 // menjelaskan diri — jadi verifikator tahu foto itu memang tidak dikirim,
 // bukan gagal termuat.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
 import { FotoBukti, FotoKosong, FotoZoom } from "./FotoBukti"
 
 export interface ItemTabFoto {
@@ -32,9 +33,15 @@ export function TabFoto({
   const awal = (item.find((t) => t.url) ?? item[0])?.kunci
 
   return (
-    <Tabs defaultValue={awal} className="w-full min-w-0 gap-1.5">
+    <Tabs
+      defaultValue={awal}
+      className={cn(
+        "w-full min-w-0 gap-1.5",
+        varian === "zoom" && "h-full flex-1 min-h-0 flex flex-col overflow-hidden"
+      )}
+    >
       <TabsList
-        className="grid w-full h-8 p-[3px] items-stretch"
+        className="grid w-full h-8 p-[3px] items-stretch shrink-0"
         style={{
           gridTemplateColumns: `repeat(${item.length}, minmax(0, 1fr))`,
         }}
@@ -52,7 +59,14 @@ export function TabFoto({
         ))}
       </TabsList>
       {item.map((t) => (
-        <TabsContent key={t.kunci} value={t.kunci} className="w-full min-w-0 mt-0">
+        <TabsContent
+          key={t.kunci}
+          value={t.kunci}
+          className={cn(
+            "w-full min-w-0 mt-0",
+            varian === "zoom" && "h-full flex-1 min-h-0 flex flex-col overflow-hidden"
+          )}
+        >
           {varian === "panel" ? (
             <FotoBukti
               url={t.url}
@@ -62,7 +76,11 @@ export function TabFoto({
           ) : t.url ? (
             <FotoZoom url={t.url} label={t.label} />
           ) : (
-            <FotoKosong label={t.label} keterangan={t.keteranganKosong} />
+            <FotoKosong
+              label={t.label}
+              keterangan={t.keteranganKosong}
+              penuh={varian === "zoom"}
+            />
           )}
         </TabsContent>
       ))}

@@ -122,7 +122,7 @@ export function DialogVerifikasi({
         {/* Layar sempit: seluruh badan menggulir. Layar lebar: dua kolom,
             masing-masing mengatur scroll-nya sendiri. */}
         <div className="grid min-h-0 flex-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_20rem] md:grid-rows-[minmax(0,1fr)] md:overflow-hidden">
-          <div className="h-80 min-w-0 p-4 md:h-auto md:min-h-0">
+          <div className="h-80 min-w-0 p-3 sm:p-4 md:h-full md:min-h-0 flex flex-col shrink-0 md:shrink overflow-hidden">
             {fotos ? (
               <TabFoto varian="zoom" item={fotos} />
             ) : fotoUrl ? (
