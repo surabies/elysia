@@ -32,6 +32,7 @@ import { useMobileNavOptional } from '@/components/layout';
 import { pelangganApi } from '../api';
 import type { PelangganGpsItem } from '../types';
 import { PetaPinpointGps } from './PetaPinpointGps';
+import { parseClipboardCoordinates } from '../utils/coordParser';
 
 interface GpsSample {
   lat: number;
@@ -222,20 +223,31 @@ export function ModalGeotagging({
   const handlePasteKoordinat = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      const match = text.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
-      if (match) {
-        const pastedLat = match[1]!;
-        const pastedLng = match[2]!;
+      const parsed = parseClipboardCoordinates(text);
+      if (parsed) {
+        const pastedLat = String(parsed.lat);
+        const pastedLng = String(parsed.lng);
         setLat(pastedLat);
         setLng(pastedLng);
         setAccuracy(null);
         setIsSnapped(false);
+
+        let descMsg = 'Peta otomatis dipusatkan ke titik koordinat dari clipboard Anda.';
+        if (parsed.format === 'swapped-decimal') {
+          descMsg = 'Format terdeteksi bujur-lintang terbalik dan telah otomatis disesuaikan.';
+        } else if (parsed.format === 'url') {
+          descMsg = 'Koordinat berhasil diekstrak langsung dari tautan/URL Google Maps.';
+        } else if (parsed.format === 'dms') {
+          descMsg = 'Format Derajat Menit Detik (DMS) berhasil dikonversi ke desimal.';
+        }
+
         toast.success(`Koordinat ditempel: ${pastedLat}, ${pastedLng}`, {
-          description: 'Peta otomatis dipusatkan ke titik koordinat dari clipboard Anda.',
+          description: descMsg,
         });
       } else {
         toast.error('Format koordinat di clipboard tidak dikenali', {
-          description: 'Salin teks koordinat dari Google Maps atau WhatsApp (Format: -6.914744, 107.609810).',
+          description:
+            'Salin teks dari Google Maps (contoh: -6.914744, 107.609810 atau link URL Google Maps atau format DMS 6°54\'53.1"S 107°36\'35.3"E).',
         });
       }
     } catch {

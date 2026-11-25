@@ -149,10 +149,13 @@ export function PetaPinpointGps({
           satellite: {
             type: 'raster',
             tiles: [
-              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+              'https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+              'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+              'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+              'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
             ],
             tileSize: 256,
-            maxzoom: 19,
+            maxzoom: 20,
           },
           osm: {
             type: 'raster',
@@ -258,7 +261,7 @@ export function PetaPinpointGps({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sinkronisasi ketika koordinat berubah dari luar (misal: hasil GPS averaging / input teks / nudge)
+  // Sinkronisasi ketika koordinat berubah dari luar (misal: hasil GPS averaging / input teks / nudge / paste)
   React.useEffect(() => {
     const map = mapRef.current;
     if (!map || !validCoord) return;
@@ -275,8 +278,13 @@ export function PetaPinpointGps({
         zoom: Math.max(map.getZoom(), 18.5),
         duration: 350,
       });
+
+      // Jika perpindahan cukup jauh (> ~60 meter), refresh poligon persil kadaster di lokasi baru
+      if (diffLat > 0.0005 || diffLng > 0.0005) {
+        loadParcels(lat!, lng!);
+      }
     }
-  }, [lat, lng, validCoord]);
+  }, [lat, lng, validCoord, loadParcels]);
 
   // Ganti basemap Satelit vs Jalan (OSM) dan Layer Persil
   React.useEffect(() => {
