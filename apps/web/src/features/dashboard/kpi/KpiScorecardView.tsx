@@ -231,43 +231,6 @@ export function KpiScorecardView({
     })
   }
 
-  // Handler update detail atribut KPI (nama, bobot, baseline, target, arah) secara inline
-  const handleUpdateKpiDetail = (
-    kpiId: string,
-    data: {
-      nama?: string
-      bobot?: number
-      baseline?: number
-      target?: number
-      arah?: "higher" | "lower"
-    }
-  ) => {
-    const next = perspectives.map((p) => ({
-      ...p,
-      objectives: p.objectives.map((obj) => ({
-        ...obj,
-        kpis: obj.kpis.map((kpi) => {
-          if (kpi.id === kpiId) {
-            return {
-              ...kpi,
-              name: data.nama ?? kpi.name,
-              weight: data.bobot ?? kpi.weight,
-              baseline: data.baseline ?? kpi.baseline,
-              target: data.target ?? kpi.target,
-              direction: data.arah ?? kpi.direction,
-            }
-          }
-          return kpi
-        }),
-      })),
-    }))
-    pushHistory(next)
-
-    kpiApi.updateKpiDetail(kpiId, data).catch((err) => {
-      console.error("Gagal simpan perubahan detail KPI:", err)
-    })
-  }
-
   // Handler tambah KPI baru secara inline langsung dari tabel
   const handleAddNewKpiInline = async (input: {
     name: string
@@ -527,7 +490,6 @@ export function KpiScorecardView({
               onUpdateKpiValue={handleUpdateKpiValue}
               onUpdateKpiWeight={handleUpdateKpiWeight}
               onUpdateKpiOwner={handleUpdateKpiOwner}
-              onUpdateKpiDetail={handleUpdateKpiDetail}
               onPasteRange={handlePasteRange}
               onAddKpiInline={handleAddNewKpiInline}
             />
