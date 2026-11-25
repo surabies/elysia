@@ -6,8 +6,15 @@ import {
   perbaruiNilaiAktualKpi,
   perbaruiBobotKpi,
   perbaruiPemilikKpi,
+  perbaruiKpiDetail,
   sinkronisasiKpiDariDatabaseRiil,
   dapatkanEvaluasiInsentifPetugas,
+  dapatkanAturanInsentif,
+  simpanAturanInsentif,
+  dapatkanAlokasiBebanPetugas,
+  simpanAlokasiBebanPetugas,
+  simpanFaktorKesulitanRute,
+  dapatkanDaftarPemilikKpi,
 } from "../../services/kpi/kpi.service"
 import {
   dapatkanDaftarFaktorMedanLengkap,
@@ -27,7 +34,7 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
   .get(
     "/",
     async ({ query }) => {
-      const periode = query.periode || "Sep 2026"
+      const periode = query.periode || "Nov 2026"
       const data = await dapatkanPerspektifScorecard(periode)
       return {
         success: true,
@@ -42,7 +49,16 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
     }
   )
 
-  // 1b. Sinkronisasi Realisasi KPI Otomatis dari Laporan Transaksi Database Riil
+  // 1b. Ambil Daftar Seluruh Pemilik (Owner) Nyata dari Database
+  .get("/owners", async () => {
+    const data = await dapatkanDaftarPemilikKpi()
+    return {
+      success: true,
+      data,
+    }
+  })
+
+  // 1c. Sinkronisasi Realisasi KPI Otomatis dari Laporan Transaksi Database Riil
   .post(
     "/sync-realisasi",
     async ({ body, set }) => {
@@ -53,7 +69,8 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
         )
         return {
           success: true,
-          message: "Realisasi KPI berhasil disinkronkan dari laporan database riil",
+          message:
+            "Realisasi KPI berhasil disinkronkan dari laporan database riil",
           ...result,
         }
       } catch (err: any) {
@@ -72,7 +89,7 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
     }
   )
 
-  // 1c. Ambil Matriks Evaluasi Beban Kerja & Parameter Insentif Petugas
+  // 1d. Ambil Matriks Evaluasi Beban Kerja & Parameter Insentif Petugas
   .get(
     "/evaluasi-insentif",
     async ({ query, set }) => {
@@ -188,6 +205,179 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
           error: err.message || "Gagal me-reset faktor medan",
         }
       }
+    }
+  )
+
+  // 1g. CRUD: Ambil Konfigurasi Aturan Rumusan Insentif Perusahaan
+  .get(
+    "/aturan-insentif",
+    async ({ query, set }) => {
+      try {
+        const data = await dapatkanAturanInsentif(query.periode || "202611")
+        return {
+          success: true,
+          data,
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal memuat aturan insentif",
+        }
+      }
+    },
+    {
+      query: t.Object({
+        periode: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  // 1h. CRUD: Simpan / Perbarui Aturan Rumusan Insentif Perusahaan
+  .put(
+    "/aturan-insentif",
+    async ({ body, user, set }) => {
+      try {
+        const result = await simpanAturanInsentif(
+          body.periode || "202611",
+          body,
+          user?.name || "admin"
+        )
+        return {
+          success: true,
+          message: "Konfigurasi aturan insentif berhasil disimpan",
+          data: result,
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal menyimpan aturan insentif",
+        }
+      }
+    },
+    {
+      body: t.Object({
+        periode: t.String(),
+        insentifDasar: t.Optional(t.Number()),
+        tarifPerSl: t.Optional(t.Number()),
+        bobotCapaianSl: t.Optional(t.Number()),
+        bobotAkurasiGps: t.Optional(t.Number()),
+        bobotKualitasBaca: t.Optional(t.Number()),
+        bobotKecepatan: t.Optional(t.Number()),
+        targetDurasiDetik: t.Optional(t.Number()),
+        thresholdGradeA: t.Optional(t.Number()),
+        thresholdGradeB: t.Optional(t.Number()),
+        thresholdGradeC: t.Optional(t.Number()),
+        pengaliGradeA: t.Optional(t.Number()),
+        pengaliGradeB: t.Optional(t.Number()),
+        pengaliGradeC: t.Optional(t.Number()),
+        minIndeksBeban: t.Optional(t.Number()),
+        maxIndeksBeban: t.Optional(t.Number()),
+        catatan: t.Optional(t.Nullable(t.String())),
+      }),
+    }
+  )
+
+  // 1i. CRUD: Ambil Alokasi Beban Kerja & Target Personel Lapangan
+  .get(
+    "/alokasi-beban",
+    async ({ query, set }) => {
+      try {
+        const result = await dapatkanAlokasiBebanPetugas(
+          query.periode || "202611"
+        )
+        return {
+          success: true,
+          data: result,
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal memuat alokasi beban kerja",
+        }
+      }
+    },
+    {
+      query: t.Object({
+        periode: t.Optional(t.String()),
+      }),
+    }
+  )
+
+  // 1j. CRUD: Simpan / Perbarui Alokasi Beban Kerja Personel Tertentu
+  .put(
+    "/alokasi-beban/:petugasId",
+    async ({ params, body, set }) => {
+      try {
+        const result = await simpanAlokasiBebanPetugas(
+          body.periode || "202611",
+          params.petugasId,
+          {
+            targetSlPenugasan: body.targetSlPenugasan,
+            faktorKesulitanMedan: body.faktorKesulitanMedan,
+            statusTugas: body.statusTugas,
+            catatan: body.catatan,
+          }
+        )
+        return {
+          message: "Alokasi beban kerja personel berhasil diperbarui",
+          ...result,
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal memperbarui alokasi beban personel",
+        }
+      }
+    },
+    {
+      params: t.Object({
+        petugasId: t.String(),
+      }),
+      body: t.Object({
+        periode: t.String(),
+        targetSlPenugasan: t.Optional(t.Nullable(t.Number())),
+        faktorKesulitanMedan: t.Optional(t.Number()),
+        statusTugas: t.Optional(t.String()),
+        catatan: t.Optional(t.Nullable(t.String())),
+      }),
+    }
+  )
+
+  // 1k. CRUD: Simpan / Perbarui Faktor Kesulitan Medan per Kode Rute
+  .put(
+    "/alokasi-beban/rute/:ruteKode",
+    async ({ params, body, set }) => {
+      try {
+        const result = await simpanFaktorKesulitanRute(params.ruteKode, {
+          faktorKesulitanMedan: body.faktorKesulitanMedan,
+          kategoriMedan: body.kategoriMedan,
+          keterangan: body.keterangan,
+        })
+        return {
+          message: `Faktor kesulitan medan rute ${params.ruteKode} berhasil diperbarui`,
+          ...result,
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal memperbarui faktor kesulitan rute",
+        }
+      }
+    },
+    {
+      params: t.Object({
+        ruteKode: t.String(),
+      }),
+      body: t.Object({
+        faktorKesulitanMedan: t.Number(),
+        kategoriMedan: t.Optional(t.String()),
+        keterangan: t.Optional(t.Nullable(t.String())),
+      }),
     }
   )
 
@@ -316,6 +506,32 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
         pemilikId: t.String(),
         pemilikNama: t.String(),
         pemilikInisial: t.String(),
+      }),
+    }
+  )
+
+  // 6. Update Detail Atribut KPI (nama, bobot, baseline, target, arah) secara Inline
+  .patch(
+    "/:id",
+    async ({ params, body, set }) => {
+      try {
+        await perbaruiKpiDetail(params.id, body as any)
+        return { success: true, message: "Detail KPI berhasil diperbarui" }
+      } catch (err: any) {
+        set.status = 500
+        return { success: false, error: err.message }
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      body: t.Object({
+        nama: t.Optional(t.String()),
+        bobot: t.Optional(t.Number()),
+        baseline: t.Optional(t.Number()),
+        target: t.Optional(t.Number()),
+        arah: t.Optional(t.String()),
       }),
     }
   )

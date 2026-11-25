@@ -4,7 +4,7 @@ import { seedAturanAnomali } from '../seeds/modules/10-anomali';
 
 async function main() {
   console.log('Menjalankan seed master aturan anomali SSOT...');
-  const res = await seedAturanAnomali.run();
+  const res = await seedAturanAnomali.run({});
   console.log('Hasil seeder aturan:', res);
   process.exit(0);
 }

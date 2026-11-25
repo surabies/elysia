@@ -125,3 +125,52 @@ export interface ObjectiveOption {
   perspectiveName: string
 }
 
+export type TopografiKategori =
+  | "DATAR"
+  | "BERGELOMBANG"
+  | "BERBUKIT"
+  | "CURAM_TANGGA"
+  | "EKSTREM"
+
+export type ModaAkses = "MOTOR_PENUH" | "CAMPURAN" | "JALAN_KAKI_MURNI"
+
+export interface RuteFaktorMedanConfig {
+  ruteKode: string
+  seksiKode?: string
+  seksiNama?: string
+  pencatatDefault?: string
+  pencatatNama?: string
+  jumlahSL: number
+  topografi: TopografiKategori
+  modaAkses: ModaAkses
+  faktorMedan: number // Rentang 1.00 s/d 1.45
+  hambatanKhusus: string[]
+  catatan?: string
+  updatedAt?: string
+  updatedBy?: string
+}
+
+export const FAKTOR_TOPOGRAFI_STANDAR: Record<TopografiKategori, number> = {
+  DATAR: 1.0,
+  BERGELOMBANG: 1.1,
+  BERBUKIT: 1.2,
+  CURAM_TANGGA: 1.3,
+  EKSTREM: 1.4,
+}
+
+export const FAKTOR_MODA_AKSES_STANDAR: Record<ModaAkses, number> = {
+  MOTOR_PENUH: 1.0,
+  CAMPURAN: 1.06,
+  JALAN_KAKI_MURNI: 1.12,
+}
+
+export const DAFTAR_HAMBATAN_KHUSUS = [
+  { id: "PAGAR_GEMBOK", label: "Pagar Gembok / Penghuni Kerja" },
+  { id: "ADA_ANJING", label: "Anjing Penjaga / Area Rawan" },
+  { id: "TANGGA_CURAM", label: "Anak Tangga Curam / Tebing" },
+  { id: "GANG_SEMPIT", label: "Gang Sempit < 1 Meter" },
+  { id: "METER_DALAM", label: "Meter di Dalam Bangunan / Kolong" },
+  { id: "RAWAN_BANJIR", label: "Bantaran Sungai / Rawan Becek" },
+] as const
+
+

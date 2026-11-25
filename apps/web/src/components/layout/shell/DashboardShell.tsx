@@ -154,8 +154,8 @@ export function DashboardShell({
                 </div>
               </header>
 
-              {/* Body Sidebar: Hirarki Menu Navigasi */}
-              <div className="sidebar-scroll relative flex-1 min-h-0 overflow-y-auto px-2 pt-2.5 pb-8 overscroll-contain">
+              {/* Body Sidebar: Hirarki Menu Navigasi (Invisible Scrollbar ala ReUI) */}
+              <div className="sidebar-scroll relative flex-1 min-h-0 overflow-y-auto px-2 pt-2.5 pb-8 overscroll-contain hide-scrollbar">
                 <SidebarNav />
               </div>
 
@@ -219,7 +219,7 @@ export function DashboardShell({
             <main
               id={MAIN_CONTENT_ID}
               tabIndex={-1}
-              className="flex flex-1 min-h-0 min-w-0 flex-col overflow-y-auto overscroll-contain focus:outline-none bg-background"
+              className="flex flex-1 min-h-0 min-w-0 flex-col overflow-y-auto overscroll-contain focus:outline-none bg-background hide-scrollbar"
             >
               {children}
             </main>

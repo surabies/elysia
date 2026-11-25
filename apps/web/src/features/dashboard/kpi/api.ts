@@ -5,6 +5,32 @@
  */
 
 export const kpiApi = {
+  /** Menambah KPI baru ke sasaran objektif tertentu */
+  async createKpi(payload: {
+    name: string;
+    objectiveId: string;
+    ownerId: string;
+    direction: string;
+    weight: number;
+    baseline: number;
+    target: number;
+    value: number | null;
+    format: string;
+    periode?: string;
+    ownerDetails?: { name: string; initials: string };
+  }) {
+    const res = await fetch("/api/kpi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal menambahkan KPI");
+    }
+    return json;
+  },
+
   /** Mengambil data perspektif KPI untuk periode tertentu */
   async getByPeriode(periode: string) {
     const res = await fetch(`/api/kpi?periode=${encodeURIComponent(periode)}`);
@@ -67,6 +93,127 @@ export const kpiApi = {
       throw new Error(json.error || "Gagal memperbarui bobot KPI");
     }
     return json.data;
+  },
+
+  /** Memperbarui atribut detail KPI (nama, bobot, baseline, target, arah) secara inline */
+  async updateKpiDetail(
+    kpiId: string,
+    data: {
+      nama?: string;
+      bobot?: number;
+      baseline?: number;
+      target?: number;
+      arah?: "higher" | "lower";
+    }
+  ) {
+    const res = await fetch(`/api/kpi/${encodeURIComponent(kpiId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui atribut KPI");
+    }
+    return json.data;
+  },
+
+  /** Mengambil daftar pemilik (owner) real dari database */
+  async getOwners() {
+    const res = await fetch("/api/kpi/owners");
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat daftar pemilik");
+    }
+    return json.data ?? [];
+  },
+
+  /** Mengambil konfigurasi aturan insentif perusahaan */
+  async getAturanInsentif(periode: string) {
+    const res = await fetch(
+      `/api/kpi/aturan-insentif?periode=${encodeURIComponent(periode)}`
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat aturan insentif");
+    }
+    return json.data;
+  },
+
+  /** Menyimpan perubahan aturan insentif perusahaan */
+  async updateAturanInsentif(data: any) {
+    const res = await fetch("/api/kpi/aturan-insentif", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal menyimpan aturan insentif");
+    }
+    return json.data;
+  },
+
+  /** Mengambil alokasi beban kerja dan penugasan seluruh petugas */
+  async getAlokasiBeban(periode: string) {
+    const res = await fetch(
+      `/api/kpi/alokasi-beban?periode=${encodeURIComponent(periode)}`
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat alokasi beban petugas");
+    }
+    return json.data;
+  },
+
+  /** Memperbarui alokasi beban kerja personel tertentu */
+  async updateAlokasiPetugas(
+    petugasId: string,
+    data: {
+      periode: string;
+      targetSlPenugasan?: number | null;
+      faktorKesulitanMedan?: number;
+      statusTugas?: string;
+      catatan?: string | null;
+    }
+  ) {
+    const res = await fetch(
+      `/api/kpi/alokasi-beban/${encodeURIComponent(petugasId)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui alokasi petugas");
+    }
+    return json;
+  },
+
+  /** Memperbarui faktor kesulitan medan per kode rute */
+  async updateFaktorRute(
+    ruteKode: string,
+    data: {
+      faktorKesulitanMedan: number;
+      kategoriMedan?: string;
+      keterangan?: string | null;
+    }
+  ) {
+    const res = await fetch(
+      `/api/kpi/alokasi-beban/rute/${encodeURIComponent(ruteKode)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui faktor kesulitan rute");
+    }
+    return json;
   },
 
   /** Memperbarui penanggung jawab (owner) KPI */

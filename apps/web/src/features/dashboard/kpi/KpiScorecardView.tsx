@@ -34,48 +34,64 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { Card } from "@/components/ui/card"
 import { kpiApi } from "./api"
 import type { KpiItem, KpiOwner, Perspective } from "./types/KpiTypes"
-import { INITIAL_SCORECARD_PERSPECTIVES, KPI_OWNERS } from "./data/KpiMockData"
 import { calculateCompanySummary } from "./lib/KpiCalculations"
-import type { ParsedNewKpi } from "./lib/KpiFormValidation"
 import { KpiSummaryStrip } from "./components/KpiSummaryStrip"
 import { KpiScorecardTable } from "./components/KpiScorecardTable"
-import { AddKpiSheet } from "./components/AddKpiSheet"
 import { KpiInsentifPetugasTab } from "./components/KpiInsentifPetugasTab"
+import { KpiPengaturanInsentifTab } from "./components/KpiPengaturanInsentifTab"
 import { KpiFaktorMedanTab } from "./components/KpiFaktorMedanTab"
 
 interface KpiScorecardViewProps {
   initialPerspectives?: Perspective[]
+  initialOwners?: KpiOwner[]
   initialPeriod?: string
-  initialTab?: "scorecard" | "insentif" | "medan"
+  initialTab?: "scorecard" | "insentif" | "pengaturan" | "medan"
 }
 
 export function KpiScorecardView({
   initialPerspectives,
-  initialPeriod = "Sep 2026",
+  initialOwners,
+  initialPeriod = "Nov 2026",
   initialTab = "scorecard",
 }: KpiScorecardViewProps = {}) {
-  const [activeTab, setActiveTab] = React.useState<"scorecard" | "insentif" | "medan">(
-    initialTab
-  )
+  const [activeTab, setActiveTab] = React.useState<
+    "scorecard" | "insentif" | "pengaturan" | "medan"
+  >(initialTab)
   const [perspectives, setPerspectives] = React.useState<Perspective[]>(
     initialPerspectives && initialPerspectives.length > 0
       ? initialPerspectives
-      : INITIAL_SCORECARD_PERSPECTIVES
+      : []
+  )
+  const [ownersList, setOwnersList] = React.useState<KpiOwner[]>(
+    initialOwners && initialOwners.length > 0 ? initialOwners : []
   )
   const [history, setHistory] = React.useState<Perspective[][]>([])
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedPeriod, setSelectedPeriod] = React.useState(initialPeriod)
   const [syncingDb, setSyncingDb] = React.useState(false)
-  const [isAddKpiOpen, setIsAddKpiOpen] = React.useState(false)
   const [isFormulaOpen, setIsFormulaOpen] = React.useState(false)
-  const [preselectedObjectiveId, setPreselectedObjectiveId] = React.useState<string | null>(null)
   const searchInputRef = React.useRef<HTMLInputElement | null>(null)
 
-  const ownersList = React.useMemo<KpiOwner[]>(() => {
-    return Object.values(KPI_OWNERS)
-  }, [])
+  // Ambil pemilik riil jika belum diisi dari SSR
+  React.useEffect(() => {
+    if (ownersList.length === 0) {
+      kpiApi.getOwners().then((owners) => {
+        if (owners && owners.length > 0) setOwnersList(owners)
+      }).catch(() => {})
+    }
+  }, [ownersList.length])
+
+  // Ambil data perspektif riil dari API jika awal kosong
+  React.useEffect(() => {
+    if (perspectives.length === 0) {
+      kpiApi.getByPeriode(selectedPeriod).then((data) => {
+        if (data && data.length > 0) setPerspectives(data)
+      }).catch(() => {})
+    }
+  }, [perspectives.length, selectedPeriod])
 
   // Hitung metrik dinamis
   const { calculatedPerspectives, summary } = React.useMemo(() => {
@@ -220,71 +236,33 @@ export function KpiScorecardView({
     })
   }
 
-  // Handler buka sheet Add KPI
-  const handleOpenAddKpi = (objectiveId?: string) => {
-    setPreselectedObjectiveId(objectiveId ?? null)
-    setIsAddKpiOpen(true)
-  }
-
-  // Handler tambah KPI baru
-  const handleAddNewKpi = (parsed: ParsedNewKpi) => {
-    const foundOwner = ownersList.find((o) => o.id === parsed.ownerId) || {
-      id: parsed.ownerId,
-      name: parsed.ownerId,
-      initials: parsed.ownerId.slice(0, 1).toUpperCase(),
-    }
-
-    const generatedId = `kpi-${Date.now()}`
-    const newKpi: KpiItem = {
-      id: generatedId,
-      name: parsed.name,
-      direction: parsed.direction,
-      owner: foundOwner,
-      weight: parsed.weight,
-      baseline: parsed.baseline,
-      value: parsed.value,
-      target: parsed.target,
-      format: parsed.format,
-      currencySymbol: parsed.format === "currency" ? "$" : undefined,
-      change: {
-        direction: "neutral",
-        diff: 0,
-        sparkline: [parsed.baseline, parsed.baseline, parsed.value ?? parsed.baseline],
-      },
-      laggingMarket: null,
-    }
-
-    const next = perspectives.map((p) => ({
-      ...p,
-      objectives: p.objectives.map((obj) => {
-        if (obj.id === parsed.objectiveId) {
-          return {
-            ...obj,
-            kpis: [...obj.kpis, newKpi],
-          }
-        }
-        return obj
-      }),
-    }))
-
-    pushHistory(next)
-    toast.success("Indikator KPI berhasil disimpan ke database")
-
-    fetch("/api/kpi", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...parsed,
+  // Handler tambah KPI baru secara inline langsung dari tabel
+  const handleAddNewKpiInline = async (input: {
+    name: string
+    objectiveId: string
+    ownerId: string
+    direction: "higher" | "lower"
+    weight: number
+    baseline: number
+    target: number
+    value: number | null
+    format: "percent" | "decimal" | "currency"
+    ownerDetails?: { name: string; initials: string }
+  }) => {
+    try {
+      await kpiApi.createKpi({
+        ...input,
         periode: selectedPeriod,
-        ownerDetails: {
-          name: foundOwner.name,
-          initials: foundOwner.initials,
-        },
-      }),
-    }).catch((err) => {
-      console.error("Gagal persist KPI ke database:", err)
-      toast.error("Gagal menyimpan ke database")
-    })
+      })
+      toast.success(`Indikator "${input.name}" berhasil ditambahkan`)
+      const data = await kpiApi.getByPeriode(selectedPeriod)
+      if (data && data.length > 0) {
+        setPerspectives(data)
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Gagal menambahkan KPI")
+      throw err
+    }
   }
 
   // Handler paste range nilai dari spreadsheet
@@ -340,100 +318,114 @@ export function KpiScorecardView({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background p-4 sm:p-6 lg:p-7">
-      {/* A. Header Halaman & Switcher Mode */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        {/* Mode Switcher Tabs (Putih Bersih) */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setActiveTab("scorecard")}
-            className={cn(
-              "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
-              activeTab === "scorecard"
-                ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
-                : "border-border text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Target className="size-3.5 text-(--ds-blue-700)" />
-            <span>1. Balanced Scorecard Unit (M2C)</span>
-          </button>
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      {/* 1. Header Cockpit & Mode Switcher (Fixed di atas / shrink-0) */}
+      <div className="flex shrink-0 flex-col gap-2.5 rounded-lg border border-border bg-card p-3 shadow-none">
+        {/* Baris 1: Mode Switcher Tabs + Aksi Sistem */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border pb-2.5">
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setActiveTab("scorecard")}
+              className={cn(
+                "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
+                activeTab === "scorecard"
+                  ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Target className="size-3.5 text-(--ds-blue-700)" />
+              <span>1. Balanced Scorecard Unit (M2C)</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("insentif")}
-            className={cn(
-              "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
-              activeTab === "insentif"
-                ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
-                : "border-border text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Calculator className="size-3.5 text-(--ds-green-700)" />
-            <span>2. Matriks Beban Kerja &amp; Insentif Petugas</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("insentif")}
+              className={cn(
+                "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
+                activeTab === "insentif"
+                  ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Calculator className="size-3.5 text-(--ds-green-700)" />
+              <span>2. Matriks Beban Kerja &amp; Insentif Petugas</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("medan")}
-            className={cn(
-              "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
-              activeTab === "medan"
-                ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
-                : "border-border text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Mountain className="size-3.5 text-(--ds-amber-700)" />
-            <span>3. Konfigurasi Faktor Medan Rute (ABK)</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("pengaturan")}
+              className={cn(
+                "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
+                activeTab === "pengaturan"
+                  ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <SlidersHorizontal className="size-3.5 text-(--ds-amber-700)" />
+              <span>3. Pengaturan Rumusan &amp; Alokasi Beban</span>
+            </button>
 
-        {/* Tombol Sinkronisasi Laporan Riil, Panduan Rumus & Share */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsFormulaOpen(true)}
-            className="h-8 gap-1.5 text-xs bg-card"
-          >
-            <FileText className="size-3.5 text-(--ds-blue-700)" />
-            <span>Metodologi &amp; Rumus KPI</span>
-          </Button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("medan")}
+              className={cn(
+                "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
+                activeTab === "medan"
+                  ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Mountain className="size-3.5 text-(--ds-purple-700)" />
+              <span>4. Konfigurasi Faktor Medan Rute (ABK)</span>
+            </button>
+          </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleSyncFromRealReports}
-            disabled={syncingDb}
-            className="h-8 gap-1.5 text-xs bg-card"
-            title="Tarik nilai aktual otomatis dari laporan baca meter, geofence GPS, koreksi, dan DRD"
-          >
-            <RefreshCw className={cn("size-3.5 text-(--ds-green-700)", syncingDb && "animate-spin")} />
-            <span>Sinkronkan dari Laporan Riil</span>
-          </Button>
-
-          {history.length > 0 && (
+          {/* Tombol Sinkronisasi Laporan Riil, Panduan Rumus & Undo */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleUndo}
-              className="h-8 gap-1 px-2 text-xs"
-              title="Batalkan perubahan terakhir (Ctrl+Z)"
+              onClick={() => setIsFormulaOpen(true)}
+              className="h-8 gap-1.5 text-xs bg-card"
             >
-              <Undo2 className="size-3.5" />
-              <span>Undo</span>
+              <FileText className="size-3.5 text-(--ds-blue-700)" />
+              <span>Metodologi &amp; Rumus KPI</span>
             </Button>
-          )}
-        </div>
-      </div>
 
-      {/* B. Kartu Utama Strategy Scorecard / Matriks Insentif */}
-      <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-        {/* Toolbar Kartu */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-3.5 sm:p-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSyncFromRealReports}
+              disabled={syncingDb}
+              className="h-8 gap-1.5 text-xs bg-card"
+              title="Tarik nilai aktual otomatis dari laporan baca meter, geofence GPS, koreksi, dan DRD"
+            >
+              <RefreshCw className={cn("size-3.5 text-(--ds-green-700)", syncingDb && "animate-spin")} />
+              <span>Sinkronkan dari Laporan Riil</span>
+            </Button>
+
+            {history.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleUndo}
+                className="h-8 gap-1 px-2 text-xs"
+                title="Batalkan perubahan terakhir (Ctrl+Z)"
+              >
+                <Undo2 className="size-3.5" />
+                <span>Undo</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Baris 2: Judul Konteks + Kotak Pencarian & Filter Periode */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
           <div>
             <h1 className="text-base font-bold text-foreground">
               {activeTab === "scorecard"
@@ -460,9 +452,9 @@ export function KpiScorecardView({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari indikator KPI atau penanggung jawab..."
-                  className="h-8 w-56 pl-8 pr-7 text-xs bg-muted/40 sm:w-64"
+                  className="h-8 w-56 pl-8 pr-7 text-xs bg-background sm:w-64"
                 />
-                <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-1 py-0.2 text-[9px] font-semibold text-muted-foreground">
+                <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1 py-0.2 text-[9px] font-semibold text-muted-foreground">
                   /
                 </kbd>
               </div>
@@ -471,7 +463,7 @@ export function KpiScorecardView({
             {/* Dropdown Periode */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-normal">
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-normal bg-card">
                   <Calendar className="size-3.5 text-muted-foreground" />
                   <span>{selectedPeriod}</span>
                 </Button>
@@ -490,66 +482,64 @@ export function KpiScorecardView({
             </DropdownMenu>
 
             {activeTab === "scorecard" && (
-              <>
-                <div className="flex items-center gap-1 border-x border-border px-1.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 text-muted-foreground hover:text-foreground"
-                    title="Unduh laporan scorecard"
-                    onClick={() => toast.success("Menyiapkan berkas laporan scorecard...")}
-                  >
-                    <Download className="size-3.5" />
-                  </Button>
-                </div>
-
+              <div className="flex items-center gap-1 border-s border-border ps-2">
                 <Button
-                  size="sm"
-                  className="h-8 gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium px-3 text-xs"
-                  onClick={() => handleOpenAddKpi()}
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 text-muted-foreground hover:text-foreground"
+                  title="Unduh laporan scorecard"
+                  onClick={() => toast.success("Menyiapkan berkas laporan scorecard...")}
                 >
-                  <Plus className="size-3.5" />
-                  <span>Tambah KPI</span>
+                  <Download className="size-3.5" />
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>
-
-        {activeTab === "scorecard" ? (
-          <>
-            {/* Strip Ringkasan 4 Sel */}
-            <KpiSummaryStrip summary={summary} />
-
-            {/* Tabel KPI Scorecard */}
-            <KpiScorecardTable
-              perspectives={calculatedPerspectives}
-              summary={summary}
-              searchQuery={searchQuery}
-              onUpdateKpiValue={handleUpdateKpiValue}
-              onUpdateKpiWeight={handleUpdateKpiWeight}
-              onUpdateKpiOwner={handleUpdateKpiOwner}
-              onPasteRange={handlePasteRange}
-              onOpenAddKpi={handleOpenAddKpi}
-            />
-          </>
-        ) : activeTab === "insentif" ? (
-          <KpiInsentifPetugasTab selectedPeriod={selectedPeriod} />
-        ) : (
-          <KpiFaktorMedanTab />
-        )}
       </div>
 
-      {/* Sheet Add KPI */}
-      <AddKpiSheet
-        open={isAddKpiOpen}
-        onOpenChange={setIsAddKpiOpen}
-        perspectives={perspectives}
-        owners={ownersList}
-        selectedPeriod={selectedPeriod}
-        preselectedObjectiveId={preselectedObjectiveId}
-        onAddKpi={handleAddNewKpi}
-      />
+      {/* 2. Konten Utama: 1 Card Mengisi Otomatis Sisa Tinggi Layar (flex-1 min-h-0) */}
+      {activeTab === "scorecard" ? (
+        <Card className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-none">
+          {/* Strip Ringkasan 4 Sel (Fixed / shrink-0 di atas tabel) */}
+          <KpiSummaryStrip summary={summary} />
+
+          {/* Tabel KPI Scorecard: Hanya tabel ini yang di-scroll! */}
+          <KpiScorecardTable
+            perspectives={calculatedPerspectives}
+            summary={summary}
+            searchQuery={searchQuery}
+            availableOwners={ownersList}
+            onUpdateKpiValue={handleUpdateKpiValue}
+            onUpdateKpiWeight={handleUpdateKpiWeight}
+            onUpdateKpiOwner={handleUpdateKpiOwner}
+            onPasteRange={handlePasteRange}
+            onAddKpiInline={handleAddNewKpiInline}
+          />
+        </Card>
+      ) : activeTab === "insentif" ? (
+        <div className="flex flex-1 min-h-0 flex-col overflow-hidden w-full">
+          <KpiInsentifPetugasTab selectedPeriod={selectedPeriod} />
+        </div>
+      ) : activeTab === "pengaturan" ? (
+        <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden w-full max-w-full">
+          <KpiPengaturanInsentifTab
+            selectedPeriod={selectedPeriod}
+            onUpdated={() => {
+              kpiApi
+                .getByPeriode(selectedPeriod)
+                .then((data) => {
+                  if (data && data.length > 0) setPerspectives(data)
+                })
+                .catch(() => {})
+            }}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden w-full max-w-full">
+          <KpiFaktorMedanTab />
+        </div>
+      )}
 
       {/* Dialog Metodologi & Rumus Presentasi KPI & Insentif */}
       <Dialog open={isFormulaOpen} onOpenChange={setIsFormulaOpen}>

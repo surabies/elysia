@@ -45,16 +45,14 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { kpiApi } from "../api";
-import type {
-  RuteFaktorMedanConfig,
-  TopografiKategori,
-  ModaAkses,
-} from "@/server/services/kpi/beban-kerja";
 import {
+  type RuteFaktorMedanConfig,
+  type TopografiKategori,
+  type ModaAkses,
   FAKTOR_TOPOGRAFI_STANDAR,
   FAKTOR_MODA_AKSES_STANDAR,
   DAFTAR_HAMBATAN_KHUSUS,
-} from "@/server/services/kpi/beban-kerja";
+} from "../types/KpiTypes";
 
 const num = (n: number) => n.toLocaleString("id-ID");
 

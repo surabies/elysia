@@ -17,53 +17,23 @@ import { sql, eq, asc } from "drizzle-orm"
 
 export const KUNCI_PENGATURAN_FAKTOR_MEDAN = "kpi_faktor_medan_rute"
 
-export type TopografiKategori =
-  | "DATAR"
-  | "BERGELOMBANG"
-  | "BERBUKIT"
-  | "CURAM_TANGGA"
-  | "EKSTREM"
+import {
+  type TopografiKategori,
+  type ModaAkses,
+  type RuteFaktorMedanConfig,
+  FAKTOR_TOPOGRAFI_STANDAR,
+  FAKTOR_MODA_AKSES_STANDAR,
+  DAFTAR_HAMBATAN_KHUSUS,
+} from "@/features/dashboard/kpi/types/KpiTypes"
 
-export type ModaAkses = "MOTOR_PENUH" | "CAMPURAN" | "JALAN_KAKI_MURNI"
-
-export interface RuteFaktorMedanConfig {
-  ruteKode: string
-  seksiKode?: string
-  seksiNama?: string
-  pencatatDefault?: string
-  pencatatNama?: string
-  jumlahSL: number
-  topografi: TopografiKategori
-  modaAkses: ModaAkses
-  faktorMedan: number // Rentang 1.00 s/d 1.45
-  hambatanKhusus: string[]
-  catatan?: string
-  updatedAt?: string
-  updatedBy?: string
+export {
+  type TopografiKategori,
+  type ModaAkses,
+  type RuteFaktorMedanConfig,
+  FAKTOR_TOPOGRAFI_STANDAR,
+  FAKTOR_MODA_AKSES_STANDAR,
+  DAFTAR_HAMBATAN_KHUSUS,
 }
-
-export const FAKTOR_TOPOGRAFI_STANDAR: Record<TopografiKategori, number> = {
-  DATAR: 1.0, // Jalan aspal, perumahan teratur, datar (Faktor 1.00x)
-  BERGELOMBANG: 1.1, // Kontur bergelombang landai, beberapa tanjakan (Faktor 1.10x)
-  BERBUKIT: 1.2, // Tanjakan/turunan sedang, jalan sempit (Faktor 1.20x)
-  CURAM_TANGGA: 1.3, // Tebing/bantaran sungai, puluhan anak tangga (Faktor 1.30x)
-  EKSTREM: 1.4, // Perbukitan terjal ekstrem, lorong sempit tanpa kendaraan (Faktor 1.40x)
-}
-
-export const FAKTOR_MODA_AKSES_STANDAR: Record<ModaAkses, number> = {
-  MOTOR_PENUH: 1.0,
-  CAMPURAN: 1.06,
-  JALAN_KAKI_MURNI: 1.12,
-}
-
-export const DAFTAR_HAMBATAN_KHUSUS = [
-  { id: "PAGAR_GEMBOK", label: "Pagar Gembok / Penghuni Kerja" },
-  { id: "ADA_ANJING", label: "Anjing Penjaga / Area Rawan" },
-  { id: "TANGGA_CURAM", label: "Anak Tangga Curam / Tebing" },
-  { id: "GANG_SEMPIT", label: "Gang Sempit < 1 Meter" },
-  { id: "METER_DALAM", label: "Meter di Dalam Bangunan / Kolong" },
-  { id: "RAWAN_BANJIR", label: "Bantaran Sungai / Rawan Becek" },
-] as const
 
 export const PARAMETER_ABK = {
   /** Waktu baca + foto + input per SL bila data durasi riil belum tersedia */

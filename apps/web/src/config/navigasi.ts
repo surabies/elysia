@@ -105,9 +105,9 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
-        title: "Scorecard KPI",
+        title: "Kinerja & Insentif",
         href: "/kpi",
-        description: "Target kinerja tahunan, matriks insentif ABK, dan faktor medan rute.",
+        description: "Evaluasi capaian SL, akurasi baca, faktor kesulitan rute, dan insentif petugas.",
         keywords: [
           "kpi",
           "scorecard",
@@ -118,7 +118,24 @@ export const navGroups: NavGroup[] = [
           "insentif",
           "abk",
           "faktor medan",
+          "beban kerja",
+          "cater",
         ],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+          "PENCATAT",
+        ],
+      },
+      {
+        title: "Scorecard Perusahaan",
+        href: "/kpi/scorecard",
+        description: "Target kinerja tahunan dan 4 perspektif Balanced Scorecard perusahaan.",
+        keywords: ["kpi", "scorecard", "strategy", "goals", "target", "kinerja", "bsc"],
         roles: ["SUPERADMIN", "EXECUTIVE"],
       },
       {
