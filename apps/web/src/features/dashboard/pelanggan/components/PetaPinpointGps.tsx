@@ -141,7 +141,7 @@ export function PetaPinpointGps({
       container: containerRef.current,
       center: initialCenter,
       zoom: validCoord ? 18.5 : 13.5,
-      maxZoom: 19,
+      maxZoom: 19.5,
       minZoom: 10,
       attributionControl: false,
       style: {
@@ -153,7 +153,7 @@ export function PetaPinpointGps({
               'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             ],
             tileSize: 256,
-            maxzoom: 19,
+            maxzoom: 18,
           },
           osm: {
             type: 'raster',
@@ -161,7 +161,7 @@ export function PetaPinpointGps({
               'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             ],
             tileSize: 256,
-            maxzoom: 19,
+            maxzoom: 18,
           },
           parcels: {
             type: 'geojson',
@@ -176,12 +176,20 @@ export function PetaPinpointGps({
             id: 'satellite-layer',
             type: 'raster',
             source: 'satellite',
+            paint: {
+              'raster-fade-duration': 0,
+              'raster-resampling': 'linear',
+            },
             layout: { visibility: 'visible' },
           },
           {
             id: 'osm-layer',
             type: 'raster',
             source: 'osm',
+            paint: {
+              'raster-fade-duration': 0,
+              'raster-resampling': 'linear',
+            },
             layout: { visibility: 'none' },
           },
           {
