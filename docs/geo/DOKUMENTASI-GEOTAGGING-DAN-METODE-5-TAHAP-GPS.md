@@ -143,7 +143,28 @@ Inilah keunggulan utama yang membedakan aplikasi ini dengan aplikasi GPS biasa:
 
 ---
 
-## 5. SOP & TATA CARA PENGGUNAAN PETUGAS DI LAPANGAN
+## 5. EKSPLORASI OPSI ENTERPRISE: POSTGIS CADASTRAL & BUILDING PARCEL SNAPPING
+
+### A. Apakah Metode Ini Bisa Diterapkan dan Apakah Akurat?
+1. **Kelayakan Teknis (100% Feasible):**  
+   PostgreSQL + PostGIS yang menjadi fondasi basis data sistem ini memiliki fungsi geospasial bawaan kelas dunia (`ST_ClosestPoint`, `ST_Snap`, `ST_DWithin`).
+2. **Tingkat Akurasi Nyata:**  
+   - **Sangat Akurat untuk Memastikan Integritas Aset:** Titik koordinat meter air **mustahil jatuh di tengah aspal jalan raya**, di lahan kosong tanpa pemilik, atau di saluran pembuangan/sungai.
+   - Posisi meter air PDAM di Indonesia selalu berada di perbatasan muka tanah (*frontage boundary*) antara jalan umum dan persil pagar pelanggan. Snapping secara matematis menarik titik GPS mentah ke garis muka dinding/pagar terdekat dalam radius toleransi 10 meter.
+   - **Mitigasi Rumah Petak Dempet:** Pada kawasan perumahan padat di mana lebar muka rumah sangat sempit ($\le 3$ meter), sistem menggunakan pendekatan *Interactive Snapping Guideline* (menampilkan garis magnetik putus-putus ke dinding persil terdekat) agar petugas dapat memverifikasi nomor rumah sebelum menekan tombol simpan.
+
+### B. Sumber Maps & Dataset yang Digunakan untuk Mendukungnya:
+Untuk menampilkan dan mengunci titik ke poligon persil/bangunan, sistem mengombinasikan 3 sumber data:
+1. **Google Open Buildings (Dataset AI Bangunan):**  
+   Dataset terbuka dari Google Research berisi vektor poligon seluruh atap bangunan di Indonesia hasil deteksi citra satelit AI resolusi tinggi. Format: GeoJSON / FlatGeobuf yang diimpor ke PostGIS.
+2. **Peta Persil Blok PBB Bapenda / ATR-BPN (Satu Data Indonesia):**  
+   Layer poligon bidang tanah resmi milik pemerintah daerah yang dapat dihubungkan dengan NOP/alamat pelanggan.
+3. **OpenStreetMap (OSM) Vector Building Tiles:**  
+   Layer poligon bangunan yang di-render secara transparan sebagai garis tepi (*wireframe outline*) di atas citra satelit Esri World Imagery pada kanvas MapLibre GL.
+
+---
+
+## 6. SOP & TATA CARA PENGGUNAAN PETUGAS DI LAPANGAN
 
 ### Panduan Operasional Lapangan (Langkah Demi Langkah):
 

@@ -720,13 +720,13 @@ Akurasi Terbaik = MIN(accuracy_i)`}
           </table>
         </div>
 
-        {/* Breakdown Mendalam: RTK via NTRIP CORS */}
+        {/* Breakdown Mendalam: Opsi 2 RTK via NTRIP CORS */}
         <div className="my-6 space-y-4">
           <Card className="motion-card-interactive gradient-card-subtle overflow-hidden border border-border">
             <CardHeader className="p-5 pb-3 border-b border-border">
               <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
                 <ShieldCheck className="size-4 text-(--ds-green-700)" />
-                <span>Rekomendasi Utama Enterprise: RTK (Real-Time Kinematic) via NTRIP CORS</span>
+                <span>Opsi 2 Enterprise: RTK (Real-Time Kinematic) via NTRIP CORS</span>
               </CardTitle>
               <CardDescription className="text-copy-13 text-muted-foreground">
                 Standar tertinggi pemetaan geodetik nasional yang dapat dikoneksikan langsung ke aplikasi web ini.
@@ -755,6 +755,116 @@ Akurasi Terbaik = MIN(accuracy_i)`}
                     Chipset receiver menyelesaikan ambiguitas fase gelombang pembawa (*Carrier-Phase Ambiguity Resolution*), menghasilkan koordinat berakurasi <strong>1–2 cm</strong>.
                   </p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Breakdown Mendalam: Opsi 4 - PostGIS Cadastral & Building Parcel Snapping */}
+          <Card className="motion-card-interactive gradient-card-subtle overflow-hidden border border-border">
+            <CardHeader className="p-5 pb-3 border-b border-border">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                <Layers className="size-4 text-(--ds-blue-700)" />
+                <span>Eksplorasi Mendalam Opsi 4: PostGIS Cadastral &amp; Building Parcel Snapping</span>
+              </CardTitle>
+              <CardDescription className="text-copy-13 text-muted-foreground">
+                Penjelasan kelayakan teknis (feasibility), tingkat akurasi nyata, dan sumber peta yang digunakan untuk mendukungnya.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-5 space-y-5">
+              {/* 1. Apakah Bisa & Apakah Akurat? */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>1. Apakah Metode Ini Bisa Diterapkan dan Apakah Akurat?</span>
+                </h4>
+                <p className="text-xs text-foreground/85 leading-relaxed">
+                  <strong>Sangat bisa (100% feasible) dan sangat akurat secara relasi spasial aset.</strong> Snapping adalah komputasi geospasial murni di database PostGIS di mana koordinat GPS mentah dari HP ditarik secara magnetis ke garis dinding terdekat dari persil bangunan pelanggan.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-1">
+                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                      Keunggulan Akurasi Nyata
+                    </span>
+                    <ul className="text-[11px] text-muted-foreground space-y-1 list-disc ml-3.5">
+                      <li>Titik meter air <strong>mustahil jatuh di tengah aspal jalan raya</strong> atau di dalam selokan umum.</li>
+                      <li>Titik tidak akan melayang ke lahan kosong atau di tengah sawah tetangga.</li>
+                      <li>Secara fisik, meter air PDAM selalu terpasang di <em>frontage boundary</em> (dinding depan persil pagar), tepat di mana snapping mengunci titiknya.</li>
+                    </ul>
+                  </div>
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-1">
+                    <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                      Tantangan &amp; Solusi di Lapangan
+                    </span>
+                    <ul className="text-[11px] text-muted-foreground space-y-1 list-disc ml-3.5">
+                      <li><strong>Tantangan:</strong> Pada rumah petak dempet sangat rapat (lebar muka &le;3m), GPS yang melenceng 5m bisa salah mengunci ke dinding rumah tetangga.</li>
+                      <li><strong>Solusi Sistem Kami:</strong> <em>Interactive Snapping Guideline</em>. Peta menampilkan garis magnetik putus-putus ke dinding bangunan, dan petugas mengonfirmasi nomor rumah di layar sebelum menyimpan.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Sumber Maps / Data yang Digunakan */}
+              <div className="space-y-2 pt-2 border-t border-border">
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <MapPin className="size-3.5 text-(--ds-blue-700)" />
+                  <span>2. Peta &amp; Dataset Spasial yang Digunakan untuk Mendukungnya</span>
+                </h4>
+                <p className="text-xs text-foreground/85 leading-relaxed">
+                  Untuk mendukung snapping persil dan visualisasinya di MapLibre GL, sistem menggabungkan 3 sumber data geospasial:
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                  <div className="rounded-lg border border-border p-3 bg-card space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-foreground">Google Open Buildings</span>
+                      <Badge variant="blue-subtle" size="sm">Gratis &amp; AI</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-normal">
+                      Dataset resmi dari Google Research yang memuat <strong>seluruh jejak poligon atap bangunan di Indonesia</strong> hasil ekstraksi citra satelit AI. Format: GeoJSON / Vector Tiles yang dapat diimpor langsung ke PostGIS.
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border p-3 bg-card space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-foreground">Peta Persil PBB / BPN</span>
+                      <Badge variant="green-subtle" size="sm">Data Pemda</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-normal">
+                      Peta Blok PBB Bapenda atau batas persil ATR/BPN melalui program <em>Satu Data Indonesia</em>. Berisi garis batas kepemilikan tanah legal per kelurahan/desa yang dapat di-join dengan NOP pelanggan.
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border p-3 bg-card space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-foreground">OpenStreetMap (OSM)</span>
+                      <Badge variant="gray-subtle" size="sm">Vector Tiles</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-normal">
+                      Lapisan poligon bangunan perkotaan dari komunitas OSM. Sangat responsif di-render sebagai layer transparan garis tepi (outline) di atas citra satelit Esri pada kanvas MapLibre GL.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Implementasi Query Teknis PostGIS */}
+              <div className="space-y-1.5 pt-2 border-t border-border">
+                <span className="text-xs font-bold text-foreground">Formula Query SQL PostGIS yang Digunakan:</span>
+                <CodeFormulaBlock
+                  formula={`-- Mengunci titik koordinat persis pada garis muka dinding persil rumah pelanggan
+UPDATE pelanggan_gps
+SET titik_lokasi = ST_ClosestPoint(
+      ST_Boundary(persil.geom), 
+      ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)
+    ),
+    snapped_to_building = true
+FROM peta_bangunan_persil persil
+WHERE pelanggan_gps.nolg = :nolg
+  AND ST_DWithin(
+        persil.geom, 
+        ST_SetSRID(ST_MakePoint(:lng, :lat), 4326), 
+        0.00009 -- Radius toleransi ~10 meter
+      );`}
+                />
               </div>
             </CardContent>
           </Card>
