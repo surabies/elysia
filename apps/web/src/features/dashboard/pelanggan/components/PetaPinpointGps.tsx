@@ -166,7 +166,7 @@ export function PetaPinpointGps({
           osm: {
             type: 'raster',
             tiles: [
-              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
               'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             ],
             tileSize: 256,
