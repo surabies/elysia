@@ -21,6 +21,7 @@ import type {
   KpiOwner,
 } from "@/features/dashboard/kpi/types/KpiTypes"
 import type { ParsedNewKpi } from "@/features/dashboard/kpi/lib/KpiFormValidation"
+import { hitungBebanKerjaRute, PARAMETER_ABK } from "./beban-kerja"
 
 function dapatkanBaris<T = any>(res: any): T[] {
   if (!res) return []
@@ -326,7 +327,25 @@ export interface InsentifPetugasItem {
   rataDurasiDetik: number
   totalAnomali: number
   totalRevisi: number
+  /** Indeks beban berbasis jam kerja ABK (dipakai dalam rumus insentif) */
   indeksBebanKerja: number
+  /** Indeks beban lama berbasis jumlah SL mentah (pembanding) */
+  indeksBebanSL: number
+  /** Beban kerja ABK dalam jam per periode */
+  bebanJam: number
+  /** SL tertimbang = beban detik ÷ waktu standar SL acuan */
+  slTertimbang: number
+  /** Rata-rata faktor kesulitan per SL (SL tertimbang ÷ target SL) */
+  faktorKesulitan: number
+  /** Beban jam ÷ kapasitas jam efektif per periode */
+  utilisasiPersen: number
+  jarakAntarMeterRata: number
+  persenSlSulit: number
+  persenSlNonDomestik: number
+  rataFaktorMedan: number
+  ruteSulitCount: number
+  rutePakaiJarakGps: number
+  durasiTersedia: boolean
   skorKpiAkhir: number
   grade: "A" | "B" | "C" | "D"
   labelGrade: string
@@ -340,11 +359,26 @@ export interface EvaluasiInsentifResult {
     totalTargetSL: number
     totalRealisasiSL: number
     rataTargetSL: number
+    rataBebanJam: number
+    totalSlTertimbang: number
+    kapasitasJamPerPetugas: number
     rataSkorKpi: number
     countGradeA: number
     countGradeB: number
     countGradeC: number
     countGradeD: number
+  }
+  parameterAbk: {
+    thblAcuanKondisi: string | null
+    waktuBacaDasarDetik: number
+    sumberWaktuBaca: "DURASI_RIIL" | "ASUMSI"
+    detikAcuanPerSL: number
+    kecepatanTempuhMps: number
+    jarakDefaultMeter: number
+    faktorKelas: Record<string, number>
+    faktorKondisiSulit: number
+    jamEfektifPerHari: number
+    hariKerjaBacaPerPeriode: number
   }
   items: InsentifPetugasItem[]
 }
@@ -365,7 +399,7 @@ export async function dapatkanEvaluasiInsentifPetugas(
 
   const isLocked = periodeInfo?.status === "TERKUNCI"
 
-  const [listPetugas, routes, targetPerRute, readingsPerPetugas] =
+  const [listPetugas, routes, targetPerRute, readingsPerPetugas, abk] =
     await Promise.all([
       db
         .select()
@@ -385,7 +419,9 @@ export async function dapatkanEvaluasiInsentifPetugas(
           petugasId: caterBacaMeter.petugasId,
           totalTerbaca: sql<number>`count(*)::int`,
           totalM3: sql<number>`coalesce(sum(coalesce(${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric), 0)::int`,
-          avgDurasi: sql<number>`coalesce(avg(${caterBacaMeter.durasiDetik}), 38)::int`,
+          // Durasi 0 = tidak terekam, jangan dihitung sebagai "0 detik"
+          avgDurasi: sql<number>`coalesce(avg(nullif(${caterBacaMeter.durasiDetik}, 0)), 38)::int`,
+          adaDurasi: sql<number>`count(case when ${caterBacaMeter.durasiDetik} > 0 then 1 end)::int`,
           totalAnomali: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} in ('NEED_RESURVEY', 'ANOMALI') then 1 end)::int`,
           totalRevisi: sql<number>`count(case when ${caterBacaMeter.pakaiM3Revisi} is not null then 1 end)::int`,
           totalGpsValid: sql<number>`count(case when ${caterBacaMeter.jarakPelangganMeter} is not null and ${caterBacaMeter.jarakPelangganMeter} <= 50 then 1 end)::int`,
@@ -394,10 +430,13 @@ export async function dapatkanEvaluasiInsentifPetugas(
         .from(caterBacaMeter)
         .where(eq(caterBacaMeter.thbl, thbl))
         .groupBy(caterBacaMeter.petugasId),
+      hitungBebanKerjaRute(thbl),
     ])
 
   const targetMap = new Map(targetPerRute.map((r) => [r.ruteKode, r.total]))
   const readingMap = new Map(readingsPerPetugas.map((r) => [r.petugasId, r]))
+  const P = PARAMETER_ABK
+  const kapasitasJamPerPetugas = P.jamEfektifPerHari * P.hariKerjaBacaPerPeriode
 
   // Hitung target SL per petugas terlebih dahulu untuk menemukan Rata-rata Beban Kerja
   const rawPetugas = listPetugas.map((p) => {
@@ -414,12 +453,42 @@ export async function dapatkanEvaluasiInsentifPetugas(
       ? assignedTarget
       : realisasiSL
 
+    // Beban kerja ABK dari komposisi rute yang diampu
+    const bebanRute = assignedRoutes
+      .map((r) => abk.rute.get(r.kode))
+      .filter((r): r is NonNullable<typeof r> => !!r)
+    const detikRute = bebanRute.reduce((a, r) => a + r.totalDetik, 0)
+    const slRute = bebanRute.reduce((a, r) => a + r.jumlahSL, 0)
+    // Skala bila target berbeda dari SL rute (mis. periode terkunci dengan realisasi > rute)
+    const bebanDetik =
+      slRute > 0 ? detikRute * (targetSL / slRute) : targetSL * abk.detikAcuanPerSL
+    const jarakRata =
+      slRute > 0
+        ? bebanRute.reduce((a, r) => a + r.jarakAntarMeter * r.jumlahSL, 0) / slRute
+        : P.jarakDefaultMeter
+
     return {
       petugas: p,
       ruteList: assignedRoutes.map((r) => r.kode),
       targetSL,
       realisasiSL,
       reading,
+      bebanDetik,
+      jarakRata,
+      persenSulit: slRute > 0 ? (bebanRute.reduce((a, r) => a + r.jumlahSulit, 0) / slRute) * 100 : 0,
+      persenNonDomestik:
+        slRute > 0 ? (bebanRute.reduce((a, r) => a + r.jumlahNonDomestik, 0) / slRute) * 100 : 0,
+      rataFaktorMedan:
+        slRute > 0
+          ? Number(
+              (
+                bebanRute.reduce((a, r) => a + r.faktorMedan * r.jumlahSL, 0) /
+                slRute
+              ).toFixed(2)
+            )
+          : 1.0,
+      ruteSulitCount: bebanRute.filter((r) => r.faktorMedan >= 1.2).length,
+      rutePakaiJarakGps: bebanRute.filter((r) => r.sumberJarak === "GPS").length,
     }
   })
 
@@ -437,9 +506,26 @@ export async function dapatkanEvaluasiInsentifPetugas(
     listToEvaluate.length > 0
       ? Math.max(1, Math.round(totalTargetAll / listToEvaluate.length))
       : 1000
+  const totalBebanDetik = listToEvaluate.reduce((acc, i) => acc + i.bebanDetik, 0)
+  const rataBebanDetik =
+    listToEvaluate.length > 0 ? Math.max(1, totalBebanDetik / listToEvaluate.length) : 1
 
   const evaluated: Omit<InsentifPetugasItem, "peringkat">[] =
-    listToEvaluate.map(({ petugas, ruteList, targetSL, realisasiSL, reading }) => {
+    listToEvaluate.map(
+      ({
+        petugas,
+        ruteList,
+        targetSL,
+        realisasiSL,
+        reading,
+        bebanDetik,
+        jarakRata,
+        persenSulit,
+        persenNonDomestik,
+        rataFaktorMedan,
+        ruteSulitCount,
+        rutePakaiJarakGps,
+      }) => {
       // 1. Capaian Kuantitas SL (0 - 100%)
       const capaianSlPersen =
         targetSL > 0
@@ -481,11 +567,16 @@ export async function dapatkanEvaluasiInsentifPetugas(
             : 78
           : 0
 
-      // Indeks Beban Kerja (Rasio Target SL petugas terhadap rata-rata perusahaan, dibatasi 0.70x s/d 1.40x)
-      const rawRatio = targetSL > 0 ? targetSL / rataTargetSL : 1.0
-      const indeksBebanKerja = Number(
-        Math.max(0.7, Math.min(1.4, rawRatio)).toFixed(2)
-      )
+      // Indeks Beban Kerja ABK (Jam kerja petugas terhadap rata-rata jam kerja, dibatasi 0.70x s/d 1.40x)
+      const clampIndeks = (v: number) =>
+        Number(Math.max(P.indeksMin, Math.min(P.indeksMax, v)).toFixed(2))
+      const indeksBebanKerja = clampIndeks(bebanDetik > 0 ? bebanDetik / rataBebanDetik : 1.0)
+      // Pembanding: indeks lama berbasis jumlah SL mentah
+      const indeksBebanSL = clampIndeks(targetSL > 0 ? targetSL / rataTargetSL : 1.0)
+      const bebanJam = Number((bebanDetik / 3600).toFixed(1))
+      const slTertimbang = Math.round(bebanDetik / abk.detikAcuanPerSL)
+      const faktorKesulitan = targetSL > 0 ? Number((slTertimbang / targetSL).toFixed(2)) : 1
+      const utilisasiPersen = Number(((bebanJam / kapasitasJamPerPetugas) * 100).toFixed(1))
 
       // Skor Komposit KPI Individu:
       // 40% Capaian SL + 25% Akurasi GPS + 20% Kualitas Tanpa Revisi + 15% Kecepatan
@@ -533,6 +624,18 @@ export async function dapatkanEvaluasiInsentifPetugas(
         totalAnomali,
         totalRevisi,
         indeksBebanKerja,
+        indeksBebanSL,
+        bebanJam,
+        slTertimbang,
+        faktorKesulitan,
+        utilisasiPersen,
+        jarakAntarMeterRata: Number(jarakRata.toFixed(1)),
+        persenSlSulit: Number(persenSulit.toFixed(1)),
+        persenSlNonDomestik: Number(persenNonDomestik.toFixed(1)),
+        rataFaktorMedan,
+        ruteSulitCount,
+        rutePakaiJarakGps,
+        durasiTersedia: (reading?.adaDurasi ?? 0) > 0,
         skorKpiAkhir,
         grade,
         labelGrade,
@@ -567,11 +670,26 @@ export async function dapatkanEvaluasiInsentifPetugas(
       totalTargetSL: totalTargetAll,
       totalRealisasiSL: totalRealisasiAll,
       rataTargetSL,
+      rataBebanJam: Number((rataBebanDetik / 3600).toFixed(1)),
+      totalSlTertimbang: items.reduce((acc, i) => acc + i.slTertimbang, 0),
+      kapasitasJamPerPetugas,
       rataSkorKpi,
       countGradeA: items.filter((i) => i.grade === "A").length,
       countGradeB: items.filter((i) => i.grade === "B").length,
       countGradeC: items.filter((i) => i.grade === "C").length,
       countGradeD: items.filter((i) => i.grade === "D").length,
+    },
+    parameterAbk: {
+      thblAcuanKondisi: abk.thblAcuanKondisi,
+      waktuBacaDasarDetik: abk.waktuBacaDasarDetik,
+      sumberWaktuBaca: abk.sumberWaktuBaca,
+      detikAcuanPerSL: Number(abk.detikAcuanPerSL.toFixed(1)),
+      kecepatanTempuhMps: P.kecepatanTempuhMps,
+      jarakDefaultMeter: P.jarakDefaultMeter,
+      faktorKelas: { ...P.faktorKelas },
+      faktorKondisiSulit: P.faktorKondisiSulit,
+      jamEfektifPerHari: P.jamEfektifPerHari,
+      hariKerjaBacaPerPeriode: P.hariKerjaBacaPerPeriode,
     },
     items,
   }

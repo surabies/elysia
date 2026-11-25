@@ -4,9 +4,9 @@ import path from 'path';
 
 if (!process.env.DATABASE_URL) {
   try {
-    dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+    dotenv.config({ path: path.resolve(__dirname, '../../.env.local'), quiet: true });
     if (!process.env.DATABASE_URL) {
-      dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+      dotenv.config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
     }
   } catch {
     // Abaikan

@@ -15,6 +15,7 @@ import {
   Target,
   Calculator,
   FileText,
+  Mountain,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,17 +43,22 @@ import { KpiSummaryStrip } from "./components/KpiSummaryStrip"
 import { KpiScorecardTable } from "./components/KpiScorecardTable"
 import { AddKpiSheet } from "./components/AddKpiSheet"
 import { KpiInsentifPetugasTab } from "./components/KpiInsentifPetugasTab"
+import { KpiFaktorMedanTab } from "./components/KpiFaktorMedanTab"
 
 interface KpiScorecardViewProps {
   initialPerspectives?: Perspective[]
   initialPeriod?: string
+  initialTab?: "scorecard" | "insentif" | "medan"
 }
 
 export function KpiScorecardView({
   initialPerspectives,
   initialPeriod = "Sep 2026",
+  initialTab = "scorecard",
 }: KpiScorecardViewProps = {}) {
-  const [activeTab, setActiveTab] = React.useState<"scorecard" | "insentif">("scorecard")
+  const [activeTab, setActiveTab] = React.useState<"scorecard" | "insentif" | "medan">(
+    initialTab
+  )
   const [perspectives, setPerspectives] = React.useState<Perspective[]>(
     initialPerspectives && initialPerspectives.length > 0
       ? initialPerspectives
@@ -366,6 +372,20 @@ export function KpiScorecardView({
             <Calculator className="size-3.5 text-(--ds-green-700)" />
             <span>2. Matriks Beban Kerja &amp; Insentif Petugas</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("medan")}
+            className={cn(
+              "h-8 px-3 rounded-md border text-label-12 font-medium flex items-center gap-1.5 transition-all cursor-pointer bg-card",
+              activeTab === "medan"
+                ? "border-foreground/40 text-foreground font-semibold shadow-2xs"
+                : "border-border text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Mountain className="size-3.5 text-(--ds-amber-700)" />
+            <span>3. Konfigurasi Faktor Medan Rute (ABK)</span>
+          </button>
         </div>
 
         {/* Tombol Sinkronisasi Laporan Riil, Panduan Rumus & Share */}
@@ -418,12 +438,16 @@ export function KpiScorecardView({
             <h1 className="text-base font-bold text-foreground">
               {activeTab === "scorecard"
                 ? "Strategy Scorecard (KPI Siklus Meter-to-Cash)"
-                : "Matriks Evaluasi KPI & Simulasi Insentif Berbasis Beban Kerja"}
+                : activeTab === "insentif"
+                ? "Matriks Evaluasi KPI & Simulasi Insentif Berbasis Beban Kerja"
+                : "Manajemen Faktor Medan & Aksesibilitas Rute Catat Meter (ABK)"}
             </h1>
             <p className="text-xs text-muted-foreground">
               {activeTab === "scorecard"
                 ? "Evaluasi 4 Perspektif Operasional: Pencatatan Lapangan (35%), Verifikasi V1/V2 (30%), Closing DRD (20%), dan Master Spasial (15%)"
-                : "Perhitungan objektif insentif petugas berdasarkan Indeks Beban Kerja (SL) × Skor Capaian Kinerja (Kuantitas, GPS, Kualitas & Durasi)"}
+                : activeTab === "insentif"
+                ? "Perhitungan objektif insentif petugas berdasarkan Indeks Beban Kerja (SL) × Skor Capaian Kinerja (Kuantitas, GPS, Kualitas & Durasi)"
+                : "Klasifikasi topografi lereng/tebing, moda akses motor/kaki, dan pembobotan kesulitan 125 rute catat meter"}
             </p>
           </div>
 
@@ -509,8 +533,10 @@ export function KpiScorecardView({
               onOpenAddKpi={handleOpenAddKpi}
             />
           </>
-        ) : (
+        ) : activeTab === "insentif" ? (
           <KpiInsentifPetugasTab selectedPeriod={selectedPeriod} />
+        ) : (
+          <KpiFaktorMedanTab />
         )}
       </div>
 
@@ -566,9 +592,10 @@ export function KpiScorecardView({
                 Mengatasi ketimpangan antara petugas rute padat dan rute ringan serta mencegah praktik tembak angka tanpa foto/GPS:
               </p>
               <div className="p-2.5 rounded bg-card border border-border font-mono text-xs space-y-1">
-                <div>1. Indeks Beban = Clamp(Target SL Petugas / Rata-rata Target SL, 0.70, 1.40)</div>
-                <div>2. Skor KPI = (40% × %SL) + (25% × %GPS) + (20% × %Kualitas) + (15% × %Kecepatan)</div>
-                <div>3. Total Insentif = (Pagu Dasar + [SL Terbaca × Tarif/SL]) × Indeks Beban × Pengali Grade</div>
+                <div>1. Beban Kerja (jam) = Σ [Waktu Baca × Faktor Kelas × Faktor Kondisi + Jarak antar Meter ÷ Kecepatan] ÷ 3600</div>
+                <div>2. Indeks Beban (ABK) = Clamp(Jam Kerja Petugas / Rata-rata Jam Kerja, 0.70, 1.40)</div>
+                <div>3. Skor KPI = (40% × %SL) + (25% × %GPS) + (20% × %Kualitas) + (15% × %Kecepatan)</div>
+                <div>4. Total Insentif = (Pagu Dasar + [SL Terbaca × Tarif/SL]) × Indeks Beban × Pengali Grade</div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center text-copy-12">
                 <div className="p-2 rounded bg-card border border-border">

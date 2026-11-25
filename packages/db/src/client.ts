@@ -6,15 +6,15 @@ import path from 'path';
 
 // Hanya muat dotenv jika DATABASE_URL belum ada di process.env (misal saat standalone test/script)
 // Mencegah spam stderr "◇ injected env (0)" di runtime Next.js dan Vercel Serverless Function
-if (!process.env.DATABASE_URL) {
+if (!process.env.DATABASE_URL && !process.env.NEXT_RUNTIME && !process.env.VERCEL) {
   try {
-    dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+    dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), quiet: true });
     if (!process.env.DATABASE_URL) {
-      dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+      dotenv.config({ path: path.resolve(process.cwd(), '.env'), quiet: true });
     }
     if (!process.env.DATABASE_URL) {
-      dotenv.config({ path: path.resolve(__dirname, '../../../.env.local') });
-      dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+      dotenv.config({ path: path.resolve(__dirname, '../../../.env.local'), quiet: true });
+      dotenv.config({ path: path.resolve(__dirname, '../../../.env'), quiet: true });
     }
   } catch {
     // Abaikan jika berkas tidak ditemukan

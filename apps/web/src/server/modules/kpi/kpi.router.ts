@@ -9,6 +9,14 @@ import {
   sinkronisasiKpiDariDatabaseRiil,
   dapatkanEvaluasiInsentifPetugas,
 } from "../../services/kpi/kpi.service"
+import {
+  dapatkanDaftarFaktorMedanLengkap,
+  simpanMapFaktorMedan,
+  type RuteFaktorMedanConfig,
+  FAKTOR_TOPOGRAFI_STANDAR,
+  FAKTOR_MODA_AKSES_STANDAR,
+  DAFTAR_HAMBATAN_KHUSUS,
+} from "../../services/kpi/beban-kerja"
 
 export const kpiRouter = new Elysia({ prefix: "/kpi" })
   .use(authPlugin)
@@ -88,6 +96,98 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
       query: t.Object({
         periode: t.Optional(t.String()),
       }),
+    }
+  )
+
+  // 1d. Ambil Daftar & Konfigurasi Faktor Medan Seluruh Rute (ABK)
+  .get(
+    "/faktor-medan",
+    async ({ set }) => {
+      try {
+        const result = await dapatkanDaftarFaktorMedanLengkap()
+        return {
+          success: true,
+          data: result,
+          standarAcuan: {
+            topografi: FAKTOR_TOPOGRAFI_STANDAR,
+            modaAkses: FAKTOR_MODA_AKSES_STANDAR,
+            hambatanKhusus: DAFTAR_HAMBATAN_KHUSUS,
+          },
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal memuat konfigurasi faktor medan rute",
+        }
+      }
+    }
+  )
+
+  // 1e. Simpan Pembaruan Faktor Medan Rute (Individual / Bulk)
+  .put(
+    "/faktor-medan",
+    async ({ body, user, set }) => {
+      try {
+        const ok = await simpanMapFaktorMedan(
+          body.ruteList as RuteFaktorMedanConfig[],
+          user?.name || user?.email || "SUPERADMIN"
+        )
+        if (!ok) throw new Error("Gagal menyimpan ke database")
+        return {
+          success: true,
+          message: "Konfigurasi faktor medan rute berhasil diperbarui",
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal menyimpan faktor medan",
+        }
+      }
+    },
+    {
+      body: t.Object({
+        ruteList: t.Array(
+          t.Object({
+            ruteKode: t.String(),
+            seksiKode: t.Optional(t.String()),
+            seksiNama: t.Optional(t.String()),
+            pencatatDefault: t.Optional(t.String()),
+            pencatatNama: t.Optional(t.String()),
+            jumlahSL: t.Number(),
+            topografi: t.String(),
+            modaAkses: t.String(),
+            faktorMedan: t.Number(),
+            hambatanKhusus: t.Array(t.String()),
+            catatan: t.Optional(t.String()),
+          })
+        ),
+      }),
+    }
+  )
+
+  // 1f. Reset Faktor Medan Rute ke Default Heuristik Regional
+  .post(
+    "/faktor-medan/reset",
+    async ({ user, set }) => {
+      try {
+        const res = await dapatkanDaftarFaktorMedanLengkap()
+        const ok = await simpanMapFaktorMedan(
+          res.ruteList,
+          user?.name || user?.email || "SUPERADMIN"
+        )
+        return {
+          success: ok,
+          message: "Faktor medan berhasil di-reset ke acuan standar regional",
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal me-reset faktor medan",
+        }
+      }
     }
   )
 

@@ -120,7 +120,11 @@ export function KpiInsentifPetugasTab({
       "Jumlah Rute",
       "Target Beban SL",
       "Realisasi SL",
-      "Indeks Beban Kerja",
+      "Beban Kerja ABK (jam)",
+      "SL Tertimbang",
+      "Faktor Kesulitan",
+      "Indeks Beban ABK",
+      "Indeks Beban SL (lama)",
       "Capaian SL (%)",
       "Akurasi GPS (%)",
       "Kualitas Tanpa Revisi (%)",
@@ -137,7 +141,11 @@ export function KpiInsentifPetugasTab({
       i.jumlahRute,
       i.targetSL,
       i.realisasiSL,
+      i.bebanJam,
+      i.slTertimbang,
+      i.faktorKesulitan,
       i.indeksBebanKerja,
+      i.indeksBebanSL,
       i.capaianSlPersen,
       i.akurasiGpsPersen,
       i.kualitasBacaPersen,
@@ -185,19 +193,21 @@ export function KpiInsentifPetugasTab({
 
         <div className="rounded-lg border border-border bg-card p-3.5">
           <div className="flex items-center justify-between text-label-12 text-muted-foreground">
-            <span>Acuan Rata-rata Beban Kerja</span>
+            <span>Acuan Rata-rata Beban Kerja (ABK)</span>
             <Scale className="size-4 text-(--ds-purple-700)" />
           </div>
           <div className="mt-1.5 flex items-baseline gap-2">
             <span className="text-heading-24 font-mono font-bold text-foreground tabular-nums">
-              {loading ? "—" : num(data?.summary.rataTargetSL ?? 0)}
+              {loading ? "—" : (data?.summary.rataBebanJam ?? 0).toLocaleString("id-ID")}
             </span>
             <span className="text-label-12 text-muted-foreground">
-              SL / Petugas (1,00x)
+              jam / Petugas (1,00x)
             </span>
           </div>
           <p className="mt-1 text-copy-12 text-muted-foreground">
-            Total beban: {num(data?.summary.totalTargetSL ?? 0)} SL aktif
+            {num(data?.summary.totalTargetSL ?? 0)} SL ={" "}
+            {num(data?.summary.totalSlTertimbang ?? 0)} SL tertimbang · kapasitas{" "}
+            {data?.summary.kapasitasJamPerPetugas ?? 0} jam
           </p>
         </div>
 
@@ -331,6 +341,30 @@ export function KpiInsentifPetugasTab({
             Grade A (&ge;90): <strong>110%</strong> | Grade B (75-89): <strong>100%</strong> | Grade C (60-74): <strong>65%</strong> | Grade D (&lt;60): <strong>0%</strong>
           </span>
         </div>
+
+        {/* Keterangan Analisis Beban Kerja (ABK) */}
+        {data?.parameterAbk && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 border-t border-border text-label-11 text-muted-foreground">
+            <span className="inline-flex items-center gap-1 font-medium text-foreground">
+              <Scale className="size-3.5 text-(--ds-purple-700)" />
+              Indeks Beban (ABK) = Jam Kerja Petugas ÷ Rata-rata Jam Kerja:
+            </span>
+            <span>
+              • Waktu baca <strong>{data.parameterAbk.waktuBacaDasarDetik} dtk/SL</strong>
+              {data.parameterAbk.sumberWaktuBaca === "ASUMSI" ? " (asumsi, durasi belum terekam)" : " (median riil)"}
+            </span>
+            <span>
+              • Tempuh: jarak antar meter ÷ {data.parameterAbk.kecepatanTempuhMps} m/dtk (default {data.parameterAbk.jarakDefaultMeter}m)
+            </span>
+            <span>
+              • Faktor kelas: Niaga Kecil ×{data.parameterAbk.faktorKelas.NIAGA_KECIL} · Niaga Besar/Instansi ×{data.parameterAbk.faktorKelas.NIAGA_BESAR} · Industri/Meter Besar ×{data.parameterAbk.faktorKelas.INDUSTRI}
+            </span>
+            <span>• Kendala akses/rusak ×{data.parameterAbk.faktorKondisiSulit}</span>
+            <span>
+              • Kapasitas {data.parameterAbk.jamEfektifPerHari} jam × {data.parameterAbk.hariKerjaBacaPerPeriode} hari
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 3. Filter & Pencarian Petugas */}
@@ -390,6 +424,7 @@ export function KpiInsentifPetugasTab({
                 <th className="py-2.5 px-3.5">Petugas Pencatat</th>
                 <th className="py-2.5 px-3 text-center">Rute</th>
                 <th className="py-2.5 px-3 text-right">Beban &amp; Realisasi SL</th>
+                <th className="py-2.5 px-3 text-right">Beban Kerja (ABK)</th>
                 <th className="py-2.5 px-3 text-center">Indeks Beban</th>
                 <th className="py-2.5 px-3 text-right">Capaian (40%)</th>
                 <th className="py-2.5 px-3 text-right">GPS &le;50m (25%)</th>
@@ -403,13 +438,13 @@ export function KpiInsentifPetugasTab({
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={13} className="py-12 text-center text-muted-foreground">
                     Memuat dan mengkalkulasi data beban kerja &amp; capaian petugas dari laporan...
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={13} className="py-12 text-center text-muted-foreground">
                     Tidak ada data petugas yang cocok dengan filter.
                   </td>
                 </tr>
@@ -457,8 +492,32 @@ export function KpiInsentifPetugasTab({
                       </span>
                     </td>
 
+                    {/* 5a. Beban Kerja ABK */}
+                    <td
+                      className="py-2 px-3 text-right font-mono"
+                      title={[
+                        `SL tertimbang: ${num(item.slTertimbang)} (faktor kesulitan total ×${item.faktorKesulitan.toFixed(2)})`,
+                        `Faktor medan rute: ${item.rataFaktorMedan ? `${item.rataFaktorMedan.toFixed(2)}x` : "1.00x"} (${item.ruteSulitCount ?? 0} rute berbukit/curam)`,
+                        `Utilisasi kapasitas: ${item.utilisasiPersen}%`,
+                        `Jarak rata-rata antar meter: ${item.jarakAntarMeterRata} m (${item.rutePakaiJarakGps} rute dari GPS)`,
+                        `SL kendala akses/rusak: ${item.persenSlSulit}%`,
+                        `SL non-domestik: ${item.persenSlNonDomestik}%`,
+                      ].join("\n")}
+                    >
+                      <span className="font-semibold text-foreground">
+                        {item.bebanJam.toLocaleString("id-ID")} jam
+                      </span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {num(item.slTertimbang)} SLt
+                      </span>
+                    </td>
+
                     {/* 5. Indeks Beban Kerja */}
-                    <td className="py-2 px-3 text-center font-mono">
+                    <td
+                      className="py-2 px-3 text-center font-mono"
+                      title={`Indeks ABK (jam kerja): ${item.indeksBebanKerja.toFixed(2)}x\nIndeks lama (SL mentah): ${item.indeksBebanSL.toFixed(2)}x`}
+                    >
                       <Badge
                         variant={
                           item.indeksBebanKerja >= 1.1
@@ -491,7 +550,8 @@ export function KpiInsentifPetugasTab({
 
                     {/* 9. Durasi / Kecepatan (15%) */}
                     <td className="py-2 px-3 text-right font-mono text-muted-foreground">
-                      {item.skorKecepatanPersen}% ({item.rataDurasiDetik}d)
+                      {item.skorKecepatanPersen}% (
+                      {item.durasiTersedia ? `${item.rataDurasiDetik}d` : "durasi n/a"})
                     </td>
 
                     {/* 10. Skor KPI Akhir */}

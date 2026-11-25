@@ -137,6 +137,7 @@ const EXPLICIT_ROUTE_ROLES: Record<string, readonly AppRole[]> = {
     "VERIFIKATOR_2",
   ],
   "/kpi": ["SUPERADMIN", "EXECUTIVE"],
+  "/kpi/faktor-medan": ["SUPERADMIN", "EXECUTIVE"],
   "/stand-konsumen": [
     "SUPERADMIN",
     "MANAGER",

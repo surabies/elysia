@@ -107,8 +107,18 @@ export const navGroups: NavGroup[] = [
       {
         title: "Scorecard KPI",
         href: "/kpi",
-        description: "Target kinerja tahunan, metrik finansial, dan retensi tim.",
-        keywords: ["kpi", "scorecard", "strategy", "goals", "target", "kinerja"],
+        description: "Target kinerja tahunan, matriks insentif ABK, dan faktor medan rute.",
+        keywords: [
+          "kpi",
+          "scorecard",
+          "strategy",
+          "goals",
+          "target",
+          "kinerja",
+          "insentif",
+          "abk",
+          "faktor medan",
+        ],
         roles: ["SUPERADMIN", "EXECUTIVE"],
       },
       {

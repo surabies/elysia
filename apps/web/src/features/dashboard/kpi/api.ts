@@ -89,4 +89,41 @@ export const kpiApi = {
     }
     return json.data;
   },
+
+  /** Mengambil konfigurasi faktor medan rute & acuan standar */
+  async getFaktorMedan() {
+    const res = await fetch("/api/kpi/faktor-medan");
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memuat konfigurasi faktor medan rute");
+    }
+    return json;
+  },
+
+  /** Menyimpan konfigurasi faktor medan rute (batch/individual) */
+  async updateFaktorMedan(ruteList: any[]) {
+    const res = await fetch("/api/kpi/faktor-medan", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ruteList }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal menyimpan konfigurasi faktor medan");
+    }
+    return json;
+  },
+
+  /** Reset faktor medan ke acuan standar heuristik regional */
+  async resetFaktorMedan() {
+    const res = await fetch("/api/kpi/faktor-medan/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal me-reset faktor medan rute");
+    }
+    return json;
+  },
 };

@@ -3,11 +3,13 @@ import path from 'path';
 import type { SeedOptions } from './types';
 
 // Load environment in hierarchical order
-const rootDir = path.resolve(__dirname, '../../../../');
-dotenv.config({ path: path.resolve(rootDir, '.env.local') });
-dotenv.config({ path: path.resolve(rootDir, '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+if (!process.env.DATABASE_URL) {
+  const rootDir = path.resolve(__dirname, '../../../../');
+  dotenv.config({ path: path.resolve(rootDir, '.env.local'), quiet: true });
+  dotenv.config({ path: path.resolve(rootDir, '.env'), quiet: true });
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), quiet: true });
+  dotenv.config({ path: path.resolve(process.cwd(), '.env'), quiet: true });
+}
 
 export const FALLBACK_SEED_PASSWORD = 'wiskaprayoga12';
 
