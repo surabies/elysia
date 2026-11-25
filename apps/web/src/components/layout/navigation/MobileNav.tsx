@@ -148,6 +148,8 @@ interface MobileNavContextValue {
   setIsSearchOpen: (open: boolean) => void;
   openSearch: () => void;
   closeSearch: () => void;
+  isFloatingBarHidden: boolean;
+  setIsFloatingBarHidden: (hidden: boolean) => void;
   user?: MobileNavUser;
   onKeluar?: () => Promise<void>;
 }
@@ -162,6 +164,10 @@ export function useMobileNav() {
     throw new Error("useMobileNav must be used within MobileNavProvider");
   }
   return ctx;
+}
+
+export function useMobileNavOptional() {
+  return React.useContext(MobileNavContext);
 }
 
 export function MobileNavProvider({
@@ -214,6 +220,12 @@ export function MobileNavProvider({
   }, [setIsSearchOpen]);
 
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all");
+  const [isFloatingBarHidden, setIsFloatingBarHidden] = React.useState(false);
+
+  // Otomatis reset visibilitas floating bar saat pindah rute
+  React.useEffect(() => {
+    setIsFloatingBarHidden(false);
+  }, [pathname]);
 
   // Tutup dengan tombol Esc
   React.useEffect(() => {
@@ -240,6 +252,8 @@ export function MobileNavProvider({
         setIsSearchOpen,
         openSearch,
         closeSearch,
+        isFloatingBarHidden,
+        setIsFloatingBarHidden,
         user,
         onKeluar,
       }}
@@ -254,7 +268,9 @@ export function MobileNavProvider({
 // ============================================================================
 
 function MobileFloatingBar() {
-  const { isOpen, toggleMenu, openSearch } = useMobileNav();
+  const { isOpen, toggleMenu, openSearch, isFloatingBarHidden } = useMobileNav();
+
+  if (isFloatingBarHidden) return null;
 
   return (
     <div
@@ -936,14 +952,18 @@ function MobileSearchPanel() {
 // ============================================================================
 
 export function MobileNav() {
+  const { isFloatingBarHidden } = useMobileNav();
+
   return (
     <>
-      <MobileFloatingBar />
+      {!isFloatingBarHidden && <MobileFloatingBar />}
       {/* Gradasi Blur Memudar di Bagian Bawah */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-45 h-20 bg-gradient-to-t from-background via-background/70 to-transparent backdrop-blur-[6px] [mask-image:linear-gradient(to_top,black_30%,transparent)] lg:hidden"
-      />
+      {!isFloatingBarHidden && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-45 h-20 bg-gradient-to-t from-background via-background/70 to-transparent backdrop-blur-[6px] [mask-image:linear-gradient(to_top,black_30%,transparent)] lg:hidden"
+        />
+      )}
       <AnimatePresence>
         <MobileMenuPanel />
       </AnimatePresence>

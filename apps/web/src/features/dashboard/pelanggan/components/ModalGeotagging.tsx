@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobileNavOptional } from '@/components/layout';
 import { pelangganApi } from '../api';
 import type { PelangganGpsItem } from '../types';
 import { PetaPinpointGps } from './PetaPinpointGps';
@@ -76,6 +78,7 @@ export function ModalGeotagging({
   onSuccess: () => void;
 }) {
   const isMobile = useIsMobile();
+  const mobileNav = useMobileNavOptional();
   const [lat, setLat] = React.useState('');
   const [lng, setLng] = React.useState('');
   const [catatan, setCatatan] = React.useState('');
@@ -116,6 +119,16 @@ export function ModalGeotagging({
     }
     return () => stopWatchGps();
   }, [open, pelanggan, stopWatchGps]);
+
+  // Sembunyikan floating bar menu navigasi mobile saat modal/sheet peta terbuka
+  React.useEffect(() => {
+    if (isMobile && open && mobileNav) {
+      mobileNav.setIsFloatingBarHidden(true);
+      return () => {
+        mobileNav.setIsFloatingBarHidden(false);
+      };
+    }
+  }, [isMobile, open, mobileNav]);
 
   const parsedLat = parseFloat(lat);
   const parsedLng = parseFloat(lng);
@@ -266,8 +279,8 @@ export function ModalGeotagging({
   if (isMobile) {
     if (!open) return null;
 
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-background animate-in fade-in-0 slide-in-from-bottom-4 duration-200">
+    const mobileContent = (
+      <div className="fixed inset-0 z-[60] flex flex-col bg-background animate-in fade-in-0 slide-in-from-bottom-4 duration-200">
         {/* 1. Native App Top Bar */}
         <header className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border bg-card shrink-0">
           <button
@@ -443,6 +456,11 @@ export function ModalGeotagging({
         </form>
       </div>
     );
+
+    if (typeof document !== 'undefined') {
+      return createPortal(mobileContent, document.body);
+    }
+    return mobileContent;
   }
 
   // =========================================================================
