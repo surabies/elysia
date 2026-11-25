@@ -13,6 +13,7 @@ import {
   simpanAturanInsentif,
   dapatkanAlokasiBebanPetugas,
   simpanAlokasiBebanPetugas,
+  simpanFaktorKesulitanRute,
   dapatkanDaftarPemilikKpi,
 } from "../../services/kpi/kpi.service"
 
@@ -242,6 +243,40 @@ export const kpiRouter = new Elysia({ prefix: "/kpi" })
         faktorKesulitanMedan: t.Optional(t.Number()),
         statusTugas: t.Optional(t.String()),
         catatan: t.Optional(t.Nullable(t.String())),
+      }),
+    }
+  )
+
+  // 1i. CRUD: Simpan / Perbarui Faktor Kesulitan Medan per Kode Rute
+  .put(
+    "/alokasi-beban/rute/:ruteKode",
+    async ({ params, body, set }) => {
+      try {
+        const result = await simpanFaktorKesulitanRute(params.ruteKode, {
+          faktorKesulitanMedan: body.faktorKesulitanMedan,
+          kategoriMedan: body.kategoriMedan,
+          keterangan: body.keterangan,
+        })
+        return {
+          message: `Faktor kesulitan medan rute ${params.ruteKode} berhasil diperbarui`,
+          ...result,
+        }
+      } catch (err: any) {
+        set.status = 500
+        return {
+          success: false,
+          error: err.message || "Gagal memperbarui faktor kesulitan rute",
+        }
+      }
+    },
+    {
+      params: t.Object({
+        ruteKode: t.String(),
+      }),
+      body: t.Object({
+        faktorKesulitanMedan: t.Number(),
+        kategoriMedan: t.Optional(t.String()),
+        keterangan: t.Optional(t.Nullable(t.String())),
       }),
     }
   )

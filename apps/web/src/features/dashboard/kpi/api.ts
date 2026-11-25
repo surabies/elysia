@@ -192,6 +192,30 @@ export const kpiApi = {
     return json;
   },
 
+  /** Memperbarui faktor kesulitan medan per kode rute */
+  async updateFaktorRute(
+    ruteKode: string,
+    data: {
+      faktorKesulitanMedan: number;
+      kategoriMedan?: string;
+      keterangan?: string | null;
+    }
+  ) {
+    const res = await fetch(
+      `/api/kpi/alokasi-beban/rute/${encodeURIComponent(ruteKode)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    );
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal memperbarui faktor kesulitan rute");
+    }
+    return json;
+  },
+
   /** Memperbarui penanggung jawab (owner) KPI */
   async updatePemilik(
     kpiId: string,

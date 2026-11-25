@@ -12,7 +12,7 @@ export function KpiSummaryStrip({ summary }: KpiSummaryStripProps) {
   const companyStyling = getStatusStyling(summary.companyStatus)
 
   return (
-    <div className="grid grid-cols-1 divide-y divide-border border-b border-border bg-card/60 sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
+    <div className="grid shrink-0 grid-cols-1 divide-y divide-border border-b border-border bg-card/60 sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
       {/* Sel 1: Skor Efektivitas M2C */}
       <div className="flex flex-col justify-between p-3.5 sm:p-4">
         <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">

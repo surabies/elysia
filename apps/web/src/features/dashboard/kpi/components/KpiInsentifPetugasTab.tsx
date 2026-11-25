@@ -168,7 +168,7 @@ export function KpiInsentifPetugasTab({
   };
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="w-full min-h-0 flex-1 overflow-y-auto space-y-3.5 hide-scrollbar">
       {/* 1. Ringkasan 4 Kartu KPI & Anggaran Insentif */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="rounded-lg border border-border bg-card p-3.5">

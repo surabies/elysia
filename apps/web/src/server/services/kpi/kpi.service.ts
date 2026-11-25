@@ -6,6 +6,7 @@ import {
   kpiRealisasi,
   kpiAturanInsentif,
   kpiAlokasiBebanPetugas,
+  kpiFaktorKesulitanRute,
   pelanggan,
   caterBacaMeter,
   petugasCater,
@@ -505,6 +506,18 @@ export async function simpanAturanInsentif(
   return dapatkanAturanInsentif(thbl)
 }
 
+export interface AlokasiRuteItem {
+  kode: string
+  seksiKode: string | null
+  seksiNama: string | null
+  petugasId: string | null
+  petugasNama: string | null
+  targetSl: number
+  faktorKesulitanMedan: number
+  kategoriMedan: string
+  keterangan: string | null
+}
+
 export interface AlokasiPetugasItem {
   petugasId: string
   nama: string
@@ -515,21 +528,30 @@ export interface AlokasiPetugasItem {
   targetSlPenugasan: number | null
   targetEfektif: number
   faktorKesulitanMedan: number
+  faktorKesulitanRuteKomposit: number
+  ruteDetails: {
+    kode: string
+    seksiNama: string | null
+    targetSl: number
+    faktorKesulitanMedan: number
+    kategoriMedan: string
+  }[]
   statusTugas: "AKTIF" | "CUTI" | "SAKIT" | "BANTUAN_KHUSUS"
   catatan: string | null
 }
 
 /**
  * MENGAMBIL DAFTAR ALOKASI BEBAN KERJA & TARGET PENUGASAN PETUGAS LAPANGAN (CRUD)
+ * Mengintegrasikan faktor kesulitan medan per Kode Rute dan agregasi terbobot per Petugas.
  */
 export async function dapatkanAlokasiBebanPetugas(
   periodeInput = "202611"
-): Promise<{ thbl: string; items: AlokasiPetugasItem[] }> {
+): Promise<{ thbl: string; items: AlokasiPetugasItem[]; routes: AlokasiRuteItem[] }> {
   const thbl = konversiPeriodeKeThbl(periodeInput)
 
-  const [petugasList, routes, targetPerRute, alokasiRows] = await Promise.all([
+  const [petugasList, routes, targetPerRute, alokasiRows, routeFaktorRows] = await Promise.all([
     db.select().from(petugasCater).orderBy(asc(petugasCater.nama)),
-    db.select().from(ruteCater),
+    db.select().from(ruteCater).orderBy(asc(ruteCater.kode)),
     db
       .select({
         ruteKode: pelanggan.ruteKode,
@@ -546,20 +568,79 @@ export async function dapatkanAlokasiBebanPetugas(
           eq(kpiAlokasiBebanPetugas.periode, periodeInput)
         )
       ),
+    db.select().from(kpiFaktorKesulitanRute),
   ])
 
   const targetMap = new Map(targetPerRute.map((r) => [r.ruteKode, r.total]))
   const alokasiMap = new Map(alokasiRows.map((a) => [a.petugasId, a]))
+  const routeFaktorMap = new Map(routeFaktorRows.map((rf) => [rf.ruteKode, rf]))
+  const petugasMap = new Map(petugasList.map((p) => [p.id, p]))
 
+  // 1. Data seluruh rute dengan faktor kesulitan medan masing-masing
+  const allRoutes: AlokasiRuteItem[] = routes.map((r) => {
+    const fData = routeFaktorMap.get(r.kode)
+    const p = r.pencatatDefault ? petugasMap.get(r.pencatatDefault) : null
+    return {
+      kode: r.kode,
+      seksiKode: r.seksiKode,
+      seksiNama: r.seksiNama,
+      petugasId: r.pencatatDefault,
+      petugasNama: p ? p.nama : null,
+      targetSl: targetMap.get(r.kode) ?? 0,
+      faktorKesulitanMedan: fData?.faktorKesulitanMedan ?? 1.0,
+      kategoriMedan: fData?.kategoriMedan ?? "NORMAL",
+      keterangan: fData?.keterangan ?? null,
+    }
+  })
+
+  // 2. Data agregasi per petugas
   const items: AlokasiPetugasItem[] = petugasList.map((p) => {
     const assignedRoutes = routes.filter((r) => r.pencatatDefault === p.id)
     const targetRuteStandar = assignedRoutes.reduce(
       (acc, r) => acc + (targetMap.get(r.kode) ?? 0),
       0
     )
+
+    const ruteDetails = assignedRoutes.map((r) => {
+      const fData = routeFaktorMap.get(r.kode)
+      const targetSl = targetMap.get(r.kode) ?? 0
+      return {
+        kode: r.kode,
+        seksiNama: r.seksiNama,
+        targetSl,
+        faktorKesulitanMedan: fData?.faktorKesulitanMedan ?? 1.0,
+        kategoriMedan: fData?.kategoriMedan ?? "NORMAL",
+      }
+    })
+
+    // Hitung rata-rata terbobot faktor kesulitan medan berdasarkan target SL rute
+    let sumSl = 0
+    let sumWeighted = 0
+    ruteDetails.forEach((rd) => {
+      sumSl += rd.targetSl
+      sumWeighted += rd.targetSl * rd.faktorKesulitanMedan
+    })
+
+    const faktorKesulitanRuteKomposit =
+      sumSl > 0
+        ? Number((sumWeighted / sumSl).toFixed(2))
+        : ruteDetails.length > 0
+        ? Number(
+            (
+              ruteDetails.reduce((acc, rd) => acc + rd.faktorKesulitanMedan, 0) /
+              ruteDetails.length
+            ).toFixed(2)
+          )
+        : 1.0
+
     const alokasi = alokasiMap.get(p.id)
     const targetSlPenugasan = alokasi?.targetSlPenugasan ?? null
-    const faktorKesulitanMedan = alokasi?.faktorKesulitanMedan ?? 1.0
+    // Gunakan faktor spesifik penugasan jika di-override secara sengaja, jika tidak gunakan komposit rute
+    const faktorKesulitanMedan =
+      alokasi?.faktorKesulitanMedan && alokasi.faktorKesulitanMedan !== 1.0
+        ? alokasi.faktorKesulitanMedan
+        : faktorKesulitanRuteKomposit
+
     const statusTugas =
       (alokasi?.statusTugas as any) || (p.aktif ? "AKTIF" : "CUTI")
     const catatan = alokasi?.catatan ?? null
@@ -579,12 +660,44 @@ export async function dapatkanAlokasiBebanPetugas(
       targetSlPenugasan,
       targetEfektif,
       faktorKesulitanMedan,
+      faktorKesulitanRuteKomposit,
+      ruteDetails,
       statusTugas,
       catatan,
     }
   })
 
-  return { thbl, items }
+  return { thbl, items, routes: allRoutes }
+}
+
+/**
+ * SIMPAN FAKTOR KESULITAN MEDAN PER KODE RUTE (CRUD)
+ */
+export async function simpanFaktorKesulitanRute(
+  ruteKode: string,
+  data: {
+    faktorKesulitanMedan: number
+    kategoriMedan?: string
+    keterangan?: string | null
+  }
+) {
+  const values = {
+    ruteKode,
+    faktorKesulitanMedan: data.faktorKesulitanMedan ?? 1.0,
+    kategoriMedan: data.kategoriMedan ?? "NORMAL",
+    keterangan: data.keterangan ?? null,
+    updatedAt: new Date(),
+  }
+
+  await db
+    .insert(kpiFaktorKesulitanRute)
+    .values(values)
+    .onConflictDoUpdate({
+      target: kpiFaktorKesulitanRute.ruteKode,
+      set: values,
+    })
+
+  return { success: true, ruteKode }
 }
 
 /**
@@ -713,7 +826,7 @@ export async function dapatkanEvaluasiInsentifPetugas(
 ): Promise<EvaluasiInsentifResult> {
   const thbl = konversiPeriodeKeThbl(thblInput)
 
-  const [periodeInfo, aturan, listPetugas, routes, targetPerRute, readingsPerPetugas, alokasiRows] =
+  const [periodeInfo, aturan, listPetugas, routes, targetPerRute, readingsPerPetugas, alokasiRows, routeFaktorRows] =
     await Promise.all([
       db
         .select({ status: periodePenagihan.status })
@@ -756,12 +869,14 @@ export async function dapatkanEvaluasiInsentifPetugas(
             eq(kpiAlokasiBebanPetugas.periode, thblInput)
           )
         ),
+      db.select().from(kpiFaktorKesulitanRute),
     ])
 
   const isLocked = periodeInfo[0]?.status === "TERKUNCI"
   const targetMap = new Map(targetPerRute.map((r) => [r.ruteKode, r.total]))
   const readingMap = new Map(readingsPerPetugas.map((r) => [r.petugasId, r]))
   const alokasiMap = new Map(alokasiRows.map((a) => [a.petugasId, a]))
+  const routeFaktorMap = new Map(routeFaktorRows.map((rf) => [rf.ruteKode, rf]))
 
   // Hitung target SL per petugas dengan mempertimbangkan custom override
   const rawPetugas = listPetugas.map((p) => {
@@ -773,9 +888,23 @@ export async function dapatkanEvaluasiInsentifPetugas(
       0
     )
 
+    // Agregasi faktor kesulitan medan dari rute-rute yang diampu
+    let sumSl = 0
+    let sumWeighted = 0
+    assignedRoutes.forEach((r) => {
+      const sl = targetMap.get(r.kode) ?? 0
+      const f = routeFaktorMap.get(r.kode)?.faktorKesulitanMedan ?? 1.0
+      sumSl += sl
+      sumWeighted += sl * f
+    })
+    const compositeFaktor = sumSl > 0 ? Number((sumWeighted / sumSl).toFixed(2)) : 1.0
+
     const alokasi = alokasiMap.get(p.id)
     const customTarget = alokasi?.targetSlPenugasan
-    const faktorKesulitanMedan = alokasi?.faktorKesulitanMedan ?? 1.0
+    const faktorKesulitanMedan =
+      alokasi?.faktorKesulitanMedan && alokasi.faktorKesulitanMedan !== 1.0
+        ? alokasi.faktorKesulitanMedan
+        : compositeFaktor
     const statusTugas =
       alokasi?.statusTugas || (p.aktif ? "AKTIF" : "CUTI")
 

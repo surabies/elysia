@@ -157,3 +157,24 @@ export const kpiAlokasiBebanPetugas = pgTable(
     ),
   ]
 )
+
+/**
+ * 7. Faktor Kesulitan Medan per Kode Rute (Topografi, Aksesibilitas, & Hambatan Geografis)
+ */
+export const kpiFaktorKesulitanRute = pgTable(
+  "kpi_faktor_kesulitan_rute",
+  {
+    ruteKode: varchar("rute_kode", { length: 20 }).primaryKey(),
+    faktorKesulitanMedan: doublePrecision("faktor_kesulitan_medan")
+      .notNull()
+      .default(1.0),
+    kategoriMedan: varchar("kategori_medan", { length: 50 }).notNull().default("NORMAL"),
+    keterangan: text("keterangan"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  }
+)
+
+export type KpiFaktorKesulitanRute = typeof kpiFaktorKesulitanRute.$inferSelect;
+export type NewKpiFaktorKesulitanRute = typeof kpiFaktorKesulitanRute.$inferInsert;
+

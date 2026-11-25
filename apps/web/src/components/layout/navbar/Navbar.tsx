@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, BookOpen } from "lucide-react";
 import { GeistPanelLeft } from "../navigation/sidebar/lib/GeistIcons";
 import { NavbarBreadcrumb } from "./NavbarBreadcrumb";
 import { useSidebar } from "../shell/SidebarContext";
@@ -126,19 +126,29 @@ export function Navbar() {
           {!isDrdPage && (
             <div className="flex min-w-0 items-center justify-self-end gap-1.5">
               <Link
-                href="/bantuan"
+                href="/docs"
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-button-13 text-foreground transition-colors",
-                  "hover:bg-(--ds-gray-100) dark:hover:bg-(--ds-gray-200)"
+                  "group relative inline-flex h-7 items-center gap-1.5 rounded-full border border-border/80 bg-gradient-to-b from-card to-muted/20 px-2.5 text-xs text-foreground/90 shadow-2xs backdrop-blur-md transition-all duration-200",
+                  "hover:border-foreground/30 hover:bg-muted/60 hover:text-foreground hover:shadow-xs",
+                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 )}
-                title="Pusat Bantuan & Dokumentasi"
+                title="Pusat Dokumentasi & Panduan Aplikasi (Docs)"
               >
-                <HelpCircle
-                  size={16}
-                  strokeWidth={1.5}
-                  className="size-4 text-muted-foreground"
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" />
+                </span>
+                <BookOpen
+                  size={13}
+                  strokeWidth={1.75}
+                  className="text-muted-foreground transition-colors group-hover:text-foreground"
                 />
-                <span>Bantuan</span>
+                <span className="font-medium text-[11px] tracking-tight">
+                  Dokumentasi
+                </span>
+                <span className="hidden sm:inline-flex items-center rounded border border-border/70 bg-muted/50 px-1 text-[9px] font-mono text-muted-foreground transition-colors group-hover:border-foreground/20 group-hover:text-foreground">
+                  Docs
+                </span>
               </Link>
             </div>
           )}

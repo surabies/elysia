@@ -1,3 +1,5 @@
+export { KpiOperasionalView } from "./KpiOperasionalView"
+export { KpiCorporateScorecardView } from "./KpiCorporateScorecardView"
 export { KpiScorecardView } from "./KpiScorecardView"
 export { KpiScorecardTable } from "./components/KpiScorecardTable"
 export { KpiSummaryStrip } from "./components/KpiSummaryStrip"
