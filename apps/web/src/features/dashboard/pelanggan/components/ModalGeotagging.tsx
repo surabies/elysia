@@ -345,7 +345,7 @@ export function ModalGeotagging({
               <span className="font-mono text-label-12 font-bold text-foreground">
                 {pelanggan.nolg}
               </span>
-              <Badge variant="gray-subtle" size="sm" className="font-mono">
+              <Badge variant="gray-subtle" size="sm" className="font-mono rounded-md">
                 Rute {pelanggan.ruteKode || '-'} #{pelanggan.noUrutRute ?? '-'}
               </Badge>
             </div>
@@ -426,7 +426,7 @@ export function ModalGeotagging({
                     : 'red-subtle'
                 }
                 size="lg"
-                className="h-10 px-2.5 shrink-0"
+                className="h-10 px-2.5 shrink-0 rounded-md font-mono"
               >
                 ±{accuracy}m
               </Badge>
@@ -538,11 +538,11 @@ export function ModalGeotagging({
               </div>
               <div className="flex items-center gap-2">
                 {isSnapped && (
-                  <Badge variant="green-subtle" size="md" className="font-mono">
+                  <Badge variant="green-subtle" size="md" className="font-mono rounded-md">
                     🧲 Snapped Muka Persil (&plusmn;{snapDistance?.toFixed(1)}m)
                   </Badge>
                 )}
-                <Badge variant={pelanggan.hasGps ? 'green-subtle' : 'amber-subtle'} size="md">
+                <Badge variant={pelanggan.hasGps ? 'green-subtle' : 'amber-subtle'} size="md" className="rounded-md">
                   {pelanggan.hasGps ? 'Sudah Ber-GPS' : 'Belum Ada GPS'}
                 </Badge>
               </div>
@@ -667,6 +667,7 @@ export function ModalGeotagging({
                           : 'red-subtle'
                       }
                       size="sm"
+                      className="rounded-md font-mono"
                     >
                       ±{accuracy} meter ({accuracy <= 8 ? 'Tinggi' : accuracy <= 20 ? 'Sedang' : 'Lemah'})
                     </Badge>
@@ -724,17 +725,23 @@ export function ModalGeotagging({
                 />
               </div>
 
-              {/* 5. Verifikasi Eksternal Google Maps */}
+              {/* 5. Verifikasi Eksternal Google Maps (Single-line Anti-overflow) */}
               {isValidCoord && (
                 <a
                   href={`https://www.google.com/maps?q=${parsedLat},${parsedLng}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full h-8 px-3 rounded-md border border-border bg-card hover:bg-(--ds-gray-100) inline-flex items-center justify-center gap-1.5 text-label-12 text-(--ds-blue-700) font-medium"
+                  className="w-full h-8 px-2.5 rounded-md border border-border bg-card hover:bg-(--ds-gray-100) flex items-center justify-between text-label-12 text-(--ds-blue-700) font-medium transition-colors"
+                  title={`Buka verifikasi titik di Google Maps (${parsedLat}, ${parsedLng})`}
                 >
-                  <MapPin className="size-3.5" />
-                  <span>Verifikasi Titik di Google Maps ({parsedLat.toFixed(5)}, {parsedLng.toFixed(5)})</span>
-                  <ExternalLink className="size-3" />
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <MapPin className="size-3.5 shrink-0" />
+                    <span className="truncate">Verifikasi di Google Maps</span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 font-mono text-[11px] text-muted-foreground">
+                    <span>({parsedLat.toFixed(4)}, {parsedLng.toFixed(4)})</span>
+                    <ExternalLink className="size-3" />
+                  </div>
                 </a>
               )}
             </div>

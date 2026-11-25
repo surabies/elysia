@@ -183,13 +183,14 @@ export class MapService {
         nolg: pelanggan.nolg,
         nama: pelanggan.nama,
         alamat: pelanggan.alamat,
-        titikLokasi: pelanggan.titikLokasi,
+        lng: sql<number>`ST_X(${pelanggan.titikLokasi})`,
+        lat: sql<number>`ST_Y(${pelanggan.titikLokasi})`,
       })
       .from(pelanggan)
       .where(
         and(
           sql`${pelanggan.titikLokasi} is not null`,
-          sql`ST_DWithin(${pelanggan.titikLokasi}, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326), ${degreeRadius})`
+          sql`ST_DWithin(ST_SetSRID(${pelanggan.titikLokasi}, 4326), ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326), ${degreeRadius})`
         )
       )
       .limit(60);
@@ -212,9 +213,8 @@ export class MapService {
         frontageLine: number[][];
       };
     }> = nearbyCustomers.map((c) => {
-      const point = c.titikLokasi as any;
-      const cLng = typeof point?.x === 'number' ? point.x : point?.coordinates?.[0] ?? lng;
-      const cLat = typeof point?.y === 'number' ? point.y : point?.coordinates?.[1] ?? lat;
+      const cLng = Number(c.lng) || lng;
+      const cLat = Number(c.lat) || lat;
 
       // Buat poligon persil bangunan 4 titik di sekeliling titik meter air
       const widthDeg = (8 / (111139 * cosLat)); // 8 meter lebar muka

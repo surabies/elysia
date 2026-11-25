@@ -113,16 +113,23 @@ export function PetaPinpointGps({
   const loadParcels = React.useCallback(async (cLat: number, cLng: number) => {
     try {
       setLoadingParcels(true);
-      const res = await fetch(`/api/places/cadastral-parcels?lat=${cLat}&lng=${cLng}&radius=160`);
+      const res = await fetch(`/api/places/cadastral-parcels?lat=${cLat}&lng=${cLng}&radius=200`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.success && data.features) {
         parcelsRef.current = data;
         const map = mapRef.current;
-        if (map && map.isStyleLoaded()) {
-          const src = map.getSource('parcels') as maplibregl.GeoJSONSource;
-          if (src) {
-            src.setData(data);
+        if (map) {
+          const applyParcels = () => {
+            const src = map.getSource('parcels') as maplibregl.GeoJSONSource;
+            if (src) {
+              src.setData(data);
+            }
+          };
+          if (map.isStyleLoaded()) {
+            applyParcels();
+          } else {
+            map.once('load', applyParcels);
           }
         }
       }
@@ -423,7 +430,7 @@ export function PetaPinpointGps({
           <div className="absolute flex flex-col items-center -translate-y-3">
             <div
               className={cn(
-                'px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold shadow-sm whitespace-nowrap mb-0.5 flex items-center gap-1',
+                'px-1.5 py-0.5 rounded-md font-mono text-[10px] font-semibold shadow-sm whitespace-nowrap mb-0.5 flex items-center gap-1',
                 isSnapped
                   ? 'bg-emerald-600 text-white'
                   : 'bg-foreground text-background'
@@ -449,46 +456,44 @@ export function PetaPinpointGps({
           />
         </div>
 
-        {/* Toggle Basemap (Satelit / Peta Jalan / Persil) di Kiri Atas */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 rounded-md border border-border bg-card/95 p-0.5 shadow-sm backdrop-blur-xs">
+        {/* Menu Tab Basemap & Persil (Segmented Control Proporsional Tanpa Separator) */}
+        <div className="absolute top-2.5 left-2.5 z-10 flex items-center rounded-lg border border-border bg-card/95 p-0.5 shadow-sm backdrop-blur-xs">
           <button
             type="button"
             onClick={() => setBasemap('satellite')}
             className={cn(
-              'px-2.5 py-1 rounded text-label-11 font-medium transition-colors cursor-pointer flex items-center gap-1',
+              'px-2.5 sm:px-3 py-1 rounded-md text-label-12 font-medium transition-colors cursor-pointer text-center',
               basemap === 'satellite'
-                ? 'bg-foreground text-background'
+                ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <Layers className="size-3" />
-            <span>Satelit</span>
+            Satelit
           </button>
           <button
             type="button"
             onClick={() => setBasemap('street')}
             className={cn(
-              'px-2.5 py-1 rounded text-label-11 font-medium transition-colors cursor-pointer',
+              'px-2.5 sm:px-3 py-1 rounded-md text-label-12 font-medium transition-colors cursor-pointer text-center',
               basemap === 'street'
-                ? 'bg-foreground text-background'
+                ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <span>Peta Jalan</span>
+            Peta Jalan
           </button>
-          <div className="h-4 w-px bg-border" />
           <button
             type="button"
             onClick={() => setShowParcels(!showParcels)}
             className={cn(
-              'px-2 py-1 rounded text-label-11 font-medium transition-colors cursor-pointer flex items-center gap-1',
+              'px-2.5 sm:px-3 py-1 rounded-md text-label-12 font-medium transition-colors cursor-pointer text-center',
               showParcels
-                ? 'bg-(--ds-blue-600) text-white'
+                ? 'bg-(--ds-blue-600) text-white shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             )}
-            title="Tampilkan / Sembunyikan Layer Garis Poligon Persil & Bangunan"
+            title="Tampilkan / Sembunyikan Poligon Persil Bangunan"
           >
-            <span>Persil</span>
+            Persil{loadingParcels ? '…' : ''}
           </button>
         </div>
 
@@ -545,41 +550,9 @@ export function PetaPinpointGps({
           </button>
         </div>
 
-        {/* Peringatan jika koordinat jatuh di samudra/laut di luar batas Indonesia */}
-        {validCoord && (lat! > 12 || lat! < -12 || lng! < 94 || lng! > 142) && (
-          <div className="absolute top-12 inset-x-2 z-20 flex justify-center">
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/90 text-amber-950 px-3 py-1.5 text-[11px] font-medium shadow-md backdrop-blur-xs flex items-center gap-2">
-              <span>⚠️ Titik koordinat ({lat?.toFixed(4)}, {lng?.toFixed(4)}) berada di luar wilayah Indonesia (samudra).</span>
-              <button
-                type="button"
-                onClick={() => {
-                  isInternalMoveRef.current = true;
-                  mapRef.current?.easeTo({
-                    center: DEFAULT_BANDUNG,
-                    zoom: 18.5,
-                    duration: 350,
-                  });
-                  onChangeRef.current(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0], { isSnapped: false });
-                  loadParcels(DEFAULT_BANDUNG[1], DEFAULT_BANDUNG[0]);
-                }}
-                className="underline font-semibold cursor-pointer hover:text-black"
-              >
-                Kembali ke Bandung
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Info Koordinat Aktif di Kiri Bawah */}
         <div className="pointer-events-none absolute bottom-2 left-2 z-10 hidden sm:flex items-center gap-1.5 rounded bg-black/75 px-2 py-0.5 text-[10px] font-mono text-white backdrop-blur-xs">
           <span>{validCoord ? `${lat?.toFixed(6)}, ${lng?.toFixed(6)}` : `${DEFAULT_BANDUNG[1]}, ${DEFAULT_BANDUNG[0]}`}</span>
-        </div>
-
-        {/* Petunjuk Geser Peta di Bawah */}
-        <div className="pointer-events-none absolute bottom-2 inset-x-2 z-10 flex justify-center">
-          <div className="rounded-full bg-black/75 text-white px-3 py-1 text-[11px] backdrop-blur-xs shadow-xs text-center">
-            Geser peta atau ketuk atap rumah untuk mengunci titik meter
-          </div>
         </div>
       </div>
 
