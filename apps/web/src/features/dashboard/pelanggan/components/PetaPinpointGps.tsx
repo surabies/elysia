@@ -360,6 +360,7 @@ export function PetaPinpointGps({
 
     let closestDist = Infinity;
     let closestPoint: { lat: number; lng: number } | null = null;
+    let targetName = '';
 
     for (const feat of features) {
       const frontage = feat.properties?.frontageLine;
@@ -380,11 +381,12 @@ export function PetaPinpointGps({
         if (dist < closestDist) {
           closestDist = dist;
           closestPoint = { lat: Number(proj.y.toFixed(7)), lng: Number(proj.x.toFixed(7)) };
+          targetName = feat.properties?.nama || '';
         }
       }
     }
 
-    if (closestPoint && closestDist <= 20) {
+    if (closestPoint && closestDist <= 35) {
       setIsSnapped(true);
       setSnapDist(closestDist);
       isInternalMoveRef.current = true;
@@ -394,9 +396,13 @@ export function PetaPinpointGps({
         duration: 300,
       });
       onChange(closestPoint.lat, closestPoint.lng, { isSnapped: true, snapDistance: closestDist });
-      toast.success(`🧲 Terkunci ke batas muka dinding persil (Koreksi: ${closestDist.toFixed(1)}m)`);
+      toast.success(
+        `🧲 Terkunci ke batas persil meteran terdekat (${closestDist.toFixed(1)}m)${targetName ? ` - ${targetName}` : ''}`
+      );
     } else {
-      toast.error('Tidak ada batas persil dalam radius 20 meter. Geser peta lebih dekat ke bangunan.');
+      toast.info(
+        'Tidak ada titik persil pelanggan dalam radius 35m. Gunakan tombol panah Geser Mikro (±2m) untuk menempatkan titik tepat di atap meteran.'
+      );
     }
   };
 
@@ -430,14 +436,26 @@ export function PetaPinpointGps({
           <div className="absolute flex flex-col items-center -translate-y-3">
             <div
               className={cn(
-                'px-1.5 py-0.5 rounded-md font-mono text-[10px] font-semibold shadow-sm whitespace-nowrap mb-0.5 flex items-center gap-1',
+                'px-2 py-0.5 rounded-md font-mono text-[10px] font-semibold shadow-sm whitespace-nowrap mb-0.5 flex items-center gap-1',
                 isSnapped
                   ? 'bg-emerald-600 text-white'
+                  : accuracy && accuracy <= 8
+                  ? 'bg-emerald-600 text-white'
+                  : accuracy && accuracy <= 20
+                  ? 'bg-amber-600 text-white'
                   : 'bg-foreground text-background'
               )}
             >
-              {isSnapped && <Magnet className="size-2.5 text-white" />}
-              <span>{isSnapped ? `Terkunci Muka Persil (±${snapDist?.toFixed(1)}m)` : 'Titik Meter'}</span>
+              {isSnapped ? (
+                <>
+                  <Magnet className="size-2.5 text-white" />
+                  <span>Terkunci Persil (±{snapDist?.toFixed(1)}m)</span>
+                </>
+              ) : accuracy !== null ? (
+                <span>Akurasi ±{accuracy}m</span>
+              ) : (
+                <span>Titik Meter</span>
+              )}
             </div>
             <div
               className={cn(
@@ -456,13 +474,13 @@ export function PetaPinpointGps({
           />
         </div>
 
-        {/* Menu Tab Basemap & Persil (Segmented Control Proporsional Tanpa Separator) */}
+        {/* Menu Tab Basemap (Satelit / Peta Jalan) - Segmented Control Rapi */}
         <div className="absolute top-2.5 left-2.5 z-10 flex items-center rounded-lg border border-border bg-card/95 p-0.5 shadow-sm backdrop-blur-xs">
           <button
             type="button"
             onClick={() => setBasemap('satellite')}
             className={cn(
-              'px-2.5 sm:px-3 py-1 rounded-md text-label-12 font-medium transition-colors cursor-pointer text-center',
+              'px-3 py-1 rounded-md text-label-12 font-medium transition-colors cursor-pointer text-center',
               basemap === 'satellite'
                 ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -474,26 +492,13 @@ export function PetaPinpointGps({
             type="button"
             onClick={() => setBasemap('street')}
             className={cn(
-              'px-2.5 sm:px-3 py-1 rounded-md text-label-12 font-medium transition-colors cursor-pointer text-center',
+              'px-3 py-1 rounded-md text-label-12 font-medium transition-colors cursor-pointer text-center',
               basemap === 'street'
                 ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
             Peta Jalan
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowParcels(!showParcels)}
-            className={cn(
-              'px-2.5 sm:px-3 py-1 rounded-md text-label-12 font-medium transition-colors cursor-pointer text-center',
-              showParcels
-                ? 'bg-(--ds-blue-600) text-white shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-            title="Tampilkan / Sembunyikan Poligon Persil Bangunan"
-          >
-            Persil{loadingParcels ? '…' : ''}
           </button>
         </div>
 

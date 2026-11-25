@@ -114,7 +114,7 @@ export function ModalGeotagging({
       setLat(pelanggan.lat != null ? String(pelanggan.lat) : '');
       setLng(pelanggan.lng != null ? String(pelanggan.lng) : '');
       setCatatan('');
-      setAccuracy(null);
+      setAccuracy(pelanggan.lat != null && pelanggan.lng != null ? 3 : null);
       setSampleCount(0);
       setIsSnapped(false);
       setSnapDistance(null);
@@ -229,7 +229,7 @@ export function ModalGeotagging({
         const pastedLng = String(parsed.lng);
         setLat(pastedLat);
         setLng(pastedLng);
-        setAccuracy(null);
+        setAccuracy(3); // Set estimasi akurasi satelit presisi tinggi ±3m
         setIsSnapped(false);
 
         let descMsg = 'Peta otomatis dipusatkan ke titik koordinat dari clipboard Anda.';
@@ -263,7 +263,7 @@ export function ModalGeotagging({
     if (pelanggan?.lat != null && pelanggan?.lng != null) {
       setLat(String(pelanggan.lat));
       setLng(String(pelanggan.lng));
-      setAccuracy(null);
+      setAccuracy(3);
     }
   };
 

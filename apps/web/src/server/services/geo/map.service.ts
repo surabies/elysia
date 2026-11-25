@@ -243,38 +243,6 @@ export class MapService {
       };
     });
 
-    // Jika belum ada pelanggan tersimpan di titik baru, buatkan grid estimasi persil kadaster lokal
-    if (features.length === 0) {
-      const widthDeg = (9 / (111139 * cosLat));
-      const depthDeg = (14 / 111139);
-      for (let i = -2; i <= 2; i++) {
-        const offsetLng = i * widthDeg * 1.05;
-        const bLng = lng + offsetLng;
-        const bLat = lat + 0.00003;
-        const p1 = [bLng - widthDeg / 2, bLat];
-        const p2 = [bLng + widthDeg / 2, bLat];
-        const p3 = [bLng + widthDeg / 2, bLat + depthDeg];
-        const p4 = [bLng - widthDeg / 2, bLat + depthDeg];
-
-        features.push({
-          type: 'Feature' as const,
-          id: `cadastral-est-${i}`,
-          geometry: {
-            type: 'Polygon' as const,
-            coordinates: [[p1, p2, p3, p4, p1]],
-          },
-          properties: {
-            id: `est-${i}`,
-            nolg: `BLOK-${Math.abs(i) + 1}`,
-            nama: `Kavling Persil #${Math.abs(i) + 1}`,
-            alamat: 'Estimasi Kadaster Bangunan',
-            tipe: 'Estimasi Blok Persil',
-            frontageLine: [p1, p2],
-          },
-        });
-      }
-    }
-
     return {
       type: 'FeatureCollection' as const,
       count: features.length,
