@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   ChevronDown,
   ChevronRight,
+  MoreVertical,
   Plus,
   ArrowUp,
   ArrowDown,
@@ -24,6 +25,12 @@ import {
   getStatusStyling,
   parseKpiInputValue,
 } from "../lib/KpiCalculations"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface KpiScorecardTableProps {
   perspectives: CalculatedPerspective[]
@@ -139,7 +146,7 @@ export function KpiScorecardTable({
   const [editValueText, setEditValueText] = React.useState("")
   const inputRef = React.useRef<HTMLInputElement | null>(null)
 
-  // State tambah baris baru saat klik (+) pada objective (perilaku Excel: ditulis sendiri, tanpa select menu)
+  // State tambah baris baru saat klik (+) pada objective
   const [addingInObjectiveId, setAddingInObjectiveId] = React.useState<
     string | null
   >(null)
@@ -236,7 +243,7 @@ export function KpiScorecardTable({
     setNewKpiTarget("100")
   }
 
-  // Handler simpan baris baru (ditulis sendiri seperti di Excel, simpan saat tekan Enter)
+  // Handler simpan baris baru
   const handleSaveRow = async (objectiveId: string) => {
     if (!newKpiName.trim()) {
       toast.error("Nama indikator KPI wajib diisi")
@@ -284,7 +291,7 @@ export function KpiScorecardTable({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
         <table className="w-full min-w-[1060px] border-collapse text-left text-[12px] tabular-nums select-none">
-          {/* Header Tabel Sticky: Semua ukuran kolom proporsional, seragam, tidak ada yang besar */}
+          {/* Header Tabel Sticky: 12 Kolom Seragam dengan Menu Aksi */}
           <thead className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur-sm text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             <tr>
               <th className="w-[120px] border-r border-border p-2">
@@ -313,7 +320,12 @@ export function KpiScorecardTable({
               </th>
               <th className="w-[75px] border-r border-border p-2">Tren</th>
               <th className="w-[85px] border-r border-border p-2">Wilayah</th>
-              <th className="w-[75px] p-2 text-center">Capaian</th>
+              <th className="w-[75px] border-r border-border p-2 text-center">
+                Capaian
+              </th>
+              <th className="w-[45px] p-2 text-center" aria-label="Aksi">
+                Aksi
+              </th>
             </tr>
           </thead>
 
@@ -341,7 +353,7 @@ export function KpiScorecardTable({
 
               return (
                 <React.Fragment key={perspective.id}>
-                  {/* 1. Baris Group Level 1: PERSPEKTIF (Seluruh kolom berukuran sama persis dengan baris di bawahnya) */}
+                  {/* 1. Baris Group Level 1: PERSPEKTIF (12 Kolom Seragam) */}
                   <tr className="bg-muted/70 font-semibold border-y border-border h-7 text-xs hover:bg-muted/80 transition-colors">
                     {/* Col 1: Nama Perspektif & Tombol Arrow */}
                     <td className="border-r border-border px-2 py-1 text-foreground">
@@ -415,12 +427,15 @@ export function KpiScorecardTable({
 
                     {/* Col 11: Capaian Skor Perspektif */}
                     <td
-                      className={`p-1 text-center font-bold text-xs ${pStyling.bgClass} ${pStyling.textClass}`}
+                      className={`border-r border-border p-1 text-center font-bold text-xs ${pStyling.bgClass} ${pStyling.textClass}`}
                     >
                       {perspective.score !== null
                         ? `${perspective.score}%`
                         : "-"}
                     </td>
+
+                    {/* Col 12: Kolom Aksi Kosong untuk Baris Grup */}
+                    <td className="p-1 text-center" />
                   </tr>
 
                   {/* 2. Baris Group Level 2: SASARAN (OBJECTIVE) */}
@@ -432,12 +447,11 @@ export function KpiScorecardTable({
 
                       return (
                         <React.Fragment key={objective.id}>
-                          {/* Header Baris Sasaran: Semua kolom sama lebar, icon plus di kolom pertama */}
+                          {/* Header Baris Sasaran: 12 Kolom Seragam */}
                           <tr className="bg-muted/40 font-medium border-t border-border h-7 text-xs hover:bg-muted/50 transition-colors">
                             {/* Col 1: Icon Arrow & Icon Plus di Kolom Pertama */}
                             <td className="border-r border-border px-2 py-1">
                               <div className="flex items-center gap-1.5">
-                                {/* Arrow Chevron */}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -457,7 +471,6 @@ export function KpiScorecardTable({
                                   )}
                                 </button>
 
-                                {/* Icon Plus (+) di Kolom Pertama */}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -510,12 +523,15 @@ export function KpiScorecardTable({
 
                             {/* Col 11: Capaian Sasaran */}
                             <td
-                              className={`p-1 text-center font-bold tabular-nums text-xs ${objStyling.bgClass} ${objStyling.textClass}`}
+                              className={`border-r border-border p-1 text-center font-bold tabular-nums text-xs ${objStyling.bgClass} ${objStyling.textClass}`}
                             >
                               {objective.progress !== null
                                 ? `${objective.progress}%`
                                 : "-"}
                             </td>
+
+                            {/* Col 12: Kolom Aksi Kosong untuk Sasaran */}
+                            <td className="p-1 text-center" />
                           </tr>
 
                           {/* 3. Baris-baris KPI di Bawah Sasaran */}
@@ -562,12 +578,12 @@ export function KpiScorecardTable({
                                     </div>
                                   </td>
 
-                                  {/* Col 3: Penanggung Jawab (Teks polos langsung) */}
+                                  {/* Col 3: Penanggung Jawab */}
                                   <td className="border-r border-border/60 px-2 py-1 text-foreground truncate">
                                     {kpi.owner.name}
                                   </td>
 
-                                  {/* Col 4: Bobot (Klik untuk edit di sel) */}
+                                  {/* Col 4: Bobot */}
                                   <td
                                     onClick={() =>
                                       handleStartEdit(kpi, "weight")
@@ -605,7 +621,7 @@ export function KpiScorecardTable({
                                     })}
                                   </td>
 
-                                  {/* Col 6: Realisasi (Klik untuk edit di sel) */}
+                                  {/* Col 6: Realisasi */}
                                   <td
                                     onClick={() =>
                                       handleStartEdit(kpi, "value")
@@ -690,17 +706,53 @@ export function KpiScorecardTable({
 
                                   {/* Col 11: Capaian */}
                                   <td
-                                    className={`p-1 text-center font-bold tabular-nums text-xs ${kpiStyling.bgClass} ${kpiStyling.textClass}`}
+                                    className={`border-r border-border/60 p-1 text-center font-bold tabular-nums text-xs ${kpiStyling.bgClass} ${kpiStyling.textClass}`}
                                   >
                                     {kpi.progress !== null
                                       ? `${kpi.progress}%`
                                       : "-"}
                                   </td>
+
+                                  {/* Col 12: Menu Aksi (Menu titik tiga) */}
+                                  <td className="p-1 text-center">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className="p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                          title="Aksi baris"
+                                        >
+                                          <MoreVertical className="size-3.5" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent
+                                        align="end"
+                                        className="w-44 text-xs"
+                                      >
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleStartEdit(kpi, "value")
+                                          }
+                                          className="cursor-pointer"
+                                        >
+                                          Ubah Nilai Realisasi
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleStartEdit(kpi, "weight")
+                                          }
+                                          className="cursor-pointer"
+                                        >
+                                          Ubah Bobot Kontribusi
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </td>
                                 </tr>
                               )
                             })}
 
-                          {/* 4. Baris Baru di Bawah Daftar (Perilaku Excel: Seluruh kolom sama lebar, input ditulis sendiri, Enter untuk simpan) */}
+                          {/* 4. Baris Baru di Bawah Daftar (12 Kolom Seragam) */}
                           {!isObjCollapsed && isAddingHere && (
                             <tr className="h-7 bg-muted/20 border-t border-border/60 text-xs">
                               {/* Col 1: Tahapan Siklus */}
@@ -730,7 +782,7 @@ export function KpiScorecardTable({
                                 />
                               </td>
 
-                              {/* Col 3: Penanggung Jawab (Ditulis sendiri) */}
+                              {/* Col 3: Penanggung Jawab */}
                               <td className="border-r border-border/60 p-0">
                                 <input
                                   type="text"
@@ -848,8 +900,22 @@ export function KpiScorecardTable({
                               </td>
 
                               {/* Col 11: Capaian */}
-                              <td className="p-1 text-center text-[10px] text-sky-600 font-medium">
-                                {savingRow ? "Menyimpan..." : "↵ Enter"}
+                              <td className="border-r border-border/60 px-2 py-1 text-center text-muted-foreground text-xs">
+                                -
+                              </td>
+
+                              {/* Col 12: Aksi Simpan Baris */}
+                              <td className="p-1 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void handleSaveRow(objective.id)
+                                  }
+                                  disabled={savingRow}
+                                  className="text-[11px] font-semibold text-sky-600 hover:underline"
+                                >
+                                  {savingRow ? "..." : "Simpan"}
+                                </button>
                               </td>
                             </tr>
                           )}
@@ -861,7 +927,7 @@ export function KpiScorecardTable({
             })}
           </tbody>
 
-          {/* Sticky Footer Total Scorecard */}
+          {/* Sticky Footer Total Scorecard: 12 Kolom Seragam */}
           <tfoot className="sticky bottom-0 z-20 border-t-2 border-border bg-muted/90 backdrop-blur-sm font-semibold text-[11px] text-foreground">
             <tr>
               <td className="border-r border-border p-2">
@@ -899,9 +965,10 @@ export function KpiScorecardTable({
               <td className="border-r border-border p-2 text-muted-foreground">
                 Semua
               </td>
-              <td className="p-2 text-center bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+              <td className="border-r border-border p-2 text-center bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
                 <div className="text-xs font-bold">{summary.companyScore}%</div>
               </td>
+              <td className="p-2 text-center" />
             </tr>
           </tfoot>
         </table>
