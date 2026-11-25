@@ -36,10 +36,8 @@ import { cn } from "@/lib/utils"
 import { kpiApi } from "./api"
 import type { KpiItem, KpiOwner, Perspective } from "./types/KpiTypes"
 import { calculateCompanySummary } from "./lib/KpiCalculations"
-import type { ParsedNewKpi } from "./lib/KpiFormValidation"
 import { KpiSummaryStrip } from "./components/KpiSummaryStrip"
 import { KpiScorecardTable } from "./components/KpiScorecardTable"
-import { AddKpiSheet } from "./components/AddKpiSheet"
 import { KpiInsentifPetugasTab } from "./components/KpiInsentifPetugasTab"
 import { KpiPengaturanInsentifTab } from "./components/KpiPengaturanInsentifTab"
 
@@ -69,9 +67,7 @@ export function KpiScorecardView({
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedPeriod, setSelectedPeriod] = React.useState(initialPeriod)
   const [syncingDb, setSyncingDb] = React.useState(false)
-  const [isAddKpiOpen, setIsAddKpiOpen] = React.useState(false)
   const [isFormulaOpen, setIsFormulaOpen] = React.useState(false)
-  const [preselectedObjectiveId, setPreselectedObjectiveId] = React.useState<string | null>(null)
   const searchInputRef = React.useRef<HTMLInputElement | null>(null)
 
   // Ambil pemilik riil jika belum diisi dari SSR
@@ -235,71 +231,33 @@ export function KpiScorecardView({
     })
   }
 
-  // Handler buka sheet Add KPI
-  const handleOpenAddKpi = (objectiveId?: string) => {
-    setPreselectedObjectiveId(objectiveId ?? null)
-    setIsAddKpiOpen(true)
-  }
-
-  // Handler tambah KPI baru
-  const handleAddNewKpi = (parsed: ParsedNewKpi) => {
-    const foundOwner = ownersList.find((o) => o.id === parsed.ownerId) || {
-      id: parsed.ownerId,
-      name: parsed.ownerId,
-      initials: parsed.ownerId.slice(0, 1).toUpperCase(),
-    }
-
-    const generatedId = `kpi-${Date.now()}`
-    const newKpi: KpiItem = {
-      id: generatedId,
-      name: parsed.name,
-      direction: parsed.direction,
-      owner: foundOwner,
-      weight: parsed.weight,
-      baseline: parsed.baseline,
-      value: parsed.value,
-      target: parsed.target,
-      format: parsed.format,
-      currencySymbol: parsed.format === "currency" ? "$" : undefined,
-      change: {
-        direction: "neutral",
-        diff: 0,
-        sparkline: [parsed.baseline, parsed.baseline, parsed.value ?? parsed.baseline],
-      },
-      laggingMarket: null,
-    }
-
-    const next = perspectives.map((p) => ({
-      ...p,
-      objectives: p.objectives.map((obj) => {
-        if (obj.id === parsed.objectiveId) {
-          return {
-            ...obj,
-            kpis: [...obj.kpis, newKpi],
-          }
-        }
-        return obj
-      }),
-    }))
-
-    pushHistory(next)
-    toast.success("Indikator KPI berhasil disimpan ke database")
-
-    fetch("/api/kpi", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...parsed,
+  // Handler tambah KPI baru secara inline langsung dari tabel
+  const handleAddNewKpiInline = async (input: {
+    name: string
+    objectiveId: string
+    ownerId: string
+    direction: "higher" | "lower"
+    weight: number
+    baseline: number
+    target: number
+    value: number | null
+    format: "percent" | "decimal" | "currency"
+    ownerDetails?: { name: string; initials: string }
+  }) => {
+    try {
+      await kpiApi.createKpi({
+        ...input,
         periode: selectedPeriod,
-        ownerDetails: {
-          name: foundOwner.name,
-          initials: foundOwner.initials,
-        },
-      }),
-    }).catch((err) => {
-      console.error("Gagal persist KPI ke database:", err)
-      toast.error("Gagal menyimpan ke database")
-    })
+      })
+      toast.success(`Indikator "${input.name}" berhasil ditambahkan`)
+      const data = await kpiApi.getByPeriode(selectedPeriod)
+      if (data && data.length > 0) {
+        setPerspectives(data)
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Gagal menambahkan KPI")
+      throw err
+    }
   }
 
   // Handler paste range nilai dari spreadsheet
@@ -513,15 +471,6 @@ export function KpiScorecardView({
                     <Download className="size-3.5" />
                   </Button>
                 </div>
-
-                <Button
-                  size="sm"
-                  className="h-8 gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium px-3 text-xs"
-                  onClick={() => handleOpenAddKpi()}
-                >
-                  <Plus className="size-3.5" />
-                  <span>Tambah KPI</span>
-                </Button>
               </>
             )}
           </div>
@@ -542,7 +491,7 @@ export function KpiScorecardView({
               onUpdateKpiWeight={handleUpdateKpiWeight}
               onUpdateKpiOwner={handleUpdateKpiOwner}
               onPasteRange={handlePasteRange}
-              onOpenAddKpi={handleOpenAddKpi}
+              onAddKpiInline={handleAddNewKpiInline}
             />
           </>
         ) : activeTab === "insentif" ? (
@@ -561,17 +510,6 @@ export function KpiScorecardView({
           />
         )}
       </div>
-
-      {/* Sheet Add KPI */}
-      <AddKpiSheet
-        open={isAddKpiOpen}
-        onOpenChange={setIsAddKpiOpen}
-        perspectives={perspectives}
-        owners={ownersList}
-        selectedPeriod={selectedPeriod}
-        preselectedObjectiveId={preselectedObjectiveId}
-        onAddKpi={handleAddNewKpi}
-      />
 
       {/* Dialog Metodologi & Rumus Presentasi KPI & Insentif */}
       <Dialog open={isFormulaOpen} onOpenChange={setIsFormulaOpen}>

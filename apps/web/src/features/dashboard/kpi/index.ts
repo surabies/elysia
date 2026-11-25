@@ -1,7 +1,6 @@
 export { KpiScorecardView } from "./KpiScorecardView"
 export { KpiScorecardTable } from "./components/KpiScorecardTable"
 export { KpiSummaryStrip } from "./components/KpiSummaryStrip"
-export { AddKpiSheet } from "./components/AddKpiSheet"
 export { KpiInsentifPetugasTab } from "./components/KpiInsentifPetugasTab"
 export { KpiPengaturanInsentifTab } from "./components/KpiPengaturanInsentifTab"
 export * from "./types/KpiTypes"

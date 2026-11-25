@@ -5,6 +5,32 @@
  */
 
 export const kpiApi = {
+  /** Menambah KPI baru ke sasaran objektif tertentu */
+  async createKpi(payload: {
+    name: string;
+    objectiveId: string;
+    ownerId: string;
+    direction: string;
+    weight: number;
+    baseline: number;
+    target: number;
+    value: number | null;
+    format: string;
+    periode?: string;
+    ownerDetails?: { name: string; initials: string };
+  }) {
+    const res = await fetch("/api/kpi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || "Gagal menambahkan KPI");
+    }
+    return json;
+  },
+
   /** Mengambil data perspektif KPI untuk periode tertentu */
   async getByPeriode(periode: string) {
     const res = await fetch(`/api/kpi?periode=${encodeURIComponent(periode)}`);
