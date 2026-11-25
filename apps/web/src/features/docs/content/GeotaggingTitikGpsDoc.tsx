@@ -27,6 +27,14 @@ import {
 import { DocsCallout } from '../components/DocsCallout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardAction,
+} from '@/components/ui/card';
 import type { DocHeading } from '../types';
 
 export const geotaggingTitikGpsHeadings: DocHeading[] = [
@@ -40,6 +48,7 @@ export const geotaggingTitikGpsHeadings: DocHeading[] = [
   { id: 'tahap-5', title: 'Tahap 5: Ground-Truthing Satelit & Micro-Nudge (2m)', level: 3 },
   { id: 'floating-bar-mobile', title: 'Manajemen UI: Smart Auto-Hide Floating Bar', level: 2 },
   { id: 'arsitektur-library', title: 'Arsitektur & Library Unggulan', level: 2 },
+  { id: 'metode-enterprise-lanjut', title: 'Metode Enterprise Lanjutan: Peta Jalan Menuju Akurasi Centimeter (RTK & PostGIS)', level: 2 },
   { id: 'sop-lapangan', title: 'SOP & Tata Cara Penggunaan di Lapangan', level: 2 },
   { id: 'panduan-presentasi', title: 'Panduan Presentasi Klien & Stakeholder', level: 2 },
   { id: 'faq', title: 'Pertanyaan Umum (FAQ)', level: 2 },
@@ -188,140 +197,146 @@ export function GeotaggingTitikGpsDoc() {
           Coba simulasi interaktif di bawah ini untuk melihat bagaimana algoritma kami menolak data GPS yang buruk dan menghasilkan titik koordinat yang jauh lebih akurat dibandingkan metode rata-rata biasa:
         </p>
 
-        {/* Kotak Interaktif Simulator */}
-        <div className="my-6 rounded-xl border border-border bg-card p-5 shadow-sm space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
-            <div>
-              <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
-                <Sparkles className="size-4 text-(--ds-blue-700)" />
-                <span>Simulasi Pengambilan Sinyal Multi-Sampel Realtime</span>
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Mengumpulkan hingga 5 sampel beruntun untuk menghitung titik pusat optimal.
-              </p>
+        {/* Card Interaktif Simulator Berstandar Vercel Geist */}
+        <Card className="my-6 motion-card-interactive gradient-card-subtle overflow-hidden border border-border">
+          <CardHeader className="border-b border-border p-5 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                  <Sparkles className="size-4 text-(--ds-blue-700)" />
+                  <span>Simulasi Pengambilan Sinyal Multi-Sampel Realtime</span>
+                </CardTitle>
+                <CardDescription className="text-copy-13 text-muted-foreground">
+                  Mengumpulkan hingga 5 sampel beruntun untuk menghitung titik pusat optimal secara presisi.
+                </CardDescription>
+              </div>
+              <CardAction>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={runSimulation}
+                  disabled={isSimulating}
+                  className="gap-2 font-medium"
+                >
+                  {isSimulating ? (
+                    <>
+                      <RotateCcw className="size-3.5 animate-spin" />
+                      <span>Mengambil Sampel ({activeStep}/5)...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="size-3.5" />
+                      <span>Jalankan Simulasi Kalibrasi</span>
+                    </>
+                  )}
+                </Button>
+              </CardAction>
             </div>
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              onClick={runSimulation}
-              disabled={isSimulating}
-              className="gap-2 font-medium"
-            >
-              {isSimulating ? (
-                <>
-                  <RotateCcw className="size-3.5 animate-spin" />
-                  <span>Mengambil Sampel ({activeStep}/5)...</span>
-                </>
-              ) : (
-                <>
-                  <Play className="size-3.5" />
-                  <span>Jalankan Simulasi Kalibrasi</span>
-                </>
-              )}
-            </Button>
-          </div>
+          </CardHeader>
 
-          {/* Tabel Sampel yang Diambil */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 text-foreground border-b border-border">
-                <tr>
-                  <th className="p-2.5">Sampel</th>
-                  <th className="p-2.5">Kondisi Sinyal</th>
-                  <th className="p-2.5">Akurasi GPS (Radius)</th>
-                  <th className="p-2.5">Bobot Matematis (1/σ²)</th>
-                  <th className="p-2.5">Pengaruh ke Hasil Akhir</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border font-mono text-[11px]">
-                {DEFAULT_SAMPLES.map((s) => {
-                  const isActive = s.id <= activeStep;
-                  const weight = (1 / (s.accuracy ** 2));
-                  const percentage = totalWeight > 0 && isActive
-                    ? ((weight / totalWeight) * 100).toFixed(1)
-                    : '0';
+          <CardContent className="p-5 space-y-5">
+            {/* Tabel Sampel yang Diambil */}
+            <div className="overflow-x-auto rounded-lg border border-border bg-card">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/50 text-foreground border-b border-border">
+                  <tr>
+                    <th className="p-2.5">Sampel</th>
+                    <th className="p-2.5">Kondisi Sinyal</th>
+                    <th className="p-2.5">Akurasi GPS (Radius)</th>
+                    <th className="p-2.5">Bobot Matematis (1/σ²)</th>
+                    <th className="p-2.5">Pengaruh ke Hasil Akhir</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border font-mono text-[11px]">
+                  {DEFAULT_SAMPLES.map((s) => {
+                    const isActive = s.id <= activeStep;
+                    const weight = (1 / (s.accuracy ** 2));
+                    const percentage = totalWeight > 0 && isActive
+                      ? ((weight / totalWeight) * 100).toFixed(1)
+                      : '0';
 
-                  return (
-                    <tr
-                      key={s.id}
-                      className={isActive ? 'bg-muted/15 text-foreground' : 'text-muted-foreground/40'}
-                    >
-                      <td className="p-2.5 font-bold">#{s.id}</td>
-                      <td className="p-2.5 font-sans font-medium">{s.label}</td>
-                      <td className="p-2.5">
-                        <Badge
-                          variant={
-                            s.accuracy <= 4
-                              ? 'green-subtle'
-                              : s.accuracy <= 10
-                              ? 'amber-subtle'
-                              : 'red-subtle'
-                          }
-                          size="sm"
-                          className="font-mono text-[10px]"
-                        >
-                          &plusmn;{s.accuracy}m
-                        </Badge>
-                      </td>
-                      <td className="p-2.5">{isActive ? weight.toFixed(5) : '-'}</td>
-                      <td className="p-2.5">
-                        {isActive ? (
-                          <div className="flex items-center gap-2 font-sans font-medium">
-                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-(--ds-blue-600)"
-                                style={{ width: `${percentage}%` }}
-                              />
+                    return (
+                      <tr
+                        key={s.id}
+                        className={isActive ? 'bg-muted/15 text-foreground' : 'text-muted-foreground/40'}
+                      >
+                        <td className="p-2.5 font-bold">#{s.id}</td>
+                        <td className="p-2.5 font-sans font-medium">{s.label}</td>
+                        <td className="p-2.5">
+                          <Badge
+                            variant={
+                              s.accuracy <= 4
+                                ? 'green-subtle'
+                                : s.accuracy <= 10
+                                ? 'amber-subtle'
+                                : 'red-subtle'
+                            }
+                            size="sm"
+                            className="font-mono text-[10px]"
+                          >
+                            &plusmn;{s.accuracy}m
+                          </Badge>
+                        </td>
+                        <td className="p-2.5">{isActive ? weight.toFixed(5) : '-'}</td>
+                        <td className="p-2.5">
+                          {isActive ? (
+                            <div className="flex items-center gap-2 font-sans font-medium">
+                              <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-(--ds-blue-600)"
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <span>{percentage}%</span>
                             </div>
-                            <span>{percentage}%</span>
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Perbandingan Hasil Akhir */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5">
-                  <AlertTriangle className="size-4" />
-                  Metode Biasa (Rata-Rata Sederhana)
-                </span>
-                <Badge variant="red-subtle" size="sm">Rentan Drift</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground font-mono">
-                Lat: {finalSimpleLat} | Lng: {finalSimpleLng}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Titik terseret sejauh <strong>~{driftMeters} meter</strong> ke jalan atau atap tetangga akibat dipengaruhi sampel drift awal.
-              </p>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
 
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="size-4" />
-                  Metode Aplikasi Ini (Weighted Centroid)
-                </span>
-                <Badge variant="green-subtle" size="sm">Akurasi &plusmn;{bestAccuracy}m</Badge>
+            {/* Perbandingan Hasil Akhir */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                    <AlertTriangle className="size-4" />
+                    Metode Biasa (Rata-Rata Sederhana)
+                  </span>
+                  <Badge variant="red-subtle" size="sm">Rentan Drift</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground font-mono">
+                  Lat: {finalSimpleLat} | Lng: {finalSimpleLng}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Titik terseret sejauh <strong>~{driftMeters} meter</strong> ke jalan atau atap tetangga akibat dipengaruhi sampel drift awal.
+                </p>
               </div>
-              <p className="text-xs text-foreground font-mono font-bold">
-                Lat: {finalWeightedLat} | Lng: {finalWeightedLng}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Sampel presisi tinggi (3.0m) menguasai &gt;75% bobot perhitungan. Titik meter air terkunci tepat di target fisik.
-              </p>
+
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="size-4" />
+                    Metode Aplikasi Ini (Weighted Centroid)
+                  </span>
+                  <Badge variant="green-subtle" size="sm">Akurasi &plusmn;{bestAccuracy}m</Badge>
+                </div>
+                <p className="text-xs text-foreground font-mono font-bold">
+                  Lat: {finalWeightedLat} | Lng: {finalWeightedLng}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Sampel presisi tinggi (3.0m) menguasai &gt;75% bobot perhitungan. Titik meter air terkunci tepat di target fisik.
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </section>
 
       {/* 3. Metode Ilmiah: Inverse-Variance Weighting */}
@@ -623,7 +638,142 @@ Akurasi Terbaik = MIN(accuracy_i)`}
         </div>
       </section>
 
-      {/* 6. SOP & Tata Cara Lapangan */}
+      {/* 6. Metode Enterprise Lanjutan: Peta Jalan Menuju Akurasi Centimeter */}
+      <section id="metode-enterprise-lanjut">
+        <h2 className="font-heading scroll-m-20 border-b border-border pb-2 text-xl font-semibold tracking-tight text-foreground flex items-center justify-between gap-3">
+          <span>Metode Enterprise Lanjutan: Peta Jalan Menuju Akurasi Centimeter (RTK &amp; PostGIS)</span>
+          <Badge variant="green-subtle" size="md">High-Precision GIS</Badge>
+        </h2>
+        <p className="leading-7 mt-3 text-[15px] text-foreground/90">
+          Titik koordinat meteran air pelanggan adalah <strong>aset spasial berharga tinggi</strong>. Dalam jangka panjang, data ini menjadi fondasi penelusuran kebocoran pipa (*Non-Revenue Water / NRW*), kalibrasi model hidrolika Epanet, dan pembangunan *Digital Twin* jaringan air perkotaan.
+        </p>
+        <p className="leading-7 mt-3 text-[15px] text-foreground/90">
+          Jika instansi PDAM menghendaki <strong>tingkat akurasi ekstrem (hingga skala sentimeter)</strong> untuk aset pelanggan industri besar, meter induk zona (DMA), atau pelanggan strategis, berikut adalah opsi teknologi geospasial tingkat lanjut yang kompatibel dengan aplikasi ini:
+        </p>
+
+        {/* Tabel 4 Tingkatan Akurasi Enterprise */}
+        <div className="my-6 w-full overflow-y-auto rounded-lg border border-border">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted/50 font-semibold text-foreground border-b border-border text-xs">
+              <tr>
+                <th className="p-3">Tingkatan (Tier)</th>
+                <th className="p-3">Metode &amp; Arsitektur</th>
+                <th className="p-3">Tingkat Akurasi</th>
+                <th className="p-3">Biaya Hardware Tambahan</th>
+                <th className="p-3">Kesesuaian Penggunaan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border text-[13px] text-muted-foreground">
+              <tr className="bg-muted/10">
+                <td className="p-3 font-medium text-foreground">
+                  <Badge variant="blue-subtle" size="sm">Tier 1 (Aktif)</Badge>
+                </td>
+                <td className="p-3">
+                  <strong>Smartphone GNSS + Multi-Sample Averaging (1/σ²) + Esri Satellite + D-Pad 2m</strong>
+                </td>
+                <td className="p-3 font-mono text-xs font-semibold text-foreground">
+                  &plusmn;1.5 s/d 3 Meter
+                </td>
+                <td className="p-3 text-emerald-600 dark:text-emerald-400 font-medium">Rp 0 (Smartphone Bawaan)</td>
+                <td className="p-3">95% Pelanggan Rumah Tangga &amp; Pembacaan Meter Rutin.</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium text-foreground">
+                  <Badge variant="green-subtle" size="sm">Tier 2 (Enterprise)</Badge>
+                </td>
+                <td className="p-3">
+                  <strong>External RTK GNSS Receiver Bluetooth + NTRIP CORS (Ina-CORS BIG)</strong>
+                </td>
+                <td className="p-3 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  &plusmn;1 s/d 3 Centimeter
+                </td>
+                <td className="p-3">Dongle GNSS RTK Portabel (Emlid / Trimble / CHCNAV)</td>
+                <td className="p-3">Meter Induk DMA, Pipa Transmisi, Pelanggan Industri / Komersial.</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium text-foreground">
+                  <Badge variant="gray-subtle" size="sm">Tier 3 (Flagship)</Badge>
+                </td>
+                <td className="p-3">
+                  <strong>Dual-Frequency Smartphone GNSS (L1 + L5 Carrier Phase)</strong>
+                </td>
+                <td className="p-3 font-mono text-xs font-semibold text-foreground">
+                  &plusmn;30 s/d 80 Centimeter
+                </td>
+                <td className="p-3">Ponsel Android Dual-Band L1/L5</td>
+                <td className="p-3">Pencatatan meter kawasan perkotaan padat (*Urban Canyon*).</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium text-foreground">
+                  <Badge variant="purple-subtle" size="sm">Tier 4 (AI/GIS)</Badge>
+                </td>
+                <td className="p-3">
+                  <strong>PostGIS Automated Cadastral &amp; Building Parcel Snapping</strong>
+                </td>
+                <td className="p-3 font-mono text-xs font-semibold text-foreground">
+                  Terkunci di Dinding Persil
+                </td>
+                <td className="p-3">Rp 0 (Integrasi Layer Peta PBB/BPN)</td>
+                <td className="p-3">Menghilangkan titik yang melenceng ke jalan raya atau tanah kosong.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Breakdown Mendalam: RTK via NTRIP CORS */}
+        <div className="my-6 space-y-4">
+          <Card className="motion-card-interactive gradient-card-subtle overflow-hidden border border-border">
+            <CardHeader className="p-5 pb-3 border-b border-border">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                <ShieldCheck className="size-4 text-(--ds-green-700)" />
+                <span>Rekomendasi Utama Enterprise: RTK (Real-Time Kinematic) via NTRIP CORS</span>
+              </CardTitle>
+              <CardDescription className="text-copy-13 text-muted-foreground">
+                Standar tertinggi pemetaan geodetik nasional yang dapat dikoneksikan langsung ke aplikasi web ini.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-5 space-y-4">
+              <p className="text-xs text-foreground/90 leading-relaxed">
+                <strong>Cara Kerja di Lapangan:</strong> Petugas membawa receiver GNSS mini seukuran genggaman tangan (misal: <em>Emlid Reach RX</em> berbobot hanya 250 gram) yang dipasang pada stik survei ringan. Receiver ini terhubung ke smartphone petugas melalui Bluetooth.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                <div className="rounded-lg border border-border p-3 bg-card space-y-1">
+                  <div className="text-[11px] font-bold text-foreground">1. Stasiun Bumi CORS</div>
+                  <p className="text-[11px] text-muted-foreground leading-normal">
+                    Stasiun <strong>Ina-CORS Badan Informasi Geospasial (BIG)</strong> yang tersebar di seluruh Indonesia menghitung pergeseran atmosfer secara konstan 24/7.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border p-3 bg-card space-y-1">
+                  <div className="text-[11px] font-bold text-foreground">2. Streaming Data RTCM</div>
+                  <p className="text-[11px] text-muted-foreground leading-normal">
+                    Smartphone mengalirkan data koreksi diferensial dari server CORS melalui jaringan internet seluler 4G/5G menggunakan protokol NTRIP.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border p-3 bg-card space-y-1">
+                  <div className="text-[11px] font-bold text-foreground">3. Solusi Fixed Centimeter</div>
+                  <p className="text-[11px] text-muted-foreground leading-normal">
+                    Chipset receiver menyelesaikan ambiguitas fase gelombang pembawa (*Carrier-Phase Ambiguity Resolution*), menghasilkan koordinat berakurasi <strong>1–2 cm</strong>.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <DocsCallout type="tip" title="Rekomendasi Strategis untuk PDAM">
+            Untuk efisiensi anggaran:
+            <ul className="mt-1.5 ml-4 list-disc text-xs space-y-1">
+              <li>
+                <strong>95% Pelanggan Rumah Tangga:</strong> Cukup gunakan <strong>Tier 1 bawaan aplikasi</strong> (Multi-Sample Weighted Averaging + Citra Satelit Esri + Micro-Nudge). Akurasi &plusmn;1.5–3m sudah lebih dari cukup untuk menemukan lokasi rumah pelanggan di lapangan tanpa biaya perangkat tambahan sepeser pun.
+              </li>
+              <li>
+                <strong>5% Aset Kritis:</strong> Sediakan 1–2 unit dongle RTK Bluetooth untuk tim khusus survei aset infrastruktur vital dan pelanggan industri besar.
+              </li>
+            </ul>
+          </DocsCallout>
+        </div>
+      </section>
+
+      {/* 7. SOP & Tata Cara Lapangan */}
       <section id="sop-lapangan">
         <h2 className="font-heading scroll-m-20 border-b border-border pb-2 text-xl font-semibold tracking-tight text-foreground">
           SOP &amp; Tata Cara Penggunaan di Lapangan
