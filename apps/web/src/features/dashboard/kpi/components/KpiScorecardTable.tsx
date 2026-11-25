@@ -6,7 +6,6 @@ import {
   ChevronRight,
   MoreVertical,
   Plus,
-  Minus,
   ArrowUp,
   ArrowDown,
   ArrowRight,
@@ -292,41 +291,39 @@ export function KpiScorecardTable({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
         <table className="w-full min-w-[1060px] border-collapse text-left text-[12px] tabular-nums select-none">
-          {/* Header Tabel Sticky */}
-          <thead className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur-sm text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+          {/* Header Tabel Sticky: Seluruh Kolom & Baris Sama Tinggi (h-7) */}
+          <thead className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur-sm text-[11px] font-semibold text-muted-foreground uppercase tracking-wider h-7">
             <tr>
-              <th className="w-[190px] border-r border-border p-2">
-                Tahapan Siklus M2C
+              <th className="w-[130px] border-r border-border px-2 py-1">
+                Tahapan Siklus
               </th>
-              <th className="min-w-[220px] border-r border-border p-2">
-                Sasaran &amp; Indikator KPI
+              <th className="w-[180px] border-r border-border px-2 py-1">
+                Sasaran &amp; Indikator
               </th>
-              <th className="w-[125px] border-r border-border p-2">
+              <th className="w-[110px] border-r border-border px-2 py-1">
                 Penanggung Jawab
               </th>
-              <th className="w-[65px] border-r border-border p-2 text-right">
+              <th className="w-[70px] border-r border-border px-2 py-1 text-right">
                 Bobot
               </th>
-              <th className="w-[75px] border-r border-border p-2 text-right">
+              <th className="w-[75px] border-r border-border px-2 py-1 text-right">
                 Baseline
               </th>
-              <th className="w-[85px] border-r border-border p-2 text-right text-sky-600 dark:text-sky-400">
+              <th className="w-[75px] border-r border-border px-2 py-1 text-right text-sky-600 dark:text-sky-400">
                 Realisasi
               </th>
-              <th className="w-[75px] border-r border-border p-2 text-right">
+              <th className="w-[75px] border-r border-border px-2 py-1 text-right">
                 Target
               </th>
-              <th className="w-[70px] border-r border-border p-2 text-right">
+              <th className="w-[70px] border-r border-border px-2 py-1 text-right">
                 Selisih
               </th>
-              <th className="w-[105px] border-r border-border p-2">Tren</th>
-              <th className="w-[120px] border-r border-border p-2">
-                Wilayah Perhatian
-              </th>
-              <th className="w-[80px] border-r border-border p-2 text-center">
+              <th className="w-[75px] border-r border-border px-2 py-1">Tren</th>
+              <th className="w-[85px] border-r border-border px-2 py-1">Wilayah</th>
+              <th className="w-[75px] border-r border-border px-2 py-1 text-center">
                 Capaian
               </th>
-              <th className="w-[45px] p-2 text-center" aria-label="Aksi">
+              <th className="w-[45px] px-2 py-1 text-center" aria-label="Aksi">
                 Aksi
               </th>
             </tr>
@@ -354,573 +351,574 @@ export function KpiScorecardTable({
 
               if (query && filteredObjectives.length === 0) return null
 
-              // Hitung jumlah baris yang dinaungi oleh Kolom Pertama (Perspective)
-              const totalRowsForPerspective = isPerspectiveCollapsed
-                ? 1
-                : filteredObjectives.reduce((acc, o) => {
-                    const isObjCollapsed = collapsedObjectives[o.id]
-                    const kpisCount = isObjCollapsed ? 0 : o.kpis.length
-                    const addingCount =
-                      !isObjCollapsed && addingInObjectiveId === o.id ? 1 : 0
-                    return acc + 1 + kpisCount + addingCount
-                  }, 0)
-
-              // Jika Perspektif di-collapse:
-              if (isPerspectiveCollapsed) {
-                return (
-                  <tr
-                    key={perspective.id}
-                    className="bg-muted/50 border-t border-border hover:bg-muted/70 transition-colors"
-                  >
-                    <td className="border-r border-border p-2 align-top">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="font-bold text-[12px] text-foreground truncate">
-                          {perspective.name}
-                        </span>
+              return (
+                <React.Fragment key={perspective.id}>
+                  {/* 1. Baris Group Level 1: PERSPEKTIF (Tinggi sama persis h-7 dengan baris di bawahnya) */}
+                  <tr className="bg-muted/70 font-semibold border-y border-border h-7 text-xs hover:bg-muted/80 transition-colors">
+                    {/* Col 1: Nama Perspektif & Tombol Arrow (Tinggi h-7) */}
+                    <td className="border-r border-border px-2 py-1 text-foreground">
+                      <div className="flex items-center gap-1 h-full">
                         <button
                           type="button"
                           onClick={() => togglePerspective(perspective.id)}
-                          className="p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          title="Tampilkan rincian tahapan"
+                          className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
+                          title={
+                            isPerspectiveCollapsed
+                              ? "Buka tahapan"
+                              : "Tutup tahapan"
+                          }
                         >
-                          <Plus className="size-3.5" />
+                          {isPerspectiveCollapsed ? (
+                            <ChevronRight className="size-3.5" />
+                          ) : (
+                            <ChevronDown className="size-3.5" />
+                          )}
                         </button>
-                      </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
-                        Bobot {perspective.scoreWeightPercent}%
+                        <span className="font-bold truncate" title={perspective.name}>
+                          {perspective.name}
+                        </span>
                       </div>
                     </td>
-                    <td
-                      colSpan={9}
-                      className="border-r border-border p-2 text-muted-foreground text-xs"
-                    >
-                      {perspective.totalKpiCount} Indikator disembunyikan. Klik
-                      (+) untuk melihat rincian.
+
+                    {/* Col 2: Keterangan Jumlah Indikator */}
+                    <td className="border-r border-border px-2 py-1 text-[11px] text-muted-foreground font-normal">
+                      {perspective.totalKpiCount} Indikator
                     </td>
+
+                    {/* Col 3: Penanggung Jawab */}
+                    <td className="border-r border-border px-2 py-1 text-[11px] text-muted-foreground">
+                      Semua
+                    </td>
+
+                    {/* Col 4: Bobot Total */}
+                    <td className="border-r border-border px-2 py-1 text-right font-bold text-foreground text-[11px]">
+                      {perspective.scoreWeightPercent}%
+                    </td>
+
+                    {/* Col 5 s/d 8: Baseline s/d Selisih */}
+                    <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
+                      -
+                    </td>
+                    <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
+                      -
+                    </td>
+                    <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
+                      -
+                    </td>
+                    <td className="border-r border-border px-2 py-1 text-right text-muted-foreground text-[11px]">
+                      -
+                    </td>
+
+                    {/* Col 9: Tren */}
+                    <td className="border-r border-border px-2 py-1 text-[11px] text-muted-foreground">
+                      -
+                    </td>
+
+                    {/* Col 10: Wilayah / Kritis */}
+                    <td className="border-r border-border px-2 py-1 text-[11px]">
+                      {perspective.offTrackCount > 0 ? (
+                        <span className="text-rose-600 font-semibold">
+                          {perspective.offTrackCount} kritis
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Normal</span>
+                      )}
+                    </td>
+
+                    {/* Col 11: Capaian Skor Perspektif */}
                     <td
-                      className={`border-r border-border p-2 text-center font-bold text-xs ${pStyling.bgClass} ${pStyling.textClass}`}
+                      className={`border-r border-border px-1 py-1 text-center font-bold text-xs ${pStyling.bgClass} ${pStyling.textClass}`}
                     >
                       {perspective.score !== null
                         ? `${perspective.score}%`
                         : "-"}
                     </td>
-                    <td className="p-2 text-center" />
+
+                    {/* Col 12: Kolom Aksi Kosong */}
+                    <td className="px-1 py-1 text-center" />
                   </tr>
-                )
-              }
 
-              // Render Expanded Perspective dengan Konten Lengkap di Kolom Pertama (rowSpan)
-              return (
-                <React.Fragment key={perspective.id}>
-                  {filteredObjectives.map((objective, objIdx) => {
-                    const isObjCollapsed = collapsedObjectives[objective.id]
-                    const objStyling = getStatusStyling(objective.status)
-                    const isAddingHere = addingInObjectiveId === objective.id
+                  {/* 2. Baris Group Level 2: SASARAN (OBJECTIVE) (Tinggi sama persis h-7) */}
+                  {!isPerspectiveCollapsed &&
+                    filteredObjectives.map((objective) => {
+                      const isObjCollapsed = collapsedObjectives[objective.id]
+                      const objStyling = getStatusStyling(objective.status)
+                      const isAddingHere = addingInObjectiveId === objective.id
 
-                    return (
-                      <React.Fragment key={objective.id}>
-                        {/* Baris Objective Header */}
-                        <tr className="bg-muted/40 font-medium border-t border-border/80">
-                          {/* KONTEN LENGKAP KOLOM PERTAMA (Tahapan Siklus M2C) dengan rowSpan */}
-                          {objIdx === 0 && (
-                            <td
-                              rowSpan={totalRowsForPerspective}
-                              className="align-top border-r border-border bg-card p-3"
-                            >
-                              <div className="sticky top-12 flex flex-col gap-2">
-                                {/* Header: Judul Tahapan & Tombol Collapse */}
-                                <div className="flex items-center justify-between gap-1">
-                                  <h3 className="text-xs font-bold text-foreground leading-tight">
-                                    {perspective.name}
-                                  </h3>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      togglePerspective(perspective.id)
-                                    }
-                                    className="p-1 text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
-                                    title="Sembunyikan rincian tahapan"
-                                  >
-                                    <Minus className="size-3.5" />
-                                  </button>
-                                </div>
+                      return (
+                        <React.Fragment key={objective.id}>
+                          {/* Header Baris Sasaran: Tinggi h-7, Icon Arrow & Plus di Kolom 1 */}
+                          <tr className="bg-muted/40 font-medium border-t border-border h-7 text-xs hover:bg-muted/50 transition-colors">
+                            {/* Col 1: Icon Arrow & Icon Plus Berdampingan (Tinggi h-7) */}
+                            <td className="border-r border-border px-2 py-1">
+                              <div className="flex items-center gap-1.5 h-full">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    toggleObjective(objective.id)
+                                  }
+                                  className="p-0.5 text-muted-foreground hover:text-foreground"
+                                  title={
+                                    isObjCollapsed
+                                      ? "Buka sasaran"
+                                      : "Tutup sasaran"
+                                  }
+                                >
+                                  {isObjCollapsed ? (
+                                    <ChevronRight className="size-3.5" />
+                                  ) : (
+                                    <ChevronDown className="size-3.5" />
+                                  )}
+                                </button>
 
-                                {/* Skor Capaian & Bobot */}
-                                <div className="flex items-baseline gap-1.5">
-                                  <span className="text-xl font-bold tracking-tight text-amber-600 dark:text-amber-400 tabular-nums">
-                                    {perspective.score !== null
-                                      ? `${perspective.score}%`
-                                      : "-"}
-                                  </span>
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {perspective.scoreWeightPercent}% dari total
-                                  </span>
-                                </div>
-
-                                {/* Progress Bar Visual */}
-                                <div className="h-1 w-full overflow-hidden bg-muted">
-                                  <div
-                                    className="h-full bg-amber-500"
-                                    style={{
-                                      width: `${perspective.score ?? 0}%`,
-                                    }}
-                                  />
-                                </div>
-
-                                {/* Badge Status Indikator Kritis */}
-                                <div className="flex items-center gap-1.5 text-[10px]">
-                                  <span className="px-1 py-0.2 font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900">
-                                    {perspective.offTrackCount} kritis
-                                  </span>
-                                  <span className="text-muted-foreground">
-                                    dari {perspective.totalKpiCount} indikator
-                                  </span>
-                                </div>
-
-                                {/* Deskripsi Naratif Tahapan Siklus M2C */}
-                                <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                  {perspective.description}
-                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleStartAddRow(objective.id)
+                                  }
+                                  className="p-0.5 text-muted-foreground hover:text-sky-600 hover:bg-muted"
+                                  title="Tambah baris baru di bawah daftar"
+                                >
+                                  <Plus className="size-3.5 stroke-[2.5]" />
+                                </button>
                               </div>
                             </td>
-                          )}
 
-                          {/* Kolom 2 s/d 10: Nama Sasaran dengan Chevron Arrow & Icon Plus Berdampingan */}
-                          <td
-                            colSpan={9}
-                            className="border-r border-border p-2"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              {/* Arrow Chevron */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  toggleObjective(objective.id)
-                                }
-                                className="p-0.5 text-muted-foreground hover:text-foreground"
-                                title={
-                                  isObjCollapsed
-                                    ? "Buka sasaran"
-                                    : "Tutup sasaran"
-                                }
-                              >
-                                {isObjCollapsed ? (
-                                  <ChevronRight className="size-3.5 text-muted-foreground" />
-                                ) : (
-                                  <ChevronDown className="size-3.5 text-muted-foreground" />
-                                )}
-                              </button>
-
-                              {/* Icon Plus (+) di Samping Arrow */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleStartAddRow(objective.id)
-                                }
-                                className="p-0.5 text-muted-foreground hover:text-sky-600 hover:bg-muted"
-                                title="Tambah baris baru di bawah daftar"
-                              >
-                                <Plus className="size-3.5 stroke-[2.5]" />
-                              </button>
-
-                              {/* Nama Sasaran */}
-                              <span className="font-semibold text-foreground text-xs ml-0.5">
-                                {objective.name}
-                              </span>
-                              <span className="font-normal text-muted-foreground text-[11px]">
-                                ({objective.kpis.length} indikator)
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Kolom 11: Capaian Sasaran */}
-                          <td
-                            className={`border-r border-border p-2 text-center font-bold tabular-nums text-xs ${objStyling.bgClass} ${objStyling.textClass}`}
-                          >
-                            {objective.progress !== null
-                              ? `${objective.progress}%`
-                              : "-"}
-                          </td>
-
-                          {/* Kolom 12: Kolom Aksi Kosong untuk Sasaran */}
-                          <td className="p-2 text-center" />
-                        </tr>
-
-                        {/* Baris-baris KPI di Bawah Sasaran */}
-                        {!isObjCollapsed &&
-                          objective.kpis.map((kpi) => {
-                            const isEditingValue =
-                              editingCell?.kpiId === kpi.id &&
-                              editingCell?.field === "value"
-                            const isEditingWeight =
-                              editingCell?.kpiId === kpi.id &&
-                              editingCell?.field === "weight"
-                            const kpiStyling = getStatusStyling(kpi.status)
-
-                            return (
-                              <tr
-                                key={kpi.id}
-                                className="h-7 hover:bg-muted/20 transition-colors border-t border-border/40 text-xs"
-                              >
-                                {/* Kolom 2: Nama KPI */}
-                                <td className="border-r border-border/60 px-2.5 py-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="truncate font-medium text-foreground">
-                                      {kpi.name}
-                                    </span>
-                                    <span
-                                      className="text-muted-foreground/80 shrink-0"
-                                      title={
-                                        kpi.direction === "higher"
-                                          ? "Higher is better (↑)"
-                                          : "Lower is better (↓)"
-                                      }
-                                    >
-                                      {kpi.direction === "higher" ? (
-                                        <ArrowUp className="size-3 text-emerald-600" />
-                                      ) : (
-                                        <ArrowDown className="size-3 text-amber-600" />
-                                      )}
-                                    </span>
-                                  </div>
-                                </td>
-
-                                {/* Kolom 3: Penanggung Jawab (Teks murni) */}
-                                <td className="border-r border-border/60 px-2 py-1 text-foreground truncate">
-                                  {kpi.owner.name}
-                                </td>
-
-                                {/* Kolom 4: Bobot (Klik untuk edit di sel) */}
-                                <td
-                                  onClick={() =>
-                                    handleStartEdit(kpi, "weight")
-                                  }
-                                  className="border-r border-border/60 p-0 text-right cursor-cell"
-                                >
-                                  {isEditingWeight ? (
-                                    <input
-                                      ref={inputRef}
-                                      type="text"
-                                      value={editValueText}
-                                      onChange={(e) =>
-                                        setEditValueText(e.target.value)
-                                      }
-                                      onBlur={() => handleCommitEdit(kpi)}
-                                      onKeyDown={(e) =>
-                                        handleKeyDown(e, kpi)
-                                      }
-                                      onPaste={(e) =>
-                                        handlePaste(e, kpi.id, "weight")
-                                      }
-                                      className="w-full h-full bg-background px-2 py-1 text-right text-xs font-semibold text-sky-600 outline-none ring-2 ring-inset ring-sky-600 border-0 font-mono"
-                                    />
-                                  ) : (
-                                    <div className="px-2 py-1 font-semibold text-sky-600 dark:text-sky-400 font-mono">
-                                      {kpi.weight}%
-                                    </div>
-                                  )}
-                                </td>
-
-                                {/* Kolom 5: Baseline */}
-                                <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground font-mono">
-                                  {formatKpiNumber(kpi.baseline, kpi.format, {
-                                    unitMultiplier: kpi.unitMultiplier,
-                                  })}
-                                </td>
-
-                                {/* Kolom 6: Realisasi (Klik untuk edit di sel) */}
-                                <td
-                                  onClick={() =>
-                                    handleStartEdit(kpi, "value")
-                                  }
-                                  className="border-r border-border/60 p-0 text-right cursor-cell"
-                                >
-                                  {isEditingValue ? (
-                                    <input
-                                      ref={inputRef}
-                                      type="text"
-                                      value={editValueText}
-                                      onChange={(e) =>
-                                        setEditValueText(e.target.value)
-                                      }
-                                      onBlur={() => handleCommitEdit(kpi)}
-                                      onKeyDown={(e) =>
-                                        handleKeyDown(e, kpi)
-                                      }
-                                      onPaste={(e) =>
-                                        handlePaste(e, kpi.id, "value")
-                                      }
-                                      className="w-full h-full bg-background px-2 py-1 text-right text-xs font-semibold text-sky-600 outline-none ring-2 ring-inset ring-sky-600 border-0 font-mono"
-                                    />
-                                  ) : (
-                                    <div
-                                      className={`px-2 py-1 font-semibold font-mono ${
-                                        kpi.value !== null
-                                          ? "text-sky-600 dark:text-sky-400"
-                                          : "text-muted-foreground"
-                                      }`}
-                                    >
-                                      {formatKpiNumber(
-                                        kpi.value,
-                                        kpi.format,
-                                        {
-                                          unitMultiplier:
-                                            kpi.unitMultiplier,
-                                        }
-                                      )}
-                                    </div>
-                                  )}
-                                </td>
-
-                                {/* Kolom 7: Target */}
-                                <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground font-mono">
-                                  {formatKpiNumber(kpi.target, kpi.format, {
-                                    unitMultiplier: kpi.unitMultiplier,
-                                  })}
-                                </td>
-
-                                {/* Kolom 8: Selisih */}
-                                <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground font-mono">
-                                  {formatKpiNumber(kpi.toGo, kpi.format, {
-                                    unitMultiplier: kpi.unitMultiplier,
-                                  })}
-                                </td>
-
-                                {/* Kolom 9: Tren */}
-                                <td className="border-r border-border/60 px-2 py-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <MiniSparkline
-                                      data={kpi.change.sparkline}
-                                    />
-                                    <TrendIndicator change={kpi.change} />
-                                  </div>
-                                </td>
-
-                                {/* Kolom 10: Wilayah */}
-                                <td className="border-r border-border/60 px-2.5 py-1 text-xs truncate">
-                                  {kpi.laggingMarket ? (
-                                    <span className="font-semibold text-foreground">
-                                      📍{" "}
-                                      {kpi.laggingMarket.countryName ||
-                                        kpi.laggingMarket.countryCode}
-                                    </span>
-                                  ) : (
-                                    <span className="text-muted-foreground italic">
-                                      Semua
-                                    </span>
-                                  )}
-                                </td>
-
-                                {/* Kolom 11: Capaian */}
-                                <td
-                                  className={`border-r border-border/60 p-1 text-center font-bold tabular-nums text-xs ${kpiStyling.bgClass} ${kpiStyling.textClass}`}
-                                >
-                                  {kpi.progress !== null
-                                    ? `${kpi.progress}%`
-                                    : "-"}
-                                </td>
-
-                                {/* Kolom 12: Menu Aksi (Menu titik tiga) */}
-                                <td className="p-1 text-center">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <button
-                                        type="button"
-                                        className="p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                                        title="Aksi baris"
-                                      >
-                                        <MoreVertical className="size-3.5" />
-                                      </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                      align="end"
-                                      className="w-44 text-xs"
-                                    >
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          handleStartEdit(kpi, "value")
-                                        }
-                                        className="cursor-pointer"
-                                      >
-                                        Ubah Nilai Realisasi
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          handleStartEdit(kpi, "weight")
-                                        }
-                                        className="cursor-pointer"
-                                      >
-                                        Ubah Bobot Kontribusi
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </td>
-                              </tr>
-                            )
-                          })}
-
-                        {/* Baris Baru di Bawah Daftar saat Klik (+) */}
-                        {!isObjCollapsed && isAddingHere && (
-                          <tr className="h-7 bg-muted/20 border-t border-border/60 text-xs">
-                            {/* Kolom 2: Nama KPI */}
-                            <td className="border-r border-border/60 p-0">
-                              <input
-                                autoFocus
-                                type="text"
-                                placeholder="Nama KPI..."
-                                value={newKpiName}
-                                onChange={(e) =>
-                                  setNewKpiName(e.target.value)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    void handleSaveRow(objective.id)
-                                  } else if (e.key === "Escape") {
-                                    setAddingInObjectiveId(null)
-                                  }
-                                }}
-                                className="w-full h-full bg-background px-2 py-1 text-xs text-foreground outline-none ring-2 ring-inset ring-sky-600 border-0"
-                              />
+                            {/* Col 2: Nama Sasaran */}
+                            <td className="border-r border-border px-2 py-1 font-semibold text-foreground truncate">
+                              {objective.name}
                             </td>
 
-                            {/* Kolom 3: Penanggung Jawab */}
-                            <td className="border-r border-border/60 p-0">
-                              <input
-                                type="text"
-                                placeholder="Penanggung Jawab..."
-                                value={newKpiOwnerName}
-                                onChange={(e) =>
-                                  setNewKpiOwnerName(e.target.value)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    void handleSaveRow(objective.id)
-                                  } else if (e.key === "Escape") {
-                                    setAddingInObjectiveId(null)
-                                  }
-                                }}
-                                className="w-full h-full bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
-                              />
-                            </td>
-
-                            {/* Kolom 4: Bobot */}
-                            <td className="border-r border-border/60 p-0 text-right">
-                              <input
-                                type="number"
-                                value={newKpiWeight}
-                                onChange={(e) =>
-                                  setNewKpiWeight(e.target.value)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    void handleSaveRow(objective.id)
-                                  } else if (e.key === "Escape") {
-                                    setAddingInObjectiveId(null)
-                                  }
-                                }}
-                                className="w-full h-full bg-background px-2 py-1 text-right text-xs font-mono font-semibold text-sky-600 outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
-                              />
-                            </td>
-
-                            {/* Kolom 5: Baseline */}
-                            <td className="border-r border-border/60 p-0 text-right">
-                              <input
-                                type="number"
-                                value={newKpiBaseline}
-                                onChange={(e) =>
-                                  setNewKpiBaseline(e.target.value)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    void handleSaveRow(objective.id)
-                                  } else if (e.key === "Escape") {
-                                    setAddingInObjectiveId(null)
-                                  }
-                                }}
-                                className="w-full h-full bg-background px-2 py-1 text-right text-xs font-mono outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
-                              />
-                            </td>
-
-                            {/* Kolom 6: Realisasi */}
-                            <td className="border-r border-border/60 p-0 text-right">
-                              <input
-                                type="number"
-                                placeholder="-"
-                                value={newKpiValue}
-                                onChange={(e) =>
-                                  setNewKpiValue(e.target.value)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    void handleSaveRow(objective.id)
-                                  } else if (e.key === "Escape") {
-                                    setAddingInObjectiveId(null)
-                                  }
-                                }}
-                                className="w-full h-full bg-background px-2 py-1 text-right text-xs font-mono text-sky-600 font-semibold outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
-                              />
-                            </td>
-
-                            {/* Kolom 7: Target */}
-                            <td className="border-r border-border/60 p-0 text-right">
-                              <input
-                                type="number"
-                                value={newKpiTarget}
-                                onChange={(e) =>
-                                  setNewKpiTarget(e.target.value)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    void handleSaveRow(objective.id)
-                                  } else if (e.key === "Escape") {
-                                    setAddingInObjectiveId(null)
-                                  }
-                                }}
-                                className="w-full h-full bg-background px-2 py-1 text-right text-xs font-mono outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
-                              />
-                            </td>
-
-                            {/* Kolom 8: Selisih */}
-                            <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground text-xs font-mono">
+                            {/* Col 3: Penanggung Jawab */}
+                            <td className="border-r border-border px-2 py-1 text-muted-foreground">
                               -
                             </td>
 
-                            {/* Kolom 9: Tren */}
-                            <td className="border-r border-border/60 px-2 py-1 text-muted-foreground text-xs">
+                            {/* Col 4 s/d 8: Bobot s/d Selisih */}
+                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground">
+                              -
+                            </td>
+                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground">
+                              -
+                            </td>
+                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground">
+                              -
+                            </td>
+                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground">
+                              -
+                            </td>
+                            <td className="border-r border-border px-2 py-1 text-right text-muted-foreground">
                               -
                             </td>
 
-                            {/* Kolom 10: Wilayah */}
-                            <td className="border-r border-border/60 px-2 py-1 text-[11px] text-muted-foreground italic">
-                              Semua
-                            </td>
-
-                            {/* Kolom 11: Capaian */}
-                            <td className="border-r border-border/60 px-2 py-1 text-center text-muted-foreground text-xs">
+                            {/* Col 9: Tren */}
+                            <td className="border-r border-border px-2 py-1 text-muted-foreground">
                               -
                             </td>
 
-                            {/* Kolom 12: Aksi Simpan Baris */}
-                            <td className="p-1 text-center">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void handleSaveRow(objective.id)
-                                }
-                                disabled={savingRow}
-                                className="text-[11px] font-semibold text-sky-600 hover:underline"
-                              >
-                                {savingRow ? "..." : "Simpan"}
-                              </button>
+                            {/* Col 10: Wilayah */}
+                            <td className="border-r border-border px-2 py-1 text-muted-foreground">
+                              -
                             </td>
+
+                            {/* Col 11: Capaian Sasaran */}
+                            <td
+                              className={`border-r border-border px-1 py-1 text-center font-bold tabular-nums text-xs ${objStyling.bgClass} ${objStyling.textClass}`}
+                            >
+                              {objective.progress !== null
+                                ? `${objective.progress}%`
+                                : "-"}
+                            </td>
+
+                            {/* Col 12: Kolom Aksi Kosong */}
+                            <td className="px-1 py-1 text-center" />
                           </tr>
-                        )}
+
+                          {/* 3. Baris-baris KPI di Bawah Sasaran (Tinggi h-7) */}
+                          {!isObjCollapsed &&
+                            objective.kpis.map((kpi) => {
+                              const isEditingValue =
+                                editingCell?.kpiId === kpi.id &&
+                                editingCell?.field === "value"
+                              const isEditingWeight =
+                                editingCell?.kpiId === kpi.id &&
+                                editingCell?.field === "weight"
+                              const kpiStyling = getStatusStyling(kpi.status)
+
+                              return (
+                                <tr
+                                  key={kpi.id}
+                                  className="h-7 hover:bg-muted/20 transition-colors border-t border-border/40 text-xs"
+                                >
+                                  {/* Col 1: Nama Tahapan Siklus (Tinggi h-7 sejajar dengan baris lain) */}
+                                  <td className="border-r border-border/60 px-2 py-1 text-muted-foreground truncate">
+                                    {perspective.name}
+                                  </td>
+
+                                  {/* Col 2: Nama KPI */}
+                                  <td className="border-r border-border/60 px-2 py-1">
+                                    <div className="flex items-center gap-1">
+                                      <span className="truncate font-medium text-foreground">
+                                        {kpi.name}
+                                      </span>
+                                      <span
+                                        className="text-muted-foreground/80 shrink-0"
+                                        title={
+                                          kpi.direction === "higher"
+                                            ? "Higher is better (↑)"
+                                            : "Lower is better (↓)"
+                                        }
+                                      >
+                                        {kpi.direction === "higher" ? (
+                                          <ArrowUp className="size-3 text-emerald-600" />
+                                        ) : (
+                                          <ArrowDown className="size-3 text-amber-600" />
+                                        )}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Col 3: Penanggung Jawab */}
+                                  <td className="border-r border-border/60 px-2 py-1 text-foreground truncate">
+                                    {kpi.owner.name}
+                                  </td>
+
+                                  {/* Col 4: Bobot */}
+                                  <td
+                                    onClick={() =>
+                                      handleStartEdit(kpi, "weight")
+                                    }
+                                    className="border-r border-border/60 p-0 text-right cursor-cell"
+                                  >
+                                    {isEditingWeight ? (
+                                      <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={editValueText}
+                                        onChange={(e) =>
+                                          setEditValueText(e.target.value)
+                                        }
+                                        onBlur={() => handleCommitEdit(kpi)}
+                                        onKeyDown={(e) =>
+                                          handleKeyDown(e, kpi)
+                                        }
+                                        onPaste={(e) =>
+                                          handlePaste(e, kpi.id, "weight")
+                                        }
+                                        className="w-full h-full bg-background px-2 py-1 text-right text-xs font-semibold text-sky-600 outline-none ring-2 ring-inset ring-sky-600 border-0 font-mono"
+                                      />
+                                    ) : (
+                                      <div className="px-2 py-1 font-semibold text-sky-600 dark:text-sky-400 font-mono">
+                                        {kpi.weight}%
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* Col 5: Baseline */}
+                                  <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground font-mono">
+                                    {formatKpiNumber(kpi.baseline, kpi.format, {
+                                      unitMultiplier: kpi.unitMultiplier,
+                                    })}
+                                  </td>
+
+                                  {/* Col 6: Realisasi */}
+                                  <td
+                                    onClick={() =>
+                                      handleStartEdit(kpi, "value")
+                                    }
+                                    className="border-r border-border/60 p-0 text-right cursor-cell"
+                                  >
+                                    {isEditingValue ? (
+                                      <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={editValueText}
+                                        onChange={(e) =>
+                                          setEditValueText(e.target.value)
+                                        }
+                                        onBlur={() => handleCommitEdit(kpi)}
+                                        onKeyDown={(e) =>
+                                          handleKeyDown(e, kpi)
+                                        }
+                                        onPaste={(e) =>
+                                          handlePaste(e, kpi.id, "value")
+                                        }
+                                        className="w-full h-full bg-background px-2 py-1 text-right text-xs font-semibold text-sky-600 outline-none ring-2 ring-inset ring-sky-600 border-0 font-mono"
+                                      />
+                                    ) : (
+                                      <div
+                                        className={`px-2 py-1 font-semibold font-mono ${
+                                          kpi.value !== null
+                                            ? "text-sky-600 dark:text-sky-400"
+                                            : "text-muted-foreground"
+                                        }`}
+                                      >
+                                        {formatKpiNumber(
+                                          kpi.value,
+                                          kpi.format,
+                                          {
+                                            unitMultiplier:
+                                              kpi.unitMultiplier,
+                                          }
+                                        )}
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* Col 7: Target */}
+                                  <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground font-mono">
+                                    {formatKpiNumber(kpi.target, kpi.format, {
+                                      unitMultiplier: kpi.unitMultiplier,
+                                    })}
+                                  </td>
+
+                                  {/* Col 8: Selisih */}
+                                  <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground font-mono">
+                                    {formatKpiNumber(kpi.toGo, kpi.format, {
+                                      unitMultiplier: kpi.unitMultiplier,
+                                    })}
+                                  </td>
+
+                                  {/* Col 9: Tren */}
+                                  <td className="border-r border-border/60 px-2 py-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <MiniSparkline
+                                        data={kpi.change.sparkline}
+                                      />
+                                      <TrendIndicator change={kpi.change} />
+                                    </div>
+                                  </td>
+
+                                  {/* Col 10: Wilayah */}
+                                  <td className="border-r border-border/60 px-2 py-1 text-xs truncate">
+                                    {kpi.laggingMarket ? (
+                                      <span className="font-semibold text-foreground">
+                                        📍{" "}
+                                        {kpi.laggingMarket.countryName ||
+                                          kpi.laggingMarket.countryCode}
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground italic">
+                                        Semua
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Col 11: Capaian */}
+                                  <td
+                                    className={`border-r border-border/60 px-1 py-1 text-center font-bold tabular-nums text-xs ${kpiStyling.bgClass} ${kpiStyling.textClass}`}
+                                  >
+                                    {kpi.progress !== null
+                                      ? `${kpi.progress}%`
+                                      : "-"}
+                                  </td>
+
+                                  {/* Col 12: Menu Aksi */}
+                                  <td className="px-1 py-1 text-center">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className="p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                          title="Aksi baris"
+                                        >
+                                          <MoreVertical className="size-3.5" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent
+                                        align="end"
+                                        className="w-44 text-xs"
+                                      >
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleStartEdit(kpi, "value")
+                                          }
+                                          className="cursor-pointer"
+                                        >
+                                          Ubah Nilai Realisasi
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleStartEdit(kpi, "weight")
+                                          }
+                                          className="cursor-pointer"
+                                        >
+                                          Ubah Bobot Kontribusi
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+
+                          {/* 4. Baris Baru di Bawah Daftar saat Klik (+) (Tinggi h-7) */}
+                          {!isObjCollapsed && isAddingHere && (
+                            <tr className="h-7 bg-muted/20 border-t border-border/60 text-xs">
+                              {/* Col 1: Tahapan Siklus */}
+                              <td className="border-r border-border/60 px-2 py-1 text-muted-foreground truncate">
+                                {perspective.name}
+                              </td>
+
+                              {/* Col 2: Nama KPI */}
+                              <td className="border-r border-border/60 p-0">
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  placeholder="Nama KPI..."
+                                  value={newKpiName}
+                                  onChange={(e) =>
+                                    setNewKpiName(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      void handleSaveRow(objective.id)
+                                    } else if (e.key === "Escape") {
+                                      setAddingInObjectiveId(null)
+                                    }
+                                  }}
+                                  className="w-full h-full bg-background px-2 py-1 text-xs text-foreground outline-none ring-2 ring-inset ring-sky-600 border-0"
+                                />
+                              </td>
+
+                              {/* Col 3: Penanggung Jawab */}
+                              <td className="border-r border-border/60 p-0">
+                                <input
+                                  type="text"
+                                  placeholder="Penanggung Jawab..."
+                                  value={newKpiOwnerName}
+                                  onChange={(e) =>
+                                    setNewKpiOwnerName(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      void handleSaveRow(objective.id)
+                                    } else if (e.key === "Escape") {
+                                      setAddingInObjectiveId(null)
+                                    }
+                                  }}
+                                  className="w-full h-full bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
+                                />
+                              </td>
+
+                              {/* Col 4: Bobot */}
+                              <td className="border-r border-border/60 p-0 text-right">
+                                <input
+                                  type="number"
+                                  value={newKpiWeight}
+                                  onChange={(e) =>
+                                    setNewKpiWeight(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      void handleSaveRow(objective.id)
+                                    } else if (e.key === "Escape") {
+                                      setAddingInObjectiveId(null)
+                                    }
+                                  }}
+                                  className="w-full h-full bg-background px-2 py-1 text-right text-xs font-mono font-semibold text-sky-600 outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
+                                />
+                              </td>
+
+                              {/* Col 5: Baseline */}
+                              <td className="border-r border-border/60 p-0 text-right">
+                                <input
+                                  type="number"
+                                  value={newKpiBaseline}
+                                  onChange={(e) =>
+                                    setNewKpiBaseline(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      void handleSaveRow(objective.id)
+                                    } else if (e.key === "Escape") {
+                                      setAddingInObjectiveId(null)
+                                    }
+                                  }}
+                                  className="w-full h-full bg-background px-2 py-1 text-right text-xs font-mono outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
+                                />
+                              </td>
+
+                              {/* Col 6: Realisasi */}
+                              <td className="border-r border-border/60 p-0 text-right">
+                                <input
+                                  type="number"
+                                  placeholder="-"
+                                  value={newKpiValue}
+                                  onChange={(e) =>
+                                    setNewKpiValue(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      void handleSaveRow(objective.id)
+                                    } else if (e.key === "Escape") {
+                                      setAddingInObjectiveId(null)
+                                    }
+                                  }}
+                                  className="w-full h-full bg-background px-2 py-1 text-right text-xs font-mono text-sky-600 font-semibold outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
+                                />
+                              </td>
+
+                              {/* Col 7: Target */}
+                              <td className="border-r border-border/60 p-0 text-right">
+                                <input
+                                  type="number"
+                                  value={newKpiTarget}
+                                  onChange={(e) =>
+                                    setNewKpiTarget(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      void handleSaveRow(objective.id)
+                                    } else if (e.key === "Escape") {
+                                      setAddingInObjectiveId(null)
+                                    }
+                                  }}
+                                  className="w-full h-full bg-background px-2 py-1 text-right text-xs font-mono outline-none focus:ring-2 focus:ring-inset focus:ring-sky-600 border-0"
+                                />
+                              </td>
+
+                              {/* Col 8: Selisih */}
+                              <td className="border-r border-border/60 px-2 py-1 text-right text-muted-foreground text-xs font-mono">
+                                -
+                              </td>
+
+                              {/* Col 9: Tren */}
+                              <td className="border-r border-border/60 px-2 py-1 text-muted-foreground text-xs">
+                                -
+                              </td>
+
+                              {/* Col 10: Wilayah */}
+                              <td className="border-r border-border/60 px-2 py-1 text-[11px] text-muted-foreground italic">
+                                Semua
+                              </td>
+
+                              {/* Col 11: Capaian */}
+                              <td className="border-r border-border/60 px-2 py-1 text-center text-muted-foreground text-xs">
+                                -
+                              </td>
+
+                              {/* Col 12: Aksi Simpan Baris */}
+                              <td className="px-1 py-1 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void handleSaveRow(objective.id)
+                                  }
+                                  disabled={savingRow}
+                                  className="text-[11px] font-semibold text-sky-600 hover:underline"
+                                >
+                                  {savingRow ? "..." : "Simpan"}
+                                </button>
+                              </td>
+                            </tr>
+                          )}
                       </React.Fragment>
                     )
                   })}
@@ -930,57 +928,47 @@ export function KpiScorecardTable({
           </tbody>
 
           {/* Sticky Footer Total Scorecard */}
-          <tfoot className="sticky bottom-0 z-20 border-t-2 border-border bg-muted/90 backdrop-blur-sm font-semibold text-[11px] text-foreground">
+          <tfoot className="sticky bottom-0 z-20 border-t-2 border-border bg-muted/90 backdrop-blur-sm font-semibold text-[11px] text-foreground h-7">
             <tr>
-              <td className="border-r border-border p-2.5">
+              <td className="border-r border-border px-2 py-1">
                 <div className="font-bold uppercase tracking-wider text-[11px]">
-                  TOTAL CAPAIAN SKOR M2C
-                </div>
-                <div className="text-[10px] font-normal text-muted-foreground">
-                  {summary.kpisOnTrackCount} dari {summary.totalScoredKpis} KPI
-                  sesuai target
+                  TOTAL CAPAIAN
                 </div>
               </td>
-              <td className="border-r border-border p-2.5 text-muted-foreground">
-                5 Peran Aktor
+              <td className="border-r border-border px-2 py-1 text-muted-foreground">
+                {summary.kpisOnTrackCount} dari {summary.totalScoredKpis} KPI
               </td>
-              <td className="border-r border-border p-2.5 text-muted-foreground">
-                —
+              <td className="border-r border-border px-2 py-1 text-muted-foreground">
+                Semua
               </td>
-              <td className="border-r border-border p-2.5 text-right font-bold text-foreground">
-                100% Total
+              <td className="border-r border-border px-2 py-1 text-right font-bold text-foreground">
+                100%
               </td>
-              <td className="border-r border-border p-2.5 text-right text-emerald-600 dark:text-emerald-400 font-semibold">
-                {summary.kpisOnTrackCount} tercapai
-              </td>
-              <td className="border-r border-border p-2.5 text-right text-amber-600 dark:text-amber-400 font-semibold">
-                {summary.kpisWatchCount} perhatian
-              </td>
-              <td className="border-r border-border p-2.5 text-right text-rose-600 dark:text-rose-400 font-semibold">
-                {summary.kpisOffTrackCount} kritis
-              </td>
-              <td className="border-r border-border p-2.5 text-right text-muted-foreground font-normal">
+              <td className="border-r border-border px-2 py-1 text-right text-muted-foreground font-normal">
                 -
               </td>
-              <td className="border-r border-border p-2.5">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+              <td className="border-r border-border px-2 py-1 text-right text-emerald-600 dark:text-emerald-400 font-semibold">
+                {summary.kpisOnTrackCount} on-track
+              </td>
+              <td className="border-r border-border px-2 py-1 text-right text-muted-foreground font-normal">
+                -
+              </td>
+              <td className="border-r border-border px-2 py-1 text-right text-muted-foreground font-normal">
+                -
+              </td>
+              <td className="border-r border-border px-2 py-1">
+                <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
                   <MiniSparkline data={[58, 59, 59.5, 60.2, 60.8, 61]} />
-                  <span>+{summary.ptsChangeSinceLastMonth} poin bln lalu</span>
+                  <span>+{summary.ptsChangeSinceLastMonth}</span>
                 </div>
               </td>
-              <td className="border-r border-border p-2.5">
-                <div className="inline-flex items-center gap-1 text-muted-foreground font-medium">
-                  <span>📍</span>
-                  <span>Semua wilayah aktif</span>
-                </div>
+              <td className="border-r border-border px-2 py-1 text-muted-foreground">
+                Semua
               </td>
-              <td className="border-r border-border p-2.5 text-center bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
-                <div className="text-sm font-bold">{summary.companyScore}%</div>
-                <div className="text-[9px] uppercase font-semibold">
-                  Perhatian
-                </div>
+              <td className="border-r border-border px-2 py-1 text-center bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                <div className="text-xs font-bold">{summary.companyScore}%</div>
               </td>
-              <td className="p-2.5 text-center" />
+              <td className="px-2 py-1 text-center" />
             </tr>
           </tfoot>
         </table>
