@@ -559,33 +559,29 @@ export function VerifikasiLapangan({
           tahap === "MENUNGGU_V2" ||
           tahap === "MENUNGGU_V3"))
 
-    // Unverifikasi = batalkan SATU tahap terakhir.
-    // Sesuai kebijakan VERIFIKASI.md: V1 hanya dapat dibatalkan oleh V2/V3
-    // (bisaV2), V2 hanya dapat dibatalkan oleh V3 (bisaV3), dan V3 dapat
-    // membuka kembali (reopen) hasil V3 sebelum Tagihan.
+    // Unverifikasi = batalkan persetujuan verifikasi dan kembalikan laporan ke antrean belum diverifikasi.
+    // V1 hanya dapat dibatalkan oleh V2/V3 (bisaV2), V2/V3 dapat dibatalkan oleh V3 (bisaV3).
     const unverif =
       tahap === "RESMI"
         ? {
-            nama: "Batalkan V3",
+            nama: "Batalkan Verifikasi (V3)",
             boleh: bisaV3,
-            judul: "Batalkan approve final?",
-            deskripsi: baris.pembacaanId
-              ? `PembacaanMeter resmi milik ${nama} dihapus dan laporan kembali ke tahap menunggu V3. Server menolak bila pembacaan sudah dipakai tagihan.`
-              : `Persetujuan V3 untuk laporan ${nama} dibatalkan. Hasil resmi yang kini berasal dari jalur lain tetap dipertahankan.`,
+            judul: "Batalkan verifikasi resmi (V3)?",
+            deskripsi: `Persetujuan verifikasi V3 untuk laporan ${nama} dibatalkan. Status laporan dikembalikan ke Belum Diverifikasi (antrean awal).`,
           }
         : tahap === "MENUNGGU_V3"
           ? {
-              nama: "Batalkan V2",
+              nama: "Batalkan Verifikasi (V2)",
               boleh: bisaV3,
-              judul: "Batalkan V2?",
-              deskripsi: `Tanda validasi V2 pada laporan ${nama} dihapus; laporan kembali menunggu V2.`,
+              judul: "Batalkan verifikasi V2?",
+              deskripsi: `Validasi V2 pada laporan ${nama} dibatalkan. Status laporan dikembalikan ke Belum Diverifikasi (antrean awal).`,
             }
           : tahap === "MENUNGGU_V2"
             ? {
-                nama: "Batalkan V1",
+                nama: "Batalkan Verifikasi (V1)",
                 boleh: bisaV2,
-                judul: "Batalkan V1?",
-                deskripsi: `Hasil pemeriksaan V1 pada laporan ${nama} (termasuk revisi stand dan pilihan meter) dihapus; laporan kembali menunggu V1.`,
+                judul: "Batalkan verifikasi V1?",
+                deskripsi: `Pemeriksaan V1 pada laporan ${nama} dibatalkan. Status laporan dikembalikan ke Belum Diverifikasi (antrean awal).`,
               }
             : null
 

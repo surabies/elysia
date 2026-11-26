@@ -9,7 +9,7 @@
  * yang memiliki keterangan kondisi catat "Stand Konsumen" (kode Z).
  */
 
-import { eq, and, desc, lt } from "drizzle-orm";
+import { eq, and, desc, lt, sql } from "drizzle-orm";
 import {
   db,
   caterMandiriPelanggan,
@@ -333,11 +333,13 @@ export class MandiriService {
           })
           .where(eq(caterMandiriPelanggan.id, mandiriId));
 
-        // Bila sebelumnya pernah disetujui, putuskan tautan di cater_baca_meter
+        // Bila sebelumnya pernah disetujui, putuskan tautan di cater_baca_meter dan bersihkan foto jika bersumber dari mandiri
         await tx
           .update(caterBacaMeter)
           .set({
             caterMandiriId: null,
+            fotoMeterUrl: sql`CASE WHEN ${caterBacaMeter.sumberCatat} IN ('MANDIRI_WEB', 'MANDIRI_APP') THEN NULL ELSE ${caterBacaMeter.fotoMeterUrl} END`,
+            fotoRumahUrl: sql`CASE WHEN ${caterBacaMeter.sumberCatat} IN ('MANDIRI_WEB', 'MANDIRI_APP') THEN NULL ELSE ${caterBacaMeter.fotoRumahUrl} END`,
             updatedAt: new Date(),
           })
           .where(eq(caterBacaMeter.caterMandiriId, mandiriId));
@@ -366,6 +368,33 @@ export class MandiriService {
             eq(caterBacaMeter.thbl, mandiri.thbl)
           )
         );
+
+      if (existingCater) {
+        if (existingCater.statusVerifikasi === "LOCKED_BILLING") {
+          throw new Error(
+            `Periode ${mandiri.thbl} untuk pelanggan ${mandiri.nolg} sudah terkunci dalam penetapan tagihan resmi (LOCKED_BILLING). Penimpaan mandiri dilarang.`
+          );
+        }
+        if (existingCater.statusVerifikasi === "APPROVED_FINAL") {
+          throw new Error(
+            `Pembacaan meter pelanggan ${mandiri.nolg} periode ${mandiri.thbl} sudah disahkan secara final (V3). Batalkan/reopen pembacaan terlebih dahulu untuk menggantinya dengan laporan mandiri.`
+          );
+        }
+      }
+
+      const previousPetugasNote =
+        existingCater &&
+        existingCater.sumberCatat !== "MANDIRI_WEB" &&
+        existingCater.sumberCatat !== "MANDIRI_APP"
+          ? `[PREV_PETUGAS:${existingCater.sumberCatat}:STMA=${existingCater.stma}:STML=${existingCater.stml}:PAKAI=${existingCater.pakaiM3}:TMSS=${existingCater.tmss}]`
+          : null;
+
+      const overrideCatatan = [
+        "[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan",
+        previousPetugasNote,
+      ]
+        .filter(Boolean)
+        .join(" | ");
 
       let stml = existingCater?.stml ? Number(existingCater.stml) : null;
       if (stml === null) {
@@ -444,8 +473,7 @@ export class MandiriService {
           kodeAnomaliUtama: evalRes.kodeUtama,
           kodeAnomaliList: evalRes.kodeList,
           aturanVersi: versi,
-          catatan:
-            "[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan",
+          catatan: overrideCatatan,
         })
         .onConflictDoUpdate({
           target: caterBacaMeter.id,
@@ -465,8 +493,7 @@ export class MandiriService {
             kodeAnomaliUtama: evalRes.kodeUtama,
             kodeAnomaliList: evalRes.kodeList,
             aturanVersi: versi,
-            catatan:
-              "[Override Mandiri] Disahkan dari hasil foto kiriman pelanggan",
+            catatan: overrideCatatan,
             updatedAt: new Date(),
           },
         });

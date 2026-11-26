@@ -12,6 +12,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import {
+  BookOpen01Icon,
   CalendarDaysIcon,
   Cancel01Icon,
   Download01Icon,
@@ -436,6 +437,29 @@ export function PanelTabelMandiri({
           ))}
         </SelectContent>
       </Select>
+
+      {/* Tombol Panduan */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        asChild
+      >
+        <a
+          href="/docs/verifikasi-baca-pelanggan"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Buka Buku Panduan Verifikasi Mandiri Pelanggan"
+        >
+          <HugeiconsIcon
+            icon={BookOpen01Icon}
+            strokeWidth={2}
+            className="size-3.5"
+            aria-hidden
+          />
+          Panduan
+        </a>
+      </Button>
 
       {/* Separator Antar Paginasi & Kontrol Tampilan */}
       <div className="h-4 w-px bg-border/80 shrink-0 mx-0.5" aria-hidden="true" />

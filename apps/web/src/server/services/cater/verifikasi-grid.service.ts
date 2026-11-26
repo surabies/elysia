@@ -525,10 +525,15 @@ export class VerifikasiGridService {
         const point = row.titikLokasi as { x?: number; y?: number } | null;
 
         // Status-aware verification stages:
-        // Setiap ring V1, V2, V3 mandiri: hanya aktif bila ring tersebut benar-benar diverifikasi.
-        const hasV3 = Boolean(v3) || (final && !v1 && !v2);
-        const hasV2 = Boolean(v2);
-        const hasV1 = Boolean(v1);
+        // Setiap ring V1, V2, V3 mandiri: hanya aktif bila ring tersebut benar-benar diverifikasi
+        // DAN status saat ini bukan status tunggu (SUBMITTED/DRAFT/WAITING).
+        const isBelumVerif =
+          row.statusVerifikasi === "SUBMITTED" ||
+          row.statusVerifikasi === "DRAFT" ||
+          row.statusVerifikasi === "WAITING";
+        const hasV3 = !isBelumVerif && (Boolean(v3) || (final && !v1 && !v2));
+        const hasV2 = !isBelumVerif && Boolean(v2);
+        const hasV1 = !isBelumVerif && Boolean(v1);
 
         return {
           id: row.id,
@@ -601,9 +606,9 @@ export class VerifikasiGridService {
           verif3By: hasV3 && v3 ? { name: v3.userName } : null,
           verifiedBy: hasV3 && v3 ? { name: v3.userName } : null,
           nomorMeter: row.noMeter,
-          fotoStandUrl: row.fotoMeterUrl,
-          fotoSegelUrl: row.fotoSegelUrl,
-          fotoRumahUrl: row.fotoRumahUrl,
+          fotoStandUrl: row.sumberCatat === "LAPDATAMETER" ? null : row.fotoMeterUrl,
+          fotoSegelUrl: row.sumberCatat === "LAPDATAMETER" ? null : row.fotoSegelUrl,
+          fotoRumahUrl: row.sumberCatat === "LAPDATAMETER" ? null : row.fotoRumahUrl,
           pencatat: row.petugasId
             ? {
                 id: row.petugasId,

@@ -6,6 +6,7 @@ export {
   Undo2 as ArrowTurnBackwardIcon,
   ChevronUp as ArrowUp01Icon,
   ArrowUpDown as ArrowUpDownIcon,
+  BookOpen as BookOpen01Icon,
   CalendarDays as CalendarDaysIcon,
   Camera as Camera01Icon,
   X as Cancel01Icon,

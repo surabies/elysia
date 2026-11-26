@@ -9,6 +9,14 @@ import {
   GeotaggingTitikGpsDoc,
   geotaggingTitikGpsHeadings,
 } from "../content/GeotaggingTitikGpsDoc"
+import {
+  VerifikasiLapanganDoc,
+  verifikasiLapanganHeadings,
+} from "../content/VerifikasiLapanganDoc"
+import {
+  VerifikasiMandiriDoc,
+  verifikasiMandiriHeadings,
+} from "../content/VerifikasiMandiriDoc"
 import { DocsDynamicPageContent } from "../components/DocsDynamicPageContent"
 
 export function hrefToSlug(href: string): string {
@@ -42,14 +50,22 @@ function buildRegistry(): {
 
       const isKpi = slug === "kpi"
       const isTitikGps = slug === "pelanggan-titik-gps"
+      const isVerifPetugas = slug === "verifikasi-baca-petugas"
+      const isVerifMandiri = slug === "verifikasi-baca-pelanggan"
       const meta: DocItemMeta = {
         slug,
         title: item.title,
         category: group.id,
         categoryTitle: group.title,
         description: item.description,
-        lastUpdated: "25 November 2026",
-        badge: isKpi ? "Update" : isTitikGps ? "Akurasi Tinggi" : undefined,
+        lastUpdated: "26 November 2026",
+        badge: isKpi
+          ? "Update"
+          : isTitikGps
+          ? "Akurasi Tinggi"
+          : isVerifPetugas || isVerifMandiri
+          ? "Guide Book"
+          : undefined,
         routeRef: item.href,
         roles: item.roles,
         keywords: item.keywords,
@@ -57,6 +73,10 @@ function buildRegistry(): {
           ? kpiInsentifHeadings
           : isTitikGps
           ? geotaggingTitikGpsHeadings
+          : isVerifPetugas
+          ? verifikasiLapanganHeadings
+          : isVerifMandiri
+          ? verifikasiMandiriHeadings
           : DEFAULT_PAGE_HEADINGS,
       }
 
@@ -94,6 +114,20 @@ function buildRegistry(): {
     }
   }
 
+  if (metas["verifikasi-baca-petugas"]) {
+    metas["verifikasi-lapangan"] = {
+      ...metas["verifikasi-baca-petugas"],
+      slug: "verifikasi-lapangan",
+    }
+  }
+
+  if (metas["verifikasi-baca-pelanggan"]) {
+    metas["verifikasi-mandiri"] = {
+      ...metas["verifikasi-baca-pelanggan"],
+      slug: "verifikasi-mandiri",
+    }
+  }
+
   return { categories, metas }
 }
 
@@ -105,6 +139,8 @@ export const docMetas = generatedMetas
 export function getDocMeta(slug: string): DocItemMeta | undefined {
   if (slug === "kpi-insentif") return docMetas["kpi"] || docMetas["kpi-insentif"]
   if (slug === "titik-gps") return docMetas["pelanggan-titik-gps"] || docMetas["titik-gps"]
+  if (slug === "verifikasi-lapangan") return docMetas["verifikasi-baca-petugas"] || docMetas["verifikasi-lapangan"]
+  if (slug === "verifikasi-mandiri") return docMetas["verifikasi-baca-pelanggan"] || docMetas["verifikasi-mandiri"]
   return docMetas[slug]
 }
 
@@ -118,6 +154,12 @@ export function getDocComponent(slug: string): ComponentType<{ meta: DocItemMeta
   }
   if (slug === "pelanggan-titik-gps" || slug === "titik-gps") {
     return GeotaggingTitikGpsDoc as unknown as ComponentType<{ meta: DocItemMeta }>
+  }
+  if (slug === "verifikasi-baca-petugas" || slug === "verifikasi-lapangan") {
+    return VerifikasiLapanganDoc as unknown as ComponentType<{ meta: DocItemMeta }>
+  }
+  if (slug === "verifikasi-baca-pelanggan" || slug === "verifikasi-mandiri") {
+    return VerifikasiMandiriDoc as unknown as ComponentType<{ meta: DocItemMeta }>
   }
   return DocsDynamicPageContent
 }

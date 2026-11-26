@@ -16,7 +16,7 @@ export function HalamanInfo({
   className?: string
 }) {
   return (
-    <div className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 lg:pt-12 pb-20 sm:pb-24", className)}>
+    <div className={cn("mx-auto w-full max-w-360 px-4 lg:px-12 pt-8 sm:pt-10 lg:pt-12 pb-20 sm:pb-24", className)}>
       {/* Enterprise Header Banner dengan Motion Masuk yang Mulus */}
       <header className="border-b border-border/80 pb-6 sm:pb-8 animate-content-fade-up">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

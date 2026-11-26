@@ -115,7 +115,7 @@ export class CaterVerifikasiService {
 
     // 1. Muat konfigurasi mode_hitung dari master_kondisi_catat, pemakaian_minimum_m3 dari golongan_tarif,
     //    serta stand_awal, pakai_lalu, dan akumulasi_taksasi_m3 dari daftar_catat (DPM)
-    const [dpmRow, pelRow, kondisiRows] = await Promise.all([
+    const [dpmRow, pelRow, kondisiRows, existingCaterRow] = await Promise.all([
       db
         .select({
           standAwal: daftarCatat.standAwal,
@@ -143,7 +143,26 @@ export class CaterVerifikasiService {
           modeHitung: masterKondisiCatat.modeHitung,
         })
         .from(masterKondisiCatat),
+      db
+        .select()
+        .from(caterBacaMeter)
+        .where(and(eq(caterBacaMeter.thbl, thbl), eq(caterBacaMeter.nolg, nolg)))
+        .limit(1),
     ]);
+
+    const existingCater = existingCaterRow[0];
+    if (existingCater) {
+      if (existingCater.statusVerifikasi === "LOCKED_BILLING") {
+        throw new Error(
+          `Periode ${thbl} untuk pelanggan ${nolg} sudah terkunci dalam penetapan tagihan resmi (LOCKED_BILLING). Penimpaan dilarang.`
+        );
+      }
+      if (existingCater.statusVerifikasi === "APPROVED_FINAL") {
+        throw new Error(
+          `Pembacaan meter pelanggan ${nolg} periode ${thbl} sudah disahkan secara final (V3). Untuk mengubah nilai, lakukan alur reopen/koreksi resmi.`
+        );
+      }
+    }
 
     const dpm = dpmRow[0];
     const pemakaianMinimumM3 = Number(pelRow[0]?.pemakaianMinimumM3 ?? 0);
@@ -232,13 +251,35 @@ export class CaterVerifikasiService {
     const pakaiTagihFinal =
       pakaiM3Override !== undefined ? pakaiM3Override : hasilMode.pakaiTagihM3;
 
-    const statusVerifikasiFinal = hasilMode.isAnomaliKreditTaksasi
+    const isExistingMandiri =
+      existingCater &&
+      (existingCater.caterMandiriId != null ||
+        existingCater.sumberCatat === "MANDIRI_WEB" ||
+        existingCater.sumberCatat === "MANDIRI_APP");
+
+    let isDiscrepancyMandiri = false;
+    let discrepancyNote: string | null = null;
+
+    if (isExistingMandiri) {
+      const standMandiri = Number(existingCater.stma);
+      const standPetugas = Number(stmaEfektif);
+      if (standMandiri !== standPetugas) {
+        isDiscrepancyMandiri = true;
+        discrepancyNote = `[BEDA_STAND_MANDIRI_PETUGAS] Petugas Lapangan input Stand ${standPetugas} (Laporan Mandiri sebelumnya: ${standMandiri}). Memerlukan keputusan supervisor.`;
+      } else {
+        discrepancyNote = `[KONFIRMASI_ONSITE] Stand Petugas Lapangan (${standPetugas}) cocok dengan Laporan Mandiri Konsumen.`;
+      }
+    }
+
+    const statusVerifikasiFinal = isDiscrepancyMandiri
       ? "ANOMALY"
-      : hasilMode.isStandTetap
-        ? "SUBMITTED"
-        : isMundur
-          ? "ANOMALY_NEGATIVE"
-          : "SUBMITTED";
+      : hasilMode.isAnomaliKreditTaksasi
+        ? "ANOMALY"
+        : hasilMode.isStandTetap
+          ? "SUBMITTED"
+          : isMundur
+            ? "ANOMALY_NEGATIVE"
+            : "SUBMITTED";
 
     const id = `cater-${thbl}-${nolg}`;
     const lokasiGps =
@@ -248,6 +289,7 @@ export class CaterVerifikasiService {
     const catatanBaca =
       [
         catatan,
+        discrepancyNote,
         hasilMode.isStandTetap
           ? "[STAND_TETAP] Stand akhir sama dengan stand awal pada kondisi Normal; menunggu keputusan verifikator"
           : null,
@@ -314,6 +356,17 @@ export class CaterVerifikasiService {
       versi
     );
 
+    if (isDiscrepancyMandiri) {
+      evalRes.isAnomali = true;
+      if (!evalRes.kodeList) evalRes.kodeList = [];
+      if (!evalRes.kodeList.includes("BEDA_STAND_MANDIRI_PETUGAS")) {
+        evalRes.kodeList.push("BEDA_STAND_MANDIRI_PETUGAS");
+      }
+      if (!evalRes.kodeUtama) {
+        evalRes.kodeUtama = "BEDA_STAND_MANDIRI_PETUGAS";
+      }
+    }
+
     await db.transaction(async (tx) => {
       await tx
         .insert(caterBacaMeter)
@@ -361,6 +414,7 @@ export class CaterVerifikasiService {
             ketCatat: namaKondisiFinal,
             metodeCatat: (metodeCatat as any) || "ONSITE",
             sumberCatat: sumberCatat || "PETUGAS_ONSITE",
+            caterMandiriId: null,
             fotoMeterUrl: processedFotoMeter,
             fotoRumahUrl: processedFotoRumah,
             lokasiGps,

@@ -1,9 +1,10 @@
 import { Elysia, t } from "elysia";
-import { and, desc, eq, inArray, or, isNotNull, ilike } from "drizzle-orm";
+import { and, desc, eq, inArray, or, isNotNull, ilike, sql } from "drizzle-orm";
 import {
   caterBacaMeter,
   caterMandiriPelanggan,
   caterVerifikasiLog,
+  daftarCatat,
   db,
   pelanggan,
   periodePenagihan,
@@ -890,7 +891,7 @@ export const verifikasiRouter = new Elysia({ prefix: "/v1" })
         }
         stage = "V3";
         action = "UNVERIFY";
-        nextStatus = "VERIFIED_L2";
+        nextStatus = "SUBMITTED";
       } else if (row.statusVerifikasi === "VERIFIED_L2") {
         if (!hasRole(roles, "VERIFIKATOR_3") && !hasRole(roles, "EXECUTIVE")) {
           set.status = 403;
@@ -904,7 +905,7 @@ export const verifikasiRouter = new Elysia({ prefix: "/v1" })
         }
         stage = "V2";
         action = "UNVERIFY";
-        nextStatus = "VERIFIED_L1";
+        nextStatus = "SUBMITTED";
       } else if (row.statusVerifikasi === "VERIFIED_L1") {
         if (
           !hasRole(roles, "VERIFIKATOR_2") &&
@@ -966,11 +967,15 @@ export const verifikasiRouter = new Elysia({ prefix: "/v1" })
           alasan:
             action === "REOPEN"
               ? "Cek ulang dibatalkan dari halaman verifikasi."
-              : `Tahap ${stage} dibatalkan dari halaman verifikasi.`,
+              : `Tahap ${stage} dibatalkan dari halaman verifikasi. Status dikembalikan ke antrean belum diverifikasi.`,
         });
         await tx
           .update(caterBacaMeter)
-          .set({ statusVerifikasi: nextStatus, updatedAt: new Date() })
+          .set({
+            statusVerifikasi: nextStatus,
+            pakaiTagih: null,
+            updatedAt: new Date(),
+          })
           .where(eq(caterBacaMeter.id, row.id));
       });
       return {
@@ -1300,7 +1305,7 @@ export const verifikasiRouter = new Elysia({ prefix: "/v1" })
   )
   .patch(
     "/laporan-mandiri/:id/unverify",
-    async ({ params, set }) => {
+    async ({ params, set, user }) => {
       const [row] = await db
         .select({
           status: caterMandiriPelanggan.statusVerifikasi,
@@ -1351,13 +1356,79 @@ export const verifikasiRouter = new Elysia({ prefix: "/v1" })
           .where(eq(caterMandiriPelanggan.id, params.id));
 
         if (row.caterId) {
-          await tx
-            .update(caterBacaMeter)
-            .set({
-              caterMandiriId: null,
-              updatedAt: new Date(),
-            })
+          const [caterRow] = await tx
+            .select()
+            .from(caterBacaMeter)
             .where(eq(caterBacaMeter.id, row.caterId));
+
+          const prevMatch = caterRow?.catatan?.match(
+            /\[PREV_PETUGAS:([^:]+):STMA=([^:]+):STML=([^:]+):PAKAI=([^:]+):TMSS=([^\]]*)\]/,
+          );
+
+          if (prevMatch) {
+            // Pulihkan data petugas yang sebelumnya tersimpan!
+            const [, prevSumber, prevStma, prevStml, prevPakai, prevTmss] = prevMatch;
+            await tx
+              .update(caterBacaMeter)
+              .set({
+                sumberCatat: prevSumber,
+                stma: prevStma,
+                stml: prevStml,
+                pakaiM3: prevPakai,
+                pakaiTagih: prevPakai,
+                tmss: prevTmss,
+                ketCatat: prevTmss === "4" ? "MB" : "Normal",
+                caterMandiriId: null,
+                fotoMeterUrl: null,
+                fotoRumahUrl: null,
+                statusVerifikasi: "SUBMITTED",
+                catatan: `[Pemulihan Data Petugas] Verifikasi mandiri dibatalkan, data kembali ke hasil catat ${prevSumber}.`,
+                updatedAt: new Date(),
+              })
+              .where(eq(caterBacaMeter.id, row.caterId));
+
+            // Sisipkan log SYSTEM_RESET agar riwayat persetujuan mandiri di-reset
+            await tx.insert(caterVerifikasiLog).values({
+              caterId: row.caterId,
+              userId: user?.id ?? "system",
+              stage: "SYSTEM_RESET",
+              action: "ROLLBACK",
+              stmaSebelum: caterRow.stma,
+              stmaSesudah: prevStma,
+              pakaiSebelum: caterRow.pakaiM3,
+              pakaiSesudah: prevPakai,
+              alasan: "Pemulihan data petugas asli setelah pembatalan verifikasi mandiri.",
+            });
+          } else if (
+            caterRow?.sumberCatat === "MANDIRI_WEB" ||
+            caterRow?.sumberCatat === "MANDIRI_APP"
+          ) {
+            // Murni dari mandiri tanpa data petugas sebelumnya -> Hapus baris transaksi agar kembali ke BELUM_DICATAT
+            await tx.delete(caterBacaMeter).where(eq(caterBacaMeter.id, row.caterId));
+            await tx
+              .update(daftarCatat)
+              .set({
+                status: "BELUM_DICATAT",
+                selesaiAt: null,
+                updatedAt: new Date(),
+              })
+              .where(
+                and(
+                  eq(daftarCatat.periode, caterRow.thbl),
+                  eq(daftarCatat.nolg, caterRow.nolg),
+                ),
+              );
+          } else {
+            await tx
+              .update(caterBacaMeter)
+              .set({
+                caterMandiriId: null,
+                fotoMeterUrl: null,
+                fotoRumahUrl: null,
+                updatedAt: new Date(),
+              })
+              .where(eq(caterBacaMeter.id, row.caterId));
+          }
         }
       });
       return {

@@ -14,6 +14,7 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
+  BookOpen01Icon,
   Task01Icon,
   ViewOffIcon,
 } from "@/features/dashboard/shared/icons/ikon-lucide";
@@ -513,7 +514,28 @@ export function PanelTabel({
             anomali={anomali ?? 0}
             ambang={ambangAnomali}
             aksiKanan={
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  asChild
+                >
+                  <a
+                    href="/docs/verifikasi-baca-petugas"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Buka Buku Panduan Verifikasi Lapangan"
+                  >
+                    <HugeiconsIcon
+                      icon={BookOpen01Icon}
+                      strokeWidth={2}
+                      className="size-3.5"
+                      aria-hidden
+                    />
+                    Panduan
+                  </a>
+                </Button>
                 <KontrolTampilan
                   ringkasanTerbuka={ringkasanTerbuka}
                   onRingkasan={onRingkasan}
