@@ -26,6 +26,12 @@ import {
   DataPagination,
   Description,
   Snippet,
+  Fieldset,
+  Entity,
+  EntityList,
+  Gauge,
+  ErrorCard,
+  MiddleTruncate,
 } from "@cater/ui";
 import {
   Sparkles,
@@ -463,6 +469,84 @@ export default function DesignSystemShowcasePage() {
                 <span>Segarkan Data</span>
               </Button>
             }
+          />
+        </section>
+
+        {/* SECTION 7: FIELDSET, ENTITY, GAUGE & ERROR CARD */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 border-b border-border pb-2">
+            <span className="text-sm font-semibold tracking-tight uppercase text-muted-foreground">
+              7. Fieldset, Entity, Gauge & ErrorCard
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fieldset */}
+            <Fieldset
+              title="Pengaturan Impor LapDataMeter"
+              description="Konfigurasi batas deviasi dan verifikasi otomatis stand meteran."
+              footer="Perubahan akan langsung aktif untuk batch impor berikutnya."
+              footerActions={
+                <Button size="sm" variant="default">
+                  Simpan Pengaturan
+                </Button>
+              }
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span>Toleransi Deviasi Ekstrim</span>
+                  <Badge variant="amber-subtle">± 50%</Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span>ID Sambungan Demo (MiddleTruncate)</span>
+                  <MiddleTruncate text="01-SURABAYA-BARAT-998822110099" start={8} end={6} />
+                </div>
+              </div>
+            </Fieldset>
+
+            {/* Gauge Circular Metrics */}
+            <div className="rounded-lg border border-border bg-card p-5 space-y-3 flex flex-col justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-foreground">Gauge (Capaian & Akurasi)</h4>
+                <p className="text-xs text-muted-foreground">Visualisasi meteran melingkar untuk persentase capaian target.</p>
+              </div>
+              <div className="flex items-center justify-around py-2">
+                <Gauge value={85} size={72} strokeWidth={6} variant="success" label="Capaian Verifikasi" />
+                <Gauge value={42} size={72} strokeWidth={6} variant="warning" label="Koreksi Anomali" />
+                <Gauge value={98} size={72} strokeWidth={6} variant="info" label="Akurasi Petugas" />
+              </div>
+            </div>
+          </div>
+
+          {/* Entity List */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold uppercase text-muted-foreground">Entity List (Daftar Petugas / Sambungan)</h4>
+            <EntityList>
+              <Entity
+                icon={<div className="size-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">BS</div>}
+                title="Budi Santoso"
+                subtitle="Petugas Lapangan Wilayah Barat"
+                meta="245 / 250 Meter Terbaca"
+                status={<Badge variant="green-subtle" size="sm">Online</Badge>}
+                action={<Button size="xs" variant="outline">Lihat Rute</Button>}
+              />
+              <Entity
+                icon={<div className="size-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">AH</div>}
+                title="Agus Haryanto"
+                subtitle="Petugas Lapangan Wilayah Timur"
+                meta="180 / 250 Meter Terbaca"
+                status={<Badge variant="amber-subtle" size="sm">Menyinkronkan</Badge>}
+                action={<Button size="xs" variant="outline">Lihat Rute</Button>}
+              />
+            </EntityList>
+          </div>
+
+          {/* Error Card */}
+          <ErrorCard
+            title="Gagal Terhubung ke Meteran IoT DMA-04"
+            code="ERR_SENSOR_TIMEOUT_504"
+            message="Koneksi telemetri ke sensor tekanan pipa DMA-04 terputus sejak 15 menit lalu. Harap periksa catu daya modul."
+            onRetry={() => alert("Mencoba menghubungkan ulang sensor...")}
           />
         </section>
       </main>

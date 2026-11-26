@@ -12,6 +12,11 @@ export * from "./ui/note";
 export * from "./ui/empty-state";
 export * from "./ui/loading-dots";
 export * from "./ui/relative-time-card";
+export * from "./ui/fieldset";
+export * from "./ui/entity";
+export * from "./ui/gauge";
+export * from "./ui/error-card";
+export * from "./ui/middle-truncate";
 
 // Inputs, Selection & Interactive
 export * from "./ui/input";

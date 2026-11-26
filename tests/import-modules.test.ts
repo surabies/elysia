@@ -6,9 +6,11 @@ import { importDataService } from "../packages/backend/src/services/pencatat-met
 import { navGroups } from "../apps/web/src/config/navigasi";
 
 describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor, PBPK)", () => {
-  const pbpkCsvPath = fs.existsSync(path.resolve(process.cwd(), "packages/db/data/raw/PBPK.csv"))
-    ? path.resolve(process.cwd(), "packages/db/data/raw/PBPK.csv")
-    : path.resolve(process.cwd(), "packages/db/data/jan/PBPK.csv");
+  const pbpkCsvPath = [
+    path.resolve(process.cwd(), "packages/db/docs/PBPK.csv"),
+    path.resolve(process.cwd(), "packages/db/data/raw/PBPK.csv"),
+    path.resolve(process.cwd(), "packages/db/data/jan/PBPK.csv"),
+  ].find((p) => fs.existsSync(p)) || path.resolve(process.cwd(), "packages/db/docs/PBPK.csv");
 
   test("1. Parse photo filename conforms strictly to {THBL}_{JENIS}_{NOLG}.jpg standard", () => {
     // 1. Stand meter photo
@@ -373,7 +375,7 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
       },
     ];
 
-    const result = await importDataService.importLapDataMeter(sampleItems);
+    const result = await importDataService.importLapDataMeter(sampleItems, "FORCE_RESET_OVERWRITE");
     expect(result.sukses).toBe(1);
     expect(result.gagal).toBe(0);
 
