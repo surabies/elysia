@@ -5,8 +5,8 @@ import {
   isKpiFormDirty,
   parseNumericField,
   validateKpiForm,
-} from "../apps/web/src/features/dashboard/kpi/lib/KpiFormValidation"
-import type { NewKpiFormData } from "../apps/web/src/features/dashboard/kpi/types/KpiTypes"
+} from "../apps/web/src/features/sdm/kpi/lib/KpiFormValidation"
+import type { NewKpiFormData } from "../apps/web/src/features/sdm/kpi/types/KpiTypes"
 
 describe("KPI Form Logic & Validation", () => {
   it("derives correct direction based on baseline and target", () => {

@@ -11,7 +11,7 @@ import type { SeedModule, SeedOptions, SeedModuleResult } from '../types';
 import {
   evaluasiAnomaliBaris,
   type ReadingInput,
-} from '../../../../../apps/web/src/server/domain/cater/anomali-evaluator';
+} from '../../../../backend/src/domain/cater/anomali-evaluator';
 
 export const DEFAULT_ATURAN_ANOMALI = [
   // 1. Meter Mundur: stma < stml (stand fisik)

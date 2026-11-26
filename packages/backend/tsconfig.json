@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "paths": {
+      "elysia": ["../../node_modules/elysia"],
+      "elysia/*": ["../../node_modules/elysia/*"],
+      "@cater/backend": ["./src"],
+      "@cater/backend/*": ["./src/*"],
+      "@cater/db": ["../db/src"],
+      "@cater/types": ["../types/src"],
+      "@/server/services/cater/*": ["./src/services/pencatat-meter/cater/*"],
+      "@/server/services/import/*": ["./src/services/pencatat-meter/import/*"],
+      "@/server/services/laporan/*": ["./src/services/pencatat-meter/laporan/*"],
+      "@/server/services/rute/*": ["./src/services/pencatat-meter/rute/*"],
+      "@/server/services/closing/*": ["./src/services/penagihan/closing/*"],
+      "@/server/services/mandiri/*": ["./src/services/langganan/mandiri/*"],
+      "@/server/services/pengaduan/*": ["./src/services/langganan/pengaduan/*"],
+      "@/server/services/master/*": ["./src/services/langganan/master/*"],
+      "@/server/services/pelanggan/*": ["./src/services/langganan/pelanggan/*"],
+      "@/server/services/publik/*": ["./src/services/langganan/publik/*"],
+      "@/server/services/pengaturan/*": ["./src/services/langganan/pengaturan/*"],
+      "@/server/services/kpi/*": ["./src/services/sdm/kpi/*"],
+      "@/server/services/geo/*": ["./src/services/sub-zona/geo/*"],
+      "@/server/services/gwm/*": ["./src/services/rpm/gwm/*"],
+      "@/server/services/dashboard/*": ["./src/services/core/dashboard/*"],
+      "@/server/services/mock/*": ["./src/services/core/mock/*"],
+      "@/server/services/broadcast/*": ["./src/services/core/broadcast/*"],
+      "@/server/*": ["./src/*"],
+      "@/*": ["./src/*", "../../apps/web/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

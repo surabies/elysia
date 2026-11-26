@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { generateMockFotoSvg } from "../apps/web/src/server/services/mock/foto-svg-generator";
+import { generateMockFotoSvg } from "../packages/backend/src/services/core/mock/foto-svg-generator";
 import { resolveFotoUrl } from "../apps/web/src/lib/foto-resolver";
-import { hitungPeriodeSebelum } from "../apps/web/src/components/tanstacktable/components/foto/FotoSebelumnya";
+import { hitungPeriodeSebelum } from "../apps/web/src/features/pencatat-meter/verifikasi/components/foto/FotoSebelumnya";
 
 describe("Dynamic On-Demand SVG Mock Photo Generator & Fallback Resolver", () => {
   it("1. Generates valid SVG content for stand meter with correct customer data", () => {

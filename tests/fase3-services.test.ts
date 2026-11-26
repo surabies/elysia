@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'bun:test';
-import { closingService } from '../apps/web/src/server/services/closing/closing.service';
-import { mandiriService } from '../apps/web/src/server/services/mandiri/mandiri.service';
-import { gwmService } from '../apps/web/src/server/services/gwm/gwm.service';
-import { caterKueriService } from '../apps/web/src/server/services/cater/cater-kueri.service';
-import { caterVerifikasiService } from '../apps/web/src/server/services/cater/cater-verifikasi.service';
+import { closingService } from '../packages/backend/src/services/penagihan/closing/closing.service';
+import { mandiriService } from '../packages/backend/src/services/langganan/mandiri/mandiri.service';
+import { gwmService } from '../packages/backend/src/services/rpm/gwm/gwm.service';
+import { caterKueriService } from '../packages/backend/src/services/pencatat-meter/cater/cater-kueri.service';
+import { caterVerifikasiService } from '../packages/backend/src/services/pencatat-meter/cater/cater-verifikasi.service';
 
 describe('Fase 3: Service Layer Integrity & Orchestration Tests', () => {
   it('1. closingService exposes pratinjauClosing and eksekusiClosing', () => {

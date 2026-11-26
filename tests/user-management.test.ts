@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { masterExtendedService } from '../apps/web/src/server/services/master/master-extended.service';
+import { masterExtendedService } from '../packages/backend/src/services/langganan/master/master-extended.service';
 
 describe('Manajemen Akun Pengguna & Hak Akses', () => {
   it('harus dapat mengambil daftar pengguna beserta peran dan statusnya', async () => {

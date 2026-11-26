@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { drdService } from '../apps/web/src/server/services/dashboard/drd.service';
-import { calculateNiceMax, truncateChartLabel } from '../apps/web/src/components/charts/vercel-bar-chart';
+import { drdService } from '../packages/backend/src/services/core/dashboard/drd.service';
+import { calculateNiceMax, truncateChartLabel } from '../packages/ui/src/charts/vercel-bar-chart';
 
 describe('Vercel Chart Styling & DRD Summary Integration', () => {
   it('harus dapat mengambil data ringkasan DRD dengan struktur chart lengkap', async () => {

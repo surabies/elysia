@@ -1,10 +1,10 @@
 import { describe, expect, it } from "bun:test"
-import { app } from "../apps/web/src/server/app"
+import { app } from "@cater/backend"
 import {
   dapatkanPerspektifScorecard,
   tambahKpiBaru,
   perbaruiNilaiAktualKpi,
-} from "../apps/web/src/server/services/kpi/kpi.service"
+} from "../packages/backend/src/services/sdm/kpi/kpi.service"
 
 describe("KPI Scorecard Backend & PostgreSQL Integration", () => {
   it("fetches perspectives from database with authentic Catat Meter categories", async () => {

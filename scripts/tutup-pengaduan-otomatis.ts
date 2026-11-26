@@ -8,7 +8,7 @@
  *   bun run scripts/tutup-pengaduan-otomatis.ts --dry-run
  */
 
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
 
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');

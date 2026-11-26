@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 import { db, pengaduan, riwayatPengaduan, user, userRoles } from '@cater/db';
 import { eq, inArray } from 'drizzle-orm';
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
 import {
   bolehMelakukan,
   tentukanAksiDariStatus,
-} from '../apps/web/src/server/domain/pengaduan/alur-pengaduan.engine';
+} from '../packages/backend/src/domain/pengaduan/alur-pengaduan.engine';
 import {
   ConflictError,
   ForbiddenError,
   ValidationError,
   NotFoundError,
-} from '../apps/web/src/server/domain/pengaduan/pengaduan.errors';
+} from '../packages/backend/src/domain/pengaduan/pengaduan.errors';
 
 describe('Fase 4: Otorisasi, Validasi, Error Handling, & Bug Logika (B6, B7, B8, B10, B11, B12, B13)', () => {
   let adminUserId: string;

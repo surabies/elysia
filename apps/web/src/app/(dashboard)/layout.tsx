@@ -14,6 +14,7 @@ import {
 import { DashboardShell } from "@/components/layout/index"
 import { SidebarProvider } from "@/components/layout/shell/SidebarContext"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import "@/styles/dashboard.css"
 
 async function keluar() {
   "use server"

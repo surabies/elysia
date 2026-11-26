@@ -11,7 +11,7 @@ import {
   daftarKebocoranAktifPeta,
   ringkasanLaporanPeta,
   ringkasanAsetPeta,
-} from '../apps/web/src/server/services/geo/peta-wilayah.service';
+} from '../packages/backend/src/services/sub-zona/geo/peta-wilayah.service';
 import { standaloneTopNav } from '../apps/web/src/config/navigasi';
 import { getPrimaryIcon, PRIMARY_ICONS } from '../apps/web/src/components/layout/navigation/sidebar/lib/Icons';
 

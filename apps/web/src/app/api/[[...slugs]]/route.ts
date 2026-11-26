@@ -1,4 +1,4 @@
-import { app } from '@/server/app';
+import { app } from '@cater/backend';
 
 // Pastikan seluruh endpoint API selalu dynamic dan tidak pernah dicache oleh Next.js atau browser
 export const dynamic = 'force-dynamic';

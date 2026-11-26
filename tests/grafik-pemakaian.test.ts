@@ -6,8 +6,8 @@ import {
   hitungRingkasan,
   hitungTingkatTerbaca,
   tentukanStatusPemakaian,
-} from "../apps/web/src/features/dashboard/info-pelanggan/lib/perhitungan-pemakaian";
-import { contoh18PeriodePemakaian } from "../apps/web/src/features/dashboard/info-pelanggan/lib/data-contoh-pemakaian";
+} from "../apps/web/src/features/langganan/info-pelanggan/lib/perhitungan-pemakaian";
+import { contoh18PeriodePemakaian } from "../apps/web/src/features/langganan/info-pelanggan/lib/data-contoh-pemakaian";
 
 describe("Grafik Pemakaian Air (Kalkulasi & Spesifikasi)", () => {
   it("memiliki tepat 18 periode riwayat pembacaan", () => {
@@ -21,8 +21,8 @@ describe("Grafik Pemakaian Air (Kalkulasi & Spesifikasi)", () => {
 
   it("menghitung median pemakaian tepat 20 m³", () => {
     const terbacaValues = contoh18PeriodePemakaian
-      .map((p) => p.totalM3)
-      .filter((v): v is number => v !== null);
+      .map((p: any) => p.totalM3)
+      .filter((v: any): v is number => v !== null);
 
     const median = hitungMedian(terbacaValues);
     expect(median).toBe(20);
@@ -30,8 +30,8 @@ describe("Grafik Pemakaian Air (Kalkulasi & Spesifikasi)", () => {
 
   it("menghitung persentil ke-95 (p95) tepat 39 m³", () => {
     const terbacaValues = contoh18PeriodePemakaian
-      .map((p) => p.totalM3)
-      .filter((v): v is number => v !== null);
+      .map((p: any) => p.totalM3)
+      .filter((v: any): v is number => v !== null);
 
     const p95 = hitungP95(terbacaValues);
     expect(p95).toBe(39);

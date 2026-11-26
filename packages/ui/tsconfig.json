@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "declaration": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/components/ui/*": ["./src/ui/*"],
+      "@/components/reui/*": ["./src/reui/*"],
+      "@/components/charts/*": ["./src/charts/*"],
+      "@/components/glide-grid/*": ["./src/glide-grid/*"],
+      "@/components/icons/*": ["./src/icons/*"],
+      "@/lib/utils": ["./src/lib/utils"],
+      "@/lib/*": ["../../apps/web/src/lib/*"],
+      "@/*": ["./src/*", "../../apps/web/src/*"],
+      "cn": ["./src/lib/utils"]
+    }
+  },
+  "include": ["src/**/*"]
+}

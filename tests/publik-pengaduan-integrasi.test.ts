@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'bun:test';
 import { app } from '@/src/server/app';
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
-import { inquiryTagihanService } from '../apps/web/src/server/services/publik/inquiry-tagihan.service';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
+import { inquiryTagihanService } from '../packages/backend/src/services/langganan/publik/inquiry-tagihan.service';
 import {
   generateNomorTiket,
   isTransisiSah,
   hitungTargetSla,
-} from '../apps/web/src/server/domain/pengaduan/alur-pengaduan.engine';
+} from '../packages/backend/src/domain/pengaduan/alur-pengaduan.engine';
 
 describe('Integrasi 3 Pilar: Pencatat Meter, Pengaduan Air, & Penagihan Publik', () => {
   describe('1. Domain Engine: Pengaduan Air State Machine & Format Terukur', () => {
@@ -141,7 +141,7 @@ describe('Integrasi 3 Pilar: Pencatat Meter, Pengaduan Air, & Penagihan Publik',
   describe('5. Validasi Sinergi Data 3 Pilar', () => {
     it('nomorTiketKomplain terdefinisi pada skema koreksi administratif staff', async () => {
       const { staffCorrectionBodySchema } = await import(
-        '../apps/web/src/server/modules/cater/cater.schema'
+        '../packages/backend/src/modules/pencatat-meter/cater/cater.schema'
       );
       expect(staffCorrectionBodySchema).toBeDefined();
       expect(staffCorrectionBodySchema.properties.nomorTiketKomplain).toBeDefined();
@@ -149,7 +149,7 @@ describe('Integrasi 3 Pilar: Pencatat Meter, Pengaduan Air, & Penagihan Publik',
 
     it('modul mandiri terintegrasi untuk override kondisi DK (Pagar Dikunci)', async () => {
       const { mandiriService } = await import(
-        '../apps/web/src/server/services/mandiri/mandiri.service'
+        '../packages/backend/src/services/langganan/mandiri/mandiri.service'
       );
       expect(mandiriService).toBeDefined();
       expect(typeof mandiriService.verifikasiLaporanMandiri).toBe('function');

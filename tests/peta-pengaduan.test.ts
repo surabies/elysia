@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { app } from '../apps/web/src/server/app';
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
+import { app } from '@cater/backend';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
 
 describe('Peta Pengaduan Spasial & Endpoint Publik', () => {
   it('pengaduanService.getPengaduanPetaPublik returns array of map-ready complaints', async () => {

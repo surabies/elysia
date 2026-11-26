@@ -7,8 +7,8 @@ import {
   calculateCompanySummary,
   formatKpiNumber,
   parseKpiInputValue,
-} from "../apps/web/src/features/dashboard/kpi/lib/KpiCalculations"
-import type { Objective, Perspective } from "../apps/web/src/features/dashboard/kpi/types/KpiTypes"
+} from "../apps/web/src/features/sdm/kpi/lib/KpiCalculations"
+import type { Objective, Perspective } from "../apps/web/src/features/sdm/kpi/types/KpiTypes"
 
 describe("KPI Scorecard Calculations Engine (Pure & Deterministic)", () => {
   it("1. ARR progress matches docs calculation: (22.99 - 18.40) / (24.00 - 18.40) = 82%", () => {

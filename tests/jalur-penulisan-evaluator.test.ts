@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { db, caterBacaMeter } from '@cater/db';
 import { eq, and, sql } from 'drizzle-orm';
-import { aturanAnomaliService } from '../apps/web/src/server/services/cater/aturan-anomali.service';
-import { evaluasiAnomaliBaris } from '../apps/web/src/server/domain/cater/anomali-evaluator';
+import { aturanAnomaliService } from '../packages/backend/src/services/pencatat-meter/cater/aturan-anomali.service';
+import { evaluasiAnomaliBaris } from '../packages/backend/src/domain/cater/anomali-evaluator';
 
 describe('Audit Gerbang B: Integrasi Evaluator Anomali pada Seluruh Jalur Penulisan', () => {
   it('1. Cache aturan memakai versi DB sebagai kunci invalidasi', async () => {

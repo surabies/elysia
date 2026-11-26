@@ -174,7 +174,7 @@ export function BroadcastDetailModal({
     <>
       {/* MODAL UTAMA RINCIAN SIARAN / IKLAN */}
       <Dialog open={Boolean(open && broadcast)} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-[calc(100vw-1rem)] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90dvh] overflow-y-auto overflow-x-hidden p-0 rounded-2xl border-border bg-card shadow-2xl">
+        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100vw-1rem)] sm:w-full max-w-[calc(100vw-1rem)] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90dvh] overflow-y-auto overflow-x-hidden p-0 rounded-2xl border-border bg-card shadow-2xl">
           {broadcast && (
             <div className="w-full max-w-full p-3.5 sm:p-6 md:p-8 space-y-3.5 sm:space-y-6 overflow-hidden">
               {/* Header Informasi & Meta Tag Bersih */}

@@ -2,8 +2,8 @@ import { describe, expect, it } from "bun:test";
 import {
   buildAnalyticsMetricCards,
   buildKpis,
-} from "../apps/web/src/features/dashboard/analytics/lib/kpi";
-import type { AnalyticsPageData } from "../apps/web/src/features/dashboard/analytics/types";
+} from "../apps/web/src/features/eksekutif/analytics/lib/kpi";
+import type { AnalyticsPageData } from "../apps/web/src/features/eksekutif/analytics/types";
 
 describe("Analytics Metric Cards (Vercel Geist Pattern)", () => {
   const mockData: AnalyticsPageData = {

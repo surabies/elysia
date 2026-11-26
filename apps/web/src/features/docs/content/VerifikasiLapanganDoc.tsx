@@ -61,7 +61,7 @@ import {
   hitungRollover,
 } from "@/server/domain/taksasi/taksasi.engine";
 import { hitungPemakaianGantiMeter } from "@/lib/domain/perhitungan-meter";
-import { LABEL_KONDISI_CATAT } from "@/features/dashboard/verifikasi/lib/label-pencatatan";
+import { LABEL_KONDISI_CATAT } from "@/components/tanstacktable/lib/label-pencatatan";
 
 export const verifikasiLapanganHeadings: DocHeading[] = [
   { id: "ikhtisar", title: "1. Ikhtisar & Nilai Strategis Halaman", level: 2 },

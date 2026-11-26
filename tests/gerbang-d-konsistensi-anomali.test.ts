@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { db, caterBacaMeter } from '@cater/db';
 import { eq, sql } from 'drizzle-orm';
-import { dashboardService } from '../apps/web/src/server/services/dashboard/dashboard.service';
-import { caterProgressService } from '../apps/web/src/server/services/cater/cater-progress.service';
-import { analyticsService } from '../apps/web/src/server/services/dashboard/analytics.service';
-import { verifikasiGridService } from '../apps/web/src/server/services/cater/verifikasi-grid.service';
+import { dashboardService } from '../packages/backend/src/services/core/dashboard/dashboard.service';
+import { caterProgressService } from '../packages/backend/src/services/pencatat-meter/cater/cater-progress.service';
+import { analyticsService } from '../packages/backend/src/services/core/dashboard/analytics.service';
+import { verifikasiGridService } from '../packages/backend/src/services/pencatat-meter/cater/verifikasi-grid.service';
 
 describe('Audit Gerbang D: Konsistensi Hitungan Anomali Lintas Semua Konsumen', () => {
   const TARGET_PERIODE = '202611';

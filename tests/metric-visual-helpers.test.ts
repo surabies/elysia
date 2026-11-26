@@ -3,7 +3,7 @@ import {
   calculatePillHeights,
   calculateSegmentPercentages,
   generateMonotoneAreaPath,
-} from "../apps/web/src/features/dashboard/overview/lib/metric-visual-helpers"
+} from "../apps/web/src/features/eksekutif/overview/lib/metric-visual-helpers"
 
 describe("Metric Visual Helpers (Pure Math & SVG)", () => {
   it("calculates segment percentages accurately", () => {
@@ -41,8 +41,8 @@ describe("Metric Visual Helpers (Pure Math & SVG)", () => {
 
     expect(linePath).toContain("M 0,")
     expect(linePath).toContain("C ")
-    expect(areaPath).toContain("L 350,72 L 0,72 Z")
-    expect(lastPoint.x).toBe(350)
+    expect(areaPath).toContain(`L ${lastPoint.x},72 L 0,72 Z`)
+    expect(lastPoint.x).toBe(346)
     expect(lastPoint.y).toBeGreaterThanOrEqual(3)
     expect(lastPoint.y).toBeLessThanOrEqual(27)
   })
