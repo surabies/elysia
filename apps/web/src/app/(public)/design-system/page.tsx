@@ -221,12 +221,15 @@ export default function DesignSystemShowcasePage() {
               </div>
             </div>
 
-            {/* Copy Button & Show More */}
+            {/* Copy Button */}
             <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-              <span className="text-xs font-semibold text-foreground">CopyButton & ShowMore</span>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-mono">ID: PEL-098231</span>
-                <CopyButton value="PEL-098231" label="Salin ID" />
+              <span className="text-xs font-semibold text-foreground">CopyButton (Icon-Only & With Label)</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-mono text-muted-foreground truncate">ID: PEL-098231</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <CopyButton value="PEL-098231" />
+                  <CopyButton value="PEL-098231" label="Salin ID" />
+                </div>
               </div>
             </div>
           </div>

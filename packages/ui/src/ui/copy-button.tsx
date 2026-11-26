@@ -23,7 +23,7 @@ export function CopyButton({
   value,
   label,
   variant = "outline",
-  size = "icon-xs",
+  size,
   className,
   onCopy,
 }: CopyButtonProps) {
@@ -41,21 +41,35 @@ export function CopyButton({
     }
   };
 
+  const hasLabel = Boolean(label);
+
+  // Jika ada label teks, jangan gunakan icon size yang membatasi width kotak (size-6 / size-8)!
+  // Gunakan size 'xs' atau 'sm' fleksibel agar teks tidak menyembur keluar border.
+  const resolvedSize = size ?? (hasLabel ? "xs" : "icon-xs");
+
   return (
     <Button
       type="button"
       variant={variant}
-      size={size}
+      size={resolvedSize}
       onClick={handleCopy}
       aria-label={copied ? "Tersalin ke clipboard" : "Salin"}
-      className={cn("transition-all duration-150 cursor-pointer", className)}
+      className={cn(
+        "cursor-pointer transition-all duration-150 shrink-0 select-none whitespace-nowrap",
+        hasLabel && "w-auto px-2.5 py-1 h-7 text-xs gap-1.5",
+        className
+      )}
     >
       {copied ? (
-        <Check className="size-3.5 text-emerald-500 transition-transform scale-110" />
+        <Check className="size-3.5 text-emerald-500 transition-transform scale-110 shrink-0" />
       ) : (
-        <Copy className="size-3.5 text-muted-foreground" />
+        <Copy className="size-3.5 text-muted-foreground shrink-0" />
       )}
-      {label && <span className="ml-1 text-xs">{copied ? "Tersalin!" : label}</span>}
+      {hasLabel && (
+        <span className="text-xs font-medium leading-none whitespace-nowrap">
+          {copied ? "Tersalin!" : label}
+        </span>
+      )}
     </Button>
   );
 }
