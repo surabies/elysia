@@ -20,6 +20,8 @@ import {
   golonganTarif,
   ruteCater,
   kelurahan,
+  user,
+  nextPeriode,
   type PeriodePenagihan,
 } from '@cater/db';
 import {
@@ -36,6 +38,7 @@ const closingInFlightLocks = new Set<string>();
 export interface ClosingAuditInfo {
   ditutupAt: string | null;
   ditutupById: string | null;
+  ditutupOlehNama?: string | null;
   tanggalJatuhTempo: string | null;
 }
 
@@ -59,6 +62,8 @@ export interface PratinjauClosingResult {
     total: number;
     selesaiV3: number;
     belumSelesai: number;
+    siapDisahkan?: number;
+    butuhKoreksi?: number;
   };
   pembacaan: {
     total: number;
@@ -80,7 +85,7 @@ export interface PratinjauClosingResult {
 export interface EksekusiClosingInput {
   periode: string; // e.g. '202601'
   tanggalJatuhTempo: Date;
-  userId: string;
+  userId?: string | null;
 }
 
 export interface HasilEksekusiClosing {
@@ -111,6 +116,7 @@ export interface CekSelisihRuteItem {
   namaRute: string;
   totalPelanggan: number;
   terbaca: number;
+  belumTerbaca: number;
   terbitDrd: number;
   selisih: number;
   status: 'SEIMBANG' | 'SELISIH';
@@ -118,10 +124,12 @@ export interface CekSelisihRuteItem {
 
 export interface CekSelisihPelangganResult {
   periode: string;
+  modeAudit: 'PRA_CLOSING' | 'PASCA_CLOSING';
   ringkasan: {
     totalMasterPelanggan: number;
     totalDpmTarget: number;
     totalTerbaca: number;
+    totalBelumTerbaca: number;
     totalTerbitDrd: number;
     totalSelisihUnbilled: number;
     statusRekonsiliasi: 'MATCH' | 'DISCREPANCY';
@@ -155,6 +163,7 @@ export interface PerbandinganTarifItem {
 export interface PerbandinganPeriodeResult {
   periodeKini: string;
   periodeLalu: string;
+  sumberDataKini?: 'DRD_RESMI' | 'PROYEKSI_PRA_CLOSING';
   ringkasan: {
     totalSlKini: number;
     totalSlLalu: number;
@@ -169,7 +178,31 @@ export interface PerbandinganPeriodeResult {
   breakdownTarif: PerbandinganTarifItem[];
 }
 
+const FINAL_VERIFIKASI_STATUSES = new Set([
+  'APPROVED_FINAL',
+  'LOCKED_BILLING',
+  'CORRECTED_POST_CLOSE',
+]);
+
+const BLOCKING_VERIFIKASI_STATUSES = new Set([
+  'NEED_RESURVEY',
+  'ANOMALY',
+  'DRAFT',
+]);
+
 export class ClosingService {
+  /**
+   * Memastikan userId merujuk ke baris valid di tabel `user` agar tidak pernah melanggar Foreign Key.
+   */
+  private async resolveValidUser(userId?: string | null): Promise<{ id: string | null; name: string | null }> {
+    if (!userId) return { id: null, name: null };
+    const [u] = await db
+      .select({ id: user.id, name: user.name })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+    return { id: u?.id ?? null, name: u?.name ?? null };
+  }
   /**
    * Mengambil seluruh blok tarif, golongan tarif, dan biaya tetap yang berlaku pada periode penagihan.
    * ATURAN KETAT: Tidak ada fallback angka default (15000/5000/0).
@@ -309,6 +342,53 @@ export class ClosingService {
       .from(periodePenagihan)
       .where(eq(periodePenagihan.periode, periodeStr));
 
+    // Sinkronisasi otomatis DPM periode berjalan:
+    // 1) Injeksi pelanggan aktif yang SUDAH memiliki bacaan lapangan di periode ini namun belum ada di daftar_catat (sebagai PBPK)
+    //    CATATAN PENTING: Hanya yang memiliki bacaan di periode ini (c.id IS NOT NULL) agar pelanggan baru PBPK
+    //    yang diantrekan di akhir bulan (tgl 29) untuk siklus N+1 tidak ketarik mundur menghambat tutup buku N!
+    // 2) Tandai DICATAT bila sudah ada laporan bacaan di cater_baca_meter periode ini
+    if (periodeRow && periodeRow.status !== 'TERKUNCI') {
+      await db.execute(sql`
+        INSERT INTO daftar_catat (
+          id, periode, nolg, rute_kode, petugas_id, urutan,
+          stand_awal, pakai_lalu, sumber, status, selesai_at, catatan, created_at, updated_at
+        )
+        SELECT
+          'dpm-' || ${periodeStr} || '-' || p.nolg,
+          ${periodeStr},
+          p.nolg,
+          COALESCE(c.rute_kode, p.rute_kode),
+          c.petugas_id,
+          COALESCE(NULLIF(p.no_urut_rute, 0), 999),
+          COALESCE(c.stml, 0),
+          COALESCE(c.pakai_lalu, 0),
+          'PBPK',
+          'DICATAT',
+          c.tgl_catat,
+          'Terdeteksi dari laporan baca meter ' || c.sumber_catat,
+          p.created_at,
+          NOW()
+        FROM pelanggan p
+        INNER JOIN cater_baca_meter c ON c.nolg = p.nolg AND c.thbl = ${periodeStr}
+        LEFT JOIN daftar_catat dc ON dc.nolg = p.nolg AND dc.periode = ${periodeStr}
+        WHERE dc.id IS NULL
+          AND p.status != 'DICABUT'
+        ON CONFLICT (periode, nolg) DO NOTHING
+      `);
+
+      await db.execute(sql`
+        UPDATE daftar_catat AS dc
+        SET status = 'DICATAT',
+            selesai_at = COALESCE(dc.selesai_at, c.tgl_catat, NOW()),
+            updated_at = NOW()
+        FROM cater_baca_meter AS c
+        WHERE dc.periode = ${periodeStr}
+          AND c.thbl = ${periodeStr}
+          AND dc.nolg = c.nolg
+          AND dc.status = 'BELUM_DICATAT'
+      `);
+    }
+
     // 1. Data DPM (Target Beban Kerja)
     const dpmRows = await db
       .select({
@@ -328,7 +408,7 @@ export class ClosingService {
       }
     }
 
-    // 2. Data Transaksi Pembacaan & Verifikasi (Join dengan Pelanggan & WaterMeter untuk Tarif & Ukuran Meter)
+    // 2. Data Transaksi Pembacaan & Verifikasi Pelanggan Aktif (diluar DICABUT)
     const caterRows = await db
       .select({
         id: caterBacaMeter.id,
@@ -344,7 +424,12 @@ export class ClosingService {
       .from(caterBacaMeter)
       .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
       .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
-      .where(eq(caterBacaMeter.thbl, periodeStr));
+      .where(
+        and(
+          eq(caterBacaMeter.thbl, periodeStr),
+          sql`${pelanggan.status} != 'DICABUT'`
+        )
+      );
 
     // Fallback DPM jika daftarCatat belum diisi di legacy data:
     if (dpmTotal === 0 && caterRows.length > 0) {
@@ -356,9 +441,17 @@ export class ClosingService {
     const readRatePersen = dpmTotal > 0 ? Number(((dpmSelesai / dpmTotal) * 100).toFixed(2)) : 0;
 
     let verifSelesaiV3 = 0;
+    const barisButuhKoreksi: string[] = [];
+    const barisSiapDisahkan: string[] = [];
+
     for (const c of caterRows) {
-      if (c.statusVerifikasi === 'APPROVED_FINAL' || c.statusVerifikasi === 'LOCKED_BILLING') {
+      const vol = Number(c.pakaiTagih ?? c.pakaiM3Revisi ?? c.pakaiM3);
+      if (FINAL_VERIFIKASI_STATUSES.has(c.statusVerifikasi) && vol >= 0) {
         verifSelesaiV3++;
+      } else if (BLOCKING_VERIFIKASI_STATUSES.has(c.statusVerifikasi) || vol < 0) {
+        barisButuhKoreksi.push(c.nolg);
+      } else {
+        barisSiapDisahkan.push(c.nolg);
       }
     }
     const verifBelumSelesai = caterRows.length - verifSelesaiV3;
@@ -418,15 +511,21 @@ export class ClosingService {
       });
     }
 
-    if (verifBelumSelesai > 0) {
+    if (barisButuhKoreksi.length > 0) {
+      hambatan.push({
+        kode: 'BACAAN_BUTUH_KOREKSI',
+        pesan: `Terdapat ${barisButuhKoreksi.length.toLocaleString('id-ID')} hasil baca meter berstatus Anomali / Perlu Survei Ulang / Kubikasi Negatif yang wajib dikoreksi terlebih dahulu di menu Verifikasi Petugas atau Koreksi Stand.`,
+        jumlah: barisButuhKoreksi.length,
+        contoh: barisButuhKoreksi.slice(0, MAKS_CONTOH_HAMBATAN),
+      });
+    }
+
+    if (barisSiapDisahkan.length > 0) {
       hambatan.push({
         kode: 'VERIFIKASI_BELUM_TUNTAS',
-        pesan: `Masih terdapat ${verifBelumSelesai.toLocaleString('id-ID')} hasil baca meter yang belum disahkan pada Langkah 2. Klik tombol "Sahkan Seluruh Bacaan Meter" sebelum menutup buku.`,
-        jumlah: verifBelumSelesai,
-        contoh: caterRows
-          .filter((c) => c.statusVerifikasi !== 'APPROVED_FINAL' && c.statusVerifikasi !== 'LOCKED_BILLING')
-          .slice(0, MAKS_CONTOH_HAMBATAN)
-          .map((c) => c.nolg),
+        pesan: `Masih terdapat ${barisSiapDisahkan.length.toLocaleString('id-ID')} hasil baca meter yang menunggu pengesahan pada Langkah 2. Klik tombol "Sahkan Seluruh Bacaan Meter" sebelum menutup buku.`,
+        jumlah: barisSiapDisahkan.length,
+        contoh: barisSiapDisahkan.slice(0, MAKS_CONTOH_HAMBATAN),
       });
     }
 
@@ -455,22 +554,36 @@ export class ClosingService {
     let perkiraanTotalM3 = 0;
     let perkiraanTotalTagihan = 0;
     let akanDitagihCount = 0;
+    const barisAnomaliTarif: string[] = [];
 
     for (const c of caterRows) {
       if (setSudahDitagih.has(c.nolg)) continue;
       akanDitagihCount++;
-      const volumeM3 = Number(c.pakaiTagih ?? c.pakaiM3Revisi ?? c.pakaiM3);
+      const volumeM3 = Math.max(0, Number(c.pakaiTagih ?? c.pakaiM3Revisi ?? c.pakaiM3));
       perkiraanTotalM3 += volumeM3;
 
       const ukuranEfektif = c.ukuranMeterAset ?? c.ukuranMeterPelanggan;
-      const rincian = this.hitungKomponenTagihanPelanggan(
-        c.nolg,
-        c.tarifKode,
-        ukuranEfektif,
-        volumeM3,
-        konteksTarif
-      );
-      perkiraanTotalTagihan += rincian.totalTagihan;
+      try {
+        const rincian = this.hitungKomponenTagihanPelanggan(
+          c.nolg,
+          c.tarifKode,
+          ukuranEfektif,
+          volumeM3,
+          konteksTarif
+        );
+        perkiraanTotalTagihan += rincian.totalTagihan;
+      } catch {
+        barisAnomaliTarif.push(c.nolg);
+      }
+    }
+
+    if (barisAnomaliTarif.length > 0) {
+      hambatan.push({
+        kode: 'DATA_TARIF_METER_TIDAK_VALID',
+        pesan: `Terdapat ${barisAnomaliTarif.length.toLocaleString('id-ID')} pelanggan dengan kode golongan tarif atau ukuran meter belum valid untuk kalkulasi progresif.`,
+        jumlah: barisAnomaliTarif.length,
+        contoh: barisAnomaliTarif.slice(0, MAKS_CONTOH_HAMBATAN),
+      });
     }
 
     let finalJumlahSl = akanDitagihCount;
@@ -500,6 +613,12 @@ export class ClosingService {
       | 'TERKUNCI'
       | 'BELUM_ADA';
 
+    let ditutupOlehNama: string | null = null;
+    if (periodeRow?.ditutupById) {
+      const resolved = await this.resolveValidUser(periodeRow.ditutupById);
+      ditutupOlehNama = resolved.name ?? periodeRow.ditutupById;
+    }
+
     return {
       periode: periodeStr,
       status: statusPeriode,
@@ -513,6 +632,8 @@ export class ClosingService {
         total: caterRows.length,
         selesaiV3: verifSelesaiV3,
         belumSelesai: verifBelumSelesai,
+        siapDisahkan: barisSiapDisahkan.length,
+        butuhKoreksi: barisButuhKoreksi.length,
       },
       pembacaan: {
         total: caterRows.length,
@@ -531,10 +652,12 @@ export class ClosingService {
         pendingMutasiRows.length === 0 &&
         verifBelumSelesai === 0 &&
         dpmBelumSelesai === 0 &&
+        barisAnomaliTarif.length === 0 &&
         caterRows.length > 0,
       audit: {
         ditutupAt: periodeRow?.ditutupAt ? periodeRow.ditutupAt.toISOString() : null,
         ditutupById: periodeRow?.ditutupById ?? null,
+        ditutupOlehNama,
         tanggalJatuhTempo: periodeRow?.tanggalJatuhTempo
           ? periodeRow.tanggalJatuhTempo.toISOString()
           : null,
@@ -589,18 +712,31 @@ export class ClosingService {
         );
       }
 
-      // Guard 2: Pastikan seluruh pembacaan meter periode ini sudah disahkan (APPROVED_FINAL / LOCKED_BILLING)
+      // Guard 2: Pastikan seluruh pembacaan meter pelanggan aktif periode ini sudah disahkan (APPROVED_FINAL / LOCKED_BILLING / CORRECTED_POST_CLOSE) dan bebas anomali negatif
       const [unapprovedCater] = await db
         .select({
           total: sql<number>`count(*)::int`,
-          belumDisahkan: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} != 'APPROVED_FINAL' and ${caterBacaMeter.statusVerifikasi} != 'LOCKED_BILLING' then 1 end)::int`,
+          butuhKoreksi: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} in ('NEED_RESURVEY', 'ANOMALY', 'DRAFT') or coalesce(${caterBacaMeter.pakaiTagih}, ${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric < 0 then 1 end)::int`,
+          belumDisahkan: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} not in ('APPROVED_FINAL', 'LOCKED_BILLING', 'CORRECTED_POST_CLOSE') then 1 end)::int`,
         })
         .from(caterBacaMeter)
-        .where(eq(caterBacaMeter.thbl, periodeStr));
+        .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`${pelanggan.status} != 'DICABUT'`
+          )
+        );
 
       if ((unapprovedCater?.total ?? 0) === 0) {
         throw new Error(
           `Tutup buku ditolak karena belum ada data bacaan meter pada periode ${periodeStr}. Tidak ada data yang diubah.`
+        );
+      }
+
+      if ((unapprovedCater?.butuhKoreksi ?? 0) > 0) {
+        throw new Error(
+          `Tutup buku ditolak karena masih terdapat ${unapprovedCater.butuhKoreksi.toLocaleString('id-ID')} hasil baca meter berstatus Anomali / Perlu Survei Ulang / Kubikasi Negatif. Selesaikan terlebih dahulu di menu Verifikasi Baca Petugas atau Koreksi Stand.`
         );
       }
 
@@ -638,7 +774,7 @@ export class ClosingService {
 
       const konteksTarif = await this.muatKonteksTarif(periodeStr);
 
-      // Ambil pembacaan meter periode ini beserta tarif & ukuran meter pelanggan (LEFT JOIN water_meter)
+      // Ambil pembacaan meter pelanggan aktif periode ini beserta tarif & ukuran meter (diluar DICABUT agar sambungan dicabut tidak ditagih biaya beban)
       const caterList = await db
         .select({
           id: caterBacaMeter.id,
@@ -653,7 +789,12 @@ export class ClosingService {
         .from(caterBacaMeter)
         .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
         .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
-        .where(eq(caterBacaMeter.thbl, periodeStr));
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`${pelanggan.status} != 'DICABUT'`
+          )
+        );
 
       const existingDrd = await db
         .select({ nolg: rekeningDrd.nolg })
@@ -667,6 +808,7 @@ export class ClosingService {
       let akumulasiTotalM3 = 0;
       let akumulasiTotalTagihan = 0;
       const waktuTutup = new Date();
+      const resolvedUser = await this.resolveValidUser(userId);
 
       await db.transaction(async (tx) => {
         // Re-check status di dalam transaksi untuk menjamin atomisitas & mencegah race condition
@@ -758,7 +900,7 @@ export class ClosingService {
         const finalTotalM3 = drdAgg?.totalM3 ?? akumulasiTotalM3;
         const finalTotalTagihan = drdAgg?.totalTagihan ? Number(drdAgg.totalTagihan) : akumulasiTotalTagihan;
 
-        // 4. Kunci Periode Penagihan & Simpan Snapshot Audit
+        // 4. Kunci Periode Penagihan & Simpan Snapshot Audit (gunakan valid user.id agar FK aman)
         await tx
           .insert(periodePenagihan)
           .values({
@@ -766,7 +908,7 @@ export class ClosingService {
             status: 'TERKUNCI',
             tanggalJatuhTempo,
             ditutupAt: waktuTutup,
-            ditutupById: userId,
+            ditutupById: resolvedUser.id,
             jumlahSl: finalTotalSl,
             totalM3: String(finalTotalM3),
             totalTagihan: String(finalTotalTagihan),
@@ -777,7 +919,7 @@ export class ClosingService {
               status: 'TERKUNCI',
               tanggalJatuhTempo,
               ditutupAt: waktuTutup,
-              ditutupById: userId,
+              ditutupById: resolvedUser.id,
               jumlahSl: finalTotalSl,
               totalM3: String(finalTotalM3),
               totalTagihan: String(finalTotalTagihan),
@@ -804,7 +946,8 @@ export class ClosingService {
         totalTagihan: Number(finalDrdAgg?.totalTagihan ?? akumulasiTotalTagihan),
         audit: {
           ditutupAt: waktuTutup.toISOString(),
-          ditutupById: userId,
+          ditutupById: resolvedUser.id,
+          ditutupOlehNama: resolvedUser.name,
           tanggalJatuhTempo: tanggalJatuhTempo.toISOString(),
         },
       };
@@ -815,9 +958,10 @@ export class ClosingService {
 
   /**
    * Tahap 4: Posting Datameter Massal
-   * Mengesahkan seluruh pembacaan meter berstatus VERIFIED / VERIFIED_L1 menjadi APPROVED_FINAL
+   * Mengesahkan seluruh pembacaan meter yang layak tagih (SUBMITTED / VERIFIED / VERIFIED_L1 / VERIFIED_L2)
+   * menjadi APPROVED_FINAL, serta menolak meloloskan data ANOMALY / NEED_RESURVEY / kubikasi negatif.
    */
-  async postingDatameterMassal(periodeStr: string, _userId: string): Promise<{ diposting: number; message: string }> {
+  async postingDatameterMassal(periodeStr: string, _userId?: string | null): Promise<{ diposting: number; message: string }> {
     const lockKey = `posting:${periodeStr}`;
     if (closingInFlightLocks.has(lockKey)) {
       throw new Error(
@@ -838,15 +982,52 @@ export class ClosingService {
         );
       }
 
+      const blockingRows = await db
+        .select({
+          nolg: caterBacaMeter.nolg,
+          statusVerifikasi: caterBacaMeter.statusVerifikasi,
+        })
+        .from(caterBacaMeter)
+        .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`${pelanggan.status} != 'DICABUT'`,
+            sql`(${caterBacaMeter.statusVerifikasi} in ('NEED_RESURVEY', 'ANOMALY', 'DRAFT') or coalesce(${caterBacaMeter.pakaiTagih}, ${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric < 0)`
+          )
+        );
+
+      if (blockingRows.length > 0) {
+        const contoh = blockingRows
+          .slice(0, 10)
+          .map((r) => `${r.nolg} (${r.statusVerifikasi})`)
+          .join(', ');
+        throw new Error(
+          `Pengesahan massal ditahan karena masih ada ${blockingRows.length.toLocaleString('id-ID')} bacaan berstatus Anomali / Perlu Survei Ulang / Kubikasi Negatif: [${contoh}]${blockingRows.length > 10 ? ` ...dan ${blockingRows.length - 10} lainnya` : ''}. Selesaikan terlebih dahulu di menu Verifikasi Baca Petugas atau Koreksi Stand.`
+        );
+      }
+
       const [caterCounts] = await db
         .select({
           total: sql<number>`count(*)::int`,
-          belumApprove: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} != 'APPROVED_FINAL' and ${caterBacaMeter.statusVerifikasi} != 'LOCKED_BILLING' then 1 end)::int`,
+          belumApprove: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} not in ('APPROVED_FINAL', 'LOCKED_BILLING', 'CORRECTED_POST_CLOSE') then 1 end)::int`,
         })
         .from(caterBacaMeter)
-        .where(eq(caterBacaMeter.thbl, periodeStr));
+        .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`${pelanggan.status} != 'DICABUT'`
+          )
+        );
 
-      if (!caterCounts || caterCounts.belumApprove === 0) {
+      if (!caterCounts || caterCounts.total === 0) {
+        throw new Error(
+          `Belum ada data hasil baca meter pada periode ${periodeStr} untuk disahkan.`
+        );
+      }
+
+      if (caterCounts.belumApprove === 0) {
         return {
           diposting: 0,
           message: 'Seluruh data hasil baca meter periode ini sudah berstatus disahkan (APPROVED_FINAL). Anda siap melanjutkan ke langkah berikutnya.',
@@ -862,7 +1043,12 @@ export class ClosingService {
         .where(
           and(
             eq(caterBacaMeter.thbl, periodeStr),
-            sql`${caterBacaMeter.statusVerifikasi} != 'APPROVED_FINAL' and ${caterBacaMeter.statusVerifikasi} != 'LOCKED_BILLING'`
+            inArray(caterBacaMeter.statusVerifikasi, [
+              'SUBMITTED',
+              'VERIFIED',
+              'VERIFIED_L1',
+              'VERIFIED_L2',
+            ])
           )
         );
 
@@ -899,7 +1085,8 @@ export class ClosingService {
           tanpaTarif: sql<number>`count(case when ${pelanggan.tarifKode} is null then 1 end)::int`,
           tanpaUrutan: sql<number>`count(case when ${pelanggan.noUrutRute} is null then 1 end)::int`,
         })
-        .from(pelanggan),
+        .from(pelanggan)
+        .where(sql`${pelanggan.status} != 'DICABUT'`),
       db
         .select({
           total: sql<number>`count(*)::int`,
@@ -917,7 +1104,13 @@ export class ClosingService {
           pendingOrDraft: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} in ('DRAFT', 'SUBMITTED', 'NEED_RESURVEY') then 1 end)::int`,
         })
         .from(caterBacaMeter)
-        .where(eq(caterBacaMeter.thbl, periodeStr)),
+        .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`${pelanggan.status} != 'DICABUT'`
+          )
+        ),
       db
         .select({
           totalSl: sql<number>`count(*)::int`,
@@ -1134,121 +1327,288 @@ export class ClosingService {
   }
 
   /**
-   * Tahap 11: Cek Selisih Pelanggan
-   * Rekonsiliasi 4 Pilar (Master, DPM, Cater Baca Meter, Rekening DRD) + Breakdown Rute
+   * Tahap 3 (Cek Selisih Pelanggan):
+   * Rekonsiliasi 4 Pilar Aktif (diluar DICABUT): Master vs DPM vs Bacaan vs DRD.
+   * Mendukung mode adaptif:
+   * - PRA_CLOSING (periode BERJALAN & DRD belum terbit): mendeteksi rute yang masih memiliki meter BELUM_DICATAT.
+   * - PASCA_CLOSING (periode TERKUNCI / DRD sudah terbit): mengaudit kesamaan 100% Master = DPM = Baca = DRD.
    */
   async getCekSelisihPelanggan(periodeStr: string): Promise<CekSelisihPelangganResult> {
-    const [masterCount] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(pelanggan);
+    const [
+      periodeRowRes,
+      masterCountRes,
+      dpmCountRes,
+      caterActiveCountRes,
+      caterBilledOrActiveCountRes,
+      drdCountRes,
+      masterRuteRows,
+    ] = await Promise.all([
+      db
+        .select({
+          status: periodePenagihan.status,
+          jumlahSl: periodePenagihan.jumlahSl,
+        })
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.periode, periodeStr)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(pelanggan)
+        .where(sql`${pelanggan.status} != 'DICABUT'`),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(daftarCatat)
+        .where(
+          and(
+            eq(daftarCatat.periode, periodeStr),
+            sql`${daftarCatat.status} != 'DICABUT'`
+          )
+        ),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(caterBacaMeter)
+        .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`${pelanggan.status} != 'DICABUT'`
+          )
+        ),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(caterBacaMeter)
+        .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .leftJoin(
+          rekeningDrd,
+          and(
+            eq(caterBacaMeter.nolg, rekeningDrd.nolg),
+            eq(rekeningDrd.thbl, periodeStr)
+          )
+        )
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`(${pelanggan.status} != 'DICABUT' OR ${rekeningDrd.nolg} IS NOT NULL)`
+          )
+        ),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(rekeningDrd)
+        .where(eq(rekeningDrd.thbl, periodeStr)),
+      db
+        .select({ kode: ruteCater.kode, seksiNama: ruteCater.seksiNama })
+        .from(ruteCater),
+    ]);
 
-    const [dpmCount] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(daftarCatat)
-      .where(eq(daftarCatat.periode, periodeStr));
+    const isLocked = periodeRowRes[0]?.status === 'TERKUNCI';
+    const snapshotSl = periodeRowRes[0]?.jumlahSl ?? null;
+    const totalDrd = drdCountRes[0]?.count ?? 0;
 
-    const [caterCount] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(caterBacaMeter)
-      .where(eq(caterBacaMeter.thbl, periodeStr));
+    const modeAudit: 'PRA_CLOSING' | 'PASCA_CLOSING' =
+      isLocked || totalDrd > 0 ? 'PASCA_CLOSING' : 'PRA_CLOSING';
 
-    const [drdCount] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(rekeningDrd)
-      .where(eq(rekeningDrd.thbl, periodeStr));
+    const rawDpm = dpmCountRes[0]?.count ?? 0;
+    const totalMaster =
+      modeAudit === 'PASCA_CLOSING'
+        ? (snapshotSl ?? (rawDpm > 0 ? rawDpm : totalDrd))
+        : (masterCountRes[0]?.count ?? 0);
+    const totalDpm =
+      modeAudit === 'PASCA_CLOSING'
+        ? (rawDpm > 0 ? rawDpm : totalMaster)
+        : (rawDpm > 0 ? rawDpm : totalMaster);
+    const totalCater =
+      modeAudit === 'PASCA_CLOSING'
+        ? (caterBilledOrActiveCountRes[0]?.count ?? 0)
+        : (caterActiveCountRes[0]?.count ?? 0);
 
-    const totalMaster = masterCount?.count ?? 0;
-    const totalDpm = dpmCount?.count > 0 ? dpmCount.count : totalMaster; // Fallback jika direct cater
-    const totalCater = caterCount?.count ?? 0;
-    const totalDrd = drdCount?.count ?? 0;
-    const totalSelisih = Math.max(0, totalCater - totalDrd);
+    const totalBelumTerbaca = Math.max(0, totalDpm - totalCater);
+    const totalSelisihUnbilled =
+      modeAudit === 'PASCA_CLOSING'
+        ? Math.max(totalBelumTerbaca, Math.abs(totalCater - totalDrd))
+        : Math.max(Math.abs(totalMaster - totalDpm), totalBelumTerbaca);
 
-    // Kueri breakdown rute
-    const ruteRows = await db
-      .select({
-        ruteKode: pelanggan.ruteKode,
-        totalPelanggan: sql<number>`count(*)::int`,
-      })
-      .from(pelanggan)
-      .groupBy(pelanggan.ruteKode)
-      .orderBy(asc(pelanggan.ruteKode));
+    const mapNamaRute = new Map(
+      masterRuteRows.map((r) => [r.kode, r.seksiNama ?? `Wilayah ${r.kode}`])
+    );
 
-    const caterPerRute = await db
-      .select({
-        ruteKode: caterBacaMeter.ruteKode,
-        terbaca: sql<number>`count(*)::int`,
-      })
-      .from(caterBacaMeter)
-      .where(eq(caterBacaMeter.thbl, periodeStr))
-      .groupBy(caterBacaMeter.ruteKode);
-    const mapCater = new Map(caterPerRute.map((c) => [c.ruteKode ?? 'TANPA_RUTE', c.terbaca]));
+    const [ruteMasterRows, caterPerRute, drdPerRute] = await Promise.all([
+      db
+        .select({
+          ruteKode: pelanggan.ruteKode,
+          totalPelanggan: sql<number>`count(*)::int`,
+        })
+        .from(pelanggan)
+        .where(sql`${pelanggan.status} != 'DICABUT'`)
+        .groupBy(pelanggan.ruteKode)
+        .orderBy(asc(pelanggan.ruteKode)),
+      modeAudit === 'PASCA_CLOSING'
+        ? db
+            .select({
+              ruteKode: pelanggan.ruteKode,
+              terbaca: sql<number>`count(*)::int`,
+            })
+            .from(caterBacaMeter)
+            .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+            .leftJoin(
+              rekeningDrd,
+              and(
+                eq(caterBacaMeter.nolg, rekeningDrd.nolg),
+                eq(rekeningDrd.thbl, periodeStr)
+              )
+            )
+            .where(
+              and(
+                eq(caterBacaMeter.thbl, periodeStr),
+                sql`(${pelanggan.status} != 'DICABUT' OR ${rekeningDrd.nolg} IS NOT NULL)`
+              )
+            )
+            .groupBy(pelanggan.ruteKode)
+        : db
+            .select({
+              ruteKode: pelanggan.ruteKode,
+              terbaca: sql<number>`count(*)::int`,
+            })
+            .from(caterBacaMeter)
+            .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+            .where(
+              and(
+                eq(caterBacaMeter.thbl, periodeStr),
+                sql`${pelanggan.status} != 'DICABUT'`
+              )
+            )
+            .groupBy(pelanggan.ruteKode),
+      db
+        .select({
+          ruteKode: pelanggan.ruteKode,
+          terbitDrd: sql<number>`count(*)::int`,
+        })
+        .from(rekeningDrd)
+        .innerJoin(pelanggan, eq(rekeningDrd.nolg, pelanggan.nolg))
+        .where(eq(rekeningDrd.thbl, periodeStr))
+        .groupBy(pelanggan.ruteKode),
+    ]);
 
-    const drdPerRute = await db
-      .select({
-        ruteKode: pelanggan.ruteKode,
-        terbitDrd: sql<number>`count(*)::int`,
-      })
-      .from(rekeningDrd)
-      .innerJoin(pelanggan, eq(rekeningDrd.nolg, pelanggan.nolg))
-      .where(eq(rekeningDrd.thbl, periodeStr))
-      .groupBy(pelanggan.ruteKode);
-    const mapDrd = new Map(drdPerRute.map((d) => [d.ruteKode ?? 'TANPA_RUTE', d.terbitDrd]));
+    const mapCater = new Map(
+      caterPerRute.map((c) => [c.ruteKode ?? 'TANPA_RUTE', c.terbaca])
+    );
+    const mapDrd = new Map(
+      drdPerRute.map((d) => [d.ruteKode ?? 'TANPA_RUTE', d.terbitDrd])
+    );
 
-    const ruteBreakdown: CekSelisihRuteItem[] = ruteRows.map((r) => {
-      const kode = r.ruteKode ?? 'TANPA_RUTE';
-      const terbaca = mapCater.get(kode) ?? 0;
-      const terbitDrd = mapDrd.get(kode) ?? 0;
-      const selisih = Math.abs(terbaca - terbitDrd);
-      return {
-        ruteKode: kode,
-        namaRute: `Rute Wilayah ${kode}`,
-        totalPelanggan: r.totalPelanggan,
-        terbaca,
-        terbitDrd,
-        selisih,
-        status: selisih === 0 ? 'SEIMBANG' : 'SELISIH',
-      };
-    });
+    const allRuteSet = new Set<string>([
+      ...ruteMasterRows.map((r) => r.ruteKode ?? 'TANPA_RUTE'),
+      ...mapCater.keys(),
+      ...mapDrd.keys(),
+    ]);
+    const mapMasterRuteCount = new Map(
+      ruteMasterRows.map((r) => [r.ruteKode ?? 'TANPA_RUTE', r.totalPelanggan])
+    );
 
-    // Ambil contoh pelanggan unbilled jika ada pembacaan yang belum masuk DRD
-    const unbilledQuery = await db
-      .select({
-        nolg: caterBacaMeter.nolg,
-        nama: pelanggan.nama,
-        ruteKode: caterBacaMeter.ruteKode,
-        stml: caterBacaMeter.stml,
-        stma: caterBacaMeter.stma,
-        pakaiM3: caterBacaMeter.pakaiM3,
-        statusVerifikasi: caterBacaMeter.statusVerifikasi,
-      })
-      .from(caterBacaMeter)
-      .leftJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
-      .leftJoin(
-        rekeningDrd,
-        and(eq(caterBacaMeter.nolg, rekeningDrd.nolg), eq(rekeningDrd.thbl, periodeStr))
-      )
-      .where(and(eq(caterBacaMeter.thbl, periodeStr), isNull(rekeningDrd.nolg)))
-      .limit(50);
+    const ruteBreakdown: CekSelisihRuteItem[] = Array.from(allRuteSet)
+      .sort()
+      .map((kode) => {
+        const terbaca = mapCater.get(kode) ?? 0;
+        const terbitDrd = mapDrd.get(kode) ?? 0;
+        const targetRute =
+          modeAudit === 'PASCA_CLOSING'
+            ? Math.max(terbaca, terbitDrd)
+            : (mapMasterRuteCount.get(kode) ?? 0);
+        const belumTerbaca = Math.max(0, targetRute - terbaca);
+        const selisih =
+          modeAudit === 'PASCA_CLOSING'
+            ? Math.abs(terbaca - terbitDrd)
+            : Math.abs(targetRute - terbaca);
+        return {
+          ruteKode: kode,
+          namaRute: mapNamaRute.get(kode) ?? `Wilayah ${kode}`,
+          totalPelanggan: targetRute,
+          terbaca,
+          belumTerbaca,
+          terbitDrd,
+          selisih,
+          status: selisih === 0 ? 'SEIMBANG' : 'SELISIH',
+        };
+      });
 
-    const daftarUnbilled = unbilledQuery.map((u) => ({
-      nolg: u.nolg,
-      nama: u.nama ?? 'Nama Pelanggan Tidak Ditemukan',
-      ruteKode: u.ruteKode ?? '-',
-      stml: Number(u.stml ?? 0),
-      stma: Number(u.stma ?? 0),
-      pakaiM3: Number(u.pakaiM3),
-      statusVerifikasi: u.statusVerifikasi,
-    }));
+    let daftarUnbilled: CekSelisihPelangganResult['daftarUnbilled'] = [];
+
+    if (modeAudit === 'PASCA_CLOSING') {
+      const unbilledQuery = await db
+        .select({
+          nolg: caterBacaMeter.nolg,
+          nama: pelanggan.nama,
+          ruteKode: pelanggan.ruteKode,
+          stml: caterBacaMeter.stml,
+          stma: caterBacaMeter.stma,
+          pakaiM3: caterBacaMeter.pakaiM3,
+          statusVerifikasi: caterBacaMeter.statusVerifikasi,
+        })
+        .from(caterBacaMeter)
+        .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .leftJoin(
+          rekeningDrd,
+          and(eq(caterBacaMeter.nolg, rekeningDrd.nolg), eq(rekeningDrd.thbl, periodeStr))
+        )
+        .where(
+          and(
+            eq(caterBacaMeter.thbl, periodeStr),
+            sql`${pelanggan.status} != 'DICABUT'`,
+            isNull(rekeningDrd.nolg)
+          )
+        )
+        .limit(50);
+
+      daftarUnbilled = unbilledQuery.map((u) => ({
+        nolg: u.nolg,
+        nama: u.nama ?? '—',
+        ruteKode: u.ruteKode ?? '—',
+        stml: Number(u.stml ?? 0),
+        stma: Number(u.stma ?? 0),
+        pakaiM3: Number(u.pakaiM3 ?? 0),
+        statusVerifikasi: u.statusVerifikasi,
+      }));
+    } else if (totalBelumTerbaca > 0) {
+      const unreadDpmQuery = await db
+        .select({
+          nolg: daftarCatat.nolg,
+          nama: pelanggan.nama,
+          ruteKode: daftarCatat.ruteKode,
+          standAwal: daftarCatat.standAwal,
+          sumber: daftarCatat.sumber,
+        })
+        .from(daftarCatat)
+        .innerJoin(pelanggan, eq(daftarCatat.nolg, pelanggan.nolg))
+        .where(
+          and(
+            eq(daftarCatat.periode, periodeStr),
+            eq(daftarCatat.status, 'BELUM_DICATAT'),
+            sql`${pelanggan.status} != 'DICABUT'`
+          )
+        )
+        .orderBy(asc(daftarCatat.ruteKode), asc(daftarCatat.nolg))
+        .limit(50);
+
+      daftarUnbilled = unreadDpmQuery.map((u) => ({
+        nolg: u.nolg,
+        nama: u.nama ?? '—',
+        ruteKode: u.ruteKode ?? '—',
+        stml: Number(u.standAwal ?? 0),
+        stma: 0,
+        pakaiM3: 0,
+        statusVerifikasi: u.sumber === 'PBPK' ? 'PBPK_BELUM_BACA' : 'BELUM_DICATAT',
+      }));
+    }
 
     return {
       periode: periodeStr,
+      modeAudit,
       ringkasan: {
         totalMasterPelanggan: totalMaster,
         totalDpmTarget: totalDpm,
         totalTerbaca: totalCater,
+        totalBelumTerbaca,
         totalTerbitDrd: totalDrd,
-        totalSelisihUnbilled: totalSelisih,
-        statusRekonsiliasi: totalSelisih === 0 && totalMaster === totalDrd ? 'MATCH' : 'DISCREPANCY',
+        totalSelisihUnbilled,
+        statusRekonsiliasi: totalSelisihUnbilled === 0 ? 'MATCH' : 'DISCREPANCY',
       },
       ruteBreakdown,
       daftarUnbilled,
@@ -1257,7 +1617,8 @@ export class ClosingService {
 
   /**
    * Tahap 6: Create Perbandingan
-   * Komparasi Konsumsi Kubikasi & Rupiah Tagihan Periode N vs N-1
+   * Komparasi Konsumsi Kubikasi & Rupiah Tagihan Periode N vs N-1 (100% Data Riil Tanpa Estimasi Fiktif).
+   * Jika DRD periode kini belum diterbitkan (Pra-Closing di Langkah 3), menggunakan kalkulasi proyeksi riil dari cater_baca_meter.
    */
   async getPerbandinganPeriode(periodeStr: string): Promise<PerbandinganPeriodeResult> {
     const year = parseInt(periodeStr.slice(0, 4));
@@ -1266,83 +1627,169 @@ export class ClosingService {
     const prevYear = month === 1 ? year - 1 : year;
     const periodeLaluStr = `${prevYear}${String(prevMonth).padStart(2, '0')}`;
 
-    // Agregat periode kini
-    const [kiniAgg] = await db
-      .select({
-        totalSl: sql<number>`count(*)::int`,
-        totalM3: sql<number>`coalesce(sum(${rekeningDrd.pakaiM3}::numeric), 0)::int`,
-        totalRp: sql<number>`coalesce(sum(${rekeningDrd.totalTagihan}::numeric), 0)::numeric`,
-      })
-      .from(rekeningDrd)
-      .where(eq(rekeningDrd.thbl, periodeStr));
+    const [
+      kiniTarifDrd,
+      laluTarifDrd,
+      masterTarif,
+    ] = await Promise.all([
+      db
+        .select({
+          tarifKode: pelanggan.tarifKode,
+          sl: sql<number>`count(*)::int`,
+          m3: sql<number>`coalesce(sum(${rekeningDrd.pakaiM3}::numeric), 0)::int`,
+          rp: sql<number>`coalesce(sum(${rekeningDrd.totalTagihan}::numeric), 0)::numeric`,
+        })
+        .from(rekeningDrd)
+        .innerJoin(pelanggan, eq(rekeningDrd.nolg, pelanggan.nolg))
+        .where(eq(rekeningDrd.thbl, periodeStr))
+        .groupBy(pelanggan.tarifKode),
+      db
+        .select({
+          tarifKode: pelanggan.tarifKode,
+          sl: sql<number>`count(*)::int`,
+          m3: sql<number>`coalesce(sum(${rekeningDrd.pakaiM3}::numeric), 0)::int`,
+          rp: sql<number>`coalesce(sum(${rekeningDrd.totalTagihan}::numeric), 0)::numeric`,
+        })
+        .from(rekeningDrd)
+        .innerJoin(pelanggan, eq(rekeningDrd.nolg, pelanggan.nolg))
+        .where(eq(rekeningDrd.thbl, periodeLaluStr))
+        .groupBy(pelanggan.tarifKode),
+      db.select().from(golonganTarif),
+    ]);
 
-    // Agregat periode lalu
-    const [laluAgg] = await db
-      .select({
-        totalSl: sql<number>`count(*)::int`,
-        totalM3: sql<number>`coalesce(sum(${rekeningDrd.pakaiM3}::numeric), 0)::int`,
-        totalRp: sql<number>`coalesce(sum(${rekeningDrd.totalTagihan}::numeric), 0)::numeric`,
-      })
-      .from(rekeningDrd)
-      .where(eq(rekeningDrd.thbl, periodeLaluStr));
-
-    // Breakdown tarif periode kini
-    const kiniTarif = await db
-      .select({
-        tarifKode: pelanggan.tarifKode,
-        sl: sql<number>`count(*)::int`,
-        m3: sql<number>`coalesce(sum(${rekeningDrd.pakaiM3}::numeric), 0)::int`,
-        rp: sql<number>`coalesce(sum(${rekeningDrd.totalTagihan}::numeric), 0)::numeric`,
-      })
-      .from(rekeningDrd)
-      .innerJoin(pelanggan, eq(rekeningDrd.nolg, pelanggan.nolg))
-      .where(eq(rekeningDrd.thbl, periodeStr))
-      .groupBy(pelanggan.tarifKode);
-
-    // Master tarif
-    const masterTarif = await db.select().from(golonganTarif);
     const mapNamaTarif = new Map(masterTarif.map((t) => [t.kode, t.nama]));
+    const mapKini = new Map<string, { sl: number; m3: number; rp: number }>();
+    let sumberDataKini: 'DRD_RESMI' | 'PROYEKSI_PRA_CLOSING' = 'DRD_RESMI';
 
-    const totalSlKini = kiniAgg?.totalSl ?? 0;
-    const totalSlLalu = laluAgg?.totalSl ?? 0;
-    const totalM3Kini = kiniAgg?.totalM3 ?? 0;
-    const totalM3Lalu = laluAgg?.totalM3 ?? 0;
-    const totalRpKini = Number(kiniAgg?.totalRp ?? 0);
-    const totalRpLalu = Number(laluAgg?.totalRp ?? 0);
+    if (kiniTarifDrd.length > 0) {
+      for (const kt of kiniTarifDrd) {
+        const kode = kt.tarifKode ?? 'TANPA_TARIF';
+        mapKini.set(kode, {
+          sl: kt.sl,
+          m3: kt.m3,
+          rp: Number(kt.rp),
+        });
+      }
+    } else {
+      // Proyeksi Pra-Closing riil dari cater_baca_meter apabila rekening_drd periode ini belum dikunci
+      sumberDataKini = 'PROYEKSI_PRA_CLOSING';
+      const [caterRows, konteksTarif] = await Promise.all([
+        db
+          .select({
+            nolg: caterBacaMeter.nolg,
+            pakaiM3: caterBacaMeter.pakaiM3,
+            pakaiM3Revisi: caterBacaMeter.pakaiM3Revisi,
+            pakaiTagih: caterBacaMeter.pakaiTagih,
+            tarifKode: pelanggan.tarifKode,
+            ukuranMeterPelanggan: pelanggan.ukuranMeter,
+            ukuranMeterAset: waterMeter.ukuran,
+          })
+          .from(caterBacaMeter)
+          .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+          .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
+          .where(
+            and(
+              eq(caterBacaMeter.thbl, periodeStr),
+              sql`${pelanggan.status} != 'DICABUT'`
+            )
+          ),
+        this.muatKonteksTarif(periodeStr),
+      ]);
 
-    const deltaSl = totalSlKini - totalSlLalu;
-    const deltaM3Persen = totalM3Lalu > 0 ? Number((((totalM3Kini - totalM3Lalu) / totalM3Lalu) * 100).toFixed(2)) : 0;
-    const deltaRpPersen = totalRpLalu > 0 ? Number((((totalRpKini - totalRpLalu) / totalRpLalu) * 100).toFixed(2)) : 0;
+      for (const c of caterRows) {
+        const kode = c.tarifKode ?? 'TANPA_TARIF';
+        const vol = Math.max(0, Number(c.pakaiTagih ?? c.pakaiM3Revisi ?? c.pakaiM3));
+        let tagihanRp = 0;
+        try {
+          const rincian = this.hitungKomponenTagihanPelanggan(
+            c.nolg,
+            c.tarifKode,
+            c.ukuranMeterAset ?? c.ukuranMeterPelanggan,
+            vol,
+            konteksTarif
+          );
+          tagihanRp = rincian.totalTagihan;
+        } catch {
+          tagihanRp = 0;
+        }
 
-    const breakdownTarif: PerbandinganTarifItem[] = kiniTarif.map((kt) => {
-      const kode = kt.tarifKode ?? '2A2';
-      const nama = mapNamaTarif.get(kode) ?? `Golongan ${kode}`;
-      // Estimasi proporsional periode lalu jika data riil N-1 belum ada
-      const slLalu = Math.round(kt.sl * 0.99);
-      const m3Lalu = Math.round(kt.m3 * 0.97);
-      const rpLalu = Math.round(Number(kt.rp) * 0.97);
+        const prev = mapKini.get(kode) ?? { sl: 0, m3: 0, rp: 0 };
+        prev.sl += 1;
+        prev.m3 += vol;
+        prev.rp += tagihanRp;
+        mapKini.set(kode, prev);
+      }
+    }
 
-      const dM3 = m3Lalu > 0 ? Number((((kt.m3 - m3Lalu) / m3Lalu) * 100).toFixed(2)) : 0;
-      const dRp = rpLalu > 0 ? Number((((Number(kt.rp) - rpLalu) / rpLalu) * 100).toFixed(2)) : 0;
+    const mapLalu = new Map<string, { sl: number; m3: number; rp: number }>();
+    for (const lt of laluTarifDrd) {
+      const kode = lt.tarifKode ?? 'TANPA_TARIF';
+      mapLalu.set(kode, {
+        sl: lt.sl,
+        m3: lt.m3,
+        rp: Number(lt.rp),
+      });
+    }
+
+    const allKodeSet = new Set<string>([...mapKini.keys(), ...mapLalu.keys()]);
+    const sortedKodes = Array.from(allKodeSet).sort();
+
+    let totalSlKini = 0;
+    let totalSlLalu = 0;
+    let totalM3Kini = 0;
+    let totalM3Lalu = 0;
+    let totalRpKini = 0;
+    let totalRpLalu = 0;
+
+    const breakdownTarif: PerbandinganTarifItem[] = sortedKodes.map((kode) => {
+      const kini = mapKini.get(kode) ?? { sl: 0, m3: 0, rp: 0 };
+      const lalu = mapLalu.get(kode) ?? { sl: 0, m3: 0, rp: 0 };
+
+      totalSlKini += kini.sl;
+      totalSlLalu += lalu.sl;
+      totalM3Kini += kini.m3;
+      totalM3Lalu += lalu.m3;
+      totalRpKini += kini.rp;
+      totalRpLalu += lalu.rp;
+
+      const dM3 =
+        lalu.m3 > 0
+          ? Number((((kini.m3 - lalu.m3) / lalu.m3) * 100).toFixed(2))
+          : 0;
+      const dRp =
+        lalu.rp > 0
+          ? Number((((kini.rp - lalu.rp) / lalu.rp) * 100).toFixed(2))
+          : 0;
 
       return {
         tarifKode: kode,
-        tarifNama: nama,
-        slPeriodeLalu: slLalu,
-        slPeriodeKini: kt.sl,
-        deltaSl: kt.sl - slLalu,
-        m3PeriodeLalu: m3Lalu,
-        m3PeriodeKini: kt.m3,
+        tarifNama: mapNamaTarif.get(kode) ?? `Golongan ${kode}`,
+        slPeriodeLalu: lalu.sl,
+        slPeriodeKini: kini.sl,
+        deltaSl: kini.sl - lalu.sl,
+        m3PeriodeLalu: lalu.m3,
+        m3PeriodeKini: kini.m3,
         deltaM3Persen: dM3,
-        rpPeriodeLalu: rpLalu,
-        rpPeriodeKini: Number(kt.rp),
+        rpPeriodeLalu: lalu.rp,
+        rpPeriodeKini: kini.rp,
         deltaRpPersen: dRp,
       };
     });
 
+    const deltaSl = totalSlKini - totalSlLalu;
+    const deltaM3Persen =
+      totalM3Lalu > 0
+        ? Number((((totalM3Kini - totalM3Lalu) / totalM3Lalu) * 100).toFixed(2))
+        : 0;
+    const deltaRpPersen =
+      totalRpLalu > 0
+        ? Number((((totalRpKini - totalRpLalu) / totalRpLalu) * 100).toFixed(2))
+        : 0;
+
     return {
       periodeKini: periodeStr,
       periodeLalu: periodeLaluStr,
+      sumberDataKini,
       ringkasan: {
         totalSlKini,
         totalSlLalu,
@@ -1392,26 +1839,68 @@ export class ClosingService {
    */
   async verifikasiStandAngkat(
     id: string,
-    verifikatorId: string,
+    verifikatorId: string | null,
     status: 'APPROVED' | 'REJECTED',
     catatan?: string
   ) {
+    const [existingMutasi] = await db
+      .select({
+        id: waterMeterMutasi.id,
+        nolg: waterMeterMutasi.nolg,
+        periode: waterMeterMutasi.periode,
+        noMeterBaru: waterMeterMutasi.noMeterBaru,
+        standAngkat: waterMeterMutasi.standAngkat,
+      })
+      .from(waterMeterMutasi)
+      .where(eq(waterMeterMutasi.id, id))
+      .limit(1);
+
+    if (!existingMutasi) {
+      throw new Error(`Data pergantian meter dengan ID '${id}' tidak ditemukan.`);
+    }
+
+    const [periodeRow] = await db
+      .select({ status: periodePenagihan.status })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, String(existingMutasi.periode)));
+
+    if (periodeRow?.status === 'TERKUNCI') {
+      throw new Error(
+        `Periode ${existingMutasi.periode} sudah terkunci. Status pergantian meter tidak dapat diubah kembali.`
+      );
+    }
+
+    if (
+      status === 'APPROVED' &&
+      (!existingMutasi.noMeterBaru || existingMutasi.standAngkat === null)
+    ) {
+      throw new Error(
+        `Pergantian meter pelanggan ${existingMutasi.nolg} belum dapat disetujui karena Nomor Meter Baru atau Stand Angkat belum dilengkapi oleh tim teknik.`
+      );
+    }
+
+    const resolvedUser = await this.resolveValidUser(verifikatorId);
+
     await db
       .update(waterMeterMutasi)
       .set({
         statusVerifikasi: status,
-        verifikatorId,
+        verifikatorId: resolvedUser.id,
         catatanVerifikasi: catatan ?? null,
         tglVerifikasi: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(waterMeterMutasi.id, id));
 
-    return { success: true, message: `Mutasi stand angkat ${id} berhasil diupdate menjadi ${status}.` };
+    return {
+      success: true,
+      message: `Pergantian meter pelanggan ${existingMutasi.nolg} berhasil diperbarui menjadi ${status === 'APPROVED' ? 'DISETUJUI' : 'DITOLAK'}.`,
+    };
   }
 
   /**
    * Info Periode Kerja Aktif & Daftar Periode Penagihan
+   * Mendukung sekaligus kontrak Closing Console dan hook terpusat `usePeriodeKerja`.
    */
   async getPeriodeKerja() {
     const daftarRows = await db
@@ -1432,12 +1921,25 @@ export class ClosingService {
     const openPeriod = daftarPeriode.find((p) => p.status === 'BERJALAN');
     const latestPeriod = daftarPeriode[0]?.periode ?? '';
     const periodeAktif = openPeriod ? openPeriod.periode : latestPeriod;
-    const saranPeriode = openPeriod ? openPeriod.periode : latestPeriod;
+    const saranPeriode = openPeriod
+      ? openPeriod.periode
+      : latestPeriod
+        ? nextPeriode(latestPeriod)
+        : '';
+    const saranBulanBaru = periodeAktif ? nextPeriode(periodeAktif) : '';
 
     return {
       periodeAktif,
       saranPeriode,
+      saranBulanBaru,
       daftarPeriode,
+      // Kontrak hook usePeriodeKerja (PanelTabel Verifikasi & Modul Lain):
+      periodeKerja: openPeriod ? Number(openPeriod.periode) : null,
+      periode: daftarPeriode.map((d) => ({
+        periode: Number(d.periode),
+        terkunci: d.status === 'TERKUNCI',
+      })),
+      saran: saranPeriode || null,
     };
   }
 
@@ -1493,8 +1995,13 @@ export class ClosingService {
           .where(isNull(pelanggan.kelurahanKode));
       }
 
-      // Sinkronkan juga daftarCatat yang ruteKode-nya masih kosong
-      if (defaultRute) {
+      // Sinkronkan juga daftarCatat yang ruteKode-nya masih kosong (hanya jika periode belum terkunci)
+      const [periodeCheck] = await tx
+        .select({ status: periodePenagihan.status })
+        .from(periodePenagihan)
+        .where(eq(periodePenagihan.periode, periodeStr));
+
+      if (defaultRute && periodeCheck?.status !== 'TERKUNCI') {
         await tx
           .update(daftarCatat)
           .set({
@@ -1570,6 +2077,17 @@ export class ClosingService {
    * pada periode target dan menginjeksinya dengan sumber 'PBPK'.
    */
   async syncPelangganBaruKeDpm(periodeStr: string) {
+    const [periodeRow] = await db
+      .select({ status: periodePenagihan.status })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, periodeStr));
+
+    if (periodeRow?.status === 'TERKUNCI') {
+      throw new Error(
+        `Periode ${periodeStr} sudah terkunci. Sinkronisasi pelanggan baru hanya dapat dijalankan pada jadwal periode yang sedang BERJALAN (mis. ${nextPeriode(periodeStr)}).`
+      );
+    }
+
     const allPelanggan = await db
       .select({
         nolg: pelanggan.nolg,
@@ -1586,6 +2104,19 @@ export class ClosingService {
       .from(daftarCatat)
       .where(eq(daftarCatat.periode, periodeStr));
 
+    const existingReadings = await db
+      .select({
+        nolg: caterBacaMeter.nolg,
+        stml: caterBacaMeter.stml,
+        pakaiLalu: caterBacaMeter.pakaiLalu,
+        petugasId: caterBacaMeter.petugasId,
+        tglCatat: caterBacaMeter.tglCatat,
+        sumberCatat: caterBacaMeter.sumberCatat,
+      })
+      .from(caterBacaMeter)
+      .where(eq(caterBacaMeter.thbl, periodeStr));
+
+    const mapReading = new Map(existingReadings.map((r) => [r.nolg, r]));
     const setDpm = new Set(existingDpm.map((d) => d.nolg));
     const belumMasukDpm = allPelanggan.filter(
       (p) => !setDpm.has(p.nolg) && p.status !== 'DICABUT'
@@ -1597,20 +2128,27 @@ export class ClosingService {
       await db.transaction(async (tx) => {
         for (let i = 0; i < belumMasukDpm.length; i += UKURAN_BATCH) {
           const batch = belumMasukDpm.slice(i, i + UKURAN_BATCH);
-          const rows = batch.map((p, idx) => ({
-            id: `dpm-${periodeStr}-${p.nolg}`,
-            periode: periodeStr,
-            nolg: p.nolg,
-            ruteKode: p.ruteKode,
-            petugasId: p.pencatatDefault ?? null,
-            urutan: p.noUrutRute && p.noUrutRute > 0 ? p.noUrutRute : idx + 1,
-            standAwal: '0',
-            pakaiLalu: '0',
-            sumber: 'PBPK',
-            status: 'BELUM_DICATAT',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }));
+          const rows = batch.map((p, idx) => {
+            const rd = mapReading.get(p.nolg);
+            return {
+              id: `dpm-${periodeStr}-${p.nolg}`,
+              periode: periodeStr,
+              nolg: p.nolg,
+              ruteKode: p.ruteKode,
+              petugasId: rd?.petugasId ?? p.pencatatDefault ?? null,
+              urutan: p.noUrutRute && p.noUrutRute > 0 ? p.noUrutRute : idx + 1,
+              standAwal: rd ? String(rd.stml ?? '0') : '0',
+              pakaiLalu: rd?.pakaiLalu ? String(rd.pakaiLalu) : '0',
+              sumber: 'PBPK',
+              status: rd ? 'DICATAT' : 'BELUM_DICATAT',
+              selesaiAt: rd?.tglCatat ?? null,
+              catatan: rd
+                ? `Disinkronkan dari bacaan ${rd.sumberCatat} periode ${periodeStr}`
+                : null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+          });
 
           await tx
             .insert(daftarCatat)
@@ -1667,16 +2205,23 @@ export class ClosingService {
       `);
     }
 
-    // Sinkronkan urutan pada daftarCatat periode ini jika urutan <= 0
-    await db.execute(sql`
-      UPDATE daftar_catat AS dc
-      SET urutan = COALESCE(p.no_urut_rute, 1),
-          updated_at = NOW()
-      FROM pelanggan AS p
-      WHERE dc.nolg = p.nolg
-        AND dc.periode = ${periodeStr}
-        AND dc.urutan <= 0
-    `);
+    // Sinkronkan urutan pada daftarCatat periode ini jika urutan <= 0 dan periode belum terkunci
+    const [periodeRow] = await db
+      .select({ status: periodePenagihan.status })
+      .from(periodePenagihan)
+      .where(eq(periodePenagihan.periode, periodeStr));
+
+    if (periodeRow?.status !== 'TERKUNCI') {
+      await db.execute(sql`
+        UPDATE daftar_catat AS dc
+        SET urutan = COALESCE(p.no_urut_rute, 1),
+            updated_at = NOW()
+        FROM pelanggan AS p
+        WHERE dc.nolg = p.nolg
+          AND dc.periode = ${periodeStr}
+          AND dc.urutan <= 0
+      `);
+    }
 
     return {
       periode: periodeStr,

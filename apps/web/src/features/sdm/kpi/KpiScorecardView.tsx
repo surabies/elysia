@@ -17,24 +17,24 @@ import {
   FileText,
   Mountain,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
+  Button,
+  Input,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
+  Card,
+  Badge,
+  StatusDot,
+} from "@cater/ui"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { Card } from "@/components/ui/card"
 import { kpiApi } from "./api"
 import type { KpiItem, KpiOwner, Perspective } from "./types/KpiTypes"
 import { calculateCompanySummary } from "./lib/KpiCalculations"

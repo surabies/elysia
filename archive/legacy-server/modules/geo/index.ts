@@ -1,20 +1,20 @@
-import { Elysia, t } from 'elysia';
-import { sql, eq, desc, count } from 'drizzle-orm';
-import { db, places } from '@cater/db';
-import { authPlugin } from '@/server/plugins/auth';
-import { mapService } from '@/server/services/geo/map.service';
+import { Elysia, t } from "elysia";
+import { sql, eq, desc, count } from "drizzle-orm";
+import { db, places } from "@cater/db";
+import { authPlugin } from "@/server/plugins/auth";
+import { mapService } from "@/server/services/geo/map.service";
 
-export const geoModule = new Elysia({ prefix: '/places' })
+export const geoModule = new Elysia({ prefix: "peta-spasial" })
   .use(authPlugin)
   // GIS Monitoring Spasial (Peta Pelanggan, Lokasi Catat, & Anti-Nembak Meter)
   .get(
-    '/gis-monitoring',
+    "/gis-monitoring",
     async ({ query }) => {
       const data = await mapService.getMonitoringSpasial({
         thbl: query.thbl,
         ruteKode: query.ruteKode,
-        hanyaAnomali: query.hanyaAnomali === 'true',
-        hanyaGeofenceAlert: query.hanyaGeofenceAlert === 'true',
+        hanyaAnomali: query.hanyaAnomali === "true",
+        hanyaGeofenceAlert: query.hanyaGeofenceAlert === "true",
         limit: query.limit ? Number(query.limit) : 500,
       });
       return { success: true, data };
@@ -27,14 +27,14 @@ export const geoModule = new Elysia({ prefix: '/places' })
         hanyaGeofenceAlert: t.Optional(t.String()),
         limit: t.Optional(t.Numeric()),
       }),
-    }
+    },
   )
   .get(
-    '/gis-geojson',
+    "/gis-geojson",
     async ({ query }) => {
       const geojson = await mapService.getPelangganGeoJson(
         query.ruteKode,
-        query.thbl
+        query.thbl,
       );
       return geojson;
     },
@@ -43,11 +43,11 @@ export const geoModule = new Elysia({ prefix: '/places' })
         thbl: t.Optional(t.String()),
         ruteKode: t.Optional(t.String()),
       }),
-    }
+    },
   )
   // Poligon Persil & Jejak Bangunan untuk Magnetic Snapping
   .get(
-    '/cadastral-parcels',
+    "/cadastral-parcels",
     async ({ query }) => {
       const lat = Number(query.lat);
       const lng = Number(query.lng);
@@ -61,11 +61,11 @@ export const geoModule = new Elysia({ prefix: '/places' })
         lng: t.Numeric(),
         radius: t.Optional(t.Numeric()),
       }),
-    }
+    },
   )
   // 1. Proximity search (must be declared before :id to prevent shadowing)
   .get(
-    '/nearby',
+    "/nearby",
     async ({ query, set }) => {
       const lon = Number(query.lon);
       const lat = Number(query.lat);
@@ -102,7 +102,7 @@ export const geoModule = new Elysia({ prefix: '/places' })
         };
       } catch (err: any) {
         // Fallback if PostGIS extension is not installed in local environment
-        console.warn('[NEARBY_FALLBACK]', err?.message);
+        console.warn("[NEARBY_FALLBACK]", err?.message);
         const allPlaces = await db.select().from(places).limit(limit);
         return {
           success: true,
@@ -125,33 +125,33 @@ export const geoModule = new Elysia({ prefix: '/places' })
         lon: t.Numeric({
           minimum: -180,
           maximum: 180,
-          error: 'Longitude must be between -180 and 180',
+          error: "Longitude must be between -180 and 180",
         }),
         lat: t.Numeric({
           minimum: -90,
           maximum: 90,
-          error: 'Latitude must be between -90 and 90',
+          error: "Latitude must be between -90 and 90",
         }),
         radius: t.Optional(
           t.Numeric({
             minimum: 1,
             maximum: 10000000,
-            error: 'Radius must be positive and within 10,000,000 meters',
-          })
+            error: "Radius must be positive and within 10,000,000 meters",
+          }),
         ),
         limit: t.Optional(
           t.Numeric({
             minimum: 1,
             maximum: 100,
-            error: 'Limit must be between 1 and 100',
-          })
+            error: "Limit must be between 1 and 100",
+          }),
         ),
       }),
-    }
+    },
   )
   // 2. Create place (protected)
   .post(
-    '/',
+    "/",
     async ({ body, user, set }) => {
       const lon = Number(body.longitude);
       const lat = Number(body.latitude);
@@ -178,41 +178,41 @@ export const geoModule = new Elysia({ prefix: '/places' })
     },
     {
       requireRole: [
-        'SUPERADMIN',
-        'EXECUTIVE',
-        'STAFF_ADMIN_BILLING',
-        'VERIFIKATOR_1',
-        'VERIFIKATOR_2',
-        'VERIFIKATOR_3',
+        "SUPERADMIN",
+        "EXECUTIVE",
+        "STAFF_ADMIN_BILLING",
+        "VERIFIKATOR_1",
+        "VERIFIKATOR_2",
+        "VERIFIKATOR_3",
       ],
       body: t.Object({
         name: t.String({
           minLength: 1,
           maxLength: 255,
-          error: 'Name is required and must not exceed 255 characters',
+          error: "Name is required and must not exceed 255 characters",
         }),
         description: t.Optional(
           t.String({
             maxLength: 1000,
-            error: 'Description must not exceed 1000 characters',
-          })
+            error: "Description must not exceed 1000 characters",
+          }),
         ),
         longitude: t.Numeric({
           minimum: -180,
           maximum: 180,
-          error: 'Longitude must be between -180 and 180',
+          error: "Longitude must be between -180 and 180",
         }),
         latitude: t.Numeric({
           minimum: -90,
           maximum: 90,
-          error: 'Latitude must be between -90 and 90',
+          error: "Latitude must be between -90 and 90",
         }),
       }),
-    }
+    },
   )
   // 3. Paginated list of places
   .get(
-    '/',
+    "/",
     async ({ query }) => {
       const page = Math.max(1, Number(query.page ?? 1));
       const limit = Math.min(100, Math.max(1, Number(query.limit ?? 20)));
@@ -257,11 +257,11 @@ export const geoModule = new Elysia({ prefix: '/places' })
         page: t.Optional(t.Numeric({ minimum: 1 })),
         limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
       }),
-    }
+    },
   )
   // 4. Get single place by ID
   .get(
-    '/:id',
+    "/:id",
     async ({ params, set }) => {
       const [place] = await db
         .select()
@@ -274,7 +274,7 @@ export const geoModule = new Elysia({ prefix: '/places' })
         return {
           success: false,
           error: {
-            code: 'NOT_FOUND',
+            code: "NOT_FOUND",
             message: `Place with id '${params.id}' not found`,
           },
         };
@@ -298,11 +298,11 @@ export const geoModule = new Elysia({ prefix: '/places' })
       params: t.Object({
         id: t.String({ minLength: 1 }),
       }),
-    }
+    },
   )
   // 5. Delete place (protected, owner only)
   .delete(
-    '/:id',
+    "/:id",
     async ({ params, user, set }) => {
       const [place] = await db
         .select()
@@ -315,7 +315,7 @@ export const geoModule = new Elysia({ prefix: '/places' })
         return {
           success: false,
           error: {
-            code: 'NOT_FOUND',
+            code: "NOT_FOUND",
             message: `Place with id '${params.id}' not found`,
           },
         };
@@ -327,8 +327,8 @@ export const geoModule = new Elysia({ prefix: '/places' })
         return {
           success: false,
           error: {
-            code: 'FORBIDDEN',
-            message: 'You are not authorized to delete this place',
+            code: "FORBIDDEN",
+            message: "You are not authorized to delete this place",
           },
         };
       }
@@ -337,20 +337,20 @@ export const geoModule = new Elysia({ prefix: '/places' })
 
       return {
         success: true,
-        message: 'Place deleted successfully',
+        message: "Place deleted successfully",
       };
     },
     {
       requireRole: [
-        'SUPERADMIN',
-        'EXECUTIVE',
-        'STAFF_ADMIN_BILLING',
-        'VERIFIKATOR_1',
-        'VERIFIKATOR_2',
-        'VERIFIKATOR_3',
+        "SUPERADMIN",
+        "EXECUTIVE",
+        "STAFF_ADMIN_BILLING",
+        "VERIFIKATOR_1",
+        "VERIFIKATOR_2",
+        "VERIFIKATOR_3",
       ],
       params: t.Object({
         id: t.String({ minLength: 1 }),
       }),
-    }
+    },
   );

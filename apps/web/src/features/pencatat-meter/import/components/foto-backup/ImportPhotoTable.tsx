@@ -3,9 +3,7 @@
 
 import * as React from "react";
 import { Check, CheckCircle2, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge, Button, Checkbox } from "@cater/ui";
 import { cn } from "@/lib/utils";
 import {
   FOTO_JENIS,
@@ -126,12 +124,12 @@ export function ImportPhotoTable({
             className: "min-w-28 text-center",
             cell: (group: CustomerPhotoGroup) =>
               group.countLengkap === FOTO_JENIS_LIST.length ? (
-                <Badge variant="green-subtle">
+                <Badge variant="secondary" className="border-emerald-500/30 text-emerald-700 bg-emerald-500/10 dark:text-emerald-400">
                   <CheckCircle2 />
                   {group.countLengkap}/{FOTO_JENIS_LIST.length} Lengkap
                 </Badge>
               ) : (
-                <Badge variant="amber-subtle">
+                <Badge variant="secondary" className="border-amber-500/30 text-amber-700 bg-amber-500/10 dark:text-amber-400">
                   {group.countLengkap}/{FOTO_JENIS_LIST.length} Berkas
                 </Badge>
               ),
@@ -226,7 +224,7 @@ export function ImportPhotoTable({
       className: "w-20 text-center",
       cell: (group) =>
         group.ruteKode ? (
-          <Badge variant="pill" className="font-mono">
+          <Badge variant="secondary" className="font-mono text-label-11">
             {group.ruteKode}
           </Badge>
         ) : (

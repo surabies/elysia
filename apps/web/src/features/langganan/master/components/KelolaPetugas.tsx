@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
+import * as React from "react";
+import Link from "next/link";
 import {
   Users,
   UserCheck,
@@ -15,13 +15,13 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableHeader,
@@ -29,18 +29,18 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { PageContainer } from '@/components/layout/page/PageContainer';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { masterApi } from '../api';
+} from "@/components/ui/dialog";
+import { PageContainer } from "@/components/layout/page/PageContainer";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { masterApi } from "../api";
 
 export interface PetugasMasterItem {
   id: string;
@@ -56,16 +56,16 @@ export interface PetugasMasterItem {
 export function KelolaPetugas() {
   const [data, setData] = React.useState<PetugasMasterItem[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = React.useState("");
   const [modalPetugas, setModalPetugas] = React.useState<{
-    mode: 'tambah' | 'edit';
+    mode: "tambah" | "edit";
     item?: PetugasMasterItem;
   } | null>(null);
 
   // Form states
-  const [formId, setFormId] = React.useState('');
-  const [formNama, setFormNama] = React.useState('');
-  const [formNoHp, setFormNoHp] = React.useState('');
+  const [formId, setFormId] = React.useState("");
+  const [formNama, setFormNama] = React.useState("");
+  const [formNoHp, setFormNoHp] = React.useState("");
   const [formAktif, setFormAktif] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
 
@@ -75,7 +75,7 @@ export function KelolaPetugas() {
       const items = await masterApi.petugas.getAll();
       setData(items);
     } catch (err) {
-      console.error('Failed to load petugas:', err);
+      console.error("Failed to load petugas:", err);
     } finally {
       setLoading(false);
     }
@@ -86,19 +86,19 @@ export function KelolaPetugas() {
   }, [fetchData]);
 
   const bukaModalTambah = () => {
-    setFormId('');
-    setFormNama('');
-    setFormNoHp('');
+    setFormId("");
+    setFormNama("");
+    setFormNoHp("");
     setFormAktif(true);
-    setModalPetugas({ mode: 'tambah' });
+    setModalPetugas({ mode: "tambah" });
   };
 
   const bukaModalEdit = (item: PetugasMasterItem) => {
     setFormId(item.id);
     setFormNama(item.nama);
-    setFormNoHp(item.noHp || '');
+    setFormNoHp(item.noHp || "");
     setFormAktif(item.aktif);
-    setModalPetugas({ mode: 'edit', item });
+    setModalPetugas({ mode: "edit", item });
   };
 
   const simpanPetugas = async (e: React.FormEvent) => {
@@ -107,28 +107,28 @@ export function KelolaPetugas() {
 
     setSaving(true);
     try {
-      if (modalPetugas?.mode === 'tambah') {
+      if (modalPetugas?.mode === "tambah") {
         await masterApi.petugas.create({
           id: formId.trim().toUpperCase(),
           nama: formNama.trim(),
           noHp: formNoHp.trim() || undefined,
           aktif: formAktif,
         });
-        toast.success('Petugas baru berhasil ditambahkan');
+        toast.success("Petugas baru berhasil ditambahkan");
         setModalPetugas(null);
         fetchData();
-      } else if (modalPetugas?.mode === 'edit' && modalPetugas.item) {
+      } else if (modalPetugas?.mode === "edit" && modalPetugas.item) {
         await masterApi.petugas.update(modalPetugas.item.id, {
           nama: formNama.trim(),
           noHp: formNoHp.trim() || undefined,
           aktif: formAktif,
         });
-        toast.success('Data petugas berhasil diperbarui');
+        toast.success("Data petugas berhasil diperbarui");
         setModalPetugas(null);
         fetchData();
       }
     } catch (err: any) {
-      toast.error(err.message || 'Terjadi kesalahan');
+      toast.error(err.message || "Terjadi kesalahan");
     } finally {
       setSaving(false);
     }
@@ -141,7 +141,7 @@ export function KelolaPetugas() {
       (p) =>
         p.nama.toLowerCase().includes(q) ||
         p.id.toLowerCase().includes(q) ||
-        (p.noHp && p.noHp.includes(q))
+        (p.noHp && p.noHp.includes(q)),
     );
   }, [data, search]);
 
@@ -159,7 +159,8 @@ export function KelolaPetugas() {
             Kelola Master Petugas Cater
           </h1>
           <p className="mt-1 text-copy-13 text-muted-foreground">
-            Manajemen profil, status aktif, dan nomor kontak petugas pencatat meter lapangan
+            Manajemen profil, status aktif, dan nomor kontak petugas pencatat
+            meter lapangan
           </p>
         </div>
 
@@ -170,14 +171,11 @@ export function KelolaPetugas() {
             onClick={fetchData}
             disabled={loading}
           >
-            <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
+            <RefreshCw className={cn("size-3.5", loading && "animate-spin")} />
             Segarkan
           </Button>
 
-          <Button
-            size="sm"
-            onClick={bukaModalTambah}
-          >
+          <Button size="sm" onClick={bukaModalTambah}>
             <Plus className="size-3.5" />
             Tambah Petugas
           </Button>
@@ -194,7 +192,9 @@ export function KelolaPetugas() {
           <div className="mt-2 text-heading-24 font-mono tabular-nums text-foreground">
             {totalPetugas}
           </div>
-          <p className="mt-1 text-copy-12 text-muted-foreground">Petugas terdaftar di sistem</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">
+            Petugas terdaftar di sistem
+          </p>
         </Card>
 
         <Card className="p-4 border-border bg-card">
@@ -205,7 +205,9 @@ export function KelolaPetugas() {
           <div className="mt-2 text-heading-24 font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
             {aktifCount} / {totalPetugas}
           </div>
-          <p className="mt-1 text-copy-12 text-muted-foreground">Siap bertugas di lapangan</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">
+            Siap bertugas di lapangan
+          </p>
         </Card>
 
         <Card className="p-4 border-border bg-card">
@@ -216,7 +218,9 @@ export function KelolaPetugas() {
           <div className="mt-2 text-heading-24 font-mono tabular-nums text-(--ds-blue-900)">
             {totalRute}
           </div>
-          <p className="mt-1 text-copy-12 text-muted-foreground">Rute terpetakan ke petugas</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">
+            Rute terpetakan ke petugas
+          </p>
         </Card>
 
         <Card className="p-4 border-border bg-card">
@@ -225,9 +229,11 @@ export function KelolaPetugas() {
             <Users className="size-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div className="mt-2 text-heading-24 font-mono tabular-nums text-amber-600 dark:text-amber-400">
-            {totalPelanggan.toLocaleString('id-ID')}
+            {totalPelanggan.toLocaleString("id-ID")}
           </div>
-          <p className="mt-1 text-copy-12 text-muted-foreground">Pelanggan aktif dalam rute</p>
+          <p className="mt-1 text-copy-12 text-muted-foreground">
+            Pelanggan aktif dalam rute
+          </p>
         </Card>
       </div>
 
@@ -262,7 +268,7 @@ export function KelolaPetugas() {
                 <TableHead>Nama Petugas</TableHead>
                 <TableHead>No. Kontak / HP</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Rute Diampu</TableHead>
+                <TableHead className="text-right">Rute Baca</TableHead>
                 <TableHead className="text-right">Beban Pelanggan</TableHead>
                 <TableHead>Daftar Rute</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
@@ -289,29 +295,29 @@ export function KelolaPetugas() {
                         {petugas.noHp}
                       </span>
                     ) : (
-                      '—'
+                      "—"
                     )}
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={petugas.aktif ? 'outline' : 'secondary'}
+                      variant={petugas.aktif ? "outline" : "secondary"}
                       className={cn(
                         petugas.aktif
-                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400'
-                          : 'bg-(--ds-gray-100) text-muted-foreground'
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400"
+                          : "bg-(--ds-gray-100) text-muted-foreground",
                       )}
                     >
-                      {petugas.aktif ? 'Aktif' : 'Nonaktif'}
+                      {petugas.aktif ? "Aktif" : "Nonaktif"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono tabular-nums font-medium text-(--ds-blue-900)">
                     {petugas.totalRute}
                   </TableCell>
                   <TableCell className="text-right font-mono tabular-nums font-medium text-foreground">
-                    {petugas.totalPelanggan.toLocaleString('id-ID')}
+                    {petugas.totalPelanggan.toLocaleString("id-ID")}
                   </TableCell>
                   <TableCell className="max-w-xs truncate font-mono text-label-12 text-muted-foreground">
-                    {petugas.ruteList.join(', ') || 'Belum ada rute'}
+                    {petugas.ruteList.join(", ") || "Belum ada rute"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -331,12 +337,17 @@ export function KelolaPetugas() {
       </div>
 
       {/* Modal Tambah / Edit Petugas using shadcn Dialog */}
-      <Dialog open={Boolean(modalPetugas)} onOpenChange={(open) => !open && setModalPetugas(null)}>
+      <Dialog
+        open={Boolean(modalPetugas)}
+        onOpenChange={(open) => !open && setModalPetugas(null)}
+      >
         {modalPetugas && (
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {modalPetugas.mode === 'tambah' ? 'Tambah Petugas Baru' : 'Edit Profil Petugas'}
+                {modalPetugas.mode === "tambah"
+                  ? "Tambah Petugas Baru"
+                  : "Edit Profil Petugas"}
               </DialogTitle>
               <DialogDescription>
                 Konfigurasi profil dan penugasan pencatat meter lapangan.
@@ -352,7 +363,7 @@ export function KelolaPetugas() {
                   type="text"
                   value={formId}
                   onChange={(e) => setFormId(e.target.value)}
-                  disabled={modalPetugas.mode === 'edit' || saving}
+                  disabled={modalPetugas.mode === "edit" || saving}
                   placeholder="Misal: DADANG, AGUS01"
                   required
                   className="font-mono uppercase"
@@ -394,7 +405,10 @@ export function KelolaPetugas() {
                   onCheckedChange={(checked) => setFormAktif(Boolean(checked))}
                   disabled={saving}
                 />
-                <label htmlFor="aktifCheck" className="text-label-13 text-foreground cursor-pointer select-none">
+                <label
+                  htmlFor="aktifCheck"
+                  className="text-label-13 text-foreground cursor-pointer select-none"
+                >
                   Status Aktif Bertugas
                 </label>
               </div>
@@ -409,11 +423,7 @@ export function KelolaPetugas() {
                 >
                   Batal
                 </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={saving}
-                >
+                <Button type="submit" size="sm" disabled={saving}>
                   {saving && <Spinner className="size-3.5" />}
                   Simpan Petugas
                 </Button>

@@ -1,7 +1,7 @@
 // features/dashboard/import/components/shared/ImportStatCard.tsx
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@cater/ui";
 import { cn } from "@/lib/utils";
 import {
   IMPORT_STAT_GRID_CLASS,

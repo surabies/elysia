@@ -40,7 +40,7 @@ const shortcuts = [
     Icon: UsersIcon,
   },
   {
-    href: "/places",
+    href: "/peta-spasial",
     title: "Peta Spasial PostGIS",
     description: "Sebaran titik koordinat pelanggan PDAM",
     badge: "GIS Map",
@@ -73,7 +73,11 @@ export function PintasanModul() {
               Akses cepat ke alur kerja operasional harian PDAM Tirtawening.
             </CardDescription>
           </div>
-          <Badge variant="outline" size="sm" className="hidden sm:inline-flex font-mono text-[10px]">
+          <Badge
+            variant="outline"
+            size="sm"
+            className="hidden sm:inline-flex font-mono text-[10px]"
+          >
             6 MODUL
           </Badge>
         </div>

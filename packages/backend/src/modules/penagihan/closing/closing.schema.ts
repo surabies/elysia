@@ -34,11 +34,26 @@ export const inputPasangBaruBodySchema = t.Object({
   noTelp: t.Optional(t.String()),
   jmlPenghuni: t.Optional(t.Number()),
   standAwal: t.Optional(t.Number()),
+  periode: t.Optional(t.String({ minLength: 6, maxLength: 6 })),
 });
 
 export const inputPerubahanKategoriBodySchema = t.Object({
   nolg: t.String({ minLength: 5 }),
   tarifKodeBaru: t.String(),
+  noMeterBaru: t.Optional(t.String()),
+  periode: t.Optional(t.String({ minLength: 6, maxLength: 6 })),
   nomorSk: t.Optional(t.String()),
   alasan: t.Optional(t.String()),
+});
+
+export const simpanBacaanPbpkBodySchema = t.Object({
+  periode: t.String({ minLength: 6, maxLength: 6 }),
+  items: t.Array(
+    t.Object({
+      nolg: t.String({ minLength: 5 }),
+      standAwal: t.Number({ minimum: 0 }),
+      standAkhir: t.Number({ minimum: 0 }),
+    }),
+    { minItems: 1 }
+  ),
 });

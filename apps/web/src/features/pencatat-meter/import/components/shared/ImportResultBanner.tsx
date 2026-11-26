@@ -1,7 +1,7 @@
 // features/dashboard/import/components/shared/ImportResultBanner.tsx
 import * as React from "react";
 import { CheckCircle2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@cater/ui";
 import { cn } from "@/lib/utils";
 import { TONE_STYLE, type ImportTone } from "../../lib/import-ui";
 

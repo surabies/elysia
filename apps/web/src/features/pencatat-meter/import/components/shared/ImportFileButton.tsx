@@ -1,7 +1,7 @@
 // features/dashboard/import/components/shared/ImportFileButton.tsx
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@cater/ui";
 import { cn } from "@/lib/utils";
 
 interface ImportFileButtonProps {

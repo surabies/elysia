@@ -3,24 +3,22 @@
 import { useEffect, useState } from "react";
 import { ArrowRightLeft, Loader2, RefreshCw, Search, Users } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
+  Checkbox,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@cater/ui";
 import { cn } from "@/lib/utils";
 import { ruteApi } from "../api";
 import type { OpsiItem, PelangganItem } from "../types";

@@ -11,14 +11,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+  Progress,
+} from "@cater/ui";
 import { cn } from "@/lib/utils";
 import { TONE_STYLE, type ImportTone } from "../../lib/import-ui";
 import type { ImportProgressState } from "../../types/import.types";

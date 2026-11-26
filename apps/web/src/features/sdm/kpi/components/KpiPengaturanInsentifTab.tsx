@@ -71,14 +71,16 @@ const PRESET_FAKTOR_MEDAN = [
     value: 1.15,
     kategori: "GANG_SEMPIT",
     label: "1.15x — Gang Sempit / Berliku",
-    deskripsi: "Kendaraan motor tidak bisa masuk, jalan kaki jauh, lorong padat",
+    deskripsi:
+      "Kendaraan motor tidak bisa masuk, jalan kaki jauh, lorong padat",
     color: "bg-orange-500/10 text-orange-700 border-orange-500/30",
   },
   {
     value: 1.2,
     kategori: "EKSTREM",
     label: "1.20x — Ekstrem / Rawan",
-    deskripsi: "Medan terjal, area perbatasan terpencil, akses sangat menantang",
+    deskripsi:
+      "Medan terjal, area perbatasan terpencil, akses sangat menantang",
     color: "bg-rose-500/10 text-rose-700 border-rose-500/30",
   },
 ];
@@ -91,15 +93,15 @@ export function KpiPengaturanInsentifTab({
   onUpdated?: () => void;
 }) {
   const [activeSubTab, setActiveSubTab] = React.useState<"rumusan" | "beban">(
-    "rumusan"
+    "rumusan",
   );
   const [loading, setLoading] = React.useState(true);
   const [savingRumus, setSavingRumus] = React.useState(false);
   const [savingPetugasId, setSavingPetugasId] = React.useState<string | null>(
-    null
+    null,
   );
   const [savingRouteKode, setSavingRouteKode] = React.useState<string | null>(
-    null
+    null,
   );
 
   // Form State Aturan Rumusan
@@ -124,7 +126,9 @@ export function KpiPengaturanInsentifTab({
   });
 
   // State Alokasi Beban Petugas & Rute
-  const [alokasiList, setAlokasiList] = React.useState<AlokasiPetugasItem[]>([]);
+  const [alokasiList, setAlokasiList] = React.useState<AlokasiPetugasItem[]>(
+    [],
+  );
   const [routesList, setRoutesList] = React.useState<AlokasiRuteItem[]>([]);
 
   // Filter Sub-Tab B
@@ -133,7 +137,9 @@ export function KpiPengaturanInsentifTab({
   const [selectedDifficultyFilter, setSelectedDifficultyFilter] =
     React.useState<string>("ALL");
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [viewMode, setViewMode] = React.useState<"routes" | "petugas">("routes");
+  const [viewMode, setViewMode] = React.useState<"routes" | "petugas">(
+    "routes",
+  );
 
   const fetchData = React.useCallback(async () => {
     setLoading(true);
@@ -170,7 +176,7 @@ export function KpiPengaturanInsentifTab({
     e.preventDefault();
     if (!isBobotValid) {
       toast.error(
-        `Total bobot komponen harus tepat 100%! (Saat ini: ${totalBobot}%)`
+        `Total bobot komponen harus tepat 100%! (Saat ini: ${totalBobot}%)`,
       );
       return;
     }
@@ -182,7 +188,7 @@ export function KpiPengaturanInsentifTab({
         periode: selectedPeriod,
       });
       toast.success(
-        `Konfigurasi rumusan insentif periode ${selectedPeriod} berhasil disimpan!`
+        `Konfigurasi rumusan insentif periode ${selectedPeriod} berhasil disimpan!`,
       );
       onUpdated?.();
     } catch (err: any) {
@@ -196,7 +202,7 @@ export function KpiPengaturanInsentifTab({
   const handleRouteChange = (
     ruteKode: string,
     field: keyof AlokasiRuteItem,
-    value: any
+    value: any,
   ) => {
     setRoutesList((prev) =>
       prev.map((r) => {
@@ -204,7 +210,7 @@ export function KpiPengaturanInsentifTab({
           const updated = { ...r, [field]: value };
           if (field === "faktorKesulitanMedan") {
             const foundPreset = PRESET_FAKTOR_MEDAN.find(
-              (p) => Math.abs(p.value - Number(value)) < 0.01
+              (p) => Math.abs(p.value - Number(value)) < 0.01,
             );
             if (foundPreset) {
               updated.kategoriMedan = foundPreset.kategori;
@@ -213,7 +219,7 @@ export function KpiPengaturanInsentifTab({
           return updated;
         }
         return r;
-      })
+      }),
     );
 
     // Otomatis sinkronkan recalculation pada petugas terkait jika ada
@@ -226,7 +232,7 @@ export function KpiPengaturanInsentifTab({
             const updatedRoutes = p.ruteDetails.map((rd) =>
               rd.kode === ruteKode
                 ? { ...rd, faktorKesulitanMedan: newFactor }
-                : rd
+                : rd,
             );
             let sumSl = 0;
             let sumWeighted = 0;
@@ -246,7 +252,7 @@ export function KpiPengaturanInsentifTab({
             };
           }
           return p;
-        })
+        }),
       );
     }
   };
@@ -261,7 +267,7 @@ export function KpiPengaturanInsentifTab({
         keterangan: route.keterangan,
       });
       toast.success(
-        `Faktor kesulitan medan rute ${route.kode} (${route.faktorKesulitanMedan}x) berhasil disimpan!`
+        `Faktor kesulitan medan rute ${route.kode} (${route.faktorKesulitanMedan}x) berhasil disimpan!`,
       );
       onUpdated?.();
     } catch (err: any) {
@@ -275,7 +281,7 @@ export function KpiPengaturanInsentifTab({
   const handleAlokasiChange = (
     petugasId: string,
     field: keyof AlokasiPetugasItem,
-    value: any
+    value: any,
   ) => {
     setAlokasiList((prev) =>
       prev.map((item) => {
@@ -288,7 +294,7 @@ export function KpiPengaturanInsentifTab({
           return updated;
         }
         return item;
-      })
+      }),
     );
   };
 
@@ -325,7 +331,7 @@ export function KpiPengaturanInsentifTab({
     if (selectedDifficultyFilter !== "ALL") {
       const targetVal = parseFloat(selectedDifficultyFilter);
       list = list.filter(
-        (r) => Math.abs(r.faktorKesulitanMedan - targetVal) < 0.02
+        (r) => Math.abs(r.faktorKesulitanMedan - targetVal) < 0.02,
       );
     }
 
@@ -338,12 +344,17 @@ export function KpiPengaturanInsentifTab({
           (r.seksiNama && r.seksiNama.toLowerCase().includes(q)) ||
           (r.seksiKode && r.seksiKode.toLowerCase().includes(q)) ||
           (r.petugasNama && r.petugasNama.toLowerCase().includes(q)) ||
-          (r.keterangan && r.keterangan.toLowerCase().includes(q))
+          (r.keterangan && r.keterangan.toLowerCase().includes(q)),
       );
     }
 
     return list;
-  }, [routesList, selectedPetugasFilter, selectedDifficultyFilter, searchQuery]);
+  }, [
+    routesList,
+    selectedPetugasFilter,
+    selectedDifficultyFilter,
+    searchQuery,
+  ]);
 
   // Filter Data Petugas
   const filteredAlokasi = React.useMemo(() => {
@@ -359,7 +370,7 @@ export function KpiPengaturanInsentifTab({
         (i) =>
           i.nama.toLowerCase().includes(q) ||
           i.petugasId.toLowerCase().includes(q) ||
-          i.ruteList.some((r) => r.toLowerCase().includes(q))
+          i.ruteList.some((r) => r.toLowerCase().includes(q)),
       );
     }
 
@@ -369,7 +380,9 @@ export function KpiPengaturanInsentifTab({
   // Petugas Terpilih (jika bukan "ALL")
   const activeOfficer = React.useMemo(() => {
     if (selectedPetugasFilter === "ALL") return null;
-    return alokasiList.find((p) => p.petugasId === selectedPetugasFilter) || null;
+    return (
+      alokasiList.find((p) => p.petugasId === selectedPetugasFilter) || null
+    );
   }, [alokasiList, selectedPetugasFilter]);
 
   if (loading) {
@@ -459,7 +472,9 @@ export function KpiPengaturanInsentifTab({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Tarif per Lembar SL Terbaca (Rp)</Label>
+                <Label className="text-xs">
+                  Tarif per Lembar SL Terbaca (Rp)
+                </Label>
                 <Input
                   type="number"
                   min="0"
@@ -496,7 +511,8 @@ export function KpiPengaturanInsentifTab({
                   className="h-8 text-xs font-mono"
                 />
                 <span className="text-[11px] text-muted-foreground">
-                  Standar efisiensi: &le; {aturan.targetDurasiDetik} detik per SL
+                  Standar efisiensi: &le; {aturan.targetDurasiDetik} detik per
+                  SL
                 </span>
               </div>
             </div>
@@ -612,7 +628,8 @@ export function KpiPengaturanInsentifTab({
                 <div className="flex items-center gap-1.5 rounded bg-red-500/10 p-2 text-xs text-red-600">
                   <AlertCircle className="size-4 shrink-0" />
                   <span>
-                    Total bobot harus bernilai 100% agar formula matematis presisi.
+                    Total bobot harus bernilai 100% agar formula matematis
+                    presisi.
                   </span>
                 </div>
               )}
@@ -760,7 +777,8 @@ export function KpiPengaturanInsentifTab({
           <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-muted-foreground">
               Catatan: Perubahan parameter ini langsung memengaruhi perhitungan
-              nominal pada Tab 2 untuk periode <strong>{selectedPeriod}</strong>.
+              nominal pada Tab 2 untuk periode <strong>{selectedPeriod}</strong>
+              .
             </div>
             <Button
               type="submit"
@@ -932,7 +950,7 @@ export function KpiPengaturanInsentifTab({
                       {activeOfficer.noHp
                         ? `Kontak: ${activeOfficer.noHp} • `
                         : ""}
-                      {activeOfficer.jumlahRute} Rute Diampu:{" "}
+                      {activeOfficer.jumlahRute} Rute Baca:{" "}
                       {activeOfficer.ruteList.join(", ") || "Belum ada rute"}
                     </div>
                   </div>
@@ -985,7 +1003,7 @@ export function KpiPengaturanInsentifTab({
                         handleAlokasiChange(
                           activeOfficer.petugasId,
                           "targetSlPenugasan",
-                          e.target.value ? Number(e.target.value) : null
+                          e.target.value ? Number(e.target.value) : null,
                         )
                       }
                       className="h-7 w-24 text-left px-2 font-mono text-xs"
@@ -1025,7 +1043,7 @@ export function KpiPengaturanInsentifTab({
                         handleAlokasiChange(
                           activeOfficer.petugasId,
                           "statusTugas",
-                          val
+                          val,
                         )
                       }
                     >
@@ -1040,7 +1058,9 @@ export function KpiPengaturanInsentifTab({
                         <SelectItem value="AKTIF">AKTIF (Berdinas)</SelectItem>
                         <SelectItem value="CUTI">CUTI (Izin Resmi)</SelectItem>
                         <SelectItem value="SAKIT">SAKIT</SelectItem>
-                        <SelectItem value="BANTUAN_KHUSUS">BANTUAN KHUSUS</SelectItem>
+                        <SelectItem value="BANTUAN_KHUSUS">
+                          BANTUAN KHUSUS
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1088,7 +1108,7 @@ export function KpiPengaturanInsentifTab({
                   {(
                     routesList.reduce(
                       (acc, r) => acc + r.faktorKesulitanMedan,
-                      0
+                      0,
                     ) / Math.max(1, routesList.length)
                   ).toFixed(2)}
                   x
@@ -1103,7 +1123,10 @@ export function KpiPengaturanInsentifTab({
                   Rute Medan Tantangan
                 </div>
                 <div className="text-label-14 font-mono font-bold text-amber-600">
-                  {routesList.filter((r) => r.faktorKesulitanMedan > 1.0).length}{" "}
+                  {
+                    routesList.filter((r) => r.faktorKesulitanMedan > 1.0)
+                      .length
+                  }{" "}
                   Rute
                 </div>
                 <div className="text-[10px] text-muted-foreground">
@@ -1120,18 +1143,32 @@ export function KpiPengaturanInsentifTab({
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-border bg-muted/40 font-semibold text-muted-foreground">
-                      <th className="py-2.5 px-3 whitespace-nowrap">Kode Rute &amp; Seksi</th>
+                      <th className="py-2.5 px-3 whitespace-nowrap">
+                        Kode Rute &amp; Seksi
+                      </th>
                       {selectedPetugasFilter === "ALL" && (
-                        <th className="py-2.5 px-3 whitespace-nowrap">Petugas Pengampu</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap">
+                          Petugas Pengampu
+                        </th>
                       )}
-                      <th className="py-2.5 px-3 text-right whitespace-nowrap">Target Beban</th>
+                      <th className="py-2.5 px-3 text-right whitespace-nowrap">
+                        Target Beban
+                      </th>
                       <th className="py-2.5 px-3 text-center whitespace-nowrap">
                         Faktor Kesulitan Medan
                       </th>
-                      <th className="py-2.5 px-3 text-center whitespace-nowrap">Kategori Medan</th>
-                      <th className="py-2.5 px-3 whitespace-nowrap">Catatan Topografi / Hambatan</th>
-                      <th className="py-2.5 px-3 text-right whitespace-nowrap">Beban Terbobot</th>
-                      <th className="py-2.5 px-3 text-right whitespace-nowrap">Aksi</th>
+                      <th className="py-2.5 px-3 text-center whitespace-nowrap">
+                        Kategori Medan
+                      </th>
+                      <th className="py-2.5 px-3 whitespace-nowrap">
+                        Catatan Topografi / Hambatan
+                      </th>
+                      <th className="py-2.5 px-3 text-right whitespace-nowrap">
+                        Beban Terbobot
+                      </th>
+                      <th className="py-2.5 px-3 text-right whitespace-nowrap">
+                        Aksi
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -1147,12 +1184,12 @@ export function KpiPengaturanInsentifTab({
                     ) : (
                       filteredRoutes.map((route) => {
                         const weightedLoad = Math.round(
-                          route.targetSl * route.faktorKesulitanMedan
+                          route.targetSl * route.faktorKesulitanMedan,
                         );
                         const matchedPreset = PRESET_FAKTOR_MEDAN.find(
                           (p) =>
                             Math.abs(p.value - route.faktorKesulitanMedan) <
-                            0.02
+                            0.02,
                         );
 
                         return (
@@ -1208,7 +1245,7 @@ export function KpiPengaturanInsentifTab({
                                   handleRouteChange(
                                     route.kode,
                                     "faktorKesulitanMedan",
-                                    Number(val)
+                                    Number(val),
                                   )
                                 }
                               >
@@ -1249,7 +1286,7 @@ export function KpiPengaturanInsentifTab({
                                   handleRouteChange(
                                     route.kode,
                                     "keterangan",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 className="h-7 text-xs w-full min-w-[120px] max-w-xs"
@@ -1301,7 +1338,7 @@ export function KpiPengaturanInsentifTab({
                   <thead>
                     <tr className="border-b border-border bg-muted/40 font-semibold text-muted-foreground">
                       <th className="py-2.5 px-3">Petugas &amp; Kontak</th>
-                      <th className="py-2.5 px-3">Rute Diampu</th>
+                      <th className="py-2.5 px-3">Rute Baca</th>
                       <th className="py-2.5 px-3 text-right">Target Standar</th>
                       <th className="py-2.5 px-3 text-center">
                         Target Khusus Penugasan
@@ -1327,7 +1364,7 @@ export function KpiPengaturanInsentifTab({
                           </div>
                         </td>
 
-                        {/* Rute Diampu */}
+                        {/* Rute Baca*/}
                         <td className="py-2 px-3">
                           <div className="flex flex-wrap gap-1 max-w-[160px]">
                             {item.ruteList.length > 0 ? (
@@ -1369,7 +1406,9 @@ export function KpiPengaturanInsentifTab({
                                 handleAlokasiChange(
                                   item.petugasId,
                                   "targetSlPenugasan",
-                                  e.target.value ? Number(e.target.value) : null
+                                  e.target.value
+                                    ? Number(e.target.value)
+                                    : null,
                                 )
                               }
                               className="h-7 w-24 text-center font-mono text-xs"
@@ -1400,7 +1439,7 @@ export function KpiPengaturanInsentifTab({
                               handleAlokasiChange(
                                 item.petugasId,
                                 "statusTugas",
-                                val
+                                val,
                               )
                             }
                           >
@@ -1427,7 +1466,7 @@ export function KpiPengaturanInsentifTab({
                               handleAlokasiChange(
                                 item.petugasId,
                                 "catatan",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="h-7 text-xs w-36"

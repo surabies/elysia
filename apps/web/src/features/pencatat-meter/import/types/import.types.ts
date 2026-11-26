@@ -106,14 +106,17 @@ export interface LapDataMeterRow {
   thbl: string;
   nolg: string;
   nama?: string;
+  alamat?: string;
   stml: number;
   stma: number;
   pakaiM3: number;
   pakaiLalu?: number;
+  trf?: string;
   tmss?: string;
   ketCatat: string;
   petugasId?: string;
   namaPetugas?: string;
+  kdWm?: string;
   ruteKode?: string;
   tglCatat: string;
   catatan?: string;

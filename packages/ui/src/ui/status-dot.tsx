@@ -13,6 +13,7 @@ export interface StatusDotProps extends React.HTMLAttributes<HTMLSpanElement> {
   state: StatusDotState;
   label?: string;
   size?: "sm" | "md";
+  showPulse?: boolean;
   titlePrefix?: string;
 }
 
@@ -56,11 +57,13 @@ export function StatusDot({
   state,
   label,
   size = "md",
+  showPulse,
   titlePrefix,
   className,
   ...props
 }: StatusDotProps) {
   const cfg = STATE_CONFIG[state] || STATE_CONFIG.ready;
+  const isPulsing = showPulse ?? cfg.pulse;
   const displayLabel = label ?? cfg.defaultLabel;
   const computedAria = titlePrefix
     ? `${titlePrefix}: ${displayLabel}`
@@ -79,7 +82,7 @@ export function StatusDot({
       {...props}
     >
       <span className="relative flex shrink-0 items-center justify-center">
-        {cfg.pulse && (
+        {isPulsing && (
           <span
             className={cn(
               "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",

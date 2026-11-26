@@ -12,8 +12,7 @@ import {
   RotateCcw,
   Upload,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge, Button } from "@cater/ui";
 import { readFileAsText } from "../lib/file-reader";
 import { getErrorMessage, postImport } from "../lib/import-api";
 import { IMPORT_API, IMPORT_LIMITS } from "../lib/import-config";
@@ -66,7 +65,7 @@ const COLUMNS: ImportColumn<PencatatanRow>[] = [
     id: "pakai",
     header: "Kubikasi",
     cell: (r) => `${r.pakaiM3} m³`,
-    cellClassName: "text-label-13-mono text-ds-blue-900",
+    cellClassName: "text-label-13-mono text-blue-700 dark:text-blue-400 font-semibold",
   },
   {
     id: "tglCatat",
@@ -426,7 +425,7 @@ export function ImportDataPencatatanView() {
 
       <ImportControlPanel
         title="Import Data Pencatatan (Stand Meter Mobile)"
-        badge={<Badge variant="pill">Format: CSV / TXT</Badge>}
+        badge={<Badge variant="secondary" className="font-mono text-label-11">Format: CSV / TXT</Badge>}
         description="Sinkronisasi hasil pembacaan stand meter mandiri petugas mobile ke database cater_baca_meter."
         hasData={items.length > 0}
         searchQuery={searchQuery}
@@ -473,7 +472,7 @@ export function ImportDataPencatatanView() {
           tone="green"
           title="Import Data Pencatatan Sukses"
           description={`Total ${resultStats.total} baris: ${resultStats.sukses} terserap ke database cater_baca_meter, ${resultStats.gagal} gagal.`}
-          actions={<Badge variant="green">Status: Terverifikasi</Badge>}
+          actions={<Badge variant="secondary" className="border-emerald-500/30 text-emerald-700 bg-emerald-500/10 dark:text-emerald-400">Status: Terverifikasi</Badge>}
         />
       )}
 
@@ -484,7 +483,7 @@ export function ImportDataPencatatanView() {
           description="Pilih atau unggah berkas CSV/TXT pembacaan meter mobile dari HP petugas untuk diproses ke database cater_baca_meter."
           badges={
             <>
-              <Badge variant="pill" className="font-mono">
+              <Badge variant="secondary" className="font-mono text-label-11">
                 thbl;nolg;stml;stma;pakai_m3;tgl_catat;petugas_id;rute_kode;kondisi
               </Badge>
             </>

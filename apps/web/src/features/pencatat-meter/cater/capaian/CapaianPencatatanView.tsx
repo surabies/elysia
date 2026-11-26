@@ -2,8 +2,17 @@
 
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import {
+  Skeleton,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  Textarea,
+  Input,
+} from '@cater/ui';
 import { capaianApi } from './api';
 import { CapaianPayloadLengkap } from '@/server/domain/capaian/capaian.types';
 import { CapaianHeader } from './CapaianHeader';
@@ -22,15 +31,6 @@ import {
   Table as TableIcon,
   Calendar,
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 
 export type CapaianViewMode = 'target' | 'progres' | 'grafik';
 

@@ -31,8 +31,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Table,
   TableHeader,
   TableBody,
@@ -40,7 +38,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table"
+} from "@cater/ui"
 
 interface KpiScorecardTableProps {
   perspectives: CalculatedPerspective[]

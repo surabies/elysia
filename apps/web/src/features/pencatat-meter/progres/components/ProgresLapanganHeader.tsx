@@ -9,15 +9,16 @@ import {
   Copy,
   RotateCw,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
+  Badge,
+  Button,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+  StatusDot,
+} from "@cater/ui";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { PeriodeOption } from "@/server/services/dashboard/dashboard.service";
@@ -108,17 +109,13 @@ export function ProgresLapanganHeader({
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border pb-3">
           {/* Heartbeat Status */}
           <div className="flex items-center gap-2.5">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-blue-500" />
-            </span>
+            <StatusDot state="ready" size="sm" showPulse />
             <span className="font-mono text-[11px] font-semibold tracking-wider text-foreground uppercase">
               PDAM Tirtawening
             </span>
             <span className="text-muted-foreground/30">•</span>
             <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-blue-500/80" />
-              <span className="font-medium text-blue-700 dark:text-blue-400">
+              <span className="font-medium text-blue-600 dark:text-blue-400">
                 Live Operasional
               </span>
               <span className="hidden sm:inline text-muted-foreground/40">/</span>

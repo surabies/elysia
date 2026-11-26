@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import * as React from "react";
+import "maplibre-gl/dist/maplibre-gl.css";
 import {
   AlertTriangle,
   ShieldAlert,
@@ -10,15 +10,26 @@ import {
   ExternalLink,
   Clock,
   X,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
-import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
-import Link from 'next/link';
+} from "lucide-react";
+import {
+  Button,
+  Badge,
+  Input,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  StatusDot,
+} from "@cater/ui";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
+import { cn } from "@/lib/utils";
+import {
+  STANDAR_PERIODE_OPTIONS,
+  PERIODE_TERKUNCI_KANTOR,
+} from "@/config/periode";
+import Link from "next/link";
 
 export interface GisPointItem {
   nolg: string;
@@ -51,7 +62,7 @@ export interface GisSummary {
   geofenceAlert: number;
 }
 
-type FilterMode = 'semua' | 'geofence' | 'anomali';
+type FilterMode = "semua" | "geofence" | "anomali";
 
 export function PetaMonitoringSpasial() {
   const mapContainerRef = React.useRef<HTMLDivElement>(null);
@@ -69,8 +80,8 @@ export function PetaMonitoringSpasial() {
   });
 
   const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
-  const [filterMode, setFilterMode] = React.useState<FilterMode>('semua');
-  const [ruteKode, setRuteKode] = React.useState('');
+  const [filterMode, setFilterMode] = React.useState<FilterMode>("semua");
+  const [ruteKode, setRuteKode] = React.useState("");
   const [selectedPoint, setSelectedPoint] = React.useState<GisPointItem | null>(
     null,
   );
@@ -80,18 +91,20 @@ export function PetaMonitoringSpasial() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ thbl: periode });
-      if (filterMode === 'geofence') params.set('hanyaGeofenceAlert', 'true');
-      if (filterMode === 'anomali') params.set('hanyaAnomali', 'true');
-      if (ruteKode.trim()) params.set('ruteKode', ruteKode.trim());
+      if (filterMode === "geofence") params.set("hanyaGeofenceAlert", "true");
+      if (filterMode === "anomali") params.set("hanyaAnomali", "true");
+      if (ruteKode.trim()) params.set("ruteKode", ruteKode.trim());
 
-      const res = await fetch(`/api/places/gis-monitoring?${params.toString()}`);
+      const res = await fetch(
+        `/api/peta-spasial/gis-monitoring?${params.toString()}`,
+      );
       const json = await res.json();
       if (json.success && json.data) {
         setData(json.data.items);
         setSummary(json.data.summary);
       }
     } catch (err) {
-      console.error('Failed to load GIS data:', err);
+      console.error("Failed to load GIS data:", err);
     } finally {
       setLoading(false);
     }
@@ -108,12 +121,12 @@ export function PetaMonitoringSpasial() {
     let isMounted = true;
 
     async function initMap() {
-      const maplibre = await import('maplibre-gl');
+      const maplibre = await import("maplibre-gl");
       if (
-        typeof window !== 'undefined' &&
-        typeof (maplibre as any).setWorkerUrl === 'function'
+        typeof window !== "undefined" &&
+        typeof (maplibre as any).setWorkerUrl === "function"
       ) {
-        (maplibre as any).setWorkerUrl('/api/maplibre-worker');
+        (maplibre as any).setWorkerUrl("/api/maplibre-worker");
       }
 
       if (!isMounted || !mapContainerRef.current) return;
@@ -126,22 +139,22 @@ export function PetaMonitoringSpasial() {
           style: {
             version: 8,
             sources: {
-              'osm-tiles': {
-                type: 'raster',
-                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              "osm-tiles": {
+                type: "raster",
+                tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
                 tileSize: 256,
                 maxzoom: 18,
-                attribution: '&copy; OpenStreetMap Contributors',
+                attribution: "&copy; OpenStreetMap Contributors",
               },
             },
             layers: [
               {
-                id: 'osm-tiles-layer',
-                type: 'raster',
-                source: 'osm-tiles',
+                id: "osm-tiles-layer",
+                type: "raster",
+                source: "osm-tiles",
                 paint: {
-                  'raster-fade-duration': 0,
-                  'raster-resampling': 'linear',
+                  "raster-fade-duration": 0,
+                  "raster-resampling": "linear",
                 },
                 minzoom: 0,
                 maxzoom: 20,
@@ -153,11 +166,11 @@ export function PetaMonitoringSpasial() {
         });
 
         // Tangkap dan abaikan missing tile 404 agar tidak memicu dialog Ajax error saat zoom
-        map.on('error', (e) => {
+        map.on("error", (e) => {
           if (
-            e.error?.message?.includes('404') ||
+            e.error?.message?.includes("404") ||
             (e as any).status === 404 ||
-            e.error?.message?.includes('Ajax error')
+            e.error?.message?.includes("Ajax error")
           ) {
             return;
           }
@@ -165,7 +178,7 @@ export function PetaMonitoringSpasial() {
 
         map.addControl(
           new maplibre.NavigationControl({ showCompass: true }),
-          'bottom-right',
+          "bottom-right",
         );
         mapRef.current = map;
       }
@@ -186,7 +199,7 @@ export function PetaMonitoringSpasial() {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    import('maplibre-gl').then((maplibre) => {
+    import("maplibre-gl").then((maplibre) => {
       const validPoints = data.filter((d) => d.pelangganCoord);
       if (validPoints.length === 0) return;
 
@@ -196,33 +209,33 @@ export function PetaMonitoringSpasial() {
         const [lon, lat] = item.pelangganCoord!;
         bounds.extend([lon, lat]);
 
-        const el = document.createElement('div');
-        el.className = 'group cursor-pointer relative';
+        const el = document.createElement("div");
+        el.className = "group cursor-pointer relative";
 
         const isAlert = item.isGeofenceAlert;
         const isAnomali = item.isAnomali;
 
-        let dotFill = 'var(--ds-green-600)';
-        let ringFill = 'rgba(30, 184, 112, 0.25)';
+        let dotFill = "var(--ds-green-600)";
+        let ringFill = "rgba(30, 184, 112, 0.25)";
 
         if (isAlert) {
-          dotFill = 'var(--ds-red-700)';
-          ringFill = 'rgba(224, 0, 0, 0.35)';
+          dotFill = "var(--ds-red-700)";
+          ringFill = "rgba(224, 0, 0, 0.35)";
         } else if (isAnomali) {
-          dotFill = 'var(--ds-amber-600)';
-          ringFill = 'rgba(224, 138, 0, 0.28)';
+          dotFill = "var(--ds-amber-600)";
+          ringFill = "rgba(224, 138, 0, 0.28)";
         }
 
         el.innerHTML = `
           <div class="relative flex items-center justify-center">
-            ${isAlert ? `<span class="absolute inline-flex size-6 rounded-full animate-ping" style="background-color: ${ringFill}"></span>` : ''}
+            ${isAlert ? `<span class="absolute inline-flex size-6 rounded-full animate-ping" style="background-color: ${ringFill}"></span>` : ""}
             <div class="size-4 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-[9px] text-white font-semibold transition-transform duration-150 hover:scale-125" style="background-color: ${dotFill}">
-              ${isAlert ? '!' : isAnomali ? 'A' : ''}
+              ${isAlert ? "!" : isAnomali ? "A" : ""}
             </div>
           </div>
         `;
 
-        el.addEventListener('click', () => {
+        el.addEventListener("click", () => {
           setSelectedPoint(item);
           map.flyTo({ center: [lon, lat], zoom: 16, essential: true });
         });
@@ -254,7 +267,8 @@ export function PetaMonitoringSpasial() {
             </Badge>
           </div>
           <p className="mt-0.5 text-copy-13 text-muted-foreground">
-            Deteksi deviasi koordinat GPS pencatatan petugas terhadap titik fisik meter pelanggan.
+            Deteksi deviasi koordinat GPS pencatatan petugas terhadap titik
+            fisik meter pelanggan.
           </p>
         </div>
 
@@ -262,7 +276,9 @@ export function PetaMonitoringSpasial() {
         <div className="flex flex-wrap items-center gap-2">
           {/* Periode Selector */}
           <div className="flex items-center rounded-md border border-border bg-card px-2.5 py-1 text-label-12">
-            <span className="text-muted-foreground mr-1.5 font-medium">Periode:</span>
+            <span className="text-muted-foreground mr-1.5 font-medium">
+              Periode:
+            </span>
             <NativeSelect
               value={periode}
               onChange={(e) => setPeriode(e.target.value)}
@@ -291,7 +307,7 @@ export function PetaMonitoringSpasial() {
               <button
                 type="button"
                 aria-label="Hapus filter rute"
-                onClick={() => setRuteKode('')}
+                onClick={() => setRuteKode("")}
                 className="absolute right-2 inline-flex size-4 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:text-foreground"
               >
                 <X className="size-3" />
@@ -306,15 +322,18 @@ export function PetaMonitoringSpasial() {
           >
             <TabsList>
               <TabsTrigger value="semua" className="tabular-nums">
-                Semua ({summary.totalTitik.toLocaleString('id-ID')})
+                Semua ({summary.totalTitik.toLocaleString("id-ID")})
               </TabsTrigger>
               <TabsTrigger value="geofence" className="tabular-nums">
                 <ShieldAlert className="size-3.5 text-(--ds-red-700)" />
-                <span>Deviasi &gt;50m ({summary.geofenceAlert.toLocaleString('id-ID')})</span>
+                <span>
+                  Deviasi &gt;50m (
+                  {summary.geofenceAlert.toLocaleString("id-ID")})
+                </span>
               </TabsTrigger>
               <TabsTrigger value="anomali" className="tabular-nums">
                 <AlertTriangle className="size-3.5 text-(--ds-amber-700)" />
-                <span>Anomali ({summary.anomali.toLocaleString('id-ID')})</span>
+                <span>Anomali ({summary.anomali.toLocaleString("id-ID")})</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -325,7 +344,7 @@ export function PetaMonitoringSpasial() {
             onClick={fetchData}
             disabled={loading}
           >
-            <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
+            <RefreshCw className={cn("size-3.5", loading && "animate-spin")} />
             <span>Muat Ulang</span>
           </Button>
         </div>
@@ -334,7 +353,10 @@ export function PetaMonitoringSpasial() {
       {/* Main Map + Inspector Panel Container */}
       <div className="relative h-full w-full flex-1 overflow-hidden">
         {/* Map Canvas */}
-        <div ref={mapContainerRef} className="h-full w-full bg-(--ds-gray-100)" />
+        <div
+          ref={mapContainerRef}
+          className="h-full w-full bg-(--ds-gray-100)"
+        />
 
         {/* Floating KPI Legend Pill (Top Left - Geist Material Menu Surface) */}
         <div className="pointer-events-none absolute top-4 left-4 z-10 flex flex-col gap-2">
@@ -346,7 +368,9 @@ export function PetaMonitoringSpasial() {
               />
               <span className="text-muted-foreground">Normal &lt;50m</span>
               <span className="text-label-12-mono tabular-nums text-foreground">
-                {(summary.tercatat - summary.geofenceAlert).toLocaleString('id-ID')}
+                {(summary.tercatat - summary.geofenceAlert).toLocaleString(
+                  "id-ID",
+                )}
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-0.5">
@@ -356,7 +380,7 @@ export function PetaMonitoringSpasial() {
               />
               <span className="text-muted-foreground">Deviasi &gt;50m</span>
               <span className="text-label-12-mono tabular-nums text-(--ds-red-700) dark:text-(--ds-red-800)">
-                {summary.geofenceAlert.toLocaleString('id-ID')}
+                {summary.geofenceAlert.toLocaleString("id-ID")}
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-0.5">
@@ -366,7 +390,7 @@ export function PetaMonitoringSpasial() {
               />
               <span className="text-muted-foreground">Anomali</span>
               <span className="text-label-12-mono tabular-nums text-(--ds-amber-800)">
-                {summary.anomali.toLocaleString('id-ID')}
+                {summary.anomali.toLocaleString("id-ID")}
               </span>
             </div>
           </div>
@@ -398,7 +422,7 @@ export function PetaMonitoringSpasial() {
                   {selectedPoint.nama}
                 </h3>
                 <p className="mt-0.5 truncate text-copy-12 text-muted-foreground">
-                  {selectedPoint.alamat || 'Alamat tidak tercatat'}
+                  {selectedPoint.alamat || "Alamat tidak tercatat"}
                 </p>
               </div>
               <Button
@@ -417,10 +441,10 @@ export function PetaMonitoringSpasial() {
               {/* Geofence Deviation Alert Box */}
               <div
                 className={cn(
-                  'flex items-start gap-2.5 rounded-lg border p-3',
+                  "flex items-start gap-2.5 rounded-lg border p-3",
                   selectedPoint.isGeofenceAlert
-                    ? 'border-(--ds-red-300) bg-(--ds-red-100) text-(--ds-red-900) dark:border-(--ds-red-400) dark:bg-(--ds-red-200)'
-                    : 'border-(--ds-green-300) bg-(--ds-green-100) text-(--ds-green-900) dark:border-(--ds-green-400) dark:bg-(--ds-green-200)',
+                    ? "border-(--ds-red-300) bg-(--ds-red-100) text-(--ds-red-900) dark:border-(--ds-red-400) dark:bg-(--ds-red-200)"
+                    : "border-(--ds-green-300) bg-(--ds-green-100) text-(--ds-green-900) dark:border-(--ds-green-400) dark:bg-(--ds-green-200)",
                 )}
               >
                 {selectedPoint.isGeofenceAlert ? (
@@ -431,17 +455,17 @@ export function PetaMonitoringSpasial() {
                 <div className="min-w-0">
                   <p className="text-label-13">
                     {selectedPoint.isGeofenceAlert
-                      ? 'Peringatan Geofence: Jarak Terlalu Jauh'
-                      : 'Posisi Catat Valid (Sesuai Titik)'}
+                      ? "Peringatan Geofence: Jarak Terlalu Jauh"
+                      : "Posisi Catat Valid (Sesuai Titik)"}
                   </p>
                   <p className="mt-0.5 text-copy-12 opacity-90">
-                    Jarak petugas saat mencatat adalah{' '}
+                    Jarak petugas saat mencatat adalah{" "}
                     <span className="font-mono font-medium underline">
-                      {selectedPoint.jarakMeter?.toFixed(1) ?? '—'} meter
-                    </span>{' '}
+                      {selectedPoint.jarakMeter?.toFixed(1) ?? "—"} meter
+                    </span>{" "}
                     dari titik meter fisik pelanggan.
                     {selectedPoint.isGeofenceAlert &&
-                      ' Rekam dilakukan di luar batas radius wajar 50 meter.'}
+                      " Rekam dilakukan di luar batas radius wajar 50 meter."}
                   </p>
                 </div>
               </div>
@@ -457,7 +481,7 @@ export function PetaMonitoringSpasial() {
                       Stand Lalu
                     </span>
                     <span className="mt-0.5 block text-label-14-mono tabular-nums text-foreground">
-                      {selectedPoint.stml ?? '—'}
+                      {selectedPoint.stml ?? "—"}
                     </span>
                   </div>
                   <div className="rounded-md border border-border bg-card p-2.5">
@@ -465,7 +489,7 @@ export function PetaMonitoringSpasial() {
                       Stand Kini
                     </span>
                     <span className="mt-0.5 block text-label-14-mono tabular-nums text-foreground">
-                      {selectedPoint.stma ?? '—'}
+                      {selectedPoint.stma ?? "—"}
                     </span>
                   </div>
                   <div className="rounded-md border border-border bg-card p-2.5">
@@ -473,7 +497,7 @@ export function PetaMonitoringSpasial() {
                       Pakai (m³)
                     </span>
                     <span className="mt-0.5 block text-label-14-mono tabular-nums text-(--ds-blue-700) dark:text-(--ds-blue-800)">
-                      {selectedPoint.pakaiM3 ?? '—'}
+                      {selectedPoint.pakaiM3 ?? "—"}
                     </span>
                   </div>
                 </div>
@@ -484,7 +508,9 @@ export function PetaMonitoringSpasial() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-copy-12">
-                  <span className="text-muted-foreground">Status Verifikasi</span>
+                  <span className="text-muted-foreground">
+                    Status Verifikasi
+                  </span>
                   <Badge variant="subtle" size="sm">
                     {selectedPoint.statusVerifikasi}
                   </Badge>
@@ -505,8 +531,8 @@ export function PetaMonitoringSpasial() {
                       {selectedPoint.namaPetugas}
                     </span>
                     <span className="block truncate text-label-11-mono text-muted-foreground">
-                      Rute: {selectedPoint.ruteKode ?? '—'} &bull; Tarif:{' '}
-                      {selectedPoint.tarifKode ?? '—'}
+                      Rute: {selectedPoint.ruteKode ?? "—"} &bull; Tarif:{" "}
+                      {selectedPoint.tarifKode ?? "—"}
                     </span>
                   </div>
                 </div>
@@ -517,8 +543,8 @@ export function PetaMonitoringSpasial() {
                   </span>
                   <span className="text-label-12-mono tabular-nums text-foreground">
                     {selectedPoint.tglCatat
-                      ? new Date(selectedPoint.tglCatat).toLocaleString('id-ID')
-                      : '—'}
+                      ? new Date(selectedPoint.tglCatat).toLocaleString("id-ID")
+                      : "—"}
                   </span>
                 </div>
               </div>
@@ -532,7 +558,7 @@ export function PetaMonitoringSpasial() {
                   <span className="tabular-nums text-foreground">
                     {selectedPoint.pelangganCoord
                       ?.map((n) => n.toFixed(5))
-                      .join(', ') ?? '—'}
+                      .join(", ") ?? "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
@@ -542,7 +568,7 @@ export function PetaMonitoringSpasial() {
                   <span className="tabular-nums text-foreground">
                     {selectedPoint.caterCoord
                       ?.map((n) => n.toFixed(5))
-                      .join(', ') ?? '—'}
+                      .join(", ") ?? "—"}
                   </span>
                 </div>
               </div>
@@ -550,7 +576,12 @@ export function PetaMonitoringSpasial() {
 
             {/* Inspector Footer Action */}
             <div className="border-t border-border bg-(--ds-gray-100) p-3">
-              <Button asChild variant="default" size="default" className="w-full">
+              <Button
+                asChild
+                variant="default"
+                size="default"
+                className="w-full"
+              >
                 <Link href={`/verifikasi/baca-petugas?q=${selectedPoint.nolg}`}>
                   <span>Buka di Verifikasi Petugas</span>
                   <ExternalLink className="size-3.5 opacity-80" />

@@ -102,7 +102,7 @@ export function MockupPengaduan() {
 
         {/* Pin Armada TRC Bergerak (aman dari tepi kiri pada layar kecil) */}
         <div className="absolute top-[24%] left-3 sm:left-5">
-          <div className="flex items-center gap-1.5 rounded-full border border-ds-blue-700/50 bg-neutral-950/90 px-2.5 py-1 text-[9px] font-medium text-blue-400 shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-1.5 rounded-full border border-blue-600/50 bg-neutral-950/90 px-2.5 py-1 text-[9px] font-medium text-blue-400 shadow-lg backdrop-blur-md">
             <span className="size-1.5 sm:size-2 animate-ping rounded-full bg-blue-400 shrink-0" />
             <span className="whitespace-nowrap">Armada TRC-03</span>
           </div>

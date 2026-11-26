@@ -8,19 +8,28 @@ import {
   executeUpdateZonasi,
   executeUploadMasterPelanggan,
   fetchClosingBundle,
+  fetchPeriodeKerjaInfo,
   initializeBulanBaru,
   postDatameterMassal,
   verifyStandAngkatMutasi,
 } from '../lib/closing-api';
 import {
+  getCachedClosingBundle,
+  getCachedPeriodeInfo,
+  getSharedClosingPeriode,
+  isClosingBundleFresh,
+  setSharedClosingPeriode,
+  subscribeSharedClosingPeriode,
+} from '../lib/closing-cache';
+import {
   buildOperatorErrorFeedback,
   CLOSING_ONBOARDING_STORAGE_KEY,
   CLOSING_SESSION_STATE_KEY,
-  DEFAULT_CLOSING_PERIODE,
-  DEFAULT_DUE_DATE,
-  DEFAULT_NEXT_PERIODE,
+  computeDefaultDueDate,
+  computeNextPeriode,
   evaluateClosingWizardSteps,
   formatAngkaId,
+  formatPeriodeLabelId,
   formatRupiahId,
 } from '../lib/closing-format';
 import type {
@@ -28,9 +37,10 @@ import type {
   ClosingWizardStep,
   OperatorFeedback,
   PerbandinganPeriodeData,
+  PeriodeDaftarItem,
   PratinjauData,
+  StandAngkatDecisionStatus,
   StandAngkatMutasiItem,
-  StandAngkatVerificationStatus,
   WorkflowStageItem,
 } from '../types';
 
@@ -60,7 +70,11 @@ export function useClosingWorkflow(
   initialTab?: string,
   initialStep?: ClosingWizardStep,
 ) {
-  const [periode, setPeriode] = React.useState(DEFAULT_CLOSING_PERIODE);
+  const initialPeriode = getSharedClosingPeriode({ ssrSafe: true });
+  const initialCachedBundle = getCachedClosingBundle(initialPeriode);
+  const initialCachedPeriodeInfo = getCachedPeriodeInfo();
+
+  const [periode, setPeriodeState] = React.useState(initialPeriode);
   const [activeTab, setActiveTab] = React.useState<ClosingConsoleTab>(() =>
     resolveInitialTab(initialTab),
   );
@@ -69,15 +83,27 @@ export function useClosingWorkflow(
   const [reviewConfirmed, setReviewConfirmed] = React.useState(false);
   const [confirmPhraseInput, setConfirmPhraseInput] = React.useState('');
 
-  const [stages, setStages] = React.useState<WorkflowStageItem[]>([]);
-  const [pratinjau, setPratinjau] = React.useState<PratinjauData | null>(null);
+  const [daftarPeriode, setDaftarPeriode] = React.useState<PeriodeDaftarItem[]>(
+    () => initialCachedPeriodeInfo?.daftarPeriode ?? [],
+  );
+  const [stages, setStages] = React.useState<WorkflowStageItem[]>(
+    () => initialCachedBundle?.stages ?? [],
+  );
+  const [pratinjau, setPratinjau] = React.useState<PratinjauData | null>(
+    () => initialCachedBundle?.pratinjau ?? null,
+  );
   const [standAngkatList, setStandAngkatList] = React.useState<
     StandAngkatMutasiItem[]
-  >([]);
+  >(() => initialCachedBundle?.standAngkatList ?? []);
   const [perbandingan, setPerbandingan] =
-    React.useState<PerbandinganPeriodeData | null>(null);
+    React.useState<PerbandinganPeriodeData | null>(
+      () => initialCachedBundle?.perbandingan ?? null,
+    );
 
-  const [loading, setLoading] = React.useState(true);
+  // `loading` hanya bernilai true saat belum ada data sama sekali di cache (cold load awal).
+  // Saat pindah tab atau refresh manual, data tetap utuh di layar dan hanya `refreshing` yang aktif.
+  const [loading, setLoading] = React.useState(() => !initialCachedBundle);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [actionLoading, setActionLoading] = React.useState(false);
   const [feedback, setFeedback] = React.useState<OperatorFeedback | null>(null);
 
@@ -85,15 +111,36 @@ export function useClosingWorkflow(
     React.useState<ActiveClosingDialog>(() =>
       initialTab === 'bulan-baru' ? 'bulan-baru' : null,
     );
-  const [tanggalJatuhTempo, setTanggalJatuhTempo] =
-    React.useState(DEFAULT_DUE_DATE);
-  const [targetBulanBaru, setTargetBulanBaru] =
-    React.useState(DEFAULT_NEXT_PERIODE);
+  const [tanggalJatuhTempo, setTanggalJatuhTempo] = React.useState(() =>
+    computeDefaultDueDate(initialPeriode),
+  );
+  const [targetBulanBaru, setTargetBulanBaru] = React.useState(() =>
+    computeNextPeriode(initialPeriode),
+  );
 
   const hasRestoredSessionRef = React.useRef(Boolean(initialStep));
+  const reviewConfirmedRef = React.useRef(reviewConfirmed);
+  const tanggalJatuhTempoRef = React.useRef(tanggalJatuhTempo);
+  reviewConfirmedRef.current = reviewConfirmed;
+  tanggalJatuhTempoRef.current = tanggalJatuhTempo;
 
-  // 1. Pemulihan sesi dari sessionStorage & cek onboarding pertama kali (Client-only setelah hidrasi)
+  // Sinkronkan bila tab lain mengubah periode aktif di memori bersama
   React.useEffect(() => {
+    return subscribeSharedClosingPeriode((nextPeriode) => {
+      setPeriodeState((prev) => {
+        if (prev === nextPeriode) return prev;
+        setTanggalJatuhTempo(computeDefaultDueDate(nextPeriode));
+        setTargetBulanBaru(computeNextPeriode(nextPeriode));
+        return nextPeriode;
+      });
+    });
+  }, []);
+
+  // 1. Pulihkan sesi lokal & muat daftar periode kerja (deduplicated + cached)
+  React.useEffect(() => {
+    let cancelled = false;
+    const syncedPeriode = getSharedClosingPeriode();
+
     try {
       const savedSession = window.sessionStorage.getItem(
         CLOSING_SESSION_STATE_KEY,
@@ -101,12 +148,16 @@ export function useClosingWorkflow(
       if (savedSession) {
         const parsed = JSON.parse(savedSession) as Partial<StoredSessionState>;
         if (parsed.periode && /^\d{6}$/.test(parsed.periode)) {
-          setPeriode(parsed.periode);
+          setSharedClosingPeriode(parsed.periode);
+          if (parsed.periode !== periode) {
+            setPeriodeState(parsed.periode);
+            setTargetBulanBaru(computeNextPeriode(parsed.periode));
+          }
         }
         if (
           !initialStep &&
           parsed.activeWizardStep &&
-          [1, 2, 3, 4, 5].includes(parsed.activeWizardStep)
+          [1, 2, 3, 4].includes(parsed.activeWizardStep)
         ) {
           setActiveWizardStep(parsed.activeWizardStep);
           hasRestoredSessionRef.current = true;
@@ -116,21 +167,35 @@ export function useClosingWorkflow(
         }
         if (parsed.tanggalJatuhTempo) {
           setTanggalJatuhTempo(parsed.tanggalJatuhTempo);
+        } else if (syncedPeriode) {
+          setTanggalJatuhTempo(computeDefaultDueDate(syncedPeriode));
         }
-      }
-
-      const onboardingSeen = window.localStorage.getItem(
-        CLOSING_ONBOARDING_STORAGE_KEY,
-      );
-      if (!onboardingSeen && !initialTab && !initialStep) {
-        setActiveDialog('onboarding');
       }
     } catch {
       // Abaikan jika storage diblokir browser
     }
+
+    fetchPeriodeKerjaInfo().then((info) => {
+      if (cancelled || !info) return;
+      if (info.daftarPeriode?.length) {
+        setDaftarPeriode(info.daftarPeriode);
+      }
+      const activeShared = getSharedClosingPeriode();
+      if (activeShared && activeShared !== periode) {
+        setPeriodeState(activeShared);
+        setTanggalJatuhTempo(computeDefaultDueDate(activeShared));
+        setTargetBulanBaru(computeNextPeriode(activeShared));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // Hanya dijalankan saat mount awal
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTab, initialStep]);
 
-  // 2. Simpan progres wizard ke sessionStorage setiap ada perubahan
+  // 2. Simpan progres lokal ke sessionStorage TANPA memicu re-fetch API!
   React.useEffect(() => {
     try {
       const payload: StoredSessionState = {
@@ -144,49 +209,84 @@ export function useClosingWorkflow(
         JSON.stringify(payload),
       );
     } catch {
-      // Abaikan jika storage penuh/diblokir
+      // Abaikan
     }
   }, [periode, activeWizardStep, reviewConfirmed, tanggalJatuhTempo]);
 
-  const loadClosingData = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const bundle = await fetchClosingBundle(periode);
-      setStages(bundle.stages);
-      setPratinjau(bundle.pratinjau);
-      setStandAngkatList(bundle.standAngkatList);
-      setPerbandingan(bundle.perbandingan);
-
-      // Sinkronkan langkah wizard dengan kondisi riil database
-      const evalResult = evaluateClosingWizardSteps({
-        stages: bundle.stages,
-        pratinjau: bundle.pratinjau,
-        standAngkatList: bundle.standAngkatList,
-        reviewConfirmed,
-        tanggalJatuhTempo,
-      });
-
-      if (bundle.pratinjau?.status === 'TERKUNCI') {
-        setActiveWizardStep(5);
-      } else if (!hasRestoredSessionRef.current) {
-        setActiveWizardStep(evalResult.recommendedStep);
-        hasRestoredSessionRef.current = true;
+  // 3. Fungsi pemuat data dengan Stale-While-Revalidate (TIDAK bergantung pada reviewConfirmed / tanggalJatuhTempo!)
+  const fetchAndApplyBundle = React.useCallback(
+    async (targetPeriode: string, options?: { force?: boolean }) => {
+      const cached = getCachedClosingBundle(targetPeriode);
+      if (cached) {
+        setStages(cached.stages);
+        setPratinjau(cached.pratinjau);
+        setStandAngkatList(cached.standAngkatList);
+        setPerbandingan(cached.perbandingan);
+        setLoading(false);
+        if (!options?.force && isClosingBundleFresh(targetPeriode)) {
+          setRefreshing(false);
+          return;
+        }
+        setRefreshing(true);
+      } else {
+        // Hanya set loading penuh jika belum ada pratinjau sama sekali di layar
+        setPratinjau((prev) => {
+          if (!prev) setLoading(true);
+          else setRefreshing(true);
+          return prev;
+        });
       }
-    } catch (err) {
-      setFeedback(
-        buildOperatorErrorFeedback(
-          err,
-          'Gagal Memuat Data Periode Penagihan',
-        ),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [periode, reviewConfirmed, tanggalJatuhTempo]);
+
+      try {
+        const bundle = await fetchClosingBundle(targetPeriode, options);
+        setStages(bundle.stages);
+        setPratinjau(bundle.pratinjau);
+        setStandAngkatList(bundle.standAngkatList);
+        setPerbandingan(bundle.perbandingan);
+
+        if (bundle.pratinjau?.audit?.tanggalJatuhTempo) {
+          const savedIso = bundle.pratinjau.audit.tanggalJatuhTempo.slice(0, 10);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(savedIso)) {
+            setTanggalJatuhTempo(savedIso);
+          }
+        }
+
+        const evalResult = evaluateClosingWizardSteps({
+          stages: bundle.stages,
+          pratinjau: bundle.pratinjau,
+          standAngkatList: bundle.standAngkatList,
+          reviewConfirmed: reviewConfirmedRef.current,
+          tanggalJatuhTempo: tanggalJatuhTempoRef.current,
+        });
+
+        if (bundle.pratinjau?.status === 'TERKUNCI') {
+          setActiveWizardStep(4);
+        } else if (!hasRestoredSessionRef.current) {
+          setActiveWizardStep(evalResult.recommendedStep);
+          hasRestoredSessionRef.current = true;
+        }
+      } catch (err) {
+        setFeedback(
+          buildOperatorErrorFeedback(
+            err,
+            'Gagal Memuat Data Periode Penagihan',
+          ),
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [],
+  );
 
   React.useEffect(() => {
-    loadClosingData();
-  }, [loadClosingData]);
+    void fetchAndApplyBundle(periode);
+  }, [periode, fetchAndApplyBundle]);
+
+  const loadClosingData = React.useCallback(async () => {
+    await fetchAndApplyBundle(periode, { force: true });
+  }, [periode, fetchAndApplyBundle]);
 
   const wizardEvaluation = React.useMemo(
     () =>
@@ -222,11 +322,9 @@ export function useClosingWorkflow(
         type: 'success',
         title: 'Pengesahan Bacaan Meter Berhasil',
         message: res.message,
-        dataImpact:
-          'Seluruh angka bacaan meter kini telah disahkan dan siap ditinjau pada Langkah 3.',
       });
       setActiveDialog(null);
-      await loadClosingData();
+      await fetchAndApplyBundle(periode, { force: true });
       setActiveWizardStep(3);
     } catch (err) {
       setFeedback(
@@ -235,7 +333,7 @@ export function useClosingWorkflow(
     } finally {
       setActionLoading(false);
     }
-  }, [actionLoading, periode, loadClosingData]);
+  }, [actionLoading, periode, fetchAndApplyBundle]);
 
   const handleEksekusiClosing = React.useCallback(async () => {
     if (actionLoading) return;
@@ -245,14 +343,12 @@ export function useClosingWorkflow(
       setFeedback({
         type: 'success',
         title: `Tutup Buku Periode ${periode} Selesai & Terkunci`,
-        message: `Berhasil menerbitkan ${formatAngkaId(res.jumlahSl)} rekening tagihan air resmi dengan total nilai ${formatRupiahId(res.totalTagihan ?? pratinjau?.perkiraan.totalTagihan)}.`,
-        dataImpact:
-          'Buku periode ini telah dikunci secara permanen dan disimpan ke riwayat audit. Anda kini dapat menyiapkan jadwal bulan baru pada Langkah 5.',
+        message: `Berhasil menerbitkan ${formatAngkaId(res.jumlahSl)} rekening tagihan air resmi senilai ${formatRupiahId(res.totalTagihan ?? pratinjau?.perkiraan.totalTagihan)}.`,
       });
       setConfirmPhraseInput('');
       setActiveDialog(null);
-      await loadClosingData();
-      setActiveWizardStep(5);
+      await fetchAndApplyBundle(periode, { force: true });
+      setActiveWizardStep(4);
     } catch (err) {
       setFeedback(
         buildOperatorErrorFeedback(err, 'Tutup Buku Tidak Dapat Diselesaikan'),
@@ -260,7 +356,13 @@ export function useClosingWorkflow(
     } finally {
       setActionLoading(false);
     }
-  }, [actionLoading, periode, tanggalJatuhTempo, pratinjau, loadClosingData]);
+  }, [
+    actionLoading,
+    periode,
+    tanggalJatuhTempo,
+    pratinjau,
+    fetchAndApplyBundle,
+  ]);
 
   const handleBukaBulanBaru = React.useCallback(async () => {
     if (actionLoading) return;
@@ -269,13 +371,15 @@ export function useClosingWorkflow(
       const res = await initializeBulanBaru(periode, targetBulanBaru);
       setFeedback({
         type: 'success',
-        title: `Jadwal Bulan Baru (${targetBulanBaru}) Siap Digunakan`,
+        title: `Jadwal Bulan Baru ${formatPeriodeLabelId(targetBulanBaru)} (${targetBulanBaru}) Siap Digunakan`,
         message: res.message,
-        dataImpact:
-          'Daftar target pencatatan meter bulan depan telah berhasil dibuat untuk seluruh pelanggan aktif.',
       });
       setActiveDialog(null);
-      await loadClosingData();
+      const info = await fetchPeriodeKerjaInfo({ force: true });
+      if (info?.daftarPeriode?.length) {
+        setDaftarPeriode(info.daftarPeriode);
+      }
+      await fetchAndApplyBundle(periode, { force: true });
     } catch (err) {
       setFeedback(
         buildOperatorErrorFeedback(
@@ -286,13 +390,10 @@ export function useClosingWorkflow(
     } finally {
       setActionLoading(false);
     }
-  }, [actionLoading, periode, targetBulanBaru, loadClosingData]);
+  }, [actionLoading, periode, targetBulanBaru, fetchAndApplyBundle]);
 
   const handleVerifikasiStandAngkat = React.useCallback(
-    async (
-      id: string,
-      status: Exclude<StandAngkatVerificationStatus, 'PENDING'>,
-    ) => {
+    async (id: string, status: StandAngkatDecisionStatus) => {
       if (actionLoading) return;
       setActionLoading(true);
       try {
@@ -302,7 +403,7 @@ export function useClosingWorkflow(
           title: 'Status Pergantian Meter Diperbarui',
           message: res.message,
         });
-        await loadClosingData();
+        await fetchAndApplyBundle(periode, { force: true });
       } catch (err) {
         setFeedback(
           buildOperatorErrorFeedback(
@@ -314,7 +415,7 @@ export function useClosingWorkflow(
         setActionLoading(false);
       }
     },
-    [actionLoading, loadClosingData],
+    [actionLoading, periode, fetchAndApplyBundle],
   );
 
   const handleExecuteStageAction = React.useCallback(
@@ -343,15 +444,18 @@ export function useClosingWorkflow(
       if (actionLoading) return;
       setActionLoading(true);
       try {
+        const dpmTargetPeriode =
+          pratinjau?.status === 'TERKUNCI' ? targetBulanBaru : periode;
+
         let res: { message: string } | null = null;
         if (stageId === 'update-zonasi') {
           res = await executeUpdateZonasi(periode);
         } else if (stageId === 'upload-master-pelanggan') {
           res = await executeUploadMasterPelanggan(periode);
         } else if (stageId === 'sync-pelanggan-baru') {
-          res = await executeSyncPelangganBaru(periode);
+          res = await executeSyncPelangganBaru(dpmTargetPeriode);
         } else if (stageId === 'update-data-pelanggan') {
-          res = await executeUpdateDataPelanggan(periode);
+          res = await executeUpdateDataPelanggan(dpmTargetPeriode);
         }
 
         if (res) {
@@ -360,28 +464,43 @@ export function useClosingWorkflow(
             title: 'Penyelarasan Data Berhasil',
             message: res.message,
           });
-          await loadClosingData();
+          await fetchAndApplyBundle(periode, { force: true });
         }
       } catch (err) {
         setFeedback(
-          buildOperatorErrorFeedback(err, 'Gagal Menjalankan Penyelarasan Data'),
+          buildOperatorErrorFeedback(
+            err,
+            'Gagal Menjalankan Penyelarasan Data',
+          ),
         );
       } finally {
         setActionLoading(false);
       }
     },
-    [actionLoading, periode, loadClosingData],
+    [
+      actionLoading,
+      periode,
+      targetBulanBaru,
+      pratinjau?.status,
+      fetchAndApplyBundle,
+    ],
   );
 
   const handlePeriodeChange = React.useCallback((newPeriode: string) => {
-    setPeriode(newPeriode);
+    setSharedClosingPeriode(newPeriode);
+    setPeriodeState(newPeriode);
     setReviewConfirmed(false);
     setConfirmPhraseInput('');
+    if (/^\d{6}$/.test(newPeriode)) {
+      setTanggalJatuhTempo(computeDefaultDueDate(newPeriode));
+      setTargetBulanBaru(computeNextPeriode(newPeriode));
+    }
     hasRestoredSessionRef.current = false;
   }, []);
 
   return {
     periode,
+    daftarPeriode,
     setPeriode: handlePeriodeChange,
     activeTab,
     setActiveTab,
@@ -398,6 +517,7 @@ export function useClosingWorkflow(
     standAngkatList,
     perbandingan,
     loading,
+    refreshing,
     actionLoading,
     feedback,
     setFeedback,

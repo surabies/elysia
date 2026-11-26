@@ -1,11 +1,10 @@
 ﻿'use client';
 
-import Link from 'next/link';
-import { ArrowLeft, GitBranch } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { PageContainer } from '@/components/layout/page/PageContainer';
 import {
+  ClosingSmoothPanel,
   PageSectionHeader,
   PeriodFilterBar,
   StatusFeedbackBanner,
@@ -17,9 +16,11 @@ import { ClosingSubNavBar } from './ClosingSubNavBar';
 export function StandAngkatView() {
   const {
     periode,
+    daftarPeriode,
     setPeriode,
     standAngkatList,
     loading,
+    refreshing,
     actionLoading,
     feedback,
     setFeedback,
@@ -32,10 +33,10 @@ export function StandAngkatView() {
   ).length;
 
   return (
-    <PageContainer className="space-y-5">
+    <PageContainer className="space-y-4">
       <PageSectionHeader
-        title="Data Pergantian Meter Air (Stand Angkat)"
-        description="Periksa dan setujui angka meter lama yang dicabut serta angka meter baru yang dipasang agar pemakaian air pelanggan dihitung dengan benar."
+        title="1. Ganti Meter"
+        description="Periksa dan setujui angka stand angkat meter lama serta stand pasang meter baru sebelum tutup buku."
         badge={
           <Badge
             variant={pendingCount === 0 ? 'green-subtle' : 'amber-subtle'}
@@ -44,44 +45,39 @@ export function StandAngkatView() {
             <GitBranch className="size-3" />
             <span>
               {pendingCount === 0
-                ? 'Semua Ganti Meter Disetujui'
-                : `${pendingCount} Menunggu Persetujuan`}
+                ? 'Semua Disetujui'
+                : `${pendingCount} Menunggu`}
             </span>
           </Badge>
         }
         actions={
-          <>
-            <PeriodFilterBar
-              periode={periode}
-              onPeriodeChange={setPeriode}
-              onRefresh={loadClosingData}
-              loading={loading}
-              label="Periode"
-            />
-            <Button asChild variant="outline" size="default">
-              <Link href="/tools-tutup/monitoring-tutup-bulan">
-                <ArrowLeft className="size-3.5" />
-                <span>Kembali ke Wizard Tutup Buku</span>
-              </Link>
-            </Button>
-          </>
+          <PeriodFilterBar
+            periode={periode}
+            options={daftarPeriode}
+            onPeriodeChange={setPeriode}
+            onRefresh={loadClosingData}
+            loading={loading || refreshing}
+            label="Periode"
+          />
         }
       />
 
       <ClosingSubNavBar />
 
-      <StatusFeedbackBanner
-        feedback={feedback}
-        onDismiss={() => setFeedback(null)}
-      />
+      <ClosingSmoothPanel refreshing={refreshing}>
+        <StatusFeedbackBanner
+          feedback={feedback}
+          onDismiss={() => setFeedback(null)}
+        />
 
-      <ClosingStandAngkatSection
-        periode={periode}
-        standAngkatList={standAngkatList}
-        loading={loading}
-        actionLoading={actionLoading}
-        onVerifyStandAngkat={handleVerifikasiStandAngkat}
-      />
+        <ClosingStandAngkatSection
+          periode={periode}
+          standAngkatList={standAngkatList}
+          loading={loading}
+          actionLoading={actionLoading}
+          onVerifyStandAngkat={handleVerifikasiStandAngkat}
+        />
+      </ClosingSmoothPanel>
     </PageContainer>
   );
 }

@@ -1,7 +1,7 @@
 // features/dashboard/import/lib/import-ui.ts
-// Pemetaan nada (tone) -> token Geist di globals.css. Tidak ada warna mentah di sini.
+// Pemetaan nada (tone) -> token Geist Tailwind yang valid.
 import type { ComponentProps } from "react";
-import type { Badge } from "@/components/ui/badge";
+import type { Badge } from "@cater/ui";
 
 type BadgeVariant = NonNullable<ComponentProps<typeof Badge>["variant"]>;
 
@@ -25,7 +25,7 @@ interface ToneStyle {
   soft: string;
   border: string;
   hoverBorder: string;
-  /** Varian Badge Geist (subtle) dan solid. */
+  /** Varian Badge Geist. */
   badge: BadgeVariant;
   badgeSolid: BadgeVariant;
 }
@@ -35,71 +35,71 @@ export const TONE_STYLE: Record<ImportTone, ToneStyle> = {
     icon: "text-foreground",
     text: "text-foreground",
     dot: "bg-foreground",
-    soft: "bg-muted",
+    soft: "bg-muted/50",
     border: "border-border",
     hoverBorder: "hover:border-foreground/30",
-    badge: "gray-subtle",
-    badgeSolid: "gray",
+    badge: "secondary",
+    badgeSolid: "default",
   },
   blue: {
-    icon: "text-ds-blue-700",
-    text: "text-ds-blue-900",
-    dot: "bg-ds-blue-700",
-    soft: "bg-ds-blue-100",
-    border: "border-ds-blue-400",
-    hoverBorder: "hover:border-ds-blue-400",
-    badge: "blue-subtle",
-    badgeSolid: "blue",
+    icon: "text-blue-600 dark:text-blue-400",
+    text: "text-blue-700 dark:text-blue-400",
+    dot: "bg-blue-600 dark:bg-blue-400",
+    soft: "bg-blue-500/10",
+    border: "border-blue-500/20",
+    hoverBorder: "hover:border-blue-500/40",
+    badge: "secondary",
+    badgeSolid: "default",
   },
   green: {
-    icon: "text-ds-green-700",
-    text: "text-ds-green-900",
-    dot: "bg-ds-green-700",
-    soft: "bg-ds-green-100",
-    border: "border-ds-green-400",
-    hoverBorder: "hover:border-ds-green-400",
-    badge: "green-subtle",
-    badgeSolid: "green",
+    icon: "text-emerald-600 dark:text-emerald-400",
+    text: "text-emerald-700 dark:text-emerald-400",
+    dot: "bg-emerald-600 dark:bg-emerald-400",
+    soft: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    hoverBorder: "hover:border-emerald-500/40",
+    badge: "secondary",
+    badgeSolid: "default",
   },
   amber: {
-    icon: "text-ds-amber-700",
-    text: "text-ds-amber-900",
-    dot: "bg-ds-amber-700",
-    soft: "bg-ds-amber-100",
-    border: "border-ds-amber-400",
-    hoverBorder: "hover:border-ds-amber-400",
-    badge: "amber-subtle",
-    badgeSolid: "amber",
+    icon: "text-amber-600 dark:text-amber-400",
+    text: "text-amber-700 dark:text-amber-400",
+    dot: "bg-amber-600 dark:bg-amber-400",
+    soft: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    hoverBorder: "hover:border-amber-500/40",
+    badge: "secondary",
+    badgeSolid: "default",
   },
   red: {
-    icon: "text-ds-red-700",
-    text: "text-ds-red-900",
-    dot: "bg-ds-red-700",
-    soft: "bg-ds-red-100",
-    border: "border-ds-red-400",
-    hoverBorder: "hover:border-ds-red-400",
-    badge: "red-subtle",
-    badgeSolid: "red",
+    icon: "text-destructive",
+    text: "text-destructive",
+    dot: "bg-destructive",
+    soft: "bg-destructive/10",
+    border: "border-destructive/20",
+    hoverBorder: "hover:border-destructive/40",
+    badge: "destructive",
+    badgeSolid: "destructive",
   },
   teal: {
-    icon: "text-ds-teal-700",
-    text: "text-ds-teal-900",
-    dot: "bg-ds-teal-700",
-    soft: "bg-ds-teal-100",
-    border: "border-ds-teal-400",
-    hoverBorder: "hover:border-ds-teal-400",
-    badge: "teal-subtle",
-    badgeSolid: "teal",
+    icon: "text-teal-600 dark:text-teal-400",
+    text: "text-teal-700 dark:text-teal-400",
+    dot: "bg-teal-600 dark:bg-teal-400",
+    soft: "bg-teal-500/10",
+    border: "border-teal-500/20",
+    hoverBorder: "hover:border-teal-500/40",
+    badge: "secondary",
+    badgeSolid: "default",
   },
   purple: {
-    icon: "text-ds-purple-700",
-    text: "text-ds-purple-900",
-    dot: "bg-ds-purple-700",
-    soft: "bg-ds-purple-100",
-    border: "border-ds-purple-400",
-    hoverBorder: "hover:border-ds-purple-400",
-    badge: "purple-subtle",
-    badgeSolid: "purple",
+    icon: "text-purple-600 dark:text-purple-400",
+    text: "text-purple-700 dark:text-purple-400",
+    dot: "bg-purple-600 dark:bg-purple-400",
+    soft: "bg-purple-500/10",
+    border: "border-purple-500/20",
+    hoverBorder: "hover:border-purple-500/40",
+    badge: "secondary",
+    badgeSolid: "default",
   },
 };
 
@@ -111,7 +111,7 @@ export const IMPORT_TABLE_CONTAINER_CLASS =
 
 /** Header tabel lengket dengan garis bawah tipis. */
 export const IMPORT_TABLE_HEADER_CLASS =
-  "sticky top-0 z-10 bg-table-head shadow-[0_1px_0_0_var(--border)] [&_th]:bg-table-head";
+  "sticky top-0 z-10 bg-muted/95 backdrop-blur-xs shadow-[0_1px_0_0_var(--border)] [&_th]:bg-muted/95";
 
 /** Grid kartu statistik berdasarkan jumlah kolom pada layar lebar. */
 export const IMPORT_STAT_GRID_CLASS = {

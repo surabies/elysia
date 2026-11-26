@@ -37,14 +37,15 @@ import {
 import type { ActiveClosingDialog } from '../hooks/use-closing-workflow';
 import {
   formatAngkaId,
+  formatPeriodeLabelId,
   formatRupiahId,
   getClosingConfirmPhrase,
 } from '../lib/closing-format';
 import type {
   ClosingConsoleTab,
   PratinjauData,
+  StandAngkatDecisionStatus,
   StandAngkatMutasiItem,
-  StandAngkatVerificationStatus,
 } from '../types';
 
 interface ClosingDialogsProps {
@@ -63,10 +64,7 @@ interface ClosingDialogsProps {
   onConfirmPosting: () => void;
   onConfirmClosing: () => void;
   onConfirmBulanBaru: () => void;
-  onVerifyStandAngkat: (
-    id: string,
-    status: Exclude<StandAngkatVerificationStatus, 'PENDING'>,
-  ) => void;
+  onVerifyStandAngkat: (id: string, status: StandAngkatDecisionStatus) => void;
   onDismissOnboarding: () => void;
   onOpenFullGuide?: (tab: ClosingConsoleTab) => void;
 }
@@ -95,71 +93,72 @@ export function ClosingDialogs({
   const isConfirmPhraseMatched =
     confirmPhraseInput.trim().toUpperCase() === expectedPhrase.toUpperCase();
 
+  const siapDisahkanCount =
+    pratinjau?.verifikasi.siapDisahkan ??
+    pratinjau?.verifikasi.belumSelesai ??
+    0;
+
   return (
     <>
-      {/* DIALOG 0: ONBOARDING RINGAN SEKALI TAMPIL (4 LANGKAH MUDAH) */}
+      {/* DIALOG 0: RINGKASAN CARA KERJA */}
       <Dialog
         open={activeDialog === 'onboarding'}
         onOpenChange={(open) => !open && onDismissOnboarding()}
       >
-        <DialogContent className="sm:max-w-[580px]">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="size-4 text-(--ds-blue-700)" />
-              <span>Selamat Datang di Panduan Aman Tutup Buku</span>
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+              <Sparkles className="size-4 text-blue-600 dark:text-blue-400" />
+              <span>Cara Menjalankan Tutup Bulan dengan Aman</span>
             </DialogTitle>
-            <DialogDescription>
-              Halaman ini dirancang khusus agar proses penutupan periode
-              penagihan berjalan aman, terarah, dan bebas dari risiko kerusakan
-              data.
+            <DialogDescription className="text-xs leading-relaxed">
+              Konsol ini menjaga setiap langkah penutupan periode penagihan agar
+              terurut, akurat, dan bebas dari risiko kerusakan data.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-1 gap-3 py-2 sm:grid-cols-2">
-            <div className="space-y-1.5 rounded-lg border border-border bg-(--ds-gray-100) p-3.5">
-              <div className="flex items-center gap-2 text-label-13 text-foreground">
-                <CheckCircle2 className="size-4 text-(--ds-blue-700)" />
-                <span>1. Urutan 5 Langkah Jelas</span>
+            <div className="space-y-1 rounded-lg border border-border bg-muted/35 p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                <span>1. Ikuti Tahap 1 s/d 4</span>
               </div>
-              <p className="text-copy-12 text-muted-foreground">
-                Ikuti langkah dari kiri ke kanan (Langkah 1 sampai 5). Tombol{' '}
-                <strong>Lanjut</strong> baru akan terbuka setelah syarat langkah
-                tersebut terpenuhi.
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Kerjakan berurutan dari kiri ke kanan. Tombol lanjut otomatis
+                terbuka begitu seluruh syarat tahap terpenuhi.
               </p>
             </div>
 
-            <div className="space-y-1.5 rounded-lg border border-border bg-(--ds-gray-100) p-3.5">
-              <div className="flex items-center gap-2 text-label-13 text-foreground">
-                <ShieldCheck className="size-4 text-(--ds-green-700)" />
-                <span>2. Anti Salah Klik &amp; Data Utuh</span>
+            <div className="space-y-1 rounded-lg border border-border bg-muted/35 p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                <ShieldCheck className="size-4 text-blue-600 dark:text-blue-400" />
+                <span>2. Proteksi Anomali Otomatis</span>
               </div>
-              <p className="text-copy-12 text-muted-foreground">
-                Jika terjadi gangguan jaringan atau salah klik, sistem otomatis
-                membatalkan perubahan setengah jalan sehingga data tagihan tidak
-                akan pernah rusak.
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Bacaan berstatus anomali atau kubikasi negatif ditahan otomatis
+                agar tidak meloloskan tagihan yang salah hitung.
               </p>
             </div>
 
-            <div className="space-y-1.5 rounded-lg border border-border bg-(--ds-gray-100) p-3.5">
-              <div className="flex items-center gap-2 text-label-13 text-foreground">
-                <Lock className="size-4 text-(--ds-amber-700)" />
-                <span>3. Konfirmasi Ganda Sebelum Kunci</span>
+            <div className="space-y-1 rounded-lg border border-border bg-muted/35 p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                <Lock className="size-4 text-red-600 dark:text-red-400" />
+                <span>3. Konfirmasi Bertingkat</span>
               </div>
-              <p className="text-copy-12 text-muted-foreground">
-                Sebelum buku benar-benar dikunci pada Langkah 4, Anda akan
-                melihat ringkasan dampak dan diminta mengetik kode konfirmasi.
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Penguncian buku DRD pada Tahap 3 dilindungi verifikasi kata
+                kunci eksplisit dan transaksi database atomik.
               </p>
             </div>
 
-            <div className="space-y-1.5 rounded-lg border border-border bg-(--ds-gray-100) p-3.5">
-              <div className="flex items-center gap-2 text-label-13 text-foreground">
+            <div className="space-y-1 rounded-lg border border-border bg-muted/35 p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
                 <RefreshCw className="size-4 text-foreground" />
-                <span>4. Posisi Kerja Selalu Tersimpan</span>
+                <span>4. Carry-Forward Bulan Baru</span>
               </div>
-              <p className="text-copy-12 text-muted-foreground">
-                Apabila halaman tidak sengaja tertutup atau dimuat ulang, sistem
-                otomatis mengembalikan Anda ke langkah terakhir yang sedang
-                dikerjakan.
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Setelah buku dikunci, Tahap 4 otomatis menyiapkan DPM bulan
+                berikutnya dengan stand akhir bulan ini sebagai stand awal.
               </p>
             </div>
           </div>
@@ -168,19 +167,20 @@ export function ClosingDialogs({
             <Button
               asChild
               variant="outline"
+              size="sm"
               onClick={() => {
                 onDismissOnboarding();
                 onOpenFullGuide?.('panduan');
               }}
             >
-              <Link href="/tools-tutup/panduan">
+              <Link href="/docs/tutup-bulan">
                 <BookOpen className="size-3.5" />
-                <span>Lihat Halaman Panduan Lengkap</span>
+                <span>Buka Panduan &amp; Simulasi Interaktif</span>
               </Link>
             </Button>
 
-            <Button type="button" onClick={onDismissOnboarding}>
-              <span>Saya Mengerti, Mulai Bekerja</span>
+            <Button type="button" size="sm" onClick={onDismissOnboarding}>
+              <span>Mengerti, Tutup</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -191,54 +191,57 @@ export function ClosingDialogs({
         open={activeDialog === 'posting'}
         onOpenChange={(open) => !open && onDialogChange(null)}
       >
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="size-4 text-(--ds-blue-700)" />
-              <span>Sahkan Seluruh Hasil Baca Meter ({periode})</span>
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+              <ShieldCheck className="size-4 text-blue-600 dark:text-blue-400" />
+              <span>
+                Sahkan Bacaan Meter {formatPeriodeLabelId(periode)}
+              </span>
             </DialogTitle>
-            <DialogDescription>
-              Tindakan ini akan mengesahkan seluruh angka meter hasil catat
-              petugas lapangan pada periode {periode} agar siap dihitung menjadi
-              tagihan air.
+            <DialogDescription className="text-xs leading-relaxed">
+              Mengesahkan seluruh hasil bacaan meter yang valid pada periode{' '}
+              <strong className="font-mono text-foreground">{periode}</strong>{' '}
+              menjadi <code className="font-mono">APPROVED_FINAL</code>.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2">
-            <div className="space-y-2 rounded-lg border border-border bg-(--ds-gray-100) p-3.5 text-label-12">
+            <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-3.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Periode Tagihan</span>
-                <span className="text-label-12-mono tabular-nums text-foreground">
-                  {periode}
+                <span className="text-muted-foreground">Periode Penagihan</span>
+                <span className="font-mono font-semibold text-foreground">
+                  {formatPeriodeLabelId(periode)} ({periode})
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">
                   Total Pelanggan Tercatat
                 </span>
-                <span className="text-label-12-mono tabular-nums text-foreground">
-                  {formatAngkaId(pratinjau?.pembacaan.total)} Pelanggan
+                <span className="font-mono font-medium tabular-nums text-foreground">
+                  {formatAngkaId(pratinjau?.pembacaan.total)} SL
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">
                   Jumlah yang Akan Disahkan
                 </span>
-                <span className="text-label-12-mono tabular-nums text-(--ds-amber-700)">
-                  {formatAngkaId(pratinjau?.verifikasi.belumSelesai)} Pelanggan
+                <span className="font-mono font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                  {formatAngkaId(siapDisahkanCount)} SL
                 </span>
               </div>
             </div>
-            <p className="text-copy-12 text-muted-foreground">
-              Setelah disahkan, Anda masih dapat memeriksa ringkasan nilai
-              tagihan pada Langkah 3 sebelum mengunci buku.
+            <p className="text-xs text-muted-foreground">
+              Setelah disahkan, Anda masih dapat meninjau estimasi nilai rupiah
+              tagihan pada Tahap 3 sebelum mengunci buku secara permanen.
             </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => onDialogChange(null)}
               disabled={actionLoading}
             >
@@ -246,6 +249,7 @@ export function ClosingDialogs({
             </Button>
             <Button
               type="button"
+              size="sm"
               onClick={onConfirmPosting}
               disabled={actionLoading}
             >
@@ -256,53 +260,58 @@ export function ClosingDialogs({
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG 2: KONFIRMASI EKSPLISIT TUTUP BUKU & KUNCI DRD (LANGKAH 4) */}
+      {/* DIALOG 2: KONFIRMASI AKHIR TUTUP BUKU & KUNCI DRD (KONTRAK GEIST OPERASI KRITIS) */}
       <Dialog
         open={activeDialog === 'closing'}
         onOpenChange={(open) => {
-          if (!open) {
+          if (!open && !actionLoading) {
             onConfirmPhraseInputChange('');
             onDialogChange(null);
           }
         }}
       >
-        <DialogContent className="sm:max-w-[520px]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="size-4 text-(--ds-red-700)" />
-              <span>Konfirmasi Akhir: Kunci Buku Periode {periode}</span>
-            </DialogTitle>
-            <DialogDescription>
-              Periksa kembali ringkasan dampak di bawah ini. Setelah dikunci,
-              rekening tagihan resmi akan diterbitkan dan periode {periode}{' '}
-              tidak dapat dibuka kembali.
-            </DialogDescription>
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-100 text-red-700 dark:border-red-900/60 dark:bg-red-950 dark:text-red-400">
+                <Lock className="size-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-semibold text-foreground">
+                  Kunci Buku {formatPeriodeLabelId(periode)} ({periode})
+                </DialogTitle>
+                <DialogDescription className="mt-0.5 text-xs leading-relaxed">
+                  Menerbitkan rekening DRD resmi dan mengunci periode secara
+                  permanen.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-3.5 py-1">
             {/* Ringkasan Dampak */}
-            <div className="space-y-2 rounded-lg border border-border bg-(--ds-gray-100) p-3.5 text-label-12">
+            <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-3.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">
-                  Periode yang Akan Dikunci
+                  Periode yang Dikunci
                 </span>
-                <span className="text-label-12-mono tabular-nums text-foreground">
-                  {periode} (Permanen)
+                <span className="font-mono font-semibold text-foreground">
+                  {formatPeriodeLabelId(periode)} ({periode})
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">
                   Jumlah Rekening Diterbitkan
                 </span>
-                <span className="text-label-12-mono tabular-nums text-foreground">
-                  {formatAngkaId(pratinjau?.perkiraan.jumlahSl)} Pelanggan
+                <span className="font-mono font-semibold tabular-nums text-foreground">
+                  {formatAngkaId(pratinjau?.perkiraan.jumlahSl)} SL
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">
-                  Total Pemakaian Air
+                  Total Kubikasi Air
                 </span>
-                <span className="text-label-12-mono tabular-nums text-foreground">
+                <span className="font-mono font-semibold tabular-nums text-foreground">
                   {formatAngkaId(pratinjau?.perkiraan.totalM3)} m³
                 </span>
               </div>
@@ -310,7 +319,7 @@ export function ClosingDialogs({
                 <span className="text-muted-foreground">
                   Total Nilai Tagihan Resmi
                 </span>
-                <span className="text-label-12-mono tabular-nums text-(--ds-green-700)">
+                <span className="font-mono font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                   {formatRupiahId(pratinjau?.perkiraan.totalTagihan)}
                 </span>
               </div>
@@ -318,59 +327,66 @@ export function ClosingDialogs({
                 <span className="text-muted-foreground">
                   Tanggal Jatuh Tempo
                 </span>
-                <span className="text-label-12-mono tabular-nums text-foreground">
+                <span className="font-mono font-semibold tabular-nums text-foreground">
                   {tanggalJatuhTempo}
                 </span>
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label
-                htmlFor="closing-due-date"
-                className="block text-label-12 text-muted-foreground"
-              >
-                Ubah Tanggal Jatuh Tempo (bila diperlukan):
-              </label>
-              <Input
-                id="closing-due-date"
-                type="date"
-                size="sm"
-                value={tanggalJatuhTempo}
-                onChange={(e) => onTanggalJatuhTempoChange(e.target.value)}
-                className="font-mono"
-              />
-            </div>
+            {/* Kontrak Vercel Geist: Operasi Kritis & Konfirmasi Bertingkat */}
+            <div className="space-y-3 rounded-lg border border-red-200 bg-red-50/30 p-4 dark:border-red-950/60 dark:bg-red-950/20">
+              <div className="flex items-start gap-3">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
+                  <AlertTriangle className="size-4" />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-semibold text-red-700 dark:text-red-400">
+                      Operasi Kritis &amp; Konfirmasi Bertingkat
+                    </h4>
+                    <Badge
+                      variant="destructive"
+                      className="px-1.5 py-0 font-mono text-[9px]"
+                    >
+                      Irreversible
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Setelah dikunci, seluruh catatan bacaan meter periode{' '}
+                    {periode} tidak dapat diubah kembali oleh petugas.
+                  </p>
+                </div>
+              </div>
 
-            {/* Guard Ketik Kata Kunci Konfirmasi */}
-            <div className="space-y-1.5 rounded-lg border border-(--ds-amber-300) bg-(--ds-amber-100)/60 p-3.5">
-              <label
-                htmlFor="closing-confirm-phrase"
-                className="flex items-center gap-1.5 text-label-12 text-foreground"
-              >
-                <AlertTriangle className="size-3.5 text-(--ds-amber-700)" />
-                <span>
-                  Ketik{' '}
-                  <code className="rounded bg-card px-1.5 py-0.5 font-mono text-foreground">
+              <div className="space-y-2 border-t border-red-200/50 pt-2 dark:border-red-900/30">
+                <label
+                  htmlFor="closing-confirm-phrase"
+                  className="block text-xs text-muted-foreground"
+                >
+                  Ketik kata verifikasi{' '}
+                  <span className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-red-700 dark:bg-red-950/80 dark:text-red-400">
                     {expectedPhrase}
-                  </code>{' '}
-                  untuk membuka tombol kunci buku:
-                </span>
-              </label>
-              <Input
-                id="closing-confirm-phrase"
-                value={confirmPhraseInput}
-                onChange={(e) => onConfirmPhraseInputChange(e.target.value)}
-                placeholder={expectedPhrase}
-                autoComplete="off"
-                className="bg-card font-mono uppercase"
-              />
+                  </span>{' '}
+                  untuk mengaktifkan tombol eksekusi:
+                </label>
+                <Input
+                  id="closing-confirm-phrase"
+                  value={confirmPhraseInput}
+                  onChange={(e) => onConfirmPhraseInputChange(e.target.value)}
+                  placeholder={`Ketik ${expectedPhrase}...`}
+                  autoComplete="off"
+                  autoFocus
+                  className="h-8 border-red-200 bg-card font-mono text-xs uppercase focus-visible:border-red-500 focus-visible:ring-red-500/20 dark:border-red-900/60"
+                />
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => {
                 onConfirmPhraseInputChange('');
                 onDialogChange(null);
@@ -381,30 +397,40 @@ export function ClosingDialogs({
             </Button>
             <Button
               type="button"
+              variant="destructive"
+              size="sm"
               onClick={onConfirmClosing}
               disabled={actionLoading || !isConfirmPhraseMatched}
             >
               {actionLoading && <Spinner className="size-3.5" />}
-              <span>Kunci Buku &amp; Terbitkan Tagihan Sekarang</span>
+              <span>Kunci Buku &amp; Terbitkan Tagihan</span>
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG 3: PERSIAPAN JADWAL BULAN BARU (LANGKAH 5) */}
+      {/* DIALOG 3: PERSIAPAN JADWAL BULAN BARU (TAHAP 4) */}
       <Dialog
         open={activeDialog === 'bulan-baru'}
         onOpenChange={(open) => !open && onDialogChange(null)}
       >
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
               <Calendar className="size-4 text-foreground" />
-              <span>Siapkan Jadwal Baca Bulan Baru ({targetBulanBaru})</span>
+              <span>
+                Siapkan Jadwal {formatPeriodeLabelId(targetBulanBaru)} (
+                {targetBulanBaru})
+              </span>
             </DialogTitle>
-            <DialogDescription>
-              Membuka periode penagihan baru dan menyalin daftar pelanggan aktif
-              ke dalam jadwal target baca meter bulan {targetBulanBaru}.
+            <DialogDescription className="text-xs leading-relaxed">
+              Membuka periode penagihan baru dan menyalin stand akhir{' '}
+              <strong className="font-mono text-foreground">{periode}</strong>{' '}
+              menjadi stand awal target baca meter bulan{' '}
+              <strong className="font-mono text-foreground">
+                {targetBulanBaru}
+              </strong>
+              .
             </DialogDescription>
           </DialogHeader>
 
@@ -412,7 +438,7 @@ export function ClosingDialogs({
             <div className="space-y-1.5">
               <label
                 htmlFor="next-period-input"
-                className="block text-label-13 text-foreground"
+                className="block text-xs font-semibold text-foreground"
               >
                 Kode Periode Bulan Baru (Format YYYYMM)
               </label>
@@ -421,19 +447,21 @@ export function ClosingDialogs({
                 value={targetBulanBaru}
                 onChange={(e) => onTargetBulanBaruChange(e.target.value)}
                 className="max-w-xs font-mono"
-                placeholder="202602"
+                placeholder="202612"
               />
             </div>
-            <p className="text-copy-12 text-muted-foreground">
-              Pelanggan yang berstatus dicabut pada bulan lalu otomatis tidak
-              akan dimasukkan ke jadwal bulan baru.
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Pelanggan berstatus <strong>DICABUT</strong> otomatis dilewati dan
+              tidak dimasukkan ke jadwal bulan baru. Proses ini idempoten (aman
+              dijalankan ulang tanpa membuat data ganda).
             </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => onDialogChange(null)}
               disabled={actionLoading}
             >
@@ -441,11 +469,12 @@ export function ClosingDialogs({
             </Button>
             <Button
               type="button"
+              size="sm"
               onClick={onConfirmBulanBaru}
-              disabled={actionLoading}
+              disabled={actionLoading || !/^\d{6}$/.test(targetBulanBaru)}
             >
               {actionLoading && <Spinner className="size-3.5" />}
-              <span>Siapkan Jadwal Periode {targetBulanBaru}</span>
+              <span>Buka Jadwal {targetBulanBaru}</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -456,15 +485,15 @@ export function ClosingDialogs({
         open={activeDialog === 'mutasi'}
         onOpenChange={(open) => !open && onDialogChange(null)}
       >
-        <DialogContent className="sm:max-w-[760px]">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
               <GitBranch className="size-4 text-foreground" />
               <span>
                 Daftar Pergantian Meter Air ({standAngkatList.length} Data)
               </span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs leading-relaxed">
               Periksa angka meter lama yang dicabut (Stand Angkat) dan angka
               awal meter baru yang dipasang (Stand Pasang).
             </DialogDescription>
@@ -474,7 +503,7 @@ export function ClosingDialogs({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No Sambungan</TableHead>
+                  <TableHead>No. SL</TableHead>
                   <TableHead>Meter Lama</TableHead>
                   <TableHead className="text-right">Stand Angkat</TableHead>
                   <TableHead>Meter Baru</TableHead>
@@ -488,85 +517,109 @@ export function ClosingDialogs({
                   <TableRow>
                     <TableCell
                       colSpan={7}
-                      className="py-6 text-center text-copy-13 text-muted-foreground"
+                      className="py-6 text-center text-xs text-muted-foreground"
                     >
                       Tidak ada pergantian meter pada periode ini.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  standAngkatList.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="text-label-13-mono text-foreground">
-                        {m.nolg}
-                      </TableCell>
-                      <TableCell className="text-label-12-mono text-muted-foreground">
-                        {m.noMeterLama}
-                      </TableCell>
-                      <TableCell className="text-right text-label-13-mono tabular-nums text-(--ds-amber-700)">
-                        {formatAngkaId(m.standAngkat)}
-                      </TableCell>
-                      <TableCell className="text-label-12-mono text-muted-foreground">
-                        {m.noMeterBaru}
-                      </TableCell>
-                      <TableCell className="text-right text-label-13-mono tabular-nums text-(--ds-green-700)">
-                        {m.standPasang}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={
-                            m.statusVerifikasi === 'APPROVED'
-                              ? 'green-subtle'
+                  standAngkatList.map((m) => {
+                    const isDataLengkap =
+                      Boolean(m.noMeterBaru) && m.standAngkat !== null;
+                    return (
+                      <TableRow key={m.id}>
+                        <TableCell className="font-mono text-xs font-medium text-foreground">
+                          <div>{m.nolg}</div>
+                          {m.namaPelanggan && (
+                            <div className="font-sans text-[11px] text-muted-foreground">
+                              {m.namaPelanggan}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {m.noMeterLama}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-xs tabular-nums text-amber-600 dark:text-amber-400">
+                          {m.standAngkat !== null
+                            ? formatAngkaId(m.standAngkat)
+                            : 'Belum diisi'}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {m.noMeterBaru ?? 'Belum diisi'}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
+                          {formatAngkaId(m.standPasang)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant={
+                              m.statusVerifikasi === 'APPROVED'
+                                ? 'green-subtle'
+                                : m.statusVerifikasi === 'REJECTED'
+                                  ? 'red-subtle'
+                                  : m.statusVerifikasi ===
+                                      'DATA_METER_BELUM_LENGKAP'
+                                    ? 'blue-subtle'
+                                    : 'amber-subtle'
+                            }
+                            size="sm"
+                          >
+                            {m.statusVerifikasi === 'APPROVED'
+                              ? 'Disetujui'
                               : m.statusVerifikasi === 'REJECTED'
-                                ? 'red-subtle'
-                                : 'subtle'
-                          }
-                          size="sm"
-                        >
-                          {m.statusVerifikasi === 'APPROVED'
-                            ? 'Disetujui'
-                            : m.statusVerifikasi === 'REJECTED'
-                              ? 'Ditolak'
-                              : 'Menunggu'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {m.statusVerifikasi === 'PENDING' ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              type="button"
-                              size="xs"
-                              variant="outline"
-                              onClick={() =>
-                                onVerifyStandAngkat(m.id, 'APPROVED')
-                              }
-                              disabled={actionLoading}
-                              className="text-(--ds-green-700)"
-                            >
-                              <Check className="size-3" />
-                              <span>Setujui</span>
-                            </Button>
-                            <Button
-                              type="button"
-                              size="xs"
-                              variant="ghost"
-                              onClick={() =>
-                                onVerifyStandAngkat(m.id, 'REJECTED')
-                              }
-                              disabled={actionLoading}
-                              className="text-(--ds-red-700)"
-                            >
-                              <X className="size-3" />
-                              <span>Tolak</span>
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-label-11 text-muted-foreground">
-                            Selesai
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                                ? 'Ditolak'
+                                : m.statusVerifikasi ===
+                                    'DATA_METER_BELUM_LENGKAP'
+                                  ? 'Data Belum Lengkap'
+                                  : 'Menunggu'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {m.statusVerifikasi === 'PENDING' ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                type="button"
+                                size="xs"
+                                variant="outline"
+                                onClick={() =>
+                                  onVerifyStandAngkat(m.id, 'APPROVED')
+                                }
+                                disabled={actionLoading || !isDataLengkap}
+                                title={
+                                  !isDataLengkap
+                                    ? 'No. Meter Baru dan Stand Angkat wajib lengkap sebelum disetujui'
+                                    : undefined
+                                }
+                                className="text-emerald-700 dark:text-emerald-400"
+                              >
+                                <Check className="size-3" />
+                                <span>Setujui</span>
+                              </Button>
+                              <Button
+                                type="button"
+                                size="xs"
+                                variant="ghost"
+                                onClick={() =>
+                                  onVerifyStandAngkat(m.id, 'REJECTED')
+                                }
+                                disabled={actionLoading}
+                                className="text-destructive"
+                              >
+                                <X className="size-3" />
+                                <span>Tolak</span>
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground">
+                              {m.statusVerifikasi === 'DATA_METER_BELUM_LENGKAP'
+                                ? 'Menunggu Teknik'
+                                : 'Selesai'}
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -576,9 +629,10 @@ export function ClosingDialogs({
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => onDialogChange(null)}
             >
-              Selesai &amp; Tutup
+              Tutup
             </Button>
           </DialogFooter>
         </DialogContent>

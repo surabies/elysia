@@ -1,37 +1,43 @@
-import { describe, expect, it } from 'bun:test';
-import { app } from '@/src/server/app';
+import { describe, expect, it } from "bun:test";
+import { app } from "@/src/server/app";
 
-describe('Geo & Spatial Validation', () => {
-  it('GET /api/places/nearby should fail if longitude is out of range (> 180)', async () => {
+describe("Geo & Spatial Validation", () => {
+  it("GET /api/peta-spasial/nearby should fail if longitude is out of range (> 180)", async () => {
     const res = await app.handle(
-      new Request('http://localhost:3000/api/places/nearby?lon=195&lat=10')
+      new Request(
+        "http://localhost:3000/api/peta-spasial/nearby?lon=195&lat=10",
+      ),
     );
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.success).toBe(false);
-    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it('GET /api/places/nearby should fail if latitude is out of range (> 90)', async () => {
+  it("GET /api/peta-spasial/nearby should fail if latitude is out of range (> 90)", async () => {
     const res = await app.handle(
-      new Request('http://localhost:3000/api/places/nearby?lon=100&lat=95')
+      new Request(
+        "http://localhost:3000/api/peta-spasial/nearby?lon=100&lat=95",
+      ),
     );
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.success).toBe(false);
-    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it('GET /api/places/nearby should validate positive radius', async () => {
+  it("GET /api/peta-spasial/nearby should validate positive radius", async () => {
     const res = await app.handle(
-      new Request('http://localhost:3000/api/places/nearby?lon=106.8&lat=-6.2&radius=-50')
+      new Request(
+        "http://localhost:3000/api/peta-spasial/nearby?lon=106.8&lat=-6.2&radius=-50",
+      ),
     );
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.success).toBe(false);
   });
 
-  it('Haversine distance calculation matches spherical geodesics', () => {
+  it("Haversine distance calculation matches spherical geodesics", () => {
     // Great circle calculation test between Monas and Istiqlal
     const monas = { lon: 106.827153, lat: -6.175392 };
     const istiqlal = { lon: 106.831389, lat: -6.170278 };

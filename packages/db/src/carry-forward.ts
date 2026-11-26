@@ -373,7 +373,7 @@ export async function carryForwardPeriode(
     pakaiLalu: string;
     akumulasiTaksasiM3: string;
     akumulasiPerluVerifikasi: boolean;
-    sumber: 'CARRY_OVER';
+    sumber: 'CARRY_OVER' | 'PBPK';
     status: 'BELUM_DICATAT';
   }> = [];
 
@@ -465,6 +465,8 @@ export async function carryForwardPeriode(
           ? dpmLalu.urutan
           : 1;
 
+    const isNewPbpk = !dpmLalu && !caterLalu;
+
     targetDpmRows.push({
       id: `dpm-${periodeBaru}-${m.nolg}`,
       periode: periodeBaru,
@@ -476,7 +478,7 @@ export async function carryForwardPeriode(
       pakaiLalu: pakaiLaluBaru,
       akumulasiTaksasiM3: akumulasiTaksasiBaru,
       akumulasiPerluVerifikasi: akumulasiPerluVerifikasiBaru,
-      sumber: 'CARRY_OVER',
+      sumber: isNewPbpk ? 'PBPK' : 'CARRY_OVER',
       status: 'BELUM_DICATAT',
     });
   }
@@ -505,7 +507,7 @@ export async function carryForwardPeriode(
         },
       });
 
-    // 2. Batch upsert daftar_catat(periodeBaru)
+    // 2. Batch upsert daftar_catat(periodeBaru) (pertahankan penanda PBPK & stand awal manual bila sudah diantrekan di tgl 29)
     for (let i = 0; i < targetDpmRows.length; i += UKURAN_BATCH) {
       const batch = targetDpmRows.slice(i, i + UKURAN_BATCH);
       await tx
@@ -517,10 +519,11 @@ export async function carryForwardPeriode(
             ruteKode: sql`EXCLUDED.rute_kode`,
             petugasId: sql`EXCLUDED.petugas_id`,
             urutan: sql`CASE WHEN ${daftarCatat.urutan} > 0 THEN ${daftarCatat.urutan} ELSE EXCLUDED.urutan END`,
-            standAwal: sql`EXCLUDED.stand_awal`,
+            standAwal: sql`CASE WHEN ${daftarCatat.sumber} = 'PBPK' AND EXCLUDED.stand_awal = 0 THEN ${daftarCatat.standAwal} ELSE EXCLUDED.stand_awal END`,
             pakaiLalu: sql`EXCLUDED.pakai_lalu`,
             akumulasiTaksasiM3: sql`EXCLUDED.akumulasi_taksasi_m3`,
             akumulasiPerluVerifikasi: sql`EXCLUDED.akumulasi_perlu_verifikasi`,
+            sumber: sql`CASE WHEN ${daftarCatat.sumber} = 'PBPK' THEN 'PBPK' ELSE EXCLUDED.sumber END`,
             updatedAt: new Date(),
           },
         });

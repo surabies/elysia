@@ -31,10 +31,28 @@ export interface PratinjauHambatan {
   contoh: string[];
 }
 
+export interface PratinjauPeringatan extends PratinjauHambatan {
+  umurHariTertua: number;
+}
+
 export interface ClosingAuditInfo {
   ditutupAt: string | null;
   ditutupById: string | null;
+  ditutupOlehNama?: string | null;
   tanggalJatuhTempo: string | null;
+}
+
+export interface PeriodeDaftarItem {
+  periode: string;
+  status: 'BERJALAN' | 'TERKUNCI';
+  jumlahSl?: number | null;
+}
+
+export interface PeriodeKerjaInfo {
+  periodeAktif: string;
+  saranPeriode: string;
+  saranBulanBaru?: string;
+  daftarPeriode: PeriodeDaftarItem[];
 }
 
 export interface PratinjauData {
@@ -50,6 +68,8 @@ export interface PratinjauData {
     total: number;
     selesaiV3: number;
     belumSelesai: number;
+    siapDisahkan?: number;
+    butuhKoreksi?: number;
   };
   pembacaan: {
     total: number;
@@ -62,11 +82,12 @@ export interface PratinjauData {
     totalTagihan: number;
   };
   hambatan: PratinjauHambatan[];
+  peringatan?: PratinjauPeringatan[];
   bisaDitutup: boolean;
   audit?: ClosingAuditInfo;
 }
 
-export type ClosingWizardStep = 1 | 2 | 3 | 4 | 5;
+export type ClosingWizardStep = 1 | 2 | 3 | 4;
 
 export interface ClosingStepEvaluation {
   step: ClosingWizardStep;
@@ -86,7 +107,13 @@ export interface OperatorFeedback {
   nextAction?: string;
 }
 
-export type StandAngkatVerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type StandAngkatVerificationStatus =
+  | 'DATA_METER_BELUM_LENGKAP'
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED';
+
+export type StandAngkatDecisionStatus = 'APPROVED' | 'REJECTED';
 
 export interface StandAngkatMutasiItem {
   id: string;
@@ -97,10 +124,10 @@ export interface StandAngkatMutasiItem {
   alasan: string;
   keterangan: string | null;
   noMeterLama: string;
-  standAngkat: number;
-  noMeterBaru: string;
+  standAngkat: number | null;
+  noMeterBaru: string | null;
   standPasang: number;
-  petugasPasang: string;
+  petugasPasang: string | null;
   statusVerifikasi: StandAngkatVerificationStatus;
 }
 
@@ -137,6 +164,7 @@ export interface PerbandinganTarifItem {
 export interface PerbandinganPeriodeData {
   periodeKini: string;
   periodeLalu: string;
+  sumberDataKini?: 'DRD_RESMI' | 'PROYEKSI_PRA_CLOSING';
   ringkasan: {
     totalSlKini: number;
     totalSlLalu: number;
@@ -163,6 +191,13 @@ export interface PasangBaruItem {
   ruteKode: string | null;
   noMeter: string | null;
   noTelp: string | null;
+  mutasian?: 'PB' | 'PK';
+  statusDpm?: string;
+  dpmStandAwal?: number;
+  stml?: number | null;
+  stma?: number | null;
+  pakaiM3?: number | null;
+  sumberCatat?: string | null;
   createdAt: string;
 }
 
@@ -173,10 +208,16 @@ export interface MasterOptionItem {
 
 export interface PbpkData {
   periode: string;
+  periodeDepan?: string;
   ringkasan: {
     totalMasterPelanggan: number;
     totalPasangBaru: number;
     totalPerubahanKategori: number;
+    totalDpmAktif?: number;
+    sudahDilaporkanPetugas?: number;
+    belumDilaporkanPetugas?: number;
+    antreanPbDepan?: number;
+    antreanPkDepan?: number;
     statusIntegrasiDpm: string;
   };
   daftarPasangBaru: PasangBaruItem[];
@@ -192,13 +233,27 @@ export interface CreatePasangBaruPayload {
   ruteKode: string;
   noMeter: string;
   noTelp?: string;
+  periode?: string;
 }
 
 export interface CreatePerubahanKategoriPayload {
   nolg: string;
   tarifKodeBaru: string;
+  noMeterBaru?: string;
+  periode?: string;
   nomorSk?: string;
   alasan?: string;
+}
+
+export interface SimpanBacaanPbpkItem {
+  nolg: string;
+  standAwal: number;
+  standAkhir: number;
+}
+
+export interface SimpanBacaanPbpkPayload {
+  periode: string;
+  items: SimpanBacaanPbpkItem[];
 }
 
 // ============================================================================
@@ -212,6 +267,7 @@ export interface CekSelisihRuteItem {
   namaRute: string;
   totalPelanggan: number;
   terbaca: number;
+  belumTerbaca?: number;
   terbitDrd: number;
   selisih: number;
   status: RekonsiliasiRuteStatus;
@@ -229,10 +285,12 @@ export interface UnbilledPelangganItem {
 
 export interface CekSelisihData {
   periode: string;
+  modeAudit?: 'PRA_CLOSING' | 'PASCA_CLOSING';
   ringkasan: {
     totalMasterPelanggan: number;
     totalDpmTarget: number;
     totalTerbaca: number;
+    totalBelumTerbaca?: number;
     totalTerbitDrd: number;
     totalSelisihUnbilled: number;
     statusRekonsiliasi: 'MATCH' | 'DISCREPANCY';

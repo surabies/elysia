@@ -17,14 +17,16 @@ import type {
   PeriodeInfo,
   PeriodeOption,
 } from "@/server/services/dashboard/dashboard.service";
-import { Badge } from "@/components/ui/badge";
 import {
+  Badge,
+  StatusDot,
+  CopyButton,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@cater/ui";
 import { toast } from "sonner";
 
 interface RingkasanHeaderProps {
@@ -123,17 +125,13 @@ export function RingkasanHeader({
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border pb-3">
           {/* Status Heartbeat */}
           <div className="flex items-center gap-2.5">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-            </span>
+            <StatusDot state="ready" size="sm" showPulse />
             <span className="font-mono text-[11px] font-semibold tracking-wider text-foreground uppercase">
               PDAM Tirtawening
             </span>
             <span className="text-muted-foreground/30">•</span>
             <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-emerald-500/80" />
-              <span className="font-medium text-emerald-700 dark:text-emerald-400">
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
                 Live Operasional
               </span>
               <span className="hidden sm:inline text-muted-foreground/40">/</span>

@@ -1,12 +1,12 @@
 ﻿'use client';
 
+import { Check, CheckCircle2, Clock, GitBranch, X } from 'lucide-react';
 import {
-  Check,
-  CheckCircle2,
-  Clock,
-  GitBranch,
-  X,
-} from 'lucide-react';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@cater/ui';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -18,11 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { MetricStatCard } from '@/features/penagihan/closing/components/shared';
-import { formatAngkaId } from '../lib/closing-format';
+import { formatAngkaId, formatPeriodeLabelId } from '../lib/closing-format';
 import type {
+  StandAngkatDecisionStatus,
   StandAngkatMutasiItem,
-  StandAngkatVerificationStatus,
 } from '../types';
 
 interface ClosingStandAngkatSectionProps {
@@ -32,7 +31,7 @@ interface ClosingStandAngkatSectionProps {
   actionLoading: boolean;
   onVerifyStandAngkat: (
     id: string,
-    status: Exclude<StandAngkatVerificationStatus, 'PENDING'>,
+    status: StandAngkatDecisionStatus,
   ) => void;
 }
 
@@ -50,185 +49,268 @@ export function ClosingStandAngkatSection({
   const totalApproved = standAngkatList.filter(
     (m) => m.statusVerifikasi === 'APPROVED',
   ).length;
+  const totalBelumLengkap = standAngkatList.filter(
+    (m) => m.statusVerifikasi === 'DATA_METER_BELUM_LENGKAP',
+  ).length;
 
   return (
-    <section aria-labelledby="stand-angkat-section-title" className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <MetricStatCard
-          label="Total Ganti Water Meter (GWM)"
-          value={loading ? '—' : formatAngkaId(totalMutasi)}
-          unit="Transaksi"
-          description={`Periode THBL ${periode}`}
-          icon={GitBranch}
-        />
-        <MetricStatCard
-          label="Menunggu Verifikasi Stand Angkat"
-          value={loading ? '—' : formatAngkaId(totalPending)}
-          unit="Pending"
-          description={
-            totalPending === 0
-              ? 'Seluruh mutasi telah diverifikasi'
-              : 'Wajib disahkan sebelum kunci DRD'
-          }
-          icon={Clock}
-          tone={totalPending > 0 ? 'warning' : 'success'}
-        />
-        <MetricStatCard
-          label="Stand Angkat Disetujui"
-          value={loading ? '—' : formatAngkaId(totalApproved)}
-          unit="Approved"
-          description="Siap dijumlahkan pada kalkulasi m³"
-          icon={CheckCircle2}
-          tone="success"
-        />
-      </div>
-
-      <Card className="space-y-4 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2
-                id="stand-angkat-section-title"
-                className="text-heading-16 text-foreground"
-              >
-                Tahap 2: Daftar Mutasi Stand Angkat Ganti Water Meter ({periode})
-              </h2>
-              <Badge
-                variant={totalPending === 0 ? 'green-subtle' : 'amber-subtle'}
-                size="sm"
-              >
-                {totalPending === 0
-                  ? '100% Terverifikasi'
-                  : `${totalPending} Menunggu Approval`}
-              </Badge>
-            </div>
-            <p className="mt-0.5 text-copy-13 text-muted-foreground">
-              Rumus pemakaian ganti meter:{' '}
-              <span className="font-mono text-foreground">
-                Pakai Total = (Stand Angkat − STML) + (STMA − Stand Pasang)
+    <TooltipProvider delayDuration={150}>
+      <section
+        aria-labelledby="stand-angkat-section-title"
+        className="space-y-4"
+      >
+        {/* Strip Telemetri Geist Hairline */}
+        <div className="grid grid-cols-1 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="space-y-1 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                Total Pergantian Meter
               </span>
-              . Pastikan angka fisik sesuai berita acara lapangan.
+              <GitBranch className="size-3.5 text-muted-foreground" />
+            </div>
+            <div className="flex items-baseline gap-1.5 font-mono tabular-nums">
+              <span className="text-base font-semibold text-foreground">
+                {loading ? '—' : formatAngkaId(totalMutasi)}
+              </span>
+              <span className="text-xs text-muted-foreground">transaksi</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Periode {formatPeriodeLabelId(periode)} ({periode})
+            </p>
+          </div>
+
+          <div className="space-y-1 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                Menunggu Persetujuan
+              </span>
+              <Clock className="size-3.5 text-muted-foreground" />
+            </div>
+            <div className="flex items-baseline gap-1.5 font-mono tabular-nums">
+              <span
+                className={
+                  totalPending > 0
+                    ? 'text-base font-semibold text-amber-600 dark:text-amber-400'
+                    : 'text-base font-semibold text-foreground'
+                }
+              >
+                {loading ? '—' : formatAngkaId(totalPending)}
+              </span>
+              <span className="text-xs text-muted-foreground">pending</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {totalPending === 0
+                ? 'Tidak ada antrean penghambat tutup buku'
+                : 'Wajib disetujui/ditolak sebelum kunci DRD'}
+            </p>
+          </div>
+
+          <div className="space-y-1 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                Disetujui &amp; Siap Hitung
+              </span>
+              <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="flex items-baseline gap-1.5 font-mono tabular-nums">
+              <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
+                {loading ? '—' : formatAngkaId(totalApproved)}
+              </span>
+              <span className="text-xs text-muted-foreground">disetujui</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {totalBelumLengkap > 0
+                ? `${totalBelumLengkap} menunggu kelengkapan data teknik`
+                : 'Rumus: (Stand Angkat − STML) + (STMA − Stand Pasang)'}
             </p>
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>No Sambungan</TableHead>
-                <TableHead>Nama Pelanggan</TableHead>
-                <TableHead>Alasan GWM</TableHead>
-                <TableHead>No Meter Lama &rarr; Baru</TableHead>
-                <TableHead className="text-right">Stand Angkat</TableHead>
-                <TableHead className="text-right">Stand Pasang</TableHead>
-                <TableHead>Petugas</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-right">Aksi Verifikasi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={9}
-                    className="py-8 text-center text-copy-13 text-muted-foreground"
-                  >
-                    Memuat transaksi mutasi stand angkat...
-                  </TableCell>
+        {/* Tabel Compact Geist */}
+        <Card className="overflow-hidden border-border p-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/25 px-4 py-3">
+            <div>
+              <h2
+                id="stand-angkat-section-title"
+                className="text-xs font-semibold text-foreground sm:text-sm"
+              >
+                Daftar Mutasi Ganti Meter ({formatPeriodeLabelId(periode)})
+              </h2>
+              <p className="text-[11px] text-muted-foreground">
+                Pastikan nomor meter baru dan angka fisik Stand Angkat sesuai
+                berita acara lapangan sebelum menyetujui.
+              </p>
+            </div>
+            <Badge
+              variant={totalPending === 0 ? 'green-subtle' : 'amber-subtle'}
+              size="sm"
+              className="font-mono tabular-nums"
+            >
+              {totalPending === 0
+                ? '0 Pending'
+                : `${totalPending} Perlu Verifikasi`}
+            </Badge>
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                  <TableHead className="h-8 text-[11px]">NOLG</TableHead>
+                  <TableHead className="h-8 text-[11px]">
+                    Nama Pelanggan
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px]">Alasan</TableHead>
+                  <TableHead className="h-8 text-[11px]">Meter Lama</TableHead>
+                  <TableHead className="h-8 text-right text-[11px]">
+                    Stand Angkat
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px]">Meter Baru</TableHead>
+                  <TableHead className="h-8 text-right text-[11px]">
+                    Stand Pasang
+                  </TableHead>
+                  <TableHead className="h-8 text-center text-[11px]">
+                    Status
+                  </TableHead>
+                  <TableHead className="h-8 text-right text-[11px]">
+                    Tindakan
+                  </TableHead>
                 </TableRow>
-              ) : standAngkatList.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={9}
-                    className="py-8 text-center text-copy-13 text-muted-foreground"
-                  >
-                    Tidak ada transaksi ganti water meter (Stand Angkat) pada
-                    periode {periode}. Tahap 2 otomatis berstatus Selesai.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                standAngkatList.map((m) => (
-                  <TableRow key={m.id}>
-                    <TableCell className="text-label-13-mono tabular-nums text-foreground">
-                      {m.nolg}
-                    </TableCell>
-                    <TableCell className="text-label-13 text-foreground">
-                      {m.namaPelanggan ?? '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="subtle" size="sm">
-                        {m.alasan}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-label-12-mono text-muted-foreground">
-                      {m.noMeterLama} &rarr;{' '}
-                      <span className="text-foreground">{m.noMeterBaru}</span>
-                    </TableCell>
-                    <TableCell className="text-right text-label-13-mono tabular-nums text-foreground">
-                      {formatAngkaId(m.standAngkat)} m³
-                    </TableCell>
-                    <TableCell className="text-right text-label-13-mono tabular-nums text-foreground">
-                      {formatAngkaId(m.standPasang)} m³
-                    </TableCell>
-                    <TableCell className="text-copy-12 text-muted-foreground">
-                      {m.petugasPasang}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        variant={
-                          m.statusVerifikasi === 'APPROVED'
-                            ? 'green-subtle'
-                            : m.statusVerifikasi === 'REJECTED'
-                              ? 'red-subtle'
-                              : 'amber-subtle'
-                        }
-                        size="sm"
-                      >
-                        {m.statusVerifikasi}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {m.statusVerifikasi === 'PENDING' ? (
-                        <div className="inline-flex items-center gap-1">
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="outline"
-                            disabled={actionLoading}
-                            onClick={() =>
-                              onVerifyStandAngkat(m.id, 'APPROVED')
-                            }
-                          >
-                            <Check className="size-3 text-(--ds-green-700)" />
-                            <span>Approve</span>
-                          </Button>
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="ghost"
-                            disabled={actionLoading}
-                            onClick={() =>
-                              onVerifyStandAngkat(m.id, 'REJECTED')
-                            }
-                          >
-                            <X className="size-3 text-(--ds-red-700)" />
-                            <span>Tolak</span>
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-copy-12 text-muted-foreground">
-                          Selesai
-                        </span>
-                      )}
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={9}
+                      className="py-8 text-center text-xs text-muted-foreground"
+                    >
+                      Memuat daftar pergantian meter...
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-    </section>
+                ) : standAngkatList.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={9}
+                      className="py-8 text-center text-xs text-muted-foreground"
+                    >
+                      Tidak ada transaksi ganti meter air pada periode{' '}
+                      {formatPeriodeLabelId(periode)}. Syarat Ganti Meter
+                      otomatis terpenuhi.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  standAngkatList.map((m) => {
+                    const isDataLengkap =
+                      Boolean(m.noMeterBaru) && m.standAngkat !== null;
+
+                    return (
+                      <TableRow key={m.id} className="h-9">
+                        <TableCell className="py-1.5 font-mono text-xs font-medium tabular-nums text-foreground">
+                          {m.nolg}
+                        </TableCell>
+                        <TableCell className="max-w-44 truncate py-1.5 text-xs text-foreground">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="block truncate">
+                                {m.namaPelanggan ?? '—'}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="text-xs">
+                              {m.namaPelanggan ?? '—'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell className="py-1.5">
+                          <Badge variant="subtle" size="sm">
+                            {m.alasan}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1.5 font-mono text-xs text-muted-foreground">
+                          {m.noMeterLama || '—'}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-right font-mono text-xs tabular-nums text-foreground">
+                          {m.standAngkat !== null
+                            ? formatAngkaId(m.standAngkat)
+                            : '—'}
+                        </TableCell>
+                        <TableCell className="py-1.5 font-mono text-xs text-foreground">
+                          {m.noMeterBaru ?? '—'}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-right font-mono text-xs tabular-nums text-foreground">
+                          {formatAngkaId(m.standPasang)}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-center">
+                          <Badge
+                            variant={
+                              m.statusVerifikasi === 'APPROVED'
+                                ? 'green-subtle'
+                                : m.statusVerifikasi === 'REJECTED'
+                                  ? 'red-subtle'
+                                  : m.statusVerifikasi ===
+                                      'DATA_METER_BELUM_LENGKAP'
+                                    ? 'blue-subtle'
+                                    : 'amber-subtle'
+                            }
+                            size="sm"
+                          >
+                            {m.statusVerifikasi === 'APPROVED'
+                              ? 'Disetujui'
+                              : m.statusVerifikasi === 'REJECTED'
+                                ? 'Ditolak'
+                                : m.statusVerifikasi ===
+                                    'DATA_METER_BELUM_LENGKAP'
+                                  ? 'Belum Lengkap'
+                                  : 'Menunggu'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1.5 text-right">
+                          {m.statusVerifikasi === 'PENDING' ? (
+                            <div className="inline-flex items-center gap-1">
+                              <Button
+                                type="button"
+                                size="xs"
+                                variant="outline"
+                                disabled={actionLoading || !isDataLengkap}
+                                title={
+                                  !isDataLengkap
+                                    ? 'No. Meter Baru dan Stand Angkat wajib lengkap sebelum disetujui'
+                                    : undefined
+                                }
+                                onClick={() =>
+                                  onVerifyStandAngkat(m.id, 'APPROVED')
+                                }
+                              >
+                                <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
+                                <span>Setujui</span>
+                              </Button>
+                              <Button
+                                type="button"
+                                size="xs"
+                                variant="ghost"
+                                disabled={actionLoading}
+                                onClick={() =>
+                                  onVerifyStandAngkat(m.id, 'REJECTED')
+                                }
+                              >
+                                <X className="size-3 text-red-600 dark:text-red-400" />
+                                <span>Tolak</span>
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground">
+                              —
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      </section>
+    </TooltipProvider>
   );
 }

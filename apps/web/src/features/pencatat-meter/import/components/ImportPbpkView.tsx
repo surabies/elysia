@@ -2,17 +2,24 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
+  ArrowRight,
   CheckCircle2,
   FileText,
   FolderSync,
   RotateCcw,
   Upload,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge, Button } from "@cater/ui";
+import { NativeSelect } from "@/components/ui/native-select";
 import { PERIODE_BERJALAN_AKTIF } from "@/config/periode";
+import {
+  computeNextPeriode,
+  formatPeriodeLabelId,
+} from "@/features/penagihan/closing/lib/closing-format";
+import { fetchPeriodeKerjaInfo } from "@/features/penagihan/closing/lib/closing-api";
 import { readFileAsText } from "../lib/file-reader";
 import { getErrorMessage, postImport } from "../lib/import-api";
 import { IMPORT_API, IMPORT_LIMITS, PBPK_DEFAULTS } from "../lib/import-config";
@@ -38,9 +45,9 @@ const COLUMNS: ImportColumn<PbpkRow>[] = [
     header: "Tipe Mutasi",
     cell: (row) =>
       row.mutasian === "PB" ? (
-        <Badge variant="blue-subtle">Pasang Baru (PB)</Badge>
+        <Badge variant="secondary" className="border-blue-500/30 text-blue-700 bg-blue-500/10 dark:text-blue-400">Pasang Baru (PB)</Badge>
       ) : (
-        <Badge variant="green-subtle">Pasang Kembali (PK)</Badge>
+        <Badge variant="secondary" className="border-emerald-500/30 text-emerald-700 bg-emerald-500/10 dark:text-emerald-400">Pasang Kembali (PK)</Badge>
       ),
   },
   {
@@ -119,12 +126,26 @@ const COLUMNS: ImportColumn<PbpkRow>[] = [
 ];
 
 export function ImportPbpkView() {
+  const [periodeAktif, setPeriodeAktif] = React.useState(PERIODE_BERJALAN_AKTIF);
+  const [targetPeriode, setTargetPeriode] = React.useState(PERIODE_BERJALAN_AKTIF);
   const [rows, setRows] = React.useState<PbpkRow[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [resultStats, setResultStats] = React.useState<PbpkResultStats | null>(
     null,
   );
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetchPeriodeKerjaInfo().then((info) => {
+      if (cancelled || !info?.periodeAktif) return;
+      setPeriodeAktif(info.periodeAktif);
+      setTargetPeriode(info.periodeAktif);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -156,7 +177,7 @@ export function ImportPbpkView() {
     try {
       const { data } = await postImport<PbpkImportResponse>(
         IMPORT_API.pbpk,
-        { rows, periode: PERIODE_BERJALAN_AKTIF },
+        { rows, periode: targetPeriode },
         { fallbackError: "Gagal mengimpor data PBPK." },
       );
 
@@ -169,7 +190,7 @@ export function ImportPbpkView() {
       };
       setResultStats(stats);
       toast.success(
-        `Sukses! Berhasil mendaftarkan ${stats.pb} Pasang Baru (PB) & ${stats.pk} Pemasangan Kembali (PK) ke Master Pelanggan & DPM!`,
+        `Sukses! Berhasil mendaftarkan ${stats.pb} Pasang Baru (PB) & ${stats.pk} Pemasangan Kembali (PK) ke Master Pelanggan & DPM ${targetPeriode}!`,
       );
     } catch (error) {
       toast.error(
@@ -240,15 +261,29 @@ export function ImportPbpkView() {
       </ImportStatGrid>
 
       <ImportControlPanel
-        title="Import PBPK (Pasang Baru & Pasang Kembali)"
-        badge={<Badge variant="pill">Format: CSV</Badge>}
-        description={`Pendaftaran mutasi Pasang Baru (PB) dan Pemasangan Kembali (PK) pelanggan ke Master & DPM periode ${PERIODE_BERJALAN_AKTIF}.`}
+        title="Import PBPK Resmi (Aplikasi Mutasi Eksternal)"
+        badge={<Badge variant="secondary" className="font-mono text-label-11">Format: CSV</Badge>}
+        description={`Unggah berkas PBPK setelah verifikasi selesai (mis. tgl 29) untuk mendaftarkan mutasi PB & PK ke DPM ${formatPeriodeLabelId(targetPeriode)} (${targetPeriode}). Jika sebelumnya sudah diinput manual, data otomatis diperbarui tanpa duplikat.`}
         hasData={rows.length > 0}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Cari No. Langganan / Nama / Alamat..."
         actions={
           <>
+            <NativeSelect
+              aria-label="Target Periode DPM"
+              value={targetPeriode}
+              onChange={(e) => setTargetPeriode(e.target.value)}
+              className="w-60 text-xs"
+            >
+              <option value={periodeAktif}>
+                Target DPM: {formatPeriodeLabelId(periodeAktif)} ({periodeAktif}) · Bulan Berjalan
+              </option>
+              <option value={computeNextPeriode(periodeAktif)}>
+                Target DPM: {formatPeriodeLabelId(computeNextPeriode(periodeAktif))} ({computeNextPeriode(periodeAktif)}) · Bulan Depan
+              </option>
+            </NativeSelect>
+
             {rows.length > 0 && (
               <Button
                 variant="outline"
@@ -287,8 +322,15 @@ export function ImportPbpkView() {
         <ImportResultBanner
           tone="green"
           title="Sinkronisasi PBPK Berhasil"
-          description={`Total ${resultStats.total} data (${resultStats.pb} Pasang Baru, ${resultStats.pk} Pemasangan Kembali). Seluruhnya siap dicatat pada DPM periode ${PERIODE_BERJALAN_AKTIF}.`}
-          actions={<Badge variant="green">Status: Masuk DPM</Badge>}
+          description={`Total ${resultStats.total} data (${resultStats.pb} Pasang Baru, ${resultStats.pk} Pemasangan Kembali) masuk ke DPM ${targetPeriode}. Lanjutkan ke menu 2. PBPK untuk mengisi Stand Awal & Stand Akhir pemakaiannya.`}
+          actions={
+            <Button asChild size="sm">
+              <Link href="/tools-tutup/pbpk">
+                <span>Lanjut Input Stand di 2. PBPK</span>
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
+          }
         />
       )}
 
@@ -299,7 +341,7 @@ export function ImportPbpkView() {
           description={`Unggah berkas CSV mutasi Pasang Baru (PB) atau Pasang Kembali (PK) untuk didaftarkan ke DPM periode ${PERIODE_BERJALAN_AKTIF}.`}
           badges={
             <>
-              <Badge variant="pill" className="font-mono">
+              <Badge variant="secondary" className="font-mono text-label-11">
                 nolg;nama;kd_kelurahan;rt;rw;alamat;notelp;nometer;kd_merkmeter;kd_rute;kd_goltarif;no_urutrute;mutasian
               </Badge>
             </>
@@ -312,7 +354,7 @@ export function ImportPbpkView() {
       ) : (
         <ImportTablePanel
           summary={[
-            `Daftar pelanggan baru (PB) dan pemasangan kembali (PK) untuk DPM periode ${PERIODE_BERJALAN_AKTIF}`,
+            `Daftar pelanggan baru (PB) dan pemasangan kembali (PK) untuk DPM periode ${targetPeriode}`,
             `${rows.length} Sambungan`,
             ...(filteredRows.length > previewRows.length
               ? [

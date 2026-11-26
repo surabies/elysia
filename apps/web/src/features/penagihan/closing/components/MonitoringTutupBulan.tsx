@@ -1,11 +1,8 @@
 ﻿'use client';
 
-import Link from 'next/link';
 import {
   AlertTriangle,
-  BookOpen,
   CheckCircle2,
-  HelpCircle,
   Lock,
   Unlock,
   X,
@@ -14,22 +11,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageContainer } from '@/components/layout/page/PageContainer';
 import {
+  ClosingSmoothPanel,
   PageSectionHeader,
   PeriodFilterBar,
 } from '@/features/penagihan/closing/components/shared';
 import { cn } from '@/lib/utils';
 import { useClosingWorkflow } from '../hooks/use-closing-workflow';
+import { formatPeriodeLabelId } from '../lib/closing-format';
 import type { MonitoringTutupBulanProps } from '../types';
 import { ClosingDialogs } from './ClosingDialogs';
 import { ClosingSubNavBar } from './ClosingSubNavBar';
 import { ClosingWizardStepper } from './ClosingWizardStepper';
 
 export function MonitoringTutupBulan({
+  highlightStage,
   initialTab,
   initialStep,
 }: MonitoringTutupBulanProps = {}) {
   const {
     periode,
+    daftarPeriode,
     setPeriode,
     setActiveTab,
     activeWizardStep,
@@ -44,6 +45,7 @@ export function MonitoringTutupBulan({
     standAngkatList,
     perbandingan,
     loading,
+    refreshing,
     actionLoading,
     feedback,
     setFeedback,
@@ -56,7 +58,6 @@ export function MonitoringTutupBulan({
     isTerkunci,
     loadClosingData,
     handleDismissOnboarding,
-    handleOpenOnboarding,
     handlePostingDatameter,
     handleEksekusiClosing,
     handleBukaBulanBaru,
@@ -65,10 +66,10 @@ export function MonitoringTutupBulan({
   } = useClosingWorkflow(initialTab, initialStep);
 
   return (
-    <PageContainer className="space-y-5">
+    <PageContainer className="space-y-4">
       <PageSectionHeader
-        title="Wizard Tutup Buku & Penerbitan Tagihan"
-        description="Ikuti panduan 5 langkah berurutan untuk memeriksa data, mengesahkan hasil baca meter, menerbitkan tagihan resmi, dan membuka jadwal bulan baru dengan aman."
+        title="5. Tutup Bulan"
+        description="Konsol kendali akhir: verifikasi 5 syarat kesiapan, sahkan bacaan meter (V3), kunci buku DRD resmi, dan inisialisasi siklus baru."
         badge={
           <Badge variant={isTerkunci ? 'secondary' : 'green-subtle'} size="md">
             {isTerkunci ? (
@@ -77,109 +78,91 @@ export function MonitoringTutupBulan({
               <Unlock className="size-3" />
             )}
             <span>
-              {isTerkunci ? 'Buku Terkunci (Selesai)' : 'Periode Berjalan'}
+              {formatPeriodeLabelId(periode)} ·{' '}
+              {isTerkunci ? 'Terkunci' : 'Berjalan'}
             </span>
           </Badge>
         }
         actions={
-          <>
-            <PeriodFilterBar
-              periode={periode}
-              onPeriodeChange={setPeriode}
-              onRefresh={loadClosingData}
-              loading={loading}
-              label="Periode"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="default"
-              onClick={handleOpenOnboarding}
-            >
-              <HelpCircle className="size-3.5" />
-              <span>Cara Kerja</span>
-            </Button>
-            <Button asChild variant="outline" size="default">
-              <Link href="/tools-tutup/panduan">
-                <BookOpen className="size-3.5" />
-                <span>Panduan &amp; 12 Modul</span>
-              </Link>
-            </Button>
-          </>
+          <PeriodFilterBar
+            periode={periode}
+            options={daftarPeriode}
+            onPeriodeChange={setPeriode}
+            onRefresh={loadClosingData}
+            loading={loading || refreshing}
+            label="Periode Kerja"
+          />
         }
       />
 
-      {/* Bar Navigasi Antar Halaman Terpisah */}
       <ClosingSubNavBar />
 
-      {/* Banner Pesan Status / Error Ramah Operator */}
-      {feedback && (
-        <div
-          role={feedback.type === 'error' ? 'alert' : 'status'}
-          className={cn(
-            'flex items-start justify-between gap-3 rounded-lg border p-4',
-            feedback.type === 'error'
-              ? 'border-(--ds-red-300) bg-(--ds-red-100) text-(--ds-red-900) dark:border-(--ds-red-400) dark:bg-(--ds-red-200)'
-              : 'border-(--ds-green-300) bg-(--ds-green-100) text-(--ds-green-900) dark:border-(--ds-green-400) dark:bg-(--ds-green-200)',
-          )}
-        >
-          <div className="flex items-start gap-3">
-            {feedback.type === 'error' ? (
-              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-(--ds-red-700)" />
-            ) : (
-              <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-(--ds-green-700)" />
+      <ClosingSmoothPanel refreshing={refreshing}>
+        {/* Banner Umpan Balik Ringkas */}
+        {feedback && (
+          <div
+            role={feedback.type === 'error' ? 'alert' : 'status'}
+            className={cn(
+              'flex items-start justify-between gap-3 rounded-lg border px-4 py-3',
+              feedback.type === 'error'
+                ? 'border-red-200 bg-red-50/40 text-red-900 dark:border-red-950/60 dark:bg-red-950/20 dark:text-red-300'
+                : 'border-emerald-200 bg-emerald-50/40 text-emerald-900 dark:border-emerald-950/60 dark:bg-emerald-950/20 dark:text-emerald-300',
             )}
-            <div className="space-y-1">
-              {feedback.title && (
-                <p className="text-label-14">{feedback.title}</p>
-              )}
-              <p className="text-copy-13">{feedback.message}</p>
-              {feedback.dataImpact && (
-                <p className="text-copy-12 opacity-90">
-                  <strong>Status Keamanan Data:</strong> {feedback.dataImpact}
-                </p>
-              )}
-              {feedback.nextAction && (
-                <p className="text-copy-12">
-                  <strong>Langkah yang Harus Dilakukan:</strong>{' '}
-                  {feedback.nextAction}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => setFeedback(null)}
-            aria-label="Tutup pesan"
           >
-            <X className="size-3.5" />
-          </Button>
-        </div>
-      )}
+            <div className="flex items-start gap-2.5">
+              {feedback.type === 'error' ? (
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-600 dark:text-red-400" />
+              ) : (
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              )}
+              <div className="space-y-0.5 text-xs">
+                {feedback.title && (
+                  <p className="font-semibold">{feedback.title}</p>
+                )}
+                <p className="leading-relaxed opacity-95">{feedback.message}</p>
+                {feedback.nextAction && (
+                  <p className="text-[11px] opacity-85">
+                    <strong>Langkah:</strong> {feedback.nextAction}
+                  </p>
+                )}
+              </div>
+            </div>
 
-      {/* Fokus Utama: Hanya 1 Kartu Wizard Aktif (Tanpa Tumpukan Puluhan Kartu di Bawah) */}
-      <ClosingWizardStepper
-        periode={periode}
-        activeStep={activeWizardStep}
-        onStepChange={setActiveWizardStep}
-        steps={wizardSteps}
-        pratinjau={pratinjau}
-        stages={stages}
-        standAngkatList={standAngkatList}
-        perbandingan={perbandingan}
-        loading={loading}
-        actionLoading={actionLoading}
-        reviewConfirmed={reviewConfirmed}
-        onReviewConfirmedChange={setReviewConfirmed}
-        tanggalJatuhTempo={tanggalJatuhTempo}
-        onTanggalJatuhTempoChange={setTanggalJatuhTempo}
-        onOpenDialog={setActiveDialog}
-        onSelectTab={setActiveTab}
-        onExecuteStageAction={handleExecuteStageAction}
-      />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setFeedback(null)}
+              aria-label="Tutup pesan"
+            >
+              <X className="size-3.5" />
+            </Button>
+          </div>
+        )}
+
+        <ClosingWizardStepper
+          periode={periode}
+          targetBulanBaru={targetBulanBaru}
+          activeStep={activeWizardStep}
+          onStepChange={setActiveWizardStep}
+          onSwitchPeriode={setPeriode}
+          highlightStage={highlightStage}
+          steps={wizardSteps}
+          pratinjau={pratinjau}
+          stages={stages}
+          standAngkatList={standAngkatList}
+          perbandingan={perbandingan}
+          loading={loading}
+          actionLoading={actionLoading}
+          reviewConfirmed={reviewConfirmed}
+          onReviewConfirmedChange={setReviewConfirmed}
+          tanggalJatuhTempo={tanggalJatuhTempo}
+          onTanggalJatuhTempoChange={setTanggalJatuhTempo}
+          onOpenDialog={setActiveDialog}
+          onSelectTab={setActiveTab}
+          onExecuteStageAction={handleExecuteStageAction}
+        />
+      </ClosingSmoothPanel>
 
       <ClosingDialogs
         periode={periode}

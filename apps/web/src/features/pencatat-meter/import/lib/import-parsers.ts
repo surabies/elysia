@@ -18,6 +18,37 @@ import type {
 const stripToId = (value: string) => value.replace(/[^\w-]/g, "");
 const stripToPeriode = (value: string) => value.replace(/[^\w]/g, "");
 
+/**
+ * Standarisasi NOLG PDAM 11 digit (mis. '101900821' dari Excel/CSV PBPK -> '00101900821')
+ * agar 100% cocok dengan kunci utama tabel `pelanggan` dan `LapDataMeter`.
+ */
+export function normalizeNolgPdam(raw: string): string {
+  const clean = stripToId(raw.trim());
+  if (!clean) return "";
+  return clean.length < 11 ? clean.padStart(11, "0") : clean;
+}
+
+/**
+ * Konversi kode ukuran meter aplikasi mutasi eksternal PDAM ('A'..'G') ke ukuran standar `biaya_tetap`.
+ */
+export function normalizeUkuranMeterPdam(raw: string): string {
+  const code = raw.trim().toUpperCase();
+  const map: Record<string, string> = {
+    A: "1/2",
+    B: "3/4",
+    C: "1",
+    D: "1 1/2",
+    E: "2",
+    F: "3",
+    G: "4",
+    "0.5": "1/2",
+    "0,5": "1/2",
+  };
+  if (map[code]) return map[code];
+  const validSizes = new Set(["1/2", "3/4", "1", "1 1/2", "2", "3", "4"]);
+  return validSizes.has(raw.trim()) ? raw.trim() : "1/2";
+}
+
 /** Kondisi dianggap normal bila keterangan memuat kata "normal" atau TMSS kosong ("-"). */
 export const isKondisiNormal = (ketCatat: string, tmss?: string) =>
   ketCatat.toLowerCase().includes(KONDISI_NORMAL_KEYWORD) || tmss === "-";
@@ -43,7 +74,7 @@ export function parsePbpkCsv(text: string): PbpkRow[] {
     tglaktif: find(["tglaktif", "tgl_aktif", "tanggal aktif", "tgl_pasang"]),
     kd_kelurahan: find(["kd_kelurahan", "kelurahan_kode", "kelurahan"]),
     kd_kecamatan: find(["kd_kecamatan", "kecamatan_kode", "kecamatan"]),
-    kode_wilayah: find(["kode_wilayah", "wilayah_kode", "wilayah"]),
+    kode_wilayah: find(["kode_wilayah", "wilayah_kode"]),
     tarif: find(["kd_goltarif", "goltarif", "tarif_kode", "tarif", "golongan"]),
     rute: find(["kd_rute", "rute_kode", "rute"]),
     urutan: find(["no_urutrute", "no_urut_rute", "urut_rute", "no_urut", "urutan"]),
@@ -53,35 +84,41 @@ export function parsePbpkCsv(text: string): PbpkRow[] {
   const rows: PbpkRow[] = [];
   table.slice(1).forEach((parts) => {
     if (parts.length < 3) return;
-    const nolgRaw = readCell(parts, col.nolg);
-    const nolg = stripToId(nolgRaw);
+    const nolg = normalizeNolgPdam(readCell(parts, col.nolg));
     if (!nolg) return;
 
-    const notelpRaw = readCell(parts, col.notelp);
-    const notelp = notelpRaw && notelpRaw !== "-" ? notelpRaw : undefined;
-    const nometerRaw = readCell(parts, col.nometer);
-    const nometer = nometerRaw ? nometerRaw.trim() : `MTR-${nolg}`;
+    const notelpRaw = readCell(parts, col.notelp).trim();
+    const notelp =
+      notelpRaw && notelpRaw !== "-"
+        ? /^8\d{8,13}$/.test(notelpRaw)
+          ? `0${notelpRaw}`
+          : notelpRaw
+        : undefined;
+    const nometerRaw = readCell(parts, col.nometer).trim();
+    const nometer = nometerRaw ? nometerRaw : `MTR-${nolg}`;
 
     const mutasiRaw = readCell(parts, col.mutasi).toUpperCase();
     const mutasian: PbpkMutasi = mutasiRaw.includes("PK") ? "PK" : "PB";
+    const kodeWilayah = readCell(parts, col.kode_wilayah).trim() || undefined;
+    const rawRute = readCell(parts, col.rute).trim().toUpperCase();
 
     rows.push({
       nolg,
-      nama: readCell(parts, col.nama) || PBPK_DEFAULTS.nama,
-      alamat: readCell(parts, col.alamat) || PBPK_DEFAULTS.alamat,
-      rt: readCell(parts, col.rt) || undefined,
-      rw: readCell(parts, col.rw) || undefined,
+      nama: readCell(parts, col.nama).trim() || PBPK_DEFAULTS.nama,
+      alamat: readCell(parts, col.alamat).trim() || PBPK_DEFAULTS.alamat,
+      rt: readCell(parts, col.rt).trim() || undefined,
+      rw: readCell(parts, col.rw).trim() || undefined,
       notelp,
       jmlpenghuni: parseDecimal(readCell(parts, col.jmlpenghuni)),
       nometer,
-      kd_merkmeter: readCell(parts, col.kd_merkmeter) || "ITR",
-      kd_ukmeter: readCell(parts, col.kd_ukmeter) || "1/2",
-      tglaktif: readCell(parts, col.tglaktif) || undefined,
-      kd_kelurahan: readCell(parts, col.kd_kelurahan) || undefined,
-      kd_kecamatan: readCell(parts, col.kd_kecamatan) || undefined,
-      kode_wilayah: readCell(parts, col.kode_wilayah) || undefined,
-      kd_goltarif: readCell(parts, col.tarif) || PBPK_DEFAULTS.tarif,
-      kd_rute: readCell(parts, col.rute) || PBPK_DEFAULTS.rute,
+      kd_merkmeter: (readCell(parts, col.kd_merkmeter).trim() || "ITR").toUpperCase(),
+      kd_ukmeter: normalizeUkuranMeterPdam(readCell(parts, col.kd_ukmeter)),
+      tglaktif: readCell(parts, col.tglaktif).trim() || undefined,
+      kd_kelurahan: readCell(parts, col.kd_kelurahan).trim().toUpperCase() || undefined,
+      kd_kecamatan: readCell(parts, col.kd_kecamatan).trim().toUpperCase() || undefined,
+      kode_wilayah: kodeWilayah,
+      kd_goltarif: readCell(parts, col.tarif).trim().toUpperCase() || PBPK_DEFAULTS.tarif,
+      kd_rute: rawRute || PBPK_DEFAULTS.rute,
       no_urutrute: parseDecimal(readCell(parts, col.urutan)) ?? 0,
       mutasian,
     });
@@ -150,15 +187,18 @@ export function parseLapDataMeterCsv(text: string): LapDataMeterRow[] {
   const col = {
     nolg: find(["no pel", "nolg", "nomor pelanggan", "nopel"]),
     nama: find(["nama pelanggan", "nama"]),
+    alamat: find(["alamat", "alamat sambungan", "alamat pelanggan"]),
     thbl: find(["periode", "thbl"]),
     stml: find(["st awal", "stml", "stand awal"]),
     stma: find(["st akhir", "stma", "stand akhir"]),
     pakai: find(["pakai_m3", "pakai", "kubikasi"]),
     pakaiLalu: find(["pakai lau", "pakai lalu", "pakai_lalu"]),
+    trf: find(["trf", "tarif", "kd_goltarif", "golongan"]),
     tmss: find(["kd_kel", "tmss", "kode_kondisi"]),
     ketCatat: find(["nm_kel", "kondisi", "ket_catat", "keterangan"]),
     petugas: find(["kd_petugas", "petugas_id"]),
     namaPetugas: find(["nama petugas"]),
+    kdWm: find(["kd_wm", "nometer", "no_meter"]),
     rute: find(["rute_kode", "rute", "kd_rute"]),
     tgl: find(["tgl_catat", "tanggal catat"]),
   };
@@ -167,7 +207,7 @@ export function parseLapDataMeterCsv(text: string): LapDataMeterRow[] {
   for (const parts of table.slice(1)) {
     if (parts.length < 3) continue;
 
-    const nolg = stripToId(readCell(parts, col.nolg));
+    const nolg = normalizeNolgPdam(readCell(parts, col.nolg));
     const thbl = stripToPeriode(readCell(parts, col.thbl));
     if (!nolg || !thbl) continue;
 
@@ -184,18 +224,25 @@ export function parseLapDataMeterCsv(text: string): LapDataMeterRow[] {
         ? Math.max(0, rawPakai)
         : Math.max(0, stma - stml);
 
+    const kdWmRaw = readCell(parts, col.kdWm).trim();
+    const kdWm =
+      kdWmRaw && kdWmRaw !== "-" && kdWmRaw !== "0" ? kdWmRaw : undefined;
+
     rows.push({
       thbl,
       nolg,
       nama: readCell(parts, col.nama) || undefined,
+      alamat: readCell(parts, col.alamat) || undefined,
       stml,
       stma,
       pakaiM3,
       pakaiLalu: parseDecimal(readCell(parts, col.pakaiLalu)),
+      trf: readCell(parts, col.trf) || undefined,
       tmss: readCell(parts, col.tmss) || LAPDATAMETER_DEFAULTS.tmss,
       ketCatat: readCell(parts, col.ketCatat) || LAPDATAMETER_DEFAULTS.ketCatat,
       petugasId,
       namaPetugas: readCell(parts, col.namaPetugas) || petugasId,
+      kdWm,
       ruteKode: readCell(parts, col.rute) || undefined,
       tglCatat: readCell(parts, col.tgl) || new Date().toISOString(),
       catatan: LAPDATAMETER_DEFAULTS.catatan,

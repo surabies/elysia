@@ -1,14 +1,14 @@
 // features/dashboard/import/components/foto-backup/ImportPhotoDialog.tsx
 import * as React from "react";
 import { Copy, ExternalLink } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@cater/ui";
 import { cn } from "@/lib/utils";
 import {
   FOTO_JENIS_LIST,
@@ -45,7 +45,7 @@ export function ImportPhotoDialog({
             <span>
               {previewCustomer.nama || `Pelanggan #${previewCustomer.nolg}`}
             </span>
-            <Badge variant="pill" className="font-mono">
+            <Badge variant="secondary" className="font-mono text-label-11">
               {previewCustomer.nolg}
             </Badge>
           </DialogTitle>
@@ -115,7 +115,7 @@ export function ImportPhotoDialog({
               href={currentPhoto.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-label-12 text-ds-blue-700 hover:underline"
+              className="inline-flex items-center gap-1 text-label-12 text-blue-600 dark:text-blue-400 hover:underline"
             >
               <ExternalLink className="size-3.5" aria-hidden />
               Buka Tab Penuh

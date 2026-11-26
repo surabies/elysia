@@ -10,13 +10,13 @@ import {
   Calendar,
   Sparkles,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@cater/ui"
 import { cn } from "@/lib/utils"
 import { KpiInsentifPetugasTab } from "./components/KpiInsentifPetugasTab"
 import { KpiPengaturanInsentifTab } from "./components/KpiPengaturanInsentifTab"
@@ -63,7 +63,7 @@ export function KpiOperasionalView({
                   : "border-border text-muted-foreground hover:text-foreground"
               )}
             >
-              <Calculator className="size-3.5 text-(--ds-green-700)" />
+              <Calculator className="size-3.5 text-emerald-500" />
               <span>1. Evaluasi &amp; Insentif Petugas</span>
             </button>
 
@@ -77,7 +77,7 @@ export function KpiOperasionalView({
                   : "border-border text-muted-foreground hover:text-foreground"
               )}
             >
-              <SlidersHorizontal className="size-3.5 text-(--ds-amber-700)" />
+              <SlidersHorizontal className="size-3.5 text-amber-500" />
               <span>2. Pengaturan Rumusan &amp; Alokasi Beban</span>
             </button>
           </div>
@@ -92,7 +92,7 @@ export function KpiOperasionalView({
                 className="h-8 gap-1.5 text-xs bg-card hover:bg-muted"
                 title="Buka halaman Balanced Scorecard 4 Perspektif Perusahaan"
               >
-                <Target className="size-3.5 text-(--ds-blue-700)" />
+                <Target className="size-3.5 text-blue-500" />
                 <span>Scorecard Perusahaan &rarr;</span>
               </Button>
             </Link>

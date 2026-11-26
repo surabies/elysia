@@ -2,7 +2,7 @@
 import * as React from "react";
 import { FolderArchive, Info, UploadCloud } from "lucide-react";
 import { PERIODE_BERJALAN_AKTIF } from "@/config/periode";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@cater/ui";
 import { FOTO_JENIS_LIST } from "../../lib/foto-backup";
 import { FOTO_EXAMPLE_NOLG } from "../../lib/import-config";
 import { ImportFileButton } from "../shared/ImportFileButton";
@@ -30,7 +30,7 @@ export function ImportPhotoEmptyState({
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
         {FOTO_JENIS_LIST.map((meta) => (
-          <Badge key={meta.key} variant="pill" className="font-mono">
+          <Badge key={meta.key} variant="secondary" className="font-mono text-label-11">
             {`${PERIODE_BERJALAN_AKTIF}_${meta.key}_${FOTO_EXAMPLE_NOLG}.jpg`}
           </Badge>
         ))}

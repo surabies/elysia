@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@cater/ui";
 import { cn } from "@/lib/utils";
 import {
   IMPORT_TABLE_CONTAINER_CLASS,
@@ -68,7 +68,7 @@ export function ImportDataTable<T>({
             <TableCell colSpan={columns.length} className="h-40 text-center">
               <div className="flex flex-col items-center justify-center gap-2">
                 <EmptyIcon
-                  className="size-8 text-ds-gray-600"
+                  className="size-8 text-muted-foreground"
                   strokeWidth={1.5}
                   aria-hidden
                 />

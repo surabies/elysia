@@ -12,6 +12,7 @@ import {
   verifikasiStandAngkatBodySchema,
   inputPasangBaruBodySchema,
   inputPerubahanKategoriBodySchema,
+  simpanBacaanPbpkBodySchema,
 } from './closing.schema';
 
 const CLOSING_ROLES: AppRole[] = [
@@ -23,7 +24,11 @@ const CLOSING_ROLES: AppRole[] = [
   'STAFF_ADMIN_BILLING',
 ];
 
-const CLOSING_AUTHORIZED_ROLES: ReadonlySet<AppRole> = new Set(CLOSING_ROLES);
+const CLOSING_EXECUTE_ROLES: ReadonlySet<AppRole> = new Set<AppRole>([
+  'SUPERADMIN',
+  'STAFF_ADMIN_BILLING',
+  'VERIFIKATOR_3',
+]);
 
 function verifyClosingPermission(userRoles: AppRole[] | undefined): void {
   if (!userRoles || userRoles.length === 0) {
@@ -31,10 +36,10 @@ function verifyClosingPermission(userRoles: AppRole[] | undefined): void {
       'AKSES_DITOLAK: Akun Anda tidak memiliki wewenang untuk menjalankan proses tutup buku.'
     );
   }
-  const hasPermission = userRoles.some((r) => CLOSING_AUTHORIZED_ROLES.has(r));
+  const hasPermission = userRoles.some((r) => CLOSING_EXECUTE_ROLES.has(r));
   if (!hasPermission) {
     throw new Error(
-      'AKSES_DITOLAK: Akun Anda tidak memiliki wewenang untuk menjalankan proses tutup buku. Hubungi Supervisor atau Admin Billing; data tetap aman dan tidak berubah.'
+      'AKSES_DITOLAK: Hanya Admin Billing, Supervisor Verifikasi (V3), atau Superadmin yang berwenang mengeksekusi tutup buku. Data tetap aman dan tidak berubah.'
     );
   }
 }
@@ -101,7 +106,7 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
         const result = await closingService.eksekusiClosing({
           periode: body.periode,
           tanggalJatuhTempo,
-          userId: user?.name ?? user?.email ?? user?.id ?? 'ADMIN_BILLING',
+          userId: user?.id ?? null,
         });
 
         return {
@@ -135,7 +140,7 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
         const result = await bulanBaruService.bukaBulanBaru({
           periodeLalu: body.periodeLalu,
           periodeBaru: body.periodeBaru,
-          userId: user?.name ?? user?.email ?? user?.id ?? 'ADMIN_BILLING',
+          userId: user?.id ?? null,
         });
 
         return {
@@ -167,7 +172,7 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
         verifyClosingPermission(userRoles);
         const result = await closingService.postingDatameterMassal(
           body.periode,
-          user?.name ?? user?.email ?? user?.id ?? 'ADMIN_BILLING'
+          user?.id ?? null
         );
         return { success: true, data: result };
       } catch (err: any) {
@@ -235,17 +240,18 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
   // 9. Tahap 2: Verifikasi Mutasi Stand Angkat
   .post(
     '/stand-angkat/verifikasi',
-    async ({ body, user, set }: any) => {
+    async ({ body, user, userRoles, set }: any) => {
       try {
+        verifyClosingPermission(userRoles);
         const result = await closingService.verifikasiStandAngkat(
           body.id,
-          user?.id ?? 'ADMIN_SYSTEM',
+          user?.id ?? null,
           body.status,
           body.catatan
         );
         return { success: true, data: result };
       } catch (err: any) {
-        set.status = 500;
+        set.status = err.message?.startsWith('AKSES_DITOLAK:') ? 403 : 400;
         return { success: false, error: err.message };
       }
     },
@@ -311,15 +317,38 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
     }
   )
 
+  // 12b. Simpan Stand Awal & Stand Akhir = Pemakaian untuk Pelanggan PBPK
+  .post(
+    '/pbpk/baca-meter',
+    async ({ body, user, userRoles, set }: any) => {
+      try {
+        verifyClosingPermission(userRoles);
+        const result = await pbpkService.simpanBacaanPbpk({
+          periode: body.periode,
+          items: body.items,
+          userId: user?.id ?? 'ADMIN_SYSTEM',
+        });
+        return { ...result, data: result };
+      } catch (err: any) {
+        set.status = err.message?.startsWith('AKSES_DITOLAK:') ? 403 : 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      body: simpanBacaanPbpkBodySchema,
+    }
+  )
+
   // 13. Tahap 3: Update Zonasi & Pemetaan Rute Otomatis
   .post(
     '/update-zonasi',
-    async ({ body, set }) => {
+    async ({ body, userRoles, set }: any) => {
       try {
+        verifyClosingPermission(userRoles);
         const result = await closingService.sinkronZonasiRute(body.periode);
         return { success: true, ...result, data: result };
       } catch (err: any) {
-        set.status = 500;
+        set.status = err.message?.startsWith('AKSES_DITOLAK:') ? 403 : 400;
         return { success: false, error: err.message };
       }
     },
@@ -331,12 +360,13 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
   // 14. Tahap 8: Upload & Validasi Master Pelanggan
   .post(
     '/upload-master-pelanggan',
-    async ({ body, set }) => {
+    async ({ body, userRoles, set }: any) => {
       try {
+        verifyClosingPermission(userRoles);
         const result = await closingService.validasiUploadMasterPelanggan(body.periode);
         return { success: true, ...result, data: result };
       } catch (err: any) {
-        set.status = 500;
+        set.status = err.message?.startsWith('AKSES_DITOLAK:') ? 403 : 400;
         return { success: false, error: err.message };
       }
     },
@@ -348,12 +378,13 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
   // 15. Tahap 9: Sync Pelanggan Baru ke Rute DPM
   .post(
     '/sync-pelanggan-baru',
-    async ({ body, set }) => {
+    async ({ body, userRoles, set }: any) => {
       try {
+        verifyClosingPermission(userRoles);
         const result = await closingService.syncPelangganBaruKeDpm(body.periode);
         return { success: true, ...result, data: result };
       } catch (err: any) {
-        set.status = 500;
+        set.status = err.message?.startsWith('AKSES_DITOLAK:') ? 403 : 400;
         return { success: false, error: err.message };
       }
     },
@@ -365,12 +396,13 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
   // 16. Tahap 10: Update Data Pelanggan (Sequencing Urutan Rute)
   .post(
     '/update-data-pelanggan',
-    async ({ body, set }) => {
+    async ({ body, userRoles, set }: any) => {
       try {
+        verifyClosingPermission(userRoles);
         const result = await closingService.sequencingUrutanPelanggan(body.periode);
         return { success: true, ...result, data: result };
       } catch (err: any) {
-        set.status = 500;
+        set.status = err.message?.startsWith('AKSES_DITOLAK:') ? 403 : 400;
         return { success: false, error: err.message };
       }
     },

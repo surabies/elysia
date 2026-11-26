@@ -14,4 +14,8 @@ export {
   MetricStatCard,
   type MetricStatCardProps,
 } from './MetricStatCard';
+export {
+  ClosingSmoothPanel,
+  type ClosingSmoothPanelProps,
+} from './ClosingSmoothPanel';
 export { PanelDasbor } from './PanelDasbor';

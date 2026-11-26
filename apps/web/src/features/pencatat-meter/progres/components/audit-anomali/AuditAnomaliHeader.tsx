@@ -9,15 +9,16 @@ import {
   RotateCw,
   ShieldCheck,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
+  Badge,
+  Button,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+  StatusDot,
+} from "@cater/ui";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { PeriodeOption } from "@/server/services/dashboard/dashboard.service";
@@ -99,10 +100,7 @@ export function AuditAnomaliHeader({
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border pb-3">
           {/* Heartbeat Status */}
           <div className="flex items-center gap-2.5">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-blue-500" />
-            </span>
+            <StatusDot state="queued" size="sm" showPulse />
             <span className="font-mono text-[11px] font-semibold tracking-wider text-foreground uppercase">
               PDAM Tirtawening
             </span>

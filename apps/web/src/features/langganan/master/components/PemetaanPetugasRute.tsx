@@ -19,32 +19,28 @@ import {
   ListOrdered,
   Filter,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
 import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from '@/components/ui/tabs';
-import {
+  Badge,
+  Button,
+  Card,
+  Input,
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
-} from '@/components/ui/select';
-import {
+  SelectTrigger,
+  SelectValue,
+  Spinner,
   Table,
-  TableHeader,
   TableBody,
-  TableHead,
-  TableRow,
   TableCell,
-} from '@/components/ui/table';
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@cater/ui';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { masterApi } from '../api';
@@ -390,7 +386,7 @@ export function PemetaanPetugasRute() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-3 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-md bg-foreground text-background">
+            <div className="p-1.5 rounded-md bg-muted border border-border text-foreground">
               <Route className="size-4" />
             </div>
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-sans">
@@ -474,7 +470,7 @@ export function PemetaanPetugasRute() {
                 </div>
 
                 {/* List Petugas dengan Scroll Internal */}
-                <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40">
+                <div className="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-1">
                   {filteredPetugasList.length === 0 ? (
                     <div className="p-6 text-center text-xs text-muted-foreground font-mono">
                       Petugas tidak ditemukan
@@ -488,51 +484,44 @@ export function PemetaanPetugasRute() {
                           type="button"
                           onClick={() => setSelectedPetugasId(petugas.id)}
                           className={cn(
-                            'w-full text-left p-2.5 sm:p-3 transition-colors duration-150 flex items-center justify-between group cursor-pointer',
+                            'w-full text-left px-3 py-2.5 rounded-md transition-all duration-150 flex items-center justify-between group cursor-pointer border',
                             isSelected
-                              ? 'bg-foreground text-background font-medium'
-                              : 'hover:bg-muted/50 text-foreground'
+                              ? 'bg-secondary/90 border-border text-foreground shadow-2xs font-medium'
+                              : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'
                           )}
                         >
                           <div className="flex flex-col min-w-0 pr-2">
-                            <span
-                              className={cn(
-                                'text-label-13 font-semibold truncate transition-colors duration-150',
-                                isSelected ? 'text-background' : 'text-foreground'
+                            <div className="flex items-center gap-1.5">
+                              {isSelected && (
+                                <span className="size-1.5 rounded-full bg-foreground shrink-0" />
                               )}
-                            >
-                              {petugas.nama}
-                            </span>
-                            <span
-                              className={cn(
-                                'font-mono text-label-11 transition-colors duration-150',
-                                isSelected ? 'text-background/80' : 'text-muted-foreground'
-                              )}
-                            >
+                              <span
+                                className={cn(
+                                  'text-label-13 font-semibold truncate transition-colors duration-150',
+                                  isSelected ? 'text-foreground' : 'text-foreground/90 group-hover:text-foreground'
+                                )}
+                              >
+                                {petugas.nama}
+                              </span>
+                            </div>
+                            <span className="font-mono text-label-11 text-muted-foreground mt-0.5">
                               ID: {petugas.id}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0">
                             <Badge
-                              variant={isSelected ? 'outline' : 'secondary'}
+                              variant={isSelected ? 'default' : 'secondary'}
                               className={cn(
                                 'font-mono text-[10px] px-1.5 py-0 transition-colors duration-150',
-                                isSelected
-                                  ? 'border-background/40 text-background bg-background/10'
-                                  : 'text-foreground'
+                                !isSelected && 'text-muted-foreground group-hover:text-foreground'
                               )}
                             >
                               {petugas.totalRute} Rute
                             </Badge>
                             <Badge
-                              variant={isSelected ? 'outline' : 'outline'}
-                              className={cn(
-                                'font-mono text-[10px] px-1.5 py-0 transition-colors duration-150',
-                                isSelected
-                                  ? 'border-background/40 text-background bg-background/10'
-                                  : 'text-muted-foreground'
-                              )}
+                              variant="outline"
+                              className="font-mono text-[10px] px-1.5 py-0 text-muted-foreground"
                             >
                               {petugas.totalSl.toLocaleString('id-ID')} SL
                             </Badge>
@@ -540,8 +529,8 @@ export function PemetaanPetugasRute() {
                               className={cn(
                                 'size-3.5 transition-transform duration-150',
                                 isSelected
-                                  ? 'text-background translate-x-0.5'
-                                  : 'text-muted-foreground opacity-50 group-hover:opacity-100'
+                                  ? 'text-foreground translate-x-0.5'
+                                  : 'text-muted-foreground/40 group-hover:text-muted-foreground group-hover:translate-x-0.5'
                               )}
                             />
                           </div>
@@ -584,7 +573,7 @@ export function PemetaanPetugasRute() {
                         onValueChange={setSelectedRuteToAdd}
                         disabled={savingAssign || !selectedPetugasId}
                       >
-                        <SelectTrigger className="h-8 text-label-12 font-mono w-full">
+                        <SelectTrigger size="sm" className="h-8 text-label-12 font-mono w-full cursor-pointer">
                           <SelectValue placeholder="Pilih rute yang ingin ditambahkan..." />
                         </SelectTrigger>
                         <SelectContent className="max-h-64 font-mono">
@@ -622,7 +611,7 @@ export function PemetaanPetugasRute() {
                         onValueChange={setStatusSementaraToAdd}
                         disabled={savingAssign || !selectedPetugasId}
                       >
-                        <SelectTrigger className="h-8 text-label-12 font-mono w-full">
+                        <SelectTrigger size="sm" className="h-8 text-label-12 font-mono w-full cursor-pointer">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="font-mono">
@@ -637,12 +626,15 @@ export function PemetaanPetugasRute() {
                     </div>
 
                     {/* Button Tambah */}
-                    <div className="sm:col-span-3">
+                    <div className="sm:col-span-3 flex flex-col gap-1">
+                      <span className="text-label-11 font-medium text-transparent select-none hidden sm:inline-block leading-none">
+                        &nbsp;
+                      </span>
                       <Button
                         onClick={handleTambahRute}
                         disabled={savingAssign || !selectedRuteToAdd || !selectedPetugasId}
                         size="sm"
-                        className="h-8 w-full gap-1.5 text-label-12 font-mono"
+                        className="h-8 w-full gap-1.5 text-label-12 font-mono font-medium shadow-none cursor-pointer"
                       >
                         {savingAssign ? (
                           <Spinner className="size-3.5" />
@@ -821,7 +813,7 @@ export function PemetaanPetugasRute() {
                       value={selectedWilayahUrutan}
                       onValueChange={setSelectedWilayahUrutan}
                     >
-                      <SelectTrigger className="h-8 text-label-12 font-mono w-full">
+                      <SelectTrigger size="sm" className="h-8 text-label-12 font-mono w-full cursor-pointer">
                         <SelectValue placeholder="Pilih wilayah..." />
                       </SelectTrigger>
                       <SelectContent className="font-mono">
@@ -846,7 +838,7 @@ export function PemetaanPetugasRute() {
                       value={selectedPetugasUrutan}
                       onValueChange={setSelectedPetugasUrutan}
                     >
-                      <SelectTrigger className="h-8 text-label-12 font-mono w-full">
+                      <SelectTrigger size="sm" className="h-8 text-label-12 font-mono w-full cursor-pointer">
                         <SelectValue placeholder="Pilih nama petugas..." />
                       </SelectTrigger>
                       <SelectContent className="font-mono">

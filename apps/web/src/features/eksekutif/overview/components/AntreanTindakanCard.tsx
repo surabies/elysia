@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@cater/ui";
 import type {
   AntreanTindakan,
   PeriodeInfo,
@@ -42,10 +42,10 @@ interface QueueItem {
 }
 
 const DOT_CLASS: Record<QueueTone, string> = {
-  neutral: "bg-(--ds-gray-700)",
-  positive: "bg-(--ds-green-700)",
-  warning: "bg-(--ds-amber-700)",
-  danger: "bg-(--ds-red-700)",
+  neutral: "bg-zinc-400 dark:bg-zinc-600",
+  positive: "bg-emerald-500",
+  warning: "bg-amber-500",
+  danger: "bg-red-500",
 };
 
 const BADGE_VARIANT: Record<QueueTone, NonNullable<BadgeProps["variant"]>> = {

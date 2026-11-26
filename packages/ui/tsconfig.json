@@ -10,7 +10,6 @@
     "noImplicitAny": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "@/components/ui/*": ["./src/ui/*"],
       "@/components/reui/*": ["./src/reui/*"],

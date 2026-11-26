@@ -3,10 +3,7 @@
 // 100% konsisten: stroke-width 1.5, size 16x16, geometri presisi.
 
 import type { SidebarIconComponent } from "../NavRow";
-import {
-  GeistProjects,
-  GeistAnalytics,
-} from "./GeistIcons";
+import { GeistProjects, GeistAnalytics } from "./GeistIcons";
 
 import {
   // Group Icons
@@ -93,7 +90,7 @@ export const PRIMARY_ICONS: Record<string, SidebarIconComponent> = {
   "/dashboard": GeistProjects,
   "/analytics": GeistAnalytics,
   "/kpi": Target,
-  "/places": Compass,
+  "/peta-spasial": Compass,
   "/peta-wilayah": Map,
   "/peta-pengaduan": MapPinned,
   "/broadcast": Radio,
@@ -241,7 +238,7 @@ const ITEM_ICONS: Record<string, SidebarIconComponent> = {
   "import data": UploadCloud,
   "lap data meter": FileSpreadsheet,
   "import lapdatameter": FileSpreadsheet,
-  "lapdatameter": FileSpreadsheet,
+  lapdatameter: FileSpreadsheet,
   "r nomor": UserMinus,
   "import r nomor": UserMinus,
   "import pbpk": FolderSync,
@@ -340,7 +337,7 @@ const ITEM_ICONS: Record<string, SidebarIconComponent> = {
 
 export function getItemIcon(
   title: string,
-  fallback: SidebarIconComponent
+  fallback: SidebarIconComponent,
 ): SidebarIconComponent {
   const key = title.trim().toLowerCase();
   return ITEM_ICONS[key] ?? fallback;

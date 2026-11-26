@@ -17,6 +17,10 @@ import {
   VerifikasiMandiriDoc,
   verifikasiMandiriHeadings,
 } from "../content/VerifikasiMandiriDoc"
+import {
+  TutupBulanDoc,
+  tutupBulanHeadings,
+} from "../content/TutupBulanDoc"
 import { DocsDynamicPageContent } from "../components/DocsDynamicPageContent"
 
 export function hrefToSlug(href: string): string {
@@ -52,19 +56,22 @@ function buildRegistry(): {
       const isTitikGps = slug === "pelanggan-titik-gps"
       const isVerifPetugas = slug === "verifikasi-baca-petugas"
       const isVerifMandiri = slug === "verifikasi-baca-pelanggan"
+      const isTutupBulan = slug === "tools-tutup-monitoring-tutup-bulan"
       const meta: DocItemMeta = {
         slug,
         title: item.title,
         category: group.id,
         categoryTitle: group.title,
         description: item.description,
-        lastUpdated: "26 November 2026",
+        lastUpdated: "27 November 2026",
         badge: isKpi
           ? "Update"
           : isTitikGps
           ? "Akurasi Tinggi"
           : isVerifPetugas || isVerifMandiri
           ? "Guide Book"
+          : isTutupBulan
+          ? "Simulasi"
           : undefined,
         routeRef: item.href,
         roles: item.roles,
@@ -77,6 +84,8 @@ function buildRegistry(): {
           ? verifikasiLapanganHeadings
           : isVerifMandiri
           ? verifikasiMandiriHeadings
+          : isTutupBulan
+          ? tutupBulanHeadings
           : DEFAULT_PAGE_HEADINGS,
       }
 
@@ -128,6 +137,17 @@ function buildRegistry(): {
     }
   }
 
+  if (metas["tools-tutup-monitoring-tutup-bulan"]) {
+    metas["tutup-bulan"] = {
+      ...metas["tools-tutup-monitoring-tutup-bulan"],
+      slug: "tutup-bulan",
+    }
+    metas["panduan-tutup-bulan"] = {
+      ...metas["tools-tutup-monitoring-tutup-bulan"],
+      slug: "panduan-tutup-bulan",
+    }
+  }
+
   return { categories, metas }
 }
 
@@ -141,6 +161,9 @@ export function getDocMeta(slug: string): DocItemMeta | undefined {
   if (slug === "titik-gps") return docMetas["pelanggan-titik-gps"] || docMetas["titik-gps"]
   if (slug === "verifikasi-lapangan") return docMetas["verifikasi-baca-petugas"] || docMetas["verifikasi-lapangan"]
   if (slug === "verifikasi-mandiri") return docMetas["verifikasi-baca-pelanggan"] || docMetas["verifikasi-mandiri"]
+  if (slug === "tutup-bulan" || slug === "panduan-tutup-bulan") {
+    return docMetas["tools-tutup-monitoring-tutup-bulan"] || docMetas[slug]
+  }
   return docMetas[slug]
 }
 
@@ -160,6 +183,13 @@ export function getDocComponent(slug: string): ComponentType<{ meta: DocItemMeta
   }
   if (slug === "verifikasi-baca-pelanggan" || slug === "verifikasi-mandiri") {
     return VerifikasiMandiriDoc as unknown as ComponentType<{ meta: DocItemMeta }>
+  }
+  if (
+    slug === "tools-tutup-monitoring-tutup-bulan" ||
+    slug === "tutup-bulan" ||
+    slug === "panduan-tutup-bulan"
+  ) {
+    return TutupBulanDoc as unknown as ComponentType<{ meta: DocItemMeta }>
   }
   return DocsDynamicPageContent
 }

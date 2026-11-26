@@ -30,7 +30,7 @@ export function MockupLaporMeter() {
         {/* Top Header UI */}
         <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-neutral-900/80 px-2.5 py-2 sm:px-3.5 sm:py-2.5 backdrop-blur-md">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-lg bg-ds-blue-700 text-white">
+            <div className="flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
               <Camera className="size-3.5 sm:size-4" />
             </div>
             <div className="min-w-0">
@@ -122,7 +122,7 @@ export function MockupLaporMeter() {
                 Foto Jernih · Siap Diverifikasi
               </span>
             </div>
-            <span className="shrink-0 rounded bg-ds-blue-700/20 px-2 py-0.5 text-[10px] font-semibold text-sky-300 border border-sky-500/30">
+            <span className="shrink-0 rounded bg-blue-600/20 px-2 py-0.5 text-[10px] font-semibold text-sky-300 border border-sky-500/30">
               14 m³
             </span>
           </div>

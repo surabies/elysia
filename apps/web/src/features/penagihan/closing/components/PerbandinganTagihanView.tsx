@@ -1,11 +1,10 @@
 ﻿'use client';
 
-import Link from 'next/link';
-import { ArrowLeft, BarChart3 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { PageContainer } from '@/components/layout/page/PageContainer';
 import {
+  ClosingSmoothPanel,
   PageSectionHeader,
   PeriodFilterBar,
   StatusFeedbackBanner,
@@ -17,19 +16,21 @@ import { ClosingSubNavBar } from './ClosingSubNavBar';
 export function PerbandinganTagihanView() {
   const {
     periode,
+    daftarPeriode,
     setPeriode,
     perbandingan,
     loading,
+    refreshing,
     feedback,
     setFeedback,
     loadClosingData,
   } = useClosingWorkflow('perbandingan');
 
   return (
-    <PageContainer className="space-y-5">
+    <PageContainer className="space-y-4">
       <PageSectionHeader
-        title="Perbandingan Tagihan Bulan Lalu vs Bulan Ini"
-        description="Bandingkan jumlah pelanggan ditagih, pemakaian air (m³), dan nilai rupiah tagihan antar periode per golongan tarif sebelum mengunci buku."
+        title="4. Perbandingan"
+        description="Komparasi jumlah pelanggan ditagih, pemakaian air (m³), dan omzet DRD antar periode per golongan tarif."
         badge={
           <Badge variant="blue-subtle" size="md">
             <BarChart3 className="size-3" />
@@ -37,35 +38,30 @@ export function PerbandinganTagihanView() {
           </Badge>
         }
         actions={
-          <>
-            <PeriodFilterBar
-              periode={periode}
-              onPeriodeChange={setPeriode}
-              onRefresh={loadClosingData}
-              loading={loading}
-              label="Periode"
-            />
-            <Button asChild variant="outline" size="default">
-              <Link href="/tools-tutup/monitoring-tutup-bulan">
-                <ArrowLeft className="size-3.5" />
-                <span>Kembali ke Wizard Tutup Buku</span>
-              </Link>
-            </Button>
-          </>
+          <PeriodFilterBar
+            periode={periode}
+            options={daftarPeriode}
+            onPeriodeChange={setPeriode}
+            onRefresh={loadClosingData}
+            loading={loading || refreshing}
+            label="Periode"
+          />
         }
       />
 
       <ClosingSubNavBar />
 
-      <StatusFeedbackBanner
-        feedback={feedback}
-        onDismiss={() => setFeedback(null)}
-      />
+      <ClosingSmoothPanel refreshing={refreshing}>
+        <StatusFeedbackBanner
+          feedback={feedback}
+          onDismiss={() => setFeedback(null)}
+        />
 
-      <ClosingPerbandinganSection
-        perbandingan={perbandingan}
-        loading={loading}
-      />
+        <ClosingPerbandinganSection
+          perbandingan={perbandingan}
+          loading={loading}
+        />
+      </ClosingSmoothPanel>
     </PageContainer>
   );
 }

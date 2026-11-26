@@ -1,13 +1,13 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
 import {
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@cater/ui";
 import type { OpsiItem } from "../types";
 
 type Props = {

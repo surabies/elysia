@@ -1,8 +1,7 @@
 // features/dashboard/import/components/foto-backup/ImportPhotoFilterBar.tsx
 import * as React from "react";
 import { FolderArchive, Layers, RotateCcw, UploadCloud } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge, Button } from "@cater/ui";
 import { cn } from "@/lib/utils";
 import { FOTO_FILENAME_TEMPLATE } from "../../lib/import-config";
 import {
@@ -85,7 +84,7 @@ export function ImportPhotoFilterBar({
             <h2 className="text-heading-16 text-foreground">
               Import Foto Backup (Mobile Recovery)
             </h2>
-            <Badge variant="pill" className="font-mono">
+            <Badge variant="secondary" className="font-mono text-label-11">
               Pola: {FOTO_FILENAME_TEMPLATE}
             </Badge>
           </div>

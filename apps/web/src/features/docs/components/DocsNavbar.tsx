@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Bell, BookOpen, ExternalLink, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/PengalihTema"
-import { UserMenu } from "@/components/layout/navbar/MenuPengguna"
-import { useSession } from "@/lib/auth-client"
+import * as React from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { Bell, BookOpen, ExternalLink, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/PengalihTema";
+import { UserMenu } from "@/components/layout/navbar/MenuPengguna";
+import { useSession } from "@/lib/auth-client";
 import {
   CommandDialog,
   CommandInput,
@@ -16,39 +16,39 @@ import {
   CommandGroup,
   CommandItem,
   CommandSeparator,
-} from "@/components/ui/command"
-import { docMetas, getAllDocSlugs } from "../config/docsRegistry"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/command";
+import { docMetas, getAllDocSlugs } from "../config/docsRegistry";
+import { cn } from "@/lib/utils";
 
 export function DocsNavbar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { data: session } = useSession()
-  const [openCommand, setOpenCommand] = React.useState(false)
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+  const [openCommand, setOpenCommand] = React.useState(false);
 
   // Keyboard shortcut Ctrl+K atau ⌘K untuk membuka Command Palette
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpenCommand((open) => !open)
+        e.preventDefault();
+        setOpenCommand((open) => !open);
       }
-    }
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
-  }, [])
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
-  const allSlugs = React.useMemo(() => getAllDocSlugs(), [])
+  const allSlugs = React.useMemo(() => getAllDocSlugs(), []);
 
   const handleSelectDoc = (slug: string) => {
-    setOpenCommand(false)
-    router.push(`/docs/${slug}`)
-  }
+    setOpenCommand(false);
+    router.push(`/docs/${slug}`);
+  };
 
   const handleSelectPage = (href: string) => {
-    setOpenCommand(false)
-    router.push(href)
-  }
+    setOpenCommand(false);
+    router.push(href);
+  };
 
   return (
     <>
@@ -63,7 +63,7 @@ export function DocsNavbar() {
                   "transition-colors hover:text-foreground",
                   pathname.startsWith("/docs")
                     ? "text-foreground font-semibold"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground",
                 )}
               >
                 Docs
@@ -81,7 +81,7 @@ export function DocsNavbar() {
                 Analytics
               </Link>
               <Link
-                href="/places"
+                href="/peta-spasial"
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
                 Peta Spasial
@@ -139,7 +139,11 @@ export function DocsNavbar() {
               <UserMenu
                 nama={session?.user?.name ?? null}
                 email={session?.user?.email ?? "user@tirtawening.co.id"}
-                role={(session?.user as any)?.role ?? (session?.user as any)?.roles?.[0] ?? "STAFF"}
+                role={
+                  (session?.user as any)?.role ??
+                  (session?.user as any)?.roles?.[0] ??
+                  "STAFF"
+                }
                 image={session?.user?.image ?? null}
                 variant="navbar"
               />
@@ -161,8 +165,8 @@ export function DocsNavbar() {
 
           <CommandGroup heading="Dokumentasi Modul Aplikasi">
             {allSlugs.map((slug) => {
-              const meta = docMetas[slug]
-              if (!meta) return null
+              const meta = docMetas[slug];
+              if (!meta) return null;
               return (
                 <CommandItem
                   key={slug}
@@ -185,7 +189,7 @@ export function DocsNavbar() {
                     /docs/{slug}
                   </span>
                 </CommandItem>
-              )
+              );
             })}
           </CommandGroup>
 
@@ -197,53 +201,67 @@ export function DocsNavbar() {
               className="flex items-center justify-between cursor-pointer py-2 px-3 text-xs"
             >
               <span>Dashboard Eksekutif</span>
-              <span className="text-muted-foreground text-[10px] font-mono">/dashboard</span>
+              <span className="text-muted-foreground text-[10px] font-mono">
+                /dashboard
+              </span>
             </CommandItem>
             <CommandItem
               onSelect={() => handleSelectPage("/analytics")}
               className="flex items-center justify-between cursor-pointer py-2 px-3 text-xs"
             >
               <span>Analytics &amp; Tren Kubikasi</span>
-              <span className="text-muted-foreground text-[10px] font-mono">/analytics</span>
+              <span className="text-muted-foreground text-[10px] font-mono">
+                /analytics
+              </span>
             </CommandItem>
             <CommandItem
               onSelect={() => handleSelectPage("/kpi")}
               className="flex items-center justify-between cursor-pointer py-2 px-3 text-xs"
             >
               <span>Kinerja &amp; Insentif Petugas</span>
-              <span className="text-muted-foreground text-[10px] font-mono">/kpi</span>
+              <span className="text-muted-foreground text-[10px] font-mono">
+                /kpi
+              </span>
             </CommandItem>
             <CommandItem
-              onSelect={() => handleSelectPage("/places")}
+              onSelect={() => handleSelectPage("/peta-spasial")}
               className="flex items-center justify-between cursor-pointer py-2 px-3 text-xs"
             >
               <span>Peta Spasial GIS</span>
-              <span className="text-muted-foreground text-[10px] font-mono">/places</span>
+              <span className="text-muted-foreground text-[10px] font-mono">
+                /peta-spasial
+              </span>
             </CommandItem>
             <CommandItem
               onSelect={() => handleSelectPage("/info-pelanggan")}
               className="flex items-center justify-between cursor-pointer py-2 px-3 text-xs"
             >
               <span>Informasi Pelanggan</span>
-              <span className="text-muted-foreground text-[10px] font-mono">/info-pelanggan</span>
+              <span className="text-muted-foreground text-[10px] font-mono">
+                /info-pelanggan
+              </span>
             </CommandItem>
             <CommandItem
               onSelect={() => handleSelectPage("/cater")}
               className="flex items-center justify-between cursor-pointer py-2 px-3 text-xs"
             >
               <span>Monitoring Pembacaan (Cater)</span>
-              <span className="text-muted-foreground text-[10px] font-mono">/cater</span>
+              <span className="text-muted-foreground text-[10px] font-mono">
+                /cater
+              </span>
             </CommandItem>
             <CommandItem
               onSelect={() => handleSelectPage("/laporan/lap-drd")}
               className="flex items-center justify-between cursor-pointer py-2 px-3 text-xs"
             >
               <span>Laporan Rekening (DRD)</span>
-              <span className="text-muted-foreground text-[10px] font-mono">/laporan/lap-drd</span>
+              <span className="text-muted-foreground text-[10px] font-mono">
+                /laporan/lap-drd
+              </span>
             </CommandItem>
           </CommandGroup>
         </CommandList>
       </CommandDialog>
     </>
-  )
+  );
 }

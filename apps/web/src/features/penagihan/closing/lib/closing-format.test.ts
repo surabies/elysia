@@ -2,8 +2,11 @@ import { describe, expect, it } from 'bun:test';
 import {
   buildOperatorErrorFeedback,
   calculateVerificationRate,
+  computeDefaultDueDate,
+  computeNextPeriode,
   evaluateClosingWizardSteps,
   formatAngkaId,
+  formatPeriodeLabelId,
   formatRupiahId,
   getClosingConfirmPhrase,
   getStageCategoryLabel,
@@ -54,26 +57,48 @@ describe('Closing Periode & Billing Engine Verification', () => {
       expect(calculateVerificationRate(500, 500)).toBe(100);
       expect(calculateVerificationRate(0, 0)).toBe(0);
     });
+
+    it('computes human-readable period labels, next period, and due dates across year boundaries', () => {
+      expect(formatPeriodeLabelId('202611')).toBe('November 2026');
+      expect(computeNextPeriode('202611')).toBe('202612');
+      expect(computeNextPeriode('202612')).toBe('202701');
+      expect(computeDefaultDueDate('202611')).toBe('2026-12-20');
+      expect(computeDefaultDueDate('202612')).toBe('2027-01-20');
+    });
   });
 
-  describe('5-Step Guided Wizard & Safety Guards', () => {
+  describe('4-Step Linear Closing Pipeline & Safety Guards', () => {
     it('generates explicit confirmation phrase per period', () => {
       expect(getClosingConfirmPhrase('202601')).toBe('TUTUP 202601');
     });
 
-    it('blocks advancing steps when preconditions are not met and unlocks sequentially', () => {
+    it('blocks advancing steps when preconditions are not met and unlocks sequentially across 4 stages', () => {
       const basePratinjau = {
         periode: '202601',
         status: 'BERJALAN' as const,
         daftarCatat: { total: 100, selesai: 100, belumSelesai: 0, readRatePersen: 100 },
-        verifikasi: { total: 100, selesaiV3: 80, belumSelesai: 20 },
+        verifikasi: { total: 100, selesaiV3: 80, belumSelesai: 20, siapDisahkan: 20, butuhKoreksi: 0 },
         pembacaan: { total: 100, sudahDitagih: 0, akanDitagih: 100 },
         perkiraan: { jumlahSl: 100, totalM3: 1500, totalTagihan: 12000000 },
         hambatan: [],
         bisaDitutup: false,
       };
 
-      // Case 1: Step 1 complete, Step 2 has 20 unapproved readings -> recommended step is 2
+      // Case 1: DPM incomplete (belumSelesai > 0) -> stays on Step 1 (Cek Kesiapan Data)
+      const evalDpmIncomplete = evaluateClosingWizardSteps({
+        stages: [],
+        pratinjau: {
+          ...basePratinjau,
+          daftarCatat: { total: 100, selesai: 95, belumSelesai: 5, readRatePersen: 95 },
+        },
+        standAngkatList: [],
+        reviewConfirmed: false,
+        tanggalJatuhTempo: '2026-02-20',
+      });
+      expect(evalDpmIncomplete.recommendedStep).toBe(1);
+      expect(evalDpmIncomplete.steps[0]?.canProceed).toBe(false);
+
+      // Case 2: Step 1 complete, Step 2 has 20 unapproved readings -> recommended step is 2
       const evalUnapproved = evaluateClosingWizardSteps({
         stages: [],
         pratinjau: basePratinjau,
@@ -81,17 +106,18 @@ describe('Closing Periode & Billing Engine Verification', () => {
         reviewConfirmed: false,
         tanggalJatuhTempo: '2026-02-20',
       });
+      expect(evalUnapproved.steps).toHaveLength(4);
       expect(evalUnapproved.recommendedStep).toBe(2);
       expect(evalUnapproved.steps[0]?.canProceed).toBe(true);
       expect(evalUnapproved.steps[1]?.canProceed).toBe(false);
       expect(evalUnapproved.steps[1]?.blockerReasons.length).toBeGreaterThan(0);
 
-      // Case 2: All readings approved, waiting for operator review checkbox in Step 3
+      // Case 3: All readings approved -> moves directly to Step 3 (Tinjau DRD & Kunci Buku)
       const evalApproved = evaluateClosingWizardSteps({
         stages: [],
         pratinjau: {
           ...basePratinjau,
-          verifikasi: { total: 100, selesaiV3: 100, belumSelesai: 0 },
+          verifikasi: { total: 100, selesaiV3: 100, belumSelesai: 0, siapDisahkan: 0, butuhKoreksi: 0 },
           bisaDitutup: true,
         },
         standAngkatList: [],
@@ -100,24 +126,9 @@ describe('Closing Periode & Billing Engine Verification', () => {
       });
       expect(evalApproved.recommendedStep).toBe(3);
       expect(evalApproved.steps[1]?.canProceed).toBe(true);
-      expect(evalApproved.steps[2]?.canProceed).toBe(false);
+      expect(evalApproved.steps[2]?.isCompleted).toBe(false);
 
-      // Case 3: Operator checks review checkbox -> unlocks Step 4 (Kunci Tutup Buku)
-      const evalReviewed = evaluateClosingWizardSteps({
-        stages: [],
-        pratinjau: {
-          ...basePratinjau,
-          verifikasi: { total: 100, selesaiV3: 100, belumSelesai: 0 },
-          bisaDitutup: true,
-        },
-        standAngkatList: [],
-        reviewConfirmed: true,
-        tanggalJatuhTempo: '2026-02-20',
-      });
-      expect(evalReviewed.recommendedStep).toBe(4);
-      expect(evalReviewed.steps[2]?.canProceed).toBe(true);
-
-      // Case 4: Period is TERKUNCI -> jumps to Step 5 (Hasil Tutup Buku)
+      // Case 4: Period is TERKUNCI -> jumps to Step 4 (Bukti Tutup Buku & Buka Bulan Baru)
       const evalLocked = evaluateClosingWizardSteps({
         stages: [],
         pratinjau: {
@@ -129,8 +140,8 @@ describe('Closing Periode & Billing Engine Verification', () => {
         reviewConfirmed: false,
         tanggalJatuhTempo: '2026-02-20',
       });
-      expect(evalLocked.recommendedStep).toBe(5);
-      expect(evalLocked.steps[3]?.isCompleted).toBe(true);
+      expect(evalLocked.recommendedStep).toBe(4);
+      expect(evalLocked.steps[2]?.isCompleted).toBe(true);
     });
 
     it('formats errors with operator-friendly explanation, data safety assurance, and next action', () => {
@@ -141,7 +152,7 @@ describe('Closing Periode & Billing Engine Verification', () => {
       expect(fb.type).toBe('error');
       expect(fb.title).toBe('Gagal Menutup Buku');
       expect(fb.dataImpact).toContain('tetap utuh 100%');
-      expect(fb.nextAction).toContain('Langkah 2');
+      expect(fb.nextAction).toContain('Tahap 2');
     });
   });
 

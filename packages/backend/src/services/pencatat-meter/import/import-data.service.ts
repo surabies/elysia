@@ -14,7 +14,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { eq, sql, and, inArray } from 'drizzle-orm';
+import { eq, sql, and, inArray, desc } from 'drizzle-orm';
 import {
   db,
   pelanggan,
@@ -25,6 +25,9 @@ import {
   petugasCater,
   ruteCater,
   golonganTarif,
+  kecamatan,
+  kelurahan,
+  wilayahAdministrasi,
   masterKondisiCatat,
 } from '@cater/db';
 import {
@@ -857,20 +860,57 @@ export class ImportDataService {
             await tx.insert(golonganTarif).values(tarifRecords).onConflictDoNothing();
           }
 
-          // 4. Pastikan pelanggan terdaftar di master database
+          // 4. Pastikan aset water_meter & pelanggan terdaftar lengkap (termasuk nomor meter kd_wm, alamat, & tarif)
+          const validKdWmSet = new Set<string>();
+          for (const item of uniqueBatch) {
+            const wm = item.kdWm?.trim();
+            if (wm && wm !== '-' && wm !== '0' && wm !== '00000000') {
+              validKdWmSet.add(wm);
+            }
+          }
+          if (validKdWmSet.size > 0) {
+            const wmList = Array.from(validKdWmSet).map((noMeter) => ({
+              noMeter,
+              merk: 'ITR',
+              ukuran: '1/2',
+              kondisi: 'Normal',
+            }));
+            for (let i = 0; i < wmList.length; i += 500) {
+              await tx
+                .insert(waterMeter)
+                .values(wmList.slice(i, i + 500))
+                .onConflictDoNothing({ target: waterMeter.noMeter });
+            }
+          }
+
           const batchNolgs = uniqueBatch.map((b) => b.nolg);
           const existingCusts = await tx
-            .select({ nolg: pelanggan.nolg, ruteKode: pelanggan.ruteKode })
+            .select({
+              nolg: pelanggan.nolg,
+              ruteKode: pelanggan.ruteKode,
+              alamat: pelanggan.alamat,
+              noMeter: pelanggan.noMeter,
+              tarifKode: pelanggan.tarifKode,
+            })
             .from(pelanggan)
             .where(inArray(pelanggan.nolg, batchNolgs));
 
           const existingCustMap = new Map(existingCusts.map((c) => [c.nolg, c]));
           const missingCusts: (typeof pelanggan.$inferInsert)[] = [];
+          const newPbpkDpmRows: (typeof daftarCatat.$inferInsert)[] = [];
 
           for (const item of uniqueBatch) {
-            if (!existingCustMap.has(item.nolg)) {
+            const wmClean = item.kdWm?.trim();
+            const validNoMeter =
+              wmClean && wmClean !== '-' && wmClean !== '0' && wmClean !== '00000000'
+                ? wmClean
+                : null;
+            const existingCust = existingCustMap.get(item.nolg);
+
+            if (!existingCust) {
               const ruteUpper = item.ruteKode ? item.ruteKode.trim().toUpperCase() : null;
               const kelKode = ruteUpper && ruteUpper.length >= 3 ? ruteUpper.slice(0, 3) : null;
+              const tglCatatItem = item.tglCatat ? new Date(item.tglCatat) : new Date();
 
               missingCusts.push({
                 nolg: item.nolg,
@@ -879,14 +919,75 @@ export class ImportDataService {
                 ruteKode: ruteUpper,
                 kelurahanKode: kelKode,
                 tarifKode: item.trf || null,
+                noMeter: validNoMeter,
+                noMeterAsli: wmClean || null,
+                ukuranMeter: '1/2',
                 status: 'PELANGGAN AKTIF',
               });
-              existingCustMap.set(item.nolg, { nolg: item.nolg, ruteKode: ruteUpper });
+
+              newPbpkDpmRows.push({
+                id: `dpm-${thbl}-${item.nolg}`,
+                periode: thbl,
+                nolg: item.nolg,
+                ruteKode: ruteUpper,
+                petugasId: item.petugasId || null,
+                urutan: 999,
+                standAwal: String(item.stml ?? 0),
+                pakaiLalu: String(item.pakaiLalu ?? 0),
+                sumber: 'PBPK',
+                status: 'DICATAT',
+                selesaiAt: tglCatatItem,
+                catatan: `Terdeteksi otomatis dari Import LapDataMeter ${thbl}`,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+
+              existingCustMap.set(item.nolg, {
+                nolg: item.nolg,
+                ruteKode: ruteUpper,
+                alamat: item.alamat || 'Alamat Terdata LapDataMeter',
+                noMeter: validNoMeter,
+                tarifKode: item.trf || null,
+              });
+            } else {
+              // Lengkapi otomatis jika pelanggan sebelumnya terinput tanpa noMeter / alamat placeholder
+              const needAlamatFix =
+                Boolean(item.alamat?.trim()) &&
+                (!existingCust.alamat ||
+                  existingCust.alamat === 'Alamat Terdata LapDataMeter' ||
+                  existingCust.alamat === '-');
+              const needMeterFix = Boolean(validNoMeter) && !existingCust.noMeter;
+              const needTarifFix =
+                Boolean(item.trf?.trim()) &&
+                (!existingCust.tarifKode ||
+                  existingCust.alamat === 'Alamat Terdata LapDataMeter');
+
+              if (needAlamatFix || needMeterFix || needTarifFix) {
+                await tx
+                  .update(pelanggan)
+                  .set({
+                    ...(needAlamatFix ? { alamat: item.alamat!.trim() } : {}),
+                    ...(needMeterFix
+                      ? { noMeter: validNoMeter, noMeterAsli: validNoMeter }
+                      : {}),
+                    ...(needTarifFix ? { tarifKode: item.trf!.trim() } : {}),
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(pelanggan.nolg, item.nolg));
+              }
             }
           }
 
           if (missingCusts.length > 0) {
             await tx.insert(pelanggan).values(missingCusts).onConflictDoNothing();
+          }
+          if (newPbpkDpmRows.length > 0) {
+            await tx
+              .insert(daftarCatat)
+              .values(newPbpkDpmRows)
+              .onConflictDoNothing({
+                target: [daftarCatat.periode, daftarCatat.nolg],
+              });
           }
 
           // 5. Pastikan semua kode TMSS terdaftar di masterKondisiCatat dalam 1 query bulk
@@ -1109,6 +1210,25 @@ export class ImportDataService {
               }
             }
           }
+
+          // 9. Sinkronkan status daftar_catat (DPM) menjadi DICATAT untuk seluruh NOLG yang sudah memiliki bacaan pada periode ini
+          for (let i = 0; i < batchNolgs.length; i += CHUNK_SIZE) {
+            const nolgChunk = batchNolgs.slice(i, i + CHUNK_SIZE);
+            await tx
+              .update(daftarCatat)
+              .set({
+                status: 'DICATAT',
+                selesaiAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .where(
+                and(
+                  eq(daftarCatat.periode, thbl),
+                  inArray(daftarCatat.nolg, nolgChunk),
+                  eq(daftarCatat.status, 'BELUM_DICATAT')
+                )
+              );
+          }
         });
       } catch (err: unknown) {
         // Jika transaksi gagal sepenuhnya, tandai semua baris unik dalam batch ini sebagai gagal
@@ -1231,6 +1351,21 @@ export class ImportDataService {
           });
         }
 
+        await db
+          .update(daftarCatat)
+          .set({
+            status: 'DICATAT',
+            selesaiAt: tglCatat,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(daftarCatat.periode, item.thbl),
+              eq(daftarCatat.nolg, item.nolg),
+              eq(daftarCatat.status, 'BELUM_DICATAT')
+            )
+          );
+
         results.sukses++;
         results.detail.push({ nolg: item.nolg, status: 'SUCCESS' });
       } catch (err: any) {
@@ -1341,7 +1476,8 @@ export class ImportDataService {
       if (parts.length < 2) continue;
 
       const nolgRaw = col.nolg >= 0 ? parts[col.nolg] : parts[0];
-      const nolg = nolgRaw?.trim()?.replace(/[^\w-]/g, '');
+      const nolgClean = nolgRaw?.trim()?.replace(/[^\w-]/g, '') || '';
+      const nolg = nolgClean.length > 0 && nolgClean.length < 11 ? nolgClean.padStart(11, '0') : nolgClean;
       if (!nolg) continue;
 
       const nometerRaw = col.nometer >= 0 && parts[col.nometer] ? parts[col.nometer].trim() : '';
@@ -1379,9 +1515,31 @@ export class ImportDataService {
   }
 
   /**
+   * Normalisasi ukuran meter dari kode aplikasi mutasi eksternal ('A'..'G') ke standar biaya_tetap
+   */
+  private normalizeUkuranMeter(raw?: string | null): string {
+    const clean = (raw || '').trim();
+    const upper = clean.toUpperCase();
+    const codeMap: Record<string, string> = {
+      A: '1/2',
+      B: '3/4',
+      C: '1',
+      D: '1 1/2',
+      E: '2',
+      F: '3',
+      G: '4',
+      '0.5': '1/2',
+      '0,5': '1/2',
+    };
+    if (codeMap[upper]) return codeMap[upper];
+    const valid = new Set(['1/2', '3/4', '1', '1 1/2', '2', '3', '4']);
+    return valid.has(clean) ? clean : '1/2';
+  }
+
+  /**
    * Eksekusi Import PBPK ke Database (Master Pelanggan, Water Meter & DPM)
    */
-  async importPbpk(rows: PbpkCsvRow[], targetPeriode = '202611') {
+  async importPbpk(rows: PbpkCsvRow[], targetPeriode = '202612') {
     if (!rows || rows.length === 0) {
       throw new Error('Data PBPK kosong.');
     }
@@ -1396,26 +1554,132 @@ export class ImportDataService {
     };
 
     for (const row of rows) {
+      const rawNolg = (row.nolg || '').trim().replace(/[^\w-]/g, '');
+      const normalizedNolg =
+        rawNolg.length > 0 && rawNolg.length < 11
+          ? rawNolg.padStart(11, '0')
+          : rawNolg;
+
       try {
+        if (!normalizedNolg) {
+          throw new Error('NOLG kosong atau tidak valid.');
+        }
+
         await db.transaction(async (tx) => {
-          const noMeter = row.nometer?.trim() || `MTR-${row.nolg}`;
-          const ruteKode = row.kd_rute?.trim() || '99999';
-          const tarifKode = row.kd_goltarif?.trim() || '2A2';
-          const tglPasangMeter = row.tglaktif ? new Date(row.tglaktif) : new Date();
+          const merkMeter = (row.kd_merkmeter?.trim() || 'ITR').toUpperCase();
+          const ukuranMeter = this.normalizeUkuranMeter(row.kd_ukmeter);
+          const noMeter = row.nometer?.trim() || `MTR-${normalizedNolg}`;
+          const tarifKode = (row.kd_goltarif?.trim() || '2A2').toUpperCase();
+          const tglPasangMeter =
+            row.tglaktif && !Number.isNaN(new Date(row.tglaktif).getTime())
+              ? new Date(row.tglaktif)
+              : new Date();
           const rt = row.rt?.trim() || null;
           const rw = row.rw?.trim() || null;
-          const noTelp = row.notelp && row.notelp !== '-' ? row.notelp.trim() : null;
-          const jmlPenghuni = typeof row.jmlpenghuni === 'number' ? row.jmlpenghuni : (parseInt(String(row.jmlpenghuni || 0), 10) || 0);
-          const noUrutRute = typeof row.no_urutrute === 'number' ? row.no_urutrute : (parseInt(String(row.no_urutrute || 0), 10) || 0);
-          const kelurahanKode = row.kd_kelurahan?.trim() || null;
+          const rawTelp = row.notelp && row.notelp !== '-' ? row.notelp.trim() : '';
+          const noTelp = rawTelp
+            ? /^8\d{8,13}$/.test(rawTelp)
+              ? `0${rawTelp}`
+              : rawTelp
+            : null;
+          const jmlPenghuni =
+            typeof row.jmlpenghuni === 'number'
+              ? row.jmlpenghuni
+              : parseInt(String(row.jmlpenghuni || 0), 10) || 0;
+          const noUrutRuteInput =
+            typeof row.no_urutrute === 'number'
+              ? row.no_urutrute
+              : parseInt(String(row.no_urutrute || 0), 10) || 0;
+
+          // Cek apakah pelanggan sudah ada di master (penting untuk PK maupun update PB)
+          const [existingCust] = await tx
+            .select({
+              nolg: pelanggan.nolg,
+              ruteKode: pelanggan.ruteKode,
+              noUrutRute: pelanggan.noUrutRute,
+              noMeter: pelanggan.noMeter,
+              kelurahanKode: pelanggan.kelurahanKode,
+            })
+            .from(pelanggan)
+            .where(eq(pelanggan.nolg, normalizedNolg));
+
+          // Resolusi rute cerdas:
+          // 1) Gunakan kd_rute bila bukan placeholder '99999'
+          // 2) Jika '99999' dan pelanggan lama (PK) sudah punya rute valid, pertahankan rute lama!
+          // 3) Jika '99999' pada PB baru, cek apakah 5 karakter awal kode_wilayah (mis. TC21101 -> TC211) cocok di rute_cater
+          const rawRute = (row.kd_rute?.trim() || '99999').toUpperCase();
+          let ruteKode = rawRute;
+          if (rawRute === '99999') {
+            if (existingCust?.ruteKode && existingCust.ruteKode !== '99999') {
+              ruteKode = existingCust.ruteKode;
+            } else if (row.kode_wilayah && row.kode_wilayah.trim().length >= 5) {
+              const candidateRute = row.kode_wilayah.trim().slice(0, 5).toUpperCase();
+              const [matchedRute] = await tx
+                .select({ kode: ruteCater.kode })
+                .from(ruteCater)
+                .where(eq(ruteCater.kode, candidateRute));
+              if (matchedRute) {
+                ruteKode = matchedRute.kode;
+              }
+            }
+          }
+
+          // Pastikan FK kelurahan & kecamatan aman sebelum insert/update pelanggan
+          const kelCandidate = (
+            row.kd_kelurahan?.trim() ||
+            existingCust?.kelurahanKode ||
+            (ruteKode !== '99999' && ruteKode.length >= 3 ? ruteKode.slice(0, 3) : '')
+          ).toUpperCase();
+          let kelurahanKode: string | null = kelCandidate || null;
+
+          if (kelurahanKode) {
+            const [existingKel] = await tx
+              .select({ kode: kelurahan.kode })
+              .from(kelurahan)
+              .where(eq(kelurahan.kode, kelurahanKode));
+
+            if (!existingKel) {
+              const kecKode = (
+                row.kd_kecamatan?.trim() || kelurahanKode.slice(0, 2)
+              ).toUpperCase();
+              if (kecKode) {
+                const [defaultWiladm] = await tx
+                  .select({ kode: wilayahAdministrasi.kode })
+                  .from(wilayahAdministrasi)
+                  .limit(1);
+                if (defaultWiladm) {
+                  await tx
+                    .insert(kecamatan)
+                    .values({
+                      kode: kecKode,
+                      nama: `KECAMATAN ${kecKode}`,
+                      wiladmKode: defaultWiladm.kode,
+                    })
+                    .onConflictDoNothing({ target: kecamatan.kode });
+                  await tx
+                    .insert(kelurahan)
+                    .values({
+                      kode: kelurahanKode,
+                      nama: `KELURAHAN ${kelurahanKode}`,
+                      kecamatanKode: kecKode,
+                    })
+                    .onConflictDoNothing({ target: kelurahan.kode });
+                } else {
+                  kelurahanKode = null;
+                }
+              } else {
+                kelurahanKode = null;
+              }
+            }
+          }
 
           // 1. Water Meter asset (Aset meter air pelanggan)
           await tx
             .insert(waterMeter)
             .values({
               noMeter,
-              merk: row.kd_merkmeter?.trim() || 'ITR',
-              ukuran: row.kd_ukmeter?.trim() || '1/2',
+              merk: merkMeter,
+              ukuran: ukuranMeter,
               tglPasang: tglPasangMeter,
               umurTahun: 0,
               umurBulan: 0,
@@ -1424,20 +1688,28 @@ export class ImportDataService {
             .onConflictDoUpdate({
               target: waterMeter.noMeter,
               set: {
-                merk: row.kd_merkmeter?.trim() || 'ITR',
-                ukuran: row.kd_ukmeter?.trim() || '1/2',
+                merk: merkMeter,
+                ukuran: ukuranMeter,
                 kondisi: 'Normal',
               },
             });
 
-          // 2. Integritas FK: Pastikan ruteCater & golonganTarif tersedia
+          // 2. Integritas FK: Pastikan ruteCater & golonganTarif tersedia & ambil petugas default rute
           await tx
             .insert(ruteCater)
             .values({
               kode: ruteKode,
-              seksiNama: ruteKode === '99999' ? 'Rute Belum Ditentukan (PBPK)' : `Rute ${ruteKode}`,
+              seksiNama:
+                ruteKode === '99999'
+                  ? 'Rute Belum Ditentukan (PBPK)'
+                  : `Rute ${ruteKode}`,
             })
             .onConflictDoNothing({ target: ruteCater.kode });
+
+          const [ruteInfo] = await tx
+            .select({ pencatatDefault: ruteCater.pencatatDefault })
+            .from(ruteCater)
+            .where(eq(ruteCater.kode, ruteKode));
 
           await tx
             .insert(golonganTarif)
@@ -1447,122 +1719,148 @@ export class ImportDataService {
             })
             .onConflictDoNothing({ target: golonganTarif.kode });
 
-          // 3. Mutasi Pelanggan (PB: Pasang Baru, PK: Pemasangan Kembali)
-          if (row.mutasian === 'PB') {
-            const [cust] = await tx
-              .select({ nolg: pelanggan.nolg })
+          // Tentukan nomor urut rute yang rapi bila di CSV bernilai 0
+          let finalUrutRute =
+            noUrutRuteInput > 0
+              ? noUrutRuteInput
+              : existingCust?.noUrutRute && existingCust.noUrutRute > 0
+                ? existingCust.noUrutRute
+                : 0;
+          if (finalUrutRute <= 0) {
+            const [maxUrut] = await tx
+              .select({
+                maxVal: sql<number>`coalesce(max(${pelanggan.noUrutRute}), 0)::int`,
+              })
               .from(pelanggan)
-              .where(eq(pelanggan.nolg, row.nolg));
-
-            if (!cust) {
-              await tx.insert(pelanggan).values({
-                nolg: row.nolg,
-                nama: row.nama,
-                alamat: row.alamat,
-                rt,
-                rw,
-                noTelp,
-                jmlPenghuni,
-                tarifKode,
-                ruteKode,
-                kelurahanKode,
-                noUrutRute,
-                noMeter,
-                merkMeter: row.kd_merkmeter?.trim() || 'ITR',
-                ukuranMeter: row.kd_ukmeter?.trim() || '1/2',
-                tglPasangMeter,
-                status: 'PELANGGAN AKTIF',
-                createdAt: tglPasangMeter,
-                updatedAt: new Date(),
-              });
-            } else {
-              await tx
-                .update(pelanggan)
-                .set({
-                  nama: row.nama,
-                  alamat: row.alamat,
-                  rt: rt || undefined,
-                  rw: rw || undefined,
-                  noTelp: noTelp || undefined,
-                  jmlPenghuni: jmlPenghuni || undefined,
-                  tarifKode,
-                  ruteKode,
-                  kelurahanKode: kelurahanKode || undefined,
-                  noUrutRute,
-                  noMeter,
-                  merkMeter: row.kd_merkmeter?.trim() || 'ITR',
-                  ukuranMeter: row.kd_ukmeter?.trim() || '1/2',
-                  status: 'PELANGGAN AKTIF',
-                  updatedAt: new Date(),
-                })
-                .where(eq(pelanggan.nolg, row.nolg));
-            }
-            stats.pb++;
-          } else {
-            // PK: Pemasangan Kembali (Reaktivasi status pelanggan yang sebelumnya non-aktif)
-            const [cust] = await tx
-              .select({ nolg: pelanggan.nolg })
-              .from(pelanggan)
-              .where(eq(pelanggan.nolg, row.nolg));
-
-            if (cust) {
-              await tx
-                .update(pelanggan)
-                .set({
-                  nama: row.nama,
-                  alamat: row.alamat,
-                  rt: rt || undefined,
-                  rw: rw || undefined,
-                  noTelp: noTelp || undefined,
-                  jmlPenghuni: jmlPenghuni || undefined,
-                  tarifKode,
-                  ruteKode,
-                  kelurahanKode: kelurahanKode || undefined,
-                  noUrutRute,
-                  noMeter,
-                  merkMeter: row.kd_merkmeter?.trim() || 'ITR',
-                  ukuranMeter: row.kd_ukmeter?.trim() || '1/2',
-                  status: 'PELANGGAN AKTIF',
-                  updatedAt: new Date(),
-                })
-                .where(eq(pelanggan.nolg, row.nolg));
-            } else {
-              await tx.insert(pelanggan).values({
-                nolg: row.nolg,
-                nama: row.nama,
-                alamat: row.alamat,
-                rt,
-                rw,
-                noTelp,
-                jmlPenghuni,
-                tarifKode,
-                ruteKode,
-                kelurahanKode,
-                noUrutRute,
-                noMeter,
-                merkMeter: row.kd_merkmeter?.trim() || 'ITR',
-                ukuranMeter: row.kd_ukmeter?.trim() || '1/2',
-                tglPasangMeter,
-                status: 'PELANGGAN AKTIF',
-                createdAt: tglPasangMeter,
-                updatedAt: new Date(),
-              });
-            }
-            stats.pk++;
+              .where(eq(pelanggan.ruteKode, ruteKode));
+            finalUrutRute = (maxUrut?.maxVal ?? 0) + 1;
           }
 
-          // 4. Injeksi target pembacaan ke DPM (daftarCatat)
+          // Hitung standAwal yang akurat untuk PK vs PB:
+          // - PB selalu mulai dari stand 0
+          // - PK dengan meter baru mulai dari stand 0; PK dengan meter lama melanjutkan stand akhir terakhir
+          let standAwalDpm = '0';
+          let pakaiLaluDpm = '0';
+          if (
+            row.mutasian === 'PK' &&
+            existingCust?.noMeter &&
+            existingCust.noMeter === noMeter
+          ) {
+            const [lastRead] = await tx
+              .select({
+                stma: caterBacaMeter.stma,
+                stmaRevisi: caterBacaMeter.stmaRevisi,
+                pakaiTagih: caterBacaMeter.pakaiTagih,
+                pakaiM3: caterBacaMeter.pakaiM3,
+              })
+              .from(caterBacaMeter)
+              .where(eq(caterBacaMeter.nolg, normalizedNolg))
+              .orderBy(desc(caterBacaMeter.thbl))
+              .limit(1);
+            if (lastRead) {
+              standAwalDpm = String(lastRead.stmaRevisi ?? lastRead.stma ?? '0');
+              pakaiLaluDpm = String(lastRead.pakaiTagih ?? lastRead.pakaiM3 ?? '0');
+            }
+          }
+
+          // 3. Mutasi Pelanggan (PB: Pasang Baru, PK: Pemasangan Kembali)
+          if (!existingCust) {
+            await tx.insert(pelanggan).values({
+              nolg: normalizedNolg,
+              nama: row.nama,
+              alamat: row.alamat,
+              rt,
+              rw,
+              noTelp,
+              jmlPenghuni,
+              tarifKode,
+              ruteKode,
+              kelurahanKode,
+              noUrutRute: finalUrutRute,
+              noMeter,
+              noMeterAsli: noMeter,
+              merkMeter,
+              ukuranMeter,
+              tglPasangMeter,
+              status: 'PELANGGAN AKTIF',
+              createdAt: tglPasangMeter,
+              updatedAt: new Date(),
+            });
+          } else {
+            await tx
+              .update(pelanggan)
+              .set({
+                nama: row.nama,
+                alamat: row.alamat,
+                rt: rt || undefined,
+                rw: rw || undefined,
+                noTelp: noTelp || undefined,
+                jmlPenghuni: jmlPenghuni || undefined,
+                tarifKode,
+                ruteKode,
+                kelurahanKode: kelurahanKode || undefined,
+                noUrutRute: finalUrutRute,
+                noMeter,
+                noMeterAsli: noMeter,
+                merkMeter,
+                ukuranMeter,
+                status: 'PELANGGAN AKTIF',
+                updatedAt: new Date(),
+              })
+              .where(eq(pelanggan.nolg, normalizedNolg));
+          }
+
+          if (row.mutasian === 'PK') {
+            stats.pk++;
+          } else {
+            stats.pb++;
+          }
+
+          // 4. Injeksi target pembacaan ke DPM (daftarCatat) — otomatis arahkan ke N+1 bila targetPeriode sudah TERKUNCI
+          const [periodeCheck] = await tx.execute(sql`
+            SELECT status FROM periode_penagihan WHERE periode = ${targetPeriode} LIMIT 1
+          `);
+          const isTargetLocked =
+            periodeCheck && String((periodeCheck as any).status) === 'TERKUNCI';
+          const effectivePeriode = isTargetLocked
+            ? (() => {
+                const yr = parseInt(targetPeriode.slice(0, 4), 10);
+                const mo = parseInt(targetPeriode.slice(4, 6), 10);
+                return mo >= 12
+                  ? `${yr + 1}01`
+                  : `${yr}${String(mo + 1).padStart(2, '0')}`;
+              })()
+            : targetPeriode;
+
+          const [existingReadingInTarget] = await tx
+            .select({ id: caterBacaMeter.id })
+            .from(caterBacaMeter)
+            .where(
+              and(
+                eq(caterBacaMeter.thbl, effectivePeriode),
+                eq(caterBacaMeter.nolg, normalizedNolg)
+              )
+            );
+
+          const catatanDpm =
+            row.mutasian === 'PK'
+              ? `Sambung kembali (PK) dari Import PBPK`
+              : `Pasang baru (PB) dari Import PBPK`;
+
           await tx
             .insert(daftarCatat)
             .values({
-              periode: targetPeriode,
-              nolg: row.nolg,
+              id: `dpm-${effectivePeriode}-${normalizedNolg}`,
+              periode: effectivePeriode,
+              nolg: normalizedNolg,
               ruteKode,
-              urutan: noUrutRute,
-              standAwal: '0',
-              pakaiLalu: '0',
+              petugasId: ruteInfo?.pencatatDefault ?? null,
+              urutan: finalUrutRute,
+              standAwal: standAwalDpm,
+              pakaiLalu: pakaiLaluDpm,
               sumber: 'PBPK',
-              status: 'BELUM_DICATAT',
+              status: existingReadingInTarget ? 'DICATAT' : 'BELUM_DICATAT',
+              catatan: catatanDpm,
               createdAt: new Date(),
               updatedAt: new Date(),
             })
@@ -1570,9 +1868,10 @@ export class ImportDataService {
               target: [daftarCatat.periode, daftarCatat.nolg],
               set: {
                 ruteKode,
-                urutan: noUrutRute,
+                petugasId: ruteInfo?.pencatatDefault ?? sql`${daftarCatat.petugasId}`,
+                urutan: finalUrutRute,
                 sumber: 'PBPK',
-                status: 'BELUM_DICATAT',
+                catatan: catatanDpm,
                 updatedAt: new Date(),
               },
             });
@@ -1580,14 +1879,14 @@ export class ImportDataService {
 
         stats.sukses++;
         stats.detail.push({
-          nolg: row.nolg,
+          nolg: normalizedNolg,
           mutasian: row.mutasian,
           status: 'SUCCESS',
         });
       } catch (err: any) {
         stats.gagal++;
         stats.detail.push({
-          nolg: row.nolg,
+          nolg: normalizedNolg || row.nolg,
           mutasian: row.mutasian,
           status: 'FAILED',
           error: err.message,

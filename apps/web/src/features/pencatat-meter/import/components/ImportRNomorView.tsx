@@ -11,8 +11,7 @@ import {
   Upload,
   UserMinus,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge, Button } from "@cater/ui";
 import { readFileAsText } from "../lib/file-reader";
 import { getErrorMessage, postImport } from "../lib/import-api";
 import { IMPORT_API } from "../lib/import-config";
@@ -68,7 +67,7 @@ const COLUMNS: ImportColumn<RNomorRow>[] = [
     id: "standCabut",
     header: "Stand Cabut",
     cell: (row) => `${row.standCabut} m³`,
-    cellClassName: "text-label-13-mono text-ds-red-900",
+    cellClassName: "text-label-13-mono text-destructive font-semibold",
   },
   {
     id: "alasan",
@@ -220,7 +219,7 @@ export function ImportRNomorView() {
 
       <ImportControlPanel
         title="Import R-Nomor (Pemutusan Pelanggan)"
-        badge={<Badge variant="pill">Format: CSV / TXT</Badge>}
+        badge={<Badge variant="secondary" className="font-mono text-label-11">Format: CSV / TXT</Badge>}
         description="Pemrosesan pemutusan sambungan pelanggan (status R) dan pencatatan stand meter cabut."
         hasData={items.length > 0}
         searchQuery={searchQuery}
@@ -268,7 +267,7 @@ export function ImportRNomorView() {
           tone="red"
           title="Pemutusan R-Nomor Selesai Diproses"
           description={`Total ${resultStats.total} pelanggan: ${resultStats.sukses} status diubah menjadi NON AKTIF (R), ${resultStats.gagal} gagal.`}
-          actions={<Badge variant="red">Status: Diputus</Badge>}
+          actions={<Badge variant="destructive">Status: Diputus</Badge>}
         />
       )}
 
@@ -279,7 +278,7 @@ export function ImportRNomorView() {
           description="Unggah berkas CSV daftar rekening pemutusan pelanggan untuk mengubah status sambungan menjadi Non Aktif (R)."
           badges={
             <>
-              <Badge variant="pill" className="font-mono">
+              <Badge variant="secondary" className="font-mono text-label-11">
                 nolg,nama,alamat,tgl_putus,nomor_ba,stand_cabut,alasan
               </Badge>
             </>
@@ -297,7 +296,7 @@ export function ImportRNomorView() {
           ]}
           aside={
             <AlertTriangle
-              className="geist-icon text-ds-red-700"
+              className="geist-icon text-destructive"
               aria-label="Peringatan pemutusan"
             />
           }

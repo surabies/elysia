@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@cater/ui";
 
 interface ImportHeaderProps {
   title: string;
@@ -29,7 +29,7 @@ export function ImportHeader({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-heading-24 text-foreground">{title}</h1>
-            <Badge variant="pill" className="uppercase">
+            <Badge variant="secondary" className="uppercase font-mono text-[10px] px-1.5 py-0">
               {badge}
             </Badge>
           </div>

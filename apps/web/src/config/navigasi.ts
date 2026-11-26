@@ -77,7 +77,8 @@ export const navGroups: NavGroup[] = [
       {
         title: "Dashboard",
         href: "/dashboard",
-        description: "Ringkasan eksekutif metrik operasional pembacaan meter harian.",
+        description:
+          "Ringkasan eksekutif metrik operasional pembacaan meter harian.",
         keywords: ["dashboard", "beranda", "ringkasan", "home"],
         roles: [
           "SUPERADMIN",
@@ -107,7 +108,8 @@ export const navGroups: NavGroup[] = [
       {
         title: "Kinerja & Insentif",
         href: "/kpi",
-        description: "Evaluasi capaian SL, akurasi baca, faktor kesulitan rute, dan insentif petugas.",
+        description:
+          "Evaluasi capaian SL, akurasi baca, faktor kesulitan rute, dan insentif petugas.",
         keywords: [
           "kpi",
           "scorecard",
@@ -134,13 +136,22 @@ export const navGroups: NavGroup[] = [
       {
         title: "Scorecard Perusahaan",
         href: "/kpi/scorecard",
-        description: "Target kinerja tahunan dan 4 perspektif Balanced Scorecard perusahaan.",
-        keywords: ["kpi", "scorecard", "strategy", "goals", "target", "kinerja", "bsc"],
+        description:
+          "Target kinerja tahunan dan 4 perspektif Balanced Scorecard perusahaan.",
+        keywords: [
+          "kpi",
+          "scorecard",
+          "strategy",
+          "goals",
+          "target",
+          "kinerja",
+          "bsc",
+        ],
         roles: ["SUPERADMIN", "EXECUTIVE"],
       },
       {
         title: "Peta Spasial",
-        href: "/places",
+        href: "/peta-spasial",
         description: "Visualisasi GIS persebaran pelanggan dan jaringan pipa.",
         keywords: ["places", "spasial", "peta", "gis", "lokasi"],
         roles: [
@@ -155,8 +166,15 @@ export const navGroups: NavGroup[] = [
       {
         title: "Peta Wilayah",
         href: "/peta-wilayah",
-        description: "Batas 7 kecamatan dan 21 kelurahan operasional wilayah pelayanan.",
-        keywords: ["peta wilayah", "wilayah 5", "polygon", "kecamatan", "kelurahan"],
+        description:
+          "Batas 7 kecamatan dan 21 kelurahan operasional wilayah pelayanan.",
+        keywords: [
+          "peta wilayah",
+          "wilayah 5",
+          "polygon",
+          "kecamatan",
+          "kelurahan",
+        ],
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
@@ -187,7 +205,8 @@ export const navGroups: NavGroup[] = [
       {
         title: "Monitoring Baca",
         href: "/cater",
-        description: "Pantau unggahan stand meter harian dan penyelesaian lapangan.",
+        description:
+          "Pantau unggahan stand meter harian dan penyelesaian lapangan.",
         keywords: ["monitoring", "baca meter", "cater", "pencatatan", "target"],
         roles: [
           "SUPERADMIN",
@@ -200,8 +219,16 @@ export const navGroups: NavGroup[] = [
       {
         title: "Capaian Pencatatan",
         href: "/cater/capaian",
-        description: "Evaluasi target vs realisasi SL, kubikasi M³, LPS, dan tren capaian tahunan.",
-        keywords: ["capaian", "target", "realisasi", "lps", "kubikasi", "tahunan"],
+        description:
+          "Evaluasi target vs realisasi SL, kubikasi M³, LPS, dan tren capaian tahunan.",
+        keywords: [
+          "capaian",
+          "target",
+          "realisasi",
+          "lps",
+          "kubikasi",
+          "tahunan",
+        ],
         roles: [
           "SUPERADMIN",
           "VERIFIKATOR_1",
@@ -213,14 +240,21 @@ export const navGroups: NavGroup[] = [
       {
         title: "Simulasi Baca",
         href: "/cater/simulasi",
-        description: "Uji coba pembacaan meter, validasi foto, dan deteksi deviasi.",
+        description:
+          "Uji coba pembacaan meter, validasi foto, dan deteksi deviasi.",
         keywords: ["simulasi", "sandbox", "test", "cater"],
-        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2", "VERIFIKATOR_3"],
+        roles: [
+          "SUPERADMIN",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
       },
       {
-        title: "Verifikasi CHN",
+        title: "Verifikasi Baca Petugas",
         href: "/verifikasi/baca-petugas",
-        description: "Verifikasi pembacaan meter CHN petugas lapangan dan approval.",
+        description:
+          "Verifikasi pembacaan meter CHN petugas lapangan dan approval.",
         keywords: ["verifikasi", "baca petugas", "chn", "lapangan", "approval"],
         roles: [
           "SUPERADMIN",
@@ -230,10 +264,17 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
-        title: "Foto Meter",
+        title: "Cek Foto Meter",
         href: "/meter/cek-foto",
-        description: "Audit visual galeri foto bukti fisik meteran air hasil bacaan.",
-        keywords: ["cek foto", "foto meter", "bukti fisik", "kamera", "audit foto"],
+        description:
+          "Audit visual galeri foto bukti fisik meteran air hasil bacaan.",
+        keywords: [
+          "cek foto",
+          "foto meter",
+          "bukti fisik",
+          "kamera",
+          "audit foto",
+        ],
         roles: [
           "SUPERADMIN",
           "VERIFIKATOR_1",
@@ -243,10 +284,17 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
-        title: "Radar Anomali",
+        title: "Radar Anomali Ekstrim",
         href: "/progres/ekstrim",
-        description: "Deteksi lonjakan pemakaian, pemakaian 0 m³, dan anomali kubikasi.",
-        keywords: ["anomali", "ekstrim", "pemakaian nol", "lonjakan", "kubikasi"],
+        description:
+          "Deteksi lonjakan pemakaian, pemakaian 0 m³, dan anomali kubikasi.",
+        keywords: [
+          "anomali",
+          "ekstrim",
+          "pemakaian nol",
+          "lonjakan",
+          "kubikasi",
+        ],
         roles: [
           "SUPERADMIN",
           "VERIFIKATOR_1",
@@ -257,8 +305,16 @@ export const navGroups: NavGroup[] = [
       {
         title: "Audit Anomali",
         href: "/progres/audit",
-        description: "Rekonsiliasi 2 pilar: anomali validasi meter vs kendala akses lapangan.",
-        keywords: ["audit", "anomali", "rekonsiliasi", "kategori", "ssot", "konfirmasi"],
+        description:
+          "Rekonsiliasi 2 pilar: anomali validasi meter vs kendala akses lapangan.",
+        keywords: [
+          "audit",
+          "anomali",
+          "rekonsiliasi",
+          "kategori",
+          "ssot",
+          "konfirmasi",
+        ],
         roles: [
           "SUPERADMIN",
           "VERIFIKATOR_1",
@@ -269,19 +325,22 @@ export const navGroups: NavGroup[] = [
       {
         title: "Progres Petugas",
         href: "/progres/cater",
-        description: "Produktivitas harian, kecepatan baca, dan sisa target per petugas.",
-        keywords: ["progres petugas", "produktivitas", "kinerja", "cater", "evaluasi"],
-        roles: [
-          "SUPERADMIN",
-          "VERIFIKATOR_1",
-          "VERIFIKATOR_2",
-          "PENCATAT",
+        description:
+          "Produktivitas harian, kecepatan baca, dan sisa target per petugas.",
+        keywords: [
+          "progres petugas",
+          "produktivitas",
+          "kinerja",
+          "cater",
+          "evaluasi",
         ],
+        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2", "PENCATAT"],
       },
       {
-        title: "Capaian Wilayah",
+        title: "Progres Wilayah",
         href: "/progres/wilayah",
-        description: "Persentase penyelesaian pembacaan meter per zona kelurahan.",
+        description:
+          "Persentase penyelesaian pembacaan meter per zona kelurahan.",
         keywords: ["progres wilayah", "capaian", "zona", "persentase"],
         roles: [
           "SUPERADMIN",
@@ -291,38 +350,64 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
-        title: "Ganti Meter",
+        title: "Ganti Water Meter",
         href: "/cater/ganti-meter",
-        description: "Pencatatan penggantian water meter fisik dan stand angkat.",
-        keywords: ["ganti meter", "gwm", "meter rusak", "meter macet", "stand angkat"],
-        roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2", "VERIFIKATOR_3"],
+        description:
+          "Pencatatan penggantian water meter fisik dan stand angkat.",
+        keywords: [
+          "ganti meter",
+          "gwm",
+          "meter rusak",
+          "meter macet",
+          "stand angkat",
+        ],
+        roles: [
+          "SUPERADMIN",
+          "VERIFIKATOR_1",
+          "VERIFIKATOR_2",
+          "VERIFIKATOR_3",
+        ],
       },
       {
         title: "Kode Kelainan",
         href: "/master/kelainan",
-        description: "Master 17 kode jenis kelainan fisik water meter dan tindakan.",
+        description:
+          "Master 17 kode jenis kelainan fisik water meter dan tindakan.",
         keywords: ["kelainan", "kode kelainan", "meter rusak", "anomali meter"],
         roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2"],
       },
       {
         title: "Pemetaan Rute",
         href: "/master/pemetaan-petugas",
-        description: "Penugasan area kerja dan rute Daftar Pembacaan Meter (DPM).",
+        description:
+          "Penugasan area kerja dan rute Daftar Pembacaan Meter (DPM).",
         keywords: ["pemetaan", "rute", "dpm", "penugasan petugas"],
         roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2"],
       },
       {
         title: "Mutasi Rute",
         href: "/rute/mutasi",
-        description: "Pindahkan satu pelanggan ke rute baca dan nomor urut baru.",
-        keywords: ["mutasi rute", "pindah rute", "urut rute", "mutasi pelanggan"],
+        description:
+          "Pindahkan satu pelanggan ke rute baca dan nomor urut baru.",
+        keywords: [
+          "mutasi rute",
+          "pindah rute",
+          "urut rute",
+          "mutasi pelanggan",
+        ],
         roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2"],
       },
       {
         title: "Penggabungan Rute",
         href: "/rute/penggabungan",
-        description: "Gabungkan atau pindahkan pelanggan dari satu rute baca ke rute petugas lain.",
-        keywords: ["penggabungan rute", "kelola rute", "transfer rute", "pindah banyak"],
+        description:
+          "Gabungkan atau pindahkan pelanggan dari satu rute baca ke rute petugas lain.",
+        keywords: [
+          "penggabungan rute",
+          "kelola rute",
+          "transfer rute",
+          "pindah banyak",
+        ],
         roles: ["SUPERADMIN", "VERIFIKATOR_1", "VERIFIKATOR_2"],
       },
     ],
@@ -346,7 +431,8 @@ export const navGroups: NavGroup[] = [
       {
         title: "Laporan DRD",
         href: "/laporan/lap-drd",
-        description: "Rekapitulasi Daftar Rekening Ditagih (DRD) dan pendapatan resmi.",
+        description:
+          "Rekapitulasi Daftar Rekening Ditagih (DRD) dan pendapatan resmi.",
         keywords: ["drd", "laporan drd", "tagihan", "rekening air", "piutang"],
         roles: [
           "SUPERADMIN",
@@ -360,29 +446,38 @@ export const navGroups: NavGroup[] = [
       {
         title: "Koreksi Stand",
         href: "/progres/koreksi",
-        description: "Koreksi angka stand meter dan penyesuaian kubikasi rekening berjalan.",
+        description:
+          "Koreksi angka stand meter dan penyesuaian kubikasi rekening berjalan.",
         keywords: ["koreksi", "koreksi stand", "edit stand", "revisi kubikasi"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
         title: "Manual ADD",
         href: "/pelanggan/manual-add",
-        description: "Input stand meter manual atau taksasi rata-rata untuk rumah terkunci.",
+        description:
+          "Input stand meter manual atau taksasi rata-rata untuk rumah terkunci.",
         keywords: ["manual add", "taksasi", "input manual", "meter terkunci"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
         title: "Hitung Rata-Rata",
         href: "/meter/hitung-rata-rata",
-        description: "Kalkulasi otomatis pemakaian air berdasarkan histori 3 bulan terakhir.",
+        description:
+          "Kalkulasi otomatis pemakaian air berdasarkan histori 3 bulan terakhir.",
         keywords: ["hitung rata rata", "rata 3 bulan", "kalkulasi taksasi"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
         title: "Konsol Tutup Bulan",
         href: "/tools-tutup/monitoring-tutup-bulan",
-        description: "5-step wizard konsol tutup buku bulanan dan pembukaan siklus baru.",
-        keywords: ["tutup bulan", "closing", "buka bulan baru", "kunci periode"],
+        description:
+          "Alur terpandu 4 tahap tutup buku bulanan dan pembukaan siklus baru.",
+        keywords: [
+          "tutup bulan",
+          "closing",
+          "buka bulan baru",
+          "kunci periode",
+        ],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
     ],
@@ -409,8 +504,15 @@ export const navGroups: NavGroup[] = [
       {
         title: "Info Pelanggan",
         href: "/info-pelanggan",
-        description: "Detail sambungan pipa, stand meter, dan histori rekening 12 bulan.",
-        keywords: ["info pelanggan", "pelanggan", "cari pelanggan", "histori", "sambungan"],
+        description:
+          "Detail sambungan pipa, stand meter, dan histori rekening 12 bulan.",
+        keywords: [
+          "info pelanggan",
+          "pelanggan",
+          "cari pelanggan",
+          "histori",
+          "sambungan",
+        ],
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
@@ -425,7 +527,13 @@ export const navGroups: NavGroup[] = [
         title: "Lapor Mandiri",
         href: "/verifikasi/baca-pelanggan",
         description: "Validasi foto dan stand pembacaan mandiri warga.",
-        keywords: ["lapor mandiri", "baca pelanggan", "mandiri", "self reading", "stand konsumen"],
+        keywords: [
+          "lapor mandiri",
+          "baca pelanggan",
+          "mandiri",
+          "self reading",
+          "stand konsumen",
+        ],
         roles: [
           "SUPERADMIN",
           "MANAGER",
@@ -437,8 +545,15 @@ export const navGroups: NavGroup[] = [
       {
         title: "Pengaduan Layanan",
         href: "/pengaduan",
-        description: "Helpdesk terpadu keluhan pipa bocor, air keruh, dan meter mati.",
-        keywords: ["pengaduan", "tiket", "keluhan", "layanan pelanggan", "bocor pipa"],
+        description:
+          "Helpdesk terpadu keluhan pipa bocor, air keruh, dan meter mati.",
+        keywords: [
+          "pengaduan",
+          "tiket",
+          "keluhan",
+          "layanan pelanggan",
+          "bocor pipa",
+        ],
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
@@ -454,8 +569,14 @@ export const navGroups: NavGroup[] = [
       {
         title: "Peta Pengaduan",
         href: "/peta-pengaduan",
-        description: "Peta kendali dan visualisasi spasial sebaran tiket keluhan pelanggan.",
-        keywords: ["peta pengaduan", "gis aduan", "sebaran keluhan", "spasial pengaduan"],
+        description:
+          "Peta kendali dan visualisasi spasial sebaran tiket keluhan pelanggan.",
+        keywords: [
+          "peta pengaduan",
+          "gis aduan",
+          "sebaran keluhan",
+          "spasial pengaduan",
+        ],
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
@@ -471,8 +592,15 @@ export const navGroups: NavGroup[] = [
       {
         title: "Kebijakan & SOP Pengaduan",
         href: "/pengaturan/pengaduan",
-        description: "Tata kelola matriks bobot keluhan, SLA berversi, dan regulasi penanganan tiket.",
-        keywords: ["kebijakan pengaduan", "sla", "sop", "regulasi tiket", "matriks bobot"],
+        description:
+          "Tata kelola matriks bobot keluhan, SLA berversi, dan regulasi penanganan tiket.",
+        keywords: [
+          "kebijakan pengaduan",
+          "sla",
+          "sop",
+          "regulasi tiket",
+          "matriks bobot",
+        ],
         roles: [
           "SUPERADMIN",
           "EXECUTIVE",
@@ -488,8 +616,14 @@ export const navGroups: NavGroup[] = [
       {
         title: "Mutasi Pelanggan",
         href: "/pelanggan/mutasi",
-        description: "Pengelolaan mutasi nama kepemilikan, alamat, dan data dinas.",
-        keywords: ["mutasi pelanggan", "ubah nama", "balik nama", "administrasi"],
+        description:
+          "Pengelolaan mutasi nama kepemilikan, alamat, dan data dinas.",
+        keywords: [
+          "mutasi pelanggan",
+          "ubah nama",
+          "balik nama",
+          "administrasi",
+        ],
         roles: [
           "SUPERADMIN",
           "MANAGER",
@@ -501,8 +635,16 @@ export const navGroups: NavGroup[] = [
       {
         title: "Titik GPS & Geotag",
         href: "/pelanggan/titik-gps",
-        description: "Pemetaan koordinat spasial PostGIS pelanggan yang belum memiliki titik lokasi.",
-        keywords: ["geotag", "titik gps", "koordinat", "gis", "postgis", "spasial"],
+        description:
+          "Pemetaan koordinat spasial PostGIS pelanggan yang belum memiliki titik lokasi.",
+        keywords: [
+          "geotag",
+          "titik gps",
+          "koordinat",
+          "gis",
+          "postgis",
+          "spasial",
+        ],
         roles: [
           "SUPERADMIN",
           "MANAGER",
@@ -515,7 +657,12 @@ export const navGroups: NavGroup[] = [
         title: "Pindah Tarif",
         href: "/pelanggan/pindah-tarif",
         description: "Reklasifikasi golongan tarif langganan pelanggan.",
-        keywords: ["pindah tarif", "reklasifikasi", "golongan langganan", "kategori tarif"],
+        keywords: [
+          "pindah tarif",
+          "reklasifikasi",
+          "golongan langganan",
+          "kategori tarif",
+        ],
         roles: [
           "SUPERADMIN",
           "MANAGER",
@@ -527,7 +674,8 @@ export const navGroups: NavGroup[] = [
       {
         title: "Validasi Kontak",
         href: "/pelanggan/no-hp",
-        description: "Pembaruan nomor telepon dan WhatsApp untuk notifikasi rekening.",
+        description:
+          "Pembaruan nomor telepon dan WhatsApp untuk notifikasi rekening.",
         keywords: ["no hp", "kontak pelanggan", "whatsapp", "telepon"],
         roles: [
           "SUPERADMIN",
@@ -559,36 +707,73 @@ export const navGroups: NavGroup[] = [
       {
         title: "Foto Backup",
         href: "/import/foto-backup",
-        description: "Pemulihan foto stand meter, segel, dan rumah dari backup HP petugas.",
-        keywords: ["foto backup", "backup hp", "foto meter", "segel", "rumah", "recovery"],
+        description:
+          "Pemulihan foto stand meter, segel, dan rumah dari backup HP petugas.",
+        keywords: [
+          "foto backup",
+          "backup hp",
+          "foto meter",
+          "segel",
+          "rumah",
+          "recovery",
+        ],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "Import Data",
         href: "/import/data",
-        description: "Import file data pencatatan stand meter pemulihan kendala jaringan.",
-        keywords: ["import data", "data pencatatan", "bacaan meter", "file backup", "csv"],
+        description:
+          "Import file data pencatatan stand meter pemulihan kendala jaringan.",
+        keywords: [
+          "import data",
+          "data pencatatan",
+          "bacaan meter",
+          "file backup",
+          "csv",
+        ],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "Lap Data Meter",
         href: "/import/lapdatameter",
-        description: "Import laporan data meter bulanan (lapdatameter) PDAM ke tabel cater_baca_meter.",
-        keywords: ["lapdatameter", "lap data meter", "laporan meter", "bacaan meter", "csv bulanan", "cater_baca_meter"],
+        description:
+          "Import laporan data meter bulanan (lapdatameter) PDAM ke tabel cater_baca_meter.",
+        keywords: [
+          "lapdatameter",
+          "lap data meter",
+          "laporan meter",
+          "bacaan meter",
+          "csv bulanan",
+          "cater_baca_meter",
+        ],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "R Nomor",
         href: "/import/r-nomor",
-        description: "Input dan pembaruan data rekening pemutusan pelanggan (R Nomor).",
-        keywords: ["r nomor", "pemutusan", "cabut meter", "pelanggan putus", "non aktif"],
+        description:
+          "Input dan pembaruan data rekening pemutusan pelanggan (R Nomor).",
+        keywords: [
+          "r nomor",
+          "pemutusan",
+          "cabut meter",
+          "pelanggan putus",
+          "non aktif",
+        ],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "Import PBPK",
         href: "/import/pbpk",
-        description: "Import CSV Pasang Baru (PB) dan Pemasangan Kembali (PK) pelanggan.",
-        keywords: ["import pbpk", "pbpk", "pasang baru", "pemasangan kembali", "csv"],
+        description:
+          "Import CSV Pasang Baru (PB) dan Pemasangan Kembali (PK) pelanggan.",
+        keywords: [
+          "import pbpk",
+          "pbpk",
+          "pasang baru",
+          "pemasangan kembali",
+          "csv",
+        ],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
     ],
@@ -600,52 +785,64 @@ export const navGroups: NavGroup[] = [
   {
     id: "setting-landing",
     title: "Setting Landing",
-    roles: [
-      "SUPERADMIN",
-      "EXECUTIVE",
-      "STAFF_ADMIN_BILLING",
-      "VERIFIKATOR_1",
-    ],
+    roles: ["SUPERADMIN", "EXECUTIVE", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
     items: [
       {
         title: "Profil & Kontak",
         href: "/setting-landing/profil",
-        description: "Informasi resmi perusahaan, visi misi, call center, dan kantor cabang.",
-        keywords: ["profil", "kontak", "perusahaan", "kantor cabang", "landing page"],
-        roles: ["SUPERADMIN", "EXECUTIVE", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
+        description:
+          "Informasi resmi perusahaan, visi misi, call center, dan kantor cabang.",
+        keywords: [
+          "profil",
+          "kontak",
+          "perusahaan",
+          "kantor cabang",
+          "landing page",
+        ],
+        roles: [
+          "SUPERADMIN",
+          "EXECUTIVE",
+          "STAFF_ADMIN_BILLING",
+          "VERIFIKATOR_1",
+        ],
       },
       {
         title: "Pasang Baru",
         href: "/setting-landing/pasang-baru",
-        description: "Persyaratan dokumen, alur pendaftaran teknis, dan informasi RAB.",
+        description:
+          "Persyaratan dokumen, alur pendaftaran teknis, dan informasi RAB.",
         keywords: ["syarat pasang baru", "pasang baru", "sambungan baru"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "Cara Bayar",
         href: "/setting-landing/cara-bayar",
-        description: "Panduan kanal perbankan mitra, ritel modern, dan kebijakan denda.",
+        description:
+          "Panduan kanal perbankan mitra, ritel modern, dan kebijakan denda.",
         keywords: ["cara bayar", "pembayaran", "rekening", "mitra"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "Tarif Air",
         href: "/setting-landing/tarif-air",
-        description: "Tabel tarif golongan pelanggan dan blok konsumsi progresif.",
+        description:
+          "Tabel tarif golongan pelanggan dan blok konsumsi progresif.",
         keywords: ["tarif air", "harga air", "golongan", "blok progresif"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "Berita Portal",
         href: "/setting-landing/berita",
-        description: "Publikasi rilis pers resmi, kegiatan humas, dan artikel edukasi.",
+        description:
+          "Publikasi rilis pers resmi, kegiatan humas, dan artikel edukasi.",
         keywords: ["berita", "pengumuman", "artikel", "rilis"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "Siaran Gangguan",
         href: "/broadcast",
-        description: "Pemberitahuan darurat kebocoran pipa dan banner portal publik.",
+        description:
+          "Pemberitahuan darurat kebocoran pipa dan banner portal publik.",
         keywords: ["broadcast", "siaran", "gangguan pipa", "banner"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
@@ -677,7 +874,8 @@ export const navGroups: NavGroup[] = [
       {
         title: "Profil Akun",
         href: "/pengaturan/profil",
-        description: "Identitas dinas petugas, NPP, foto profil, dan kata sandi.",
+        description:
+          "Identitas dinas petugas, NPP, foto profil, dan kata sandi.",
         keywords: ["profil akun", "password", "kata sandi", "operator"],
         roles: [
           "SUPERADMIN",
@@ -693,15 +891,24 @@ export const navGroups: NavGroup[] = [
       {
         title: "Catat Meter",
         href: "/pengaturan/cater",
-        description: "Radius toleransi geofence GPS, durasi baca, dan mock GPS.",
+        description:
+          "Radius toleransi geofence GPS, durasi baca, dan mock GPS.",
         keywords: ["cater", "geofence", "toleransi gps", "foto meter"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING", "VERIFIKATOR_1"],
       },
       {
         title: "Verifikasi & Anomali",
         href: "/pengaturan/verifikasi",
-        description: "Pengaturan terpusat 12 aturan anomali SSOT, deviasi, metode taksasi, dan pemetaan TMSS.",
-        keywords: ["verifikasi", "anomali", "aturan anomali", "ssot", "taksasi", "ambang deviasi"],
+        description:
+          "Pengaturan terpusat 12 aturan anomali SSOT, deviasi, metode taksasi, dan pemetaan TMSS.",
+        keywords: [
+          "verifikasi",
+          "anomali",
+          "aturan anomali",
+          "ssot",
+          "taksasi",
+          "ambang deviasi",
+        ],
         roles: [
           "SUPERADMIN",
           "STAFF_ADMIN_BILLING",
@@ -713,14 +920,16 @@ export const navGroups: NavGroup[] = [
       {
         title: "Billing & Denda",
         href: "/pengaturan/billing",
-        description: "Bea administrasi rekening, biaya pemeliharaan meter, dan denda flat.",
+        description:
+          "Bea administrasi rekening, biaya pemeliharaan meter, dan denda flat.",
         keywords: ["billing", "bea admin", "pemeliharaan", "denda"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
         title: "Pengaduan & SLA",
         href: "/pengaturan/pengaduan",
-        description: "Target SLA pipa bocor, alur SPK meter, dan WhatsApp gateway.",
+        description:
+          "Target SLA pipa bocor, alur SPK meter, dan WhatsApp gateway.",
         keywords: ["pengaduan", "sla", "tiket", "whatsapp gateway"],
         roles: [
           "SUPERADMIN",
@@ -740,21 +949,24 @@ export const navGroups: NavGroup[] = [
       {
         title: "Sistem & Log",
         href: "/pengaturan/sistem",
-        description: "Kepadatan tabel antarmuka, suara alert anomali, dan audit log.",
+        description:
+          "Kepadatan tabel antarmuka, suara alert anomali, dan audit log.",
         keywords: ["sistem", "audit trail", "kepadatan", "preferensi"],
         roles: ["SUPERADMIN", "STAFF_ADMIN_BILLING"],
       },
       {
         title: "Pengguna",
         href: "/master/user",
-        description: "Manajemen akun pengguna aplikasi, penetapan role, dan status aktif.",
+        description:
+          "Manajemen akun pengguna aplikasi, penetapan role, dan status aktif.",
         keywords: ["manajemen user", "pengguna", "akun", "tambah user"],
         roles: ["SUPERADMIN"],
       },
       {
         title: "Hak Akses (RBAC)",
         href: "/master/otorisasi",
-        description: "Matriks perizinan hak akses per level pengguna dan approval.",
+        description:
+          "Matriks perizinan hak akses per level pengguna dan approval.",
         keywords: ["otorisasi", "rbac", "hak akses", "role matriks"],
         roles: ["SUPERADMIN"],
       },
@@ -915,7 +1127,7 @@ export const navbarLinks = [
   { label: "Baca Meter", href: "/cater" },
   { label: "Simulasi", href: "/cater/simulasi" },
   { label: "Verifikasi", href: "/verifikasi/baca-petugas" },
-  { label: "Peta Spasial", href: "/places" },
+  { label: "Peta Spasial", href: "/peta-spasial" },
   { label: "Tutup Bulan", href: "/tools-tutup/monitoring-tutup-bulan" },
 ];
 

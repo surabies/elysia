@@ -1,22 +1,56 @@
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
-  BookOpen,
+  ChevronRight,
   GitBranch,
+  Lock,
   Scale,
   UserPlus,
-  Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { prefetchClosingRouteData } from '../lib/closing-api';
 
 const CLOSING_SUBNAV_ITEMS = [
   {
+    step: 1,
+    href: '/tools-tutup/stand-angkat',
+    label: '1. Ganti Meter',
+    icon: GitBranch,
+    matchPaths: ['/tools-tutup/stand-angkat'],
+  },
+  {
+    step: 2,
+    href: '/tools-tutup/pbpk',
+    label: '2. PBPK',
+    icon: UserPlus,
+    matchPaths: ['/tools-tutup/pbpk'],
+  },
+  {
+    step: 3,
+    href: '/tools-tutup/cek-selisih-pelanggan',
+    label: '3. Cek Selisih',
+    icon: Scale,
+    matchPaths: ['/tools-tutup/cek-selisih-pelanggan'],
+  },
+  {
+    step: 4,
+    href: '/tools-tutup/create-perbandingan',
+    label: '4. Perbandingan',
+    icon: BarChart3,
+    matchPaths: [
+      '/tools-tutup/create-perbandingan',
+      '/tools-tutup/perbandingan',
+    ],
+  },
+  {
+    step: 5,
     href: '/tools-tutup/monitoring-tutup-bulan',
-    label: '1. Wizard Tutup Buku',
-    icon: Workflow,
+    label: '5. Tutup Bulan',
+    icon: Lock,
     matchPaths: [
       '/tools-tutup/monitoring-tutup-bulan',
       '/tools-tutup/update-zonasi',
@@ -28,64 +62,60 @@ const CLOSING_SUBNAV_ITEMS = [
       '/tools-tutup/update-data-pelanggan',
     ],
   },
-  {
-    href: '/tools-tutup/stand-angkat',
-    label: '2. Data Ganti Meter',
-    icon: GitBranch,
-    matchPaths: ['/tools-tutup/stand-angkat'],
-  },
-  {
-    href: '/tools-tutup/create-perbandingan',
-    label: '3. Perbandingan Tagihan',
-    icon: BarChart3,
-    matchPaths: ['/tools-tutup/create-perbandingan'],
-  },
-  {
-    href: '/tools-tutup/cek-selisih-pelanggan',
-    label: '4. Cek Selisih Rute',
-    icon: Scale,
-    matchPaths: ['/tools-tutup/cek-selisih-pelanggan'],
-  },
-  {
-    href: '/tools-tutup/pbpk',
-    label: '5. Pelanggan Baru (PBPK)',
-    icon: UserPlus,
-    matchPaths: ['/tools-tutup/pbpk'],
-  },
-  {
-    href: '/tools-tutup/panduan',
-    label: '6. Peta 12 Modul & Panduan',
-    icon: BookOpen,
-    matchPaths: ['/tools-tutup/panduan'],
-  },
 ] as const;
 
 export function ClosingSubNavBar() {
   const pathname = usePathname();
 
+  // Panaskan data cache seluruh tab di latar belakang saat browser idle agar klik tab 0ms tanpa kedipan
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => {
+      prefetchClosingRouteData('/tools-tutup/monitoring-tutup-bulan');
+      prefetchClosingRouteData('/tools-tutup/pbpk');
+      prefetchClosingRouteData('/tools-tutup/cek-selisih-pelanggan');
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <nav
-      aria-label="Menu Halaman Tutup Buku"
-      className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-(--ds-gray-100) p-1.5"
+      aria-label="Tahapan Menu Tutup Bulan"
+      className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-muted/35 p-1"
     >
-      {CLOSING_SUBNAV_ITEMS.map((item) => {
+      {CLOSING_SUBNAV_ITEMS.map((item, idx) => {
         const Icon = item.icon;
         const isActive = item.matchPaths.some((p) => pathname === p);
 
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-label-12 transition-colors duration-150',
-              isActive
-                ? 'border border-border bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:bg-card/60 hover:text-foreground',
+          <React.Fragment key={item.href}>
+            <Link
+              href={item.href}
+              prefetch
+              aria-current={isActive ? 'page' : undefined}
+              onMouseEnter={() => prefetchClosingRouteData(item.href)}
+              onFocus={() => prefetchClosingRouteData(item.href)}
+              className={cn(
+                'inline-flex h-7.5 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-all duration-150 ease-out',
+                isActive
+                  ? 'border-border bg-card text-foreground shadow-2xs'
+                  : 'border-transparent text-muted-foreground hover:bg-card/60 hover:text-foreground',
+              )}
+            >
+              <Icon
+                className={cn(
+                  'size-3.5 shrink-0 transition-colors duration-150',
+                  isActive ? 'text-foreground' : 'text-muted-foreground',
+                )}
+              />
+              <span>{item.label}</span>
+            </Link>
+            {idx < CLOSING_SUBNAV_ITEMS.length - 1 && (
+              <ChevronRight
+                aria-hidden="true"
+                className="hidden size-3 shrink-0 text-muted-foreground/50 sm:block"
+              />
             )}
-          >
-            <Icon className="size-3.5 shrink-0" />
-            <span>{item.label}</span>
-          </Link>
+          </React.Fragment>
         );
       })}
     </nav>

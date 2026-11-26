@@ -5,7 +5,7 @@ import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowRight, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@cater/ui";
 import type {
   CustomerPhotoGroup,
   ImportProgressState,
@@ -412,7 +412,7 @@ export function ImportFotoBackupView() {
               </strong>{" "}
               berhasil dipetakan ke{" "}
               <strong>{resultSummary.slCount} Nomor Langganan</strong> di tabel{" "}
-              <code className="rounded-sm bg-ds-green-200 px-1 py-0.5 text-label-12-mono">
+              <code className="rounded-sm bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-1 py-0.5 text-label-12-mono">
                 cater_baca_meter
               </code>
               .

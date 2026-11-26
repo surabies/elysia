@@ -13,8 +13,7 @@ import {
   RotateCcw,
   Upload,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge, Button } from "@cater/ui";
 import { cn } from "@/lib/utils";
 import { readFileAsText } from "../lib/file-reader";
 import { getErrorMessage, postImport } from "../lib/import-api";
@@ -61,16 +60,42 @@ const COLUMNS: ImportColumn<LapDataMeterRow>[] = [
   },
   {
     id: "nama",
-    header: "Nama Pelanggan",
+    header: "Nama & Alamat",
     cell: (r) => (
-      <span className="block max-w-40 truncate">{r.nama || "-"}</span>
+      <div className="max-w-52">
+        <span className="block truncate font-medium text-foreground">
+          {r.nama || "-"}
+        </span>
+        {r.alamat && (
+          <span className="block truncate text-[11px] text-muted-foreground">
+            {r.alamat}
+          </span>
+        )}
+      </div>
     ),
     cellClassName: "text-label-13",
   },
   {
     id: "rute",
-    header: "Rute",
-    cell: (r) => <Badge variant="gray-subtle">{r.ruteKode || "-"}</Badge>,
+    header: "Tarif & Rute",
+    cell: (r) => (
+      <div className="flex items-center gap-1">
+        {r.trf && (
+          <Badge variant="outline" className="font-mono text-label-11">
+            {r.trf}
+          </Badge>
+        )}
+        <Badge variant="secondary" className="font-mono text-label-11">
+          {r.ruteKode || "-"}
+        </Badge>
+      </div>
+    ),
+  },
+  {
+    id: "kdWm",
+    header: "No. Meter",
+    cell: (r) => r.kdWm || "-",
+    cellClassName: "text-copy-13-mono text-muted-foreground",
   },
   {
     id: "stml",
@@ -91,7 +116,7 @@ const COLUMNS: ImportColumn<LapDataMeterRow>[] = [
     header: "Pakai (m³)",
     cell: (r) => formatAngka(r.pakaiM3),
     className: "text-right",
-    cellClassName: "text-label-13-mono text-ds-blue-900",
+    cellClassName: "text-label-13-mono text-blue-700 dark:text-blue-400",
   },
   {
     id: "pakaiLalu",
@@ -541,7 +566,7 @@ export function ImportLapDataMeterView() {
 
       <ImportControlPanel
         title="Import LapDataMeter (Laporan Bacaan Meter)"
-        badge={<Badge variant="pill">Format: CSV / TXT</Badge>}
+        badge={<Badge variant="secondary" className="font-mono text-label-11">Format: CSV / TXT</Badge>}
         description="Import dan perbarui pembacaan meter bulanan petugas (lapdatameter) ke tabel cater_baca_meter."
         hasData={items.length > 0}
         searchQuery={searchQuery}
@@ -611,7 +636,7 @@ export function ImportLapDataMeterView() {
                 : `Total ${resultStats.total.toLocaleString("id-ID")} baris data diproses • ${resultStats.created.toLocaleString("id-ID")} transaksi baru dibuat • ${resultStats.skipped.toLocaleString("id-ID")} data dilewati (sudah ada) • ${resultStats.gagal.toLocaleString("id-ID")} gagal.`
           }
           actions={
-            <Badge variant="pill">
+            <Badge variant="secondary" className="font-mono text-label-11">
               {lastImportMode === "FORCE_RESET_OVERWRITE"
                 ? "cater_baca_meter: DIRESET ULANG"
                 : resultStats.created === 0 && resultStats.skipped > 0
@@ -629,7 +654,7 @@ export function ImportLapDataMeterView() {
           description="Pilih berkas CSV laporan data pembacaan meter bulanan dari sistem untuk dipetakan ke database cater_baca_meter."
           badges={
             <>
-              <Badge variant="pill" className="font-mono">
+              <Badge variant="secondary" className="font-mono text-label-11">
                 NO PEL;NAMA;PERIODE;ST AWAL;ST AKHIR;PAKAI;KONDISI;RUTE
               </Badge>
             </>

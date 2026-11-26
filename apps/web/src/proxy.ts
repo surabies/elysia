@@ -21,7 +21,7 @@ const PROTECTED_INTERNAL_PREFIXES = [
   "/pengaduan",
   "/pengaturan",
   "/peta-wilayah",
-  "/places",
+  "/peta-spasial",
   "/progres",
   "/setting-landing",
   "/stand-konsumen",
@@ -33,7 +33,7 @@ const PROTECTED_INTERNAL_PREFIXES = [
 
 function isProtectedInternalPath(pathname: string): boolean {
   return PROTECTED_INTERNAL_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 

@@ -14,9 +14,49 @@ export const DEFAULT_CLOSING_PERIODE = '202611';
 export const DEFAULT_NEXT_PERIODE = '202612';
 export const DEFAULT_DUE_DATE = '2026-12-20';
 export const CLOSING_ONBOARDING_STORAGE_KEY = 'cater_closing_onboarding_seen_v1';
-export const CLOSING_SESSION_STATE_KEY = 'cater_closing_wizard_session_v1';
+export const CLOSING_SESSION_STATE_KEY = 'cater_closing_wizard_session_v2';
+
+const BULAN_NAMA_ID = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+] as const;
 
 const idNumberFormatter = new Intl.NumberFormat('id-ID');
+
+export function formatPeriodeLabelId(periode: string | null | undefined): string {
+  if (!periode || !/^\d{6}$/.test(periode)) return periode ?? '—';
+  const year = periode.slice(0, 4);
+  const monthIdx = parseInt(periode.slice(4, 6), 10) - 1;
+  const bulan = BULAN_NAMA_ID[monthIdx] ?? 'Bulan';
+  return `${bulan} ${year}`;
+}
+
+export function computeNextPeriode(periode: string): string {
+  if (!/^\d{6}$/.test(periode)) return DEFAULT_NEXT_PERIODE;
+  const year = parseInt(periode.slice(0, 4), 10);
+  const month = parseInt(periode.slice(4, 6), 10);
+  if (Number.isNaN(year) || Number.isNaN(month) || month < 1 || month > 12) {
+    return DEFAULT_NEXT_PERIODE;
+  }
+  if (month === 12) return `${year + 1}01`;
+  return `${year}${String(month + 1).padStart(2, '0')}`;
+}
+
+export function computeDefaultDueDate(periode: string): string {
+  const next = computeNextPeriode(periode);
+  if (!/^\d{6}$/.test(next)) return DEFAULT_DUE_DATE;
+  return `${next.slice(0, 4)}-${next.slice(4, 6)}-20`;
+}
 
 export function formatAngkaId(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—';
@@ -112,23 +152,36 @@ export function buildOperatorErrorFeedback(
         : 'Terjadi gangguan komunikasi dengan server.';
 
   let nextAction =
-    'Periksa kembali syarat pada langkah yang sedang aktif, atau klik tombol "Muat Ulang" di pojok kanan atas lalu coba kembali.';
+    'Periksa kembali syarat pada tahap yang sedang aktif, atau klik tombol "Muat Ulang" di kanan atas lalu coba kembali.';
 
   if (rawMessage.includes('pergantian meter') || rawMessage.includes('MUTASI')) {
     nextAction =
-      'Buka Langkah 1 (Pengecekan Awal) lalu klik "Tinjau Ganti Meter" untuk menyetujui atau menolak pergantian meter yang masih menunggu.';
+      'Buka Tahap 1 (Cek Kesiapan Data) lalu setujui pergantian meter yang masih menunggu.';
+  } else if (
+    rawMessage.includes('Survei Ulang') ||
+    rawMessage.includes('Anomali') ||
+    rawMessage.includes('Kubikasi Negatif')
+  ) {
+    nextAction =
+      'Buka menu Verifikasi Baca Petugas (/verifikasi/baca-petugas) atau Koreksi Stand (/progres/koreksi) untuk menyelesaikan bacaan anomali sebelum pengesahan massal.';
+  } else if (
+    rawMessage.includes('BELUM_DICATAT') ||
+    rawMessage.includes('belum mencapai 100%')
+  ) {
+    nextAction =
+      'Lengkapi pelanggan yang belum tercatat melalui menu Manual ADD (/pelanggan/manual-add) atau Hitung Rata-Rata (/meter/hitung-rata-rata).';
   } else if (
     rawMessage.includes('belum disahkan') ||
     rawMessage.includes('VERIFIKASI')
   ) {
     nextAction =
-      'Buka Langkah 2 (Pengesahan Bacaan Meter) lalu klik tombol "Sahkan Seluruh Bacaan Meter".';
+      'Buka Tahap 2 (Sahkan Bacaan Meter) lalu klik tombol "Sahkan Bacaan Meter".';
   } else if (rawMessage.includes('AKSES_DITOLAK')) {
     nextAction =
-      'Masuk menggunakan akun Supervisor atau Admin Billing yang memiliki izin untuk menjalankan tutup buku.';
+      'Masuk menggunakan akun Admin Billing, Supervisor (V3), atau Superadmin yang memiliki izin mengeksekusi tutup buku.';
   } else if (rawMessage.includes('sudah ditutup') || rawMessage.includes('TERKUNCI')) {
     nextAction =
-      'Periode ini sudah selesai ditutup. Anda dapat langsung membuka Langkah 5 untuk menyiapkan jadwal bulan berikutnya.';
+      'Periode ini sudah selesai ditutup. Anda dapat langsung membuka Tahap 4 untuk menyiapkan jadwal bulan berikutnya.';
   }
 
   return {
@@ -149,11 +202,18 @@ export interface EvaluateWizardParams {
   tanggalJatuhTempo: string;
 }
 
+/**
+ * Evaluasi Alur 4 Tahap Inti Tutup Bulan:
+ * Tahap 1: Cek Kesiapan Data (Cakupan DPM 100%, Stand Angkat 0 Pending, Rute & Tarif Valid)
+ * Tahap 2: Sahkan Bacaan Meter (0 Anomali Menggantung & 100% Bacaan APPROVED_FINAL)
+ * Tahap 3: Tinjau DRD & Kunci Buku (Periksa Angka Tagihan, Jatuh Tempo, & Eksekusi Kunci Buku)
+ * Tahap 4: Bukti Tutup Buku & Buka Bulan Baru (Inisialisasi DPM N+1 Terpadu)
+ */
 export function evaluateClosingWizardSteps({
   stages,
   pratinjau,
   standAngkatList,
-  reviewConfirmed,
+  reviewConfirmed: _reviewConfirmed,
   tanggalJatuhTempo,
 }: EvaluateWizardParams): {
   steps: ClosingStepEvaluation[];
@@ -161,7 +221,9 @@ export function evaluateClosingWizardSteps({
 } {
   const isLocked = pratinjau?.status === 'TERKUNCI';
 
-  // Evaluasi Langkah 1: Kelengkapan Data Awal (PBPK, Ganti Meter, Rute)
+  // --- TAHAP 1: CEK KESIAPAN DATA ---
+  const totalBacaan = pratinjau?.pembacaan.total ?? 0;
+  const dpmBelumSelesai = pratinjau?.daftarCatat.belumSelesai ?? 0;
   const pendingMutasi = standAngkatList.filter(
     (m) => m.statusVerifikasi === 'PENDING',
   ).length;
@@ -171,146 +233,143 @@ export function evaluateClosingWizardSteps({
   const tanpaTarifCount = Number(stagePbpk?.detail?.tanpaTarif ?? 0);
 
   const step1Blockers: string[] = [];
-  if (pendingMutasi > 0) {
-    step1Blockers.push(
-      `Masih ada ${formatAngkaId(pendingMutasi)} data pergantian meter air yang belum disetujui.`,
-    );
-  }
-  if (tanpaRuteCount > 0) {
-    step1Blockers.push(
-      `Terdapat ${formatAngkaId(tanpaRuteCount)} pelanggan yang belum memiliki kode rute baca.`,
-    );
-  }
-  if (tanpaTarifCount > 0) {
-    step1Blockers.push(
-      `Terdapat ${formatAngkaId(tanpaTarifCount)} pelanggan yang belum memiliki golongan tarif.`,
-    );
+  if (!isLocked) {
+    if (totalBacaan === 0) {
+      step1Blockers.push('Belum ada data hasil bacaan meter pada periode ini.');
+    }
+    if (dpmBelumSelesai > 0) {
+      step1Blockers.push(
+        `Masih ada ${formatAngkaId(dpmBelumSelesai)} pelanggan aktif yang belum dicatat (${pratinjau?.daftarCatat.readRatePersen ?? 0}%). Lengkapi lewat Manual ADD atau Hitung Rata-Rata.`,
+      );
+    }
+    if (pendingMutasi > 0) {
+      step1Blockers.push(
+        `Masih ada ${formatAngkaId(pendingMutasi)} pergantian meter air yang menunggu persetujuan.`,
+      );
+    }
+    if (tanpaRuteCount > 0) {
+      step1Blockers.push(
+        `Terdapat ${formatAngkaId(tanpaRuteCount)} pelanggan yang belum memiliki kode rute baca.`,
+      );
+    }
+    if (tanpaTarifCount > 0) {
+      step1Blockers.push(
+        `Terdapat ${formatAngkaId(tanpaTarifCount)} pelanggan yang belum memiliki golongan tarif.`,
+      );
+    }
   }
   const step1Done = isLocked || step1Blockers.length === 0;
 
-  // Evaluasi Langkah 2: Pengesahan Hasil Baca Meter
-  const totalBacaan = pratinjau?.pembacaan.total ?? 0;
+  // --- TAHAP 2: SAHKAN BACAAN METER ---
+  const butuhKoreksi = pratinjau?.verifikasi.butuhKoreksi ?? 0;
   const belumDisahkan = pratinjau?.verifikasi.belumSelesai ?? 0;
+  const siapDisahkan =
+    pratinjau?.verifikasi.siapDisahkan ?? Math.max(0, belumDisahkan - butuhKoreksi);
+
   const step2Blockers: string[] = [];
   if (!step1Done) {
-    step2Blockers.push('Selesaikan Langkah 1 (Pengecekan Data Awal) terlebih dahulu.');
+    step2Blockers.push('Selesaikan pemeriksaan kesiapan pada Tahap 1 terlebih dahulu.');
   }
-  if (totalBacaan === 0 && !isLocked) {
-    step2Blockers.push('Belum ada data hasil bacaan meter pada periode ini.');
-  }
-  if (belumDisahkan > 0 && !isLocked) {
+  if (butuhKoreksi > 0 && !isLocked) {
     step2Blockers.push(
-      `Masih ada ${formatAngkaId(belumDisahkan)} hasil baca meter yang belum disahkan. Klik tombol "Sahkan Seluruh Bacaan Meter".`,
+      `Terdapat ${formatAngkaId(butuhKoreksi)} bacaan berstatus Anomali / Perlu Survei Ulang yang wajib diselesaikan di Verifikasi Petugas atau Koreksi Stand.`,
     );
   }
-  const step2Done =
-    isLocked || (step1Done && totalBacaan > 0 && belumDisahkan === 0);
+  if (siapDisahkan > 0 && !isLocked) {
+    step2Blockers.push(
+      `Masih ada ${formatAngkaId(siapDisahkan)} hasil baca meter yang menunggu pengesahan. Klik tombol "Sahkan Bacaan Meter".`,
+    );
+  } else if (belumDisahkan > 0 && butuhKoreksi === 0 && !isLocked) {
+    step2Blockers.push(
+      `Masih ada ${formatAngkaId(belumDisahkan)} hasil baca meter yang belum disahkan. Klik tombol "Sahkan Bacaan Meter".`,
+    );
+  }
 
-  // Evaluasi Langkah 3: Tinjau Ringkasan Tagihan & Tanggal Jatuh Tempo
+  const step2Done =
+    isLocked || (step1Done && butuhKoreksi === 0 && belumDisahkan === 0);
+
+  // --- TAHAP 3: TINJAU DRD & KUNCI BUKU ---
   const isDueDateValid = Boolean(
     tanggalJatuhTempo && !Number.isNaN(new Date(tanggalJatuhTempo).getTime()),
   );
   const step3Blockers: string[] = [];
   if (!step2Done) {
     step3Blockers.push(
-      'Selesaikan Langkah 2 (Pengesahan Bacaan Meter) terlebih dahulu.',
+      'Selesaikan pengesahan bacaan meter pada Tahap 2 terlebih dahulu.',
     );
   }
-  if (!isDueDateValid) {
+  if (!isDueDateValid && !isLocked) {
     step3Blockers.push('Tanggal jatuh tempo pembayaran wajib diisi dengan benar.');
   }
-  if (!reviewConfirmed && !isLocked) {
-    step3Blockers.push(
-      'Centang kotak pernyataan "Saya sudah memeriksa ringkasan angka tagihan" untuk melanjutkan.',
-    );
+  if (!isLocked && pratinjau && !pratinjau.bisaDitutup && step2Done) {
+    for (const h of pratinjau.hambatan) {
+      step3Blockers.push(h.pesan);
+    }
   }
-  const step3Done = isLocked || (step2Done && isDueDateValid && reviewConfirmed);
+  const step3Done = isLocked;
 
-  // Evaluasi Langkah 4: Konfirmasi & Kunci Tutup Buku
-  const step4Blockers: string[] = [];
-  if (!step3Done) {
-    step4Blockers.push(
-      'Selesaikan pemeriksaan pada Langkah 3 sebelum mengunci tutup buku.',
-    );
-  }
-  if (!isLocked) {
-    step4Blockers.push(
-      'Periode belum dikunci. Klik tombol "Mulai Tutup Buku & Terbitkan Tagihan" untuk menyelesaikan.',
-    );
-  }
-  const step4Done = isLocked;
-
-  // Evaluasi Langkah 5: Hasil Tutup Buku & Persiapan Bulan Baru
+  // --- TAHAP 4: BUKTI TUTUP BUKU & BUKA BULAN BARU ---
   const stageBulanBaru = stages.find((s) => s.id === 'create-bulan-baru');
   const hasNextPeriod = Boolean(stageBulanBaru?.detail?.hasNextPeriod);
-  const step5Blockers: string[] = [];
+  const step4Blockers: string[] = [];
   if (!isLocked) {
-    step5Blockers.push('Periode berjalan harus dikunci pada Langkah 4 terlebih dahulu.');
+    step4Blockers.push('Kunci buku periode berjalan pada Tahap 3 terlebih dahulu.');
   }
-  const step5Done = isLocked && hasNextPeriod;
+  const step4Done = isLocked && hasNextPeriod;
 
   const steps: ClosingStepEvaluation[] = [
     {
       step: 1,
-      title: '1. Pengecekan Kelengkapan Data',
+      title: '1. Cek Kesiapan Data',
       subtitle:
-        'Memastikan data pelanggan baru, pergantian meter rusak, dan pembagian rute baca sudah lengkap.',
-      operatorTask:
-        'Periksa 3 indikator di bawah. Jika ada yang belum selesai, gunakan tombol perbaikan yang tersedia.',
+        'Pemeriksaan otomatis cakupan catat lapangan 100%, persetujuan ganti meter, dan kelengkapan data pelanggan.',
+      operatorTask: step1Done
+        ? 'Seluruh syarat kesiapan terpenuhi. Lanjutkan ke Tahap 2.'
+        : 'Selesaikan item bertanda kuning di bawah sebelum melanjutkan.',
       isCompleted: step1Done,
       canProceed: step1Done,
       blockerReasons: step1Blockers,
     },
     {
       step: 2,
-      title: '2. Pengesahan Hasil Baca Meter',
+      title: '2. Sahkan Bacaan Meter',
       subtitle:
-        'Mengesahkan seluruh angka meter hasil catat petugas lapangan agar siap dihitung menjadi tagihan.',
-      operatorTask:
-        'Klik tombol "Sahkan Seluruh Bacaan Meter" apabila masih ada hasil bacaan yang menunggu pengesahan.',
+        'Mengesahkan seluruh hasil bacaan meter yang valid menjadi APPROVED_FINAL agar siap dihitung ke rekening DRD.',
+      operatorTask: step2Done
+        ? 'Seluruh bacaan meter telah disahkan. Lanjutkan ke Tahap 3.'
+        : 'Klik tombol "Sahkan Bacaan Meter" untuk mengesahkan bacaan.',
       isCompleted: step2Done,
       canProceed: step2Done,
       blockerReasons: step2Blockers,
     },
     {
       step: 3,
-      title: '3. Tinjau Ringkasan Tagihan & Jatuh Tempo',
+      title: '3. Tinjau DRD & Kunci Buku',
       subtitle:
-        'Memeriksa estimasi total pemakaian air, nilai rupiah tagihan, dan menentukan batas akhir pembayaran.',
-      operatorTask:
-        'Pilih tanggal jatuh tempo pembayaran, periksa angka estimasi tagihan, lalu centang kotak persetujuan.',
+        'Periksa proyeksi jumlah rekening, pemakaian air (m³), total rupiah tagihan, tentukan jatuh tempo, lalu kunci buku.',
+      operatorTask: isLocked
+        ? 'Buku periode ini telah dikunci permanen.'
+        : 'Centang pernyataan pemeriksaan lalu klik "Kunci Buku & Terbitkan DRD".',
       isCompleted: step3Done,
       canProceed: step3Done,
       blockerReasons: step3Blockers,
     },
     {
       step: 4,
-      title: '4. Konfirmasi & Kunci Tutup Buku',
+      title: '4. Buka Jadwal Bulan Baru',
       subtitle:
-        'Menerbitkan rekening tagihan air resmi untuk seluruh pelanggan dan mengunci buku periode ini secara permanen.',
-      operatorTask:
-        'Klik tombol "Mulai Tutup Buku & Terbitkan Tagihan", lalu ketik kata kunci konfirmasi pada jendela yang muncul.',
+        'Bukti resmi penutupan buku periode ini dan pembukaan daftar target catat meter (DPM) untuk bulan berikutnya.',
+      operatorTask: step4Done
+        ? 'Siklus bulan baru telah aktif dan siap digunakan.'
+        : 'Klik "Buka Jadwal Bulan Baru" untuk menyiapkan target catat bulan depan.',
       isCompleted: step4Done,
-      canProceed: step4Done,
-      blockerReasons: step4Blockers,
-    },
-    {
-      step: 5,
-      title: '5. Hasil Tutup Buku & Jadwal Bulan Baru',
-      subtitle:
-        'Menampilkan bukti penutupan buku periode ini dan menyiapkan daftar target catat meter untuk bulan depan.',
-      operatorTask:
-        'Tinjau bukti hasil tutup buku, lalu klik "Siapkan Jadwal Bulan Baru" untuk membuka periode berikutnya.',
-      isCompleted: step5Done,
       canProceed: true,
-      blockerReasons: step5Blockers,
+      blockerReasons: step4Blockers,
     },
   ];
 
   let recommendedStep: ClosingWizardStep = 1;
   if (isLocked) {
-    recommendedStep = 5;
-  } else if (step3Done) {
     recommendedStep = 4;
   } else if (step2Done) {
     recommendedStep = 3;
