@@ -55,7 +55,7 @@ export function SiteFooter() {
   }, [])
 
   return (
-    <footer className="relative overflow-hidden border-t border-border/80 bg-linear-to-br from-sky-50 via-card to-emerald-50/80 dark:from-slate-900 dark:via-card dark:to-sky-950/70 px-4 pt-15 pb-8 text-foreground lg:p-12.5">
+    <footer className="relative overflow-hidden border-t border-border/80 bg-linear-to-br from-sky-50 via-card to-emerald-50/80 dark:from-slate-900 dark:via-card dark:to-sky-950/70 pt-14 pb-8 text-foreground lg:pt-16">
       {/* Soft Gradient Blur Orbs (selaras dengan Card Total Estimasi) */}
       <div
         aria-hidden="true"
@@ -66,8 +66,8 @@ export function SiteFooter() {
         className="pointer-events-none absolute -bottom-28 -left-24 size-96 rounded-full bg-emerald-400/18 dark:bg-emerald-500/14 blur-3xl"
       />
 
-      {/* Footer utama */}
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-wrap pb-2 lg:pb-8">
+      {/* Footer utama (Selebar Navbar max-w-360 px-4 lg:px-12) */}
+      <div className="relative z-10 mx-auto flex w-full max-w-360 flex-wrap px-4 pb-2 lg:px-12 lg:pb-8">
         <div className="mb-15 w-full lg:w-auto">
           <Link href="/" className="block max-w-[220px]">
             <div className="flex items-center gap-3">
@@ -112,9 +112,9 @@ export function SiteFooter() {
         />
       </div>
 
-      {/* Footer sekunder */}
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-col border-t border-border/80 pt-8 lg:flex-row lg:flex-wrap lg:items-center lg:pt-6">
-        <LanguageSwitcher className="lg:mx-12.5" />
+      {/* Footer sekunder (Selebar Navbar max-w-360 px-4 lg:px-12) */}
+      <div className="relative z-10 mx-auto flex w-full max-w-360 flex-col border-t border-border/80 px-4 pt-8 lg:flex-row lg:flex-wrap lg:items-center lg:px-12 lg:pt-6">
+        <LanguageSwitcher className="lg:mr-8" />
 
         <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-center lg:justify-end">
           {legalLinks.map((link) => (

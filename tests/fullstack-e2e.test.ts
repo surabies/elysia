@@ -2,9 +2,9 @@ import { afterAll, describe, expect, it } from 'bun:test';
 import { Elysia } from 'elysia';
 import { eq } from 'drizzle-orm';
 import { db, user as userTable, places as placesTable } from '@cater/db';
-import { app } from '@/src/server/app';
-import { errorHandler } from '@/src/server/plugins/error-handler';
-import { auth } from '@/src/lib/auth';
+import { app } from '@cater/backend';
+import { errorHandler } from '../packages/backend/src/plugins/error-handler';
+import { auth } from '../apps/web/src/lib/auth';
 
 function extractCookieHeader(res: Response): string {
   const setCookies =

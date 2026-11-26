@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
-import { broadcastService } from '../apps/web/src/server/services/broadcast/broadcast.service';
-import { app } from '../apps/web/src/server/app';
-import { isCloudinaryConfigured } from '../apps/web/src/server/lib/cloudinary';
+import { broadcastService } from '../packages/backend/src/services/core/broadcast/broadcast.service';
+import { app } from '@cater/backend';
+import { isCloudinaryConfigured } from '../packages/backend/src/lib/cloudinary';
 
 describe('Integrasi Siaran Gangguan, Banner Iklan & Media Cloudinary', () => {
   test('1. Service Layer mengekspos fungsi operasional siaran dan fallback data', async () => {

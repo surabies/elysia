@@ -1,6 +1,5 @@
 import * as React from "react"
 import { Info } from "lucide-react"
-import { HaloBadge } from "@/components/ui/halo-badge"
 import { cn } from "@/lib/utils"
 
 /** Layout bersama untuk halaman layanan pelanggan yang ramah layar mobile & desktop (Mendukung Light & Dark Mode) */
@@ -22,14 +21,9 @@ export function HalamanPublik({
     <div className="w-full bg-transparent text-foreground font-sans">
       {/* Header Banner - Mobile-First dengan Ambient Glow Biru + Hijau Emerald Tipis */}
       <section className="relative overflow-hidden bg-[radial-gradient(ellipse_75%_60%_at_50%_-15%,rgba(0,112,243,0.09),rgba(16,185,129,0.04)_45%,transparent)]">
-        <div className="relative mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-9 md:px-8 lg:py-12">
-          {/* Eyebrow Badge Bersih */}
-          <HaloBadge live variant="outline" className="px-3 py-1 text-xs font-mono font-medium">
-            {eyebrow} · Layanan 24 Jam
-          </HaloBadge>
-
+        <div className="relative mx-auto w-full max-w-360 px-4 py-6 sm:px-6 sm:py-9 lg:px-12 lg:py-12">
           {/* Heading & Lede */}
-          <h1 className="mt-4 sm:mt-5 max-w-3xl text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-balance text-foreground">
+          <h1 className="max-w-3xl text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-balance text-foreground">
             {judul}
           </h1>
           <p className="mt-2 sm:mt-3 max-w-2xl text-xs sm:text-sm md:text-base text-muted-foreground leading-relaxed">
@@ -38,8 +32,8 @@ export function HalamanPublik({
         </div>
       </section>
 
-      {/* Main Grid Content - Mobile optimized layout */}
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-8 px-4 py-6 sm:px-6 sm:py-8 md:px-8 lg:grid-cols-12 lg:gap-10 lg:py-12 bg-transparent">
+      {/* Main Grid Content - Mobile optimized layout (Selebar Navbar max-w-360 px-4 lg:px-12) */}
+      <div className="mx-auto grid w-full max-w-360 grid-cols-1 gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-12 lg:gap-12 lg:px-12 lg:py-12 bg-transparent">
         {/* Kolom Formulir Utama (Tampil pertama di mobile, interaktif) */}
         <div className="min-w-0 lg:col-span-7 lg:col-start-6">{children}</div>
 
@@ -61,9 +55,6 @@ export function HalamanPublik({
                   </p>
                 </div>
               </div>
-              <span className="font-mono text-[10px] font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full border border-border/60">
-                Informasi
-              </span>
             </div>
 
             {/* Kumpulan Card Panduan */}

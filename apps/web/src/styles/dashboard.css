@@ -1,0 +1,209 @@
+/* ==========================================================================
+   Dashboard & Internal App Stylesheet
+   Khusus untuk halaman operasional / internal (Dashboard, Verifikasi, AG Grid, dsb)
+   ========================================================================== */
+
+/* Glide Data Grid Overlay Editor: Ukuran persis seperti lebar sel & rata kanan */
+#portal .gdg-style {
+  box-sizing: border-box !important;
+  width: var(--d19meir1-2, 100%) !important;
+  max-width: var(--d19meir1-2, 100%) !important;
+  border-radius: 0px !important;
+  padding: 0 8px !important;
+  background-color: var(--card) !important;
+  box-shadow: 0 0 0 1.5px #3b82f6, 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+#portal .gdg-style input,
+#portal .gdg-style input.gdg-input {
+  text-align: right !important;
+  font-family: var(--font-mono, "Geist Mono", monospace) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--foreground) !important;
+}
+
+#portal .gdg-style .gdg-clip-region {
+  justify-content: center !important;
+}
+
+/* Keep frozen and scrolling cells on one opaque row surface during horizontal scroll. */
+.tabel-verifikasi tbody > tr > td {
+  background-color: var(--card);
+  background-image: linear-gradient(
+    var(--latar-baris, transparent),
+    var(--latar-baris, transparent)
+  );
+  transition:
+    background-image 100ms ease,
+    box-shadow 100ms ease;
+}
+
+.tabel-verifikasi tbody > tr:hover > td {
+  background-image: linear-gradient(
+    var(--latar-baris-hover, var(--latar-baris, transparent)),
+    var(--latar-baris-hover, var(--latar-baris, transparent))
+  );
+}
+
+/* ==========================================================================
+   AG Grid Scrollbar Precision (Unlayered)
+   Guarantees a clean single 8px floating pill scrollbar for AG Grid tables.
+   ========================================================================== */
+.ag-grid-viewport,
+.ag-body-horizontal-scroll-end-spacer {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.ag-grid-viewport::-webkit-scrollbar,
+.ag-body-horizontal-scroll-end-spacer::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.ag-body-horizontal-scroll-viewport,
+.ag-body-vertical-scroll-viewport,
+.ag-virtual-list-viewport {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--ds-gray-alpha-400) transparent !important;
+  background-color: transparent !important;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar,
+.ag-virtual-list-viewport::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-track,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-track,
+.ag-virtual-list-viewport::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-virtual-list-viewport::-webkit-scrollbar-thumb {
+  background-color: var(--ds-gray-alpha-400) !important;
+  border: 2px solid transparent !important;
+  border-radius: 9999px !important;
+  background-clip: padding-box !important;
+  transition: background-color 0.15s ease;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb:hover,
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb:active,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb:hover,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb:active,
+.ag-virtual-list-viewport::-webkit-scrollbar-thumb:hover,
+.ag-virtual-list-viewport::-webkit-scrollbar-thumb:active {
+  background-color: var(--ds-gray-alpha-600) !important;
+}
+
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-corner,
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+.ag-body-horizontal-scroll,
+.ag-body-vertical-scroll {
+  background-color: transparent !important;
+}
+
+/* ==========================================================================
+   AG Grid Selection Column & Checkbox Precision Alignment
+   ========================================================================== */
+.ag-pinned-left-header,
+.ag-pinned-left-cols-container,
+.ag-pinned-left-cols-container .ag-cell,
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"],
+.ag-cell[col-id="ag-Grid-SelectionColumn"] {
+  border-right: none !important;
+  border-left: none !important;
+  box-shadow: none !important;
+}
+
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"] .ag-header-cell-comp-wrapper,
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"] .ag-cell-label-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ag-header-cell[col-id="ag-Grid-SelectionColumn"] .ag-header-select-all {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ag-cell[col-id="ag-Grid-SelectionColumn"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.ag-cell[col-id="ag-Grid-SelectionColumn"] .ag-cell-wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ag-cell[col-id="ag-Grid-SelectionColumn"] .ag-selection-checkbox {
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
+}
+
+.ag-cell[col-id="ag-Grid-SelectionColumn"] .ag-cell-value {
+  display: none !important;
+}
+
+/* Kunci window & document level scroll di dalam dashboard shell */
+html:has(#main-content),
+body:has(#main-content) {
+  overflow: hidden !important;
+  height: 100% !important;
+  overscroll-behavior: none !important;
+}
+
+/* ==========================================================================
+   Sidebar Scrollbar - Invisible / Seamless ala ReUI Template Signal
+   ========================================================================== */
+aside .sidebar-scroll,
+.sidebar-scroll {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+aside .sidebar-scroll::-webkit-scrollbar,
+.sidebar-scroll::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+aside .sidebar-scroll::-webkit-scrollbar-button,
+.sidebar-scroll::-webkit-scrollbar-button,
+aside *::-webkit-scrollbar-button,
+aside::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}

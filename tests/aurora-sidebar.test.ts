@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'bun:test';
 import { app } from '@/src/server/app';
-import { bulanBaruService } from '../apps/web/src/server/services/closing/bulan-baru.service';
-import { caterRuteService } from '../apps/web/src/server/services/cater/cater-rute.service';
-import { pelangganService } from '../apps/web/src/server/services/pelanggan/pelanggan.service';
-import { caterProgressService } from '../apps/web/src/server/services/cater/cater-progress.service';
-import { mapService } from '../apps/web/src/server/services/geo/map.service';
+import { bulanBaruService } from '../packages/backend/src/services/penagihan/closing/bulan-baru.service';
+import { caterRuteService } from '../packages/backend/src/services/pencatat-meter/cater/cater-rute.service';
+import { pelangganService } from '../packages/backend/src/services/langganan/pelanggan/pelanggan.service';
+import { caterProgressService } from '../packages/backend/src/services/pencatat-meter/cater/cater-progress.service';
+import { mapService } from '../packages/backend/src/services/sub-zona/geo/map.service';
 
 describe('Aurora Sidebar Synchronization & Enterprise Backend Verification', () => {
   describe('1. Module 8.2: Buka Bulan Baru DPM Service & Endpoint', () => {

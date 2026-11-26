@@ -9,7 +9,7 @@ import {
 } from "../apps/web/src/lib/auth/access-control";
 import { registerSchema } from "../apps/web/src/features/auth/lib/auth-schema";
 import { navGroups, filterNavGroups } from "../apps/web/src/config/navigasi";
-import { app } from "../apps/web/src/server/app";
+import { app } from "@cater/backend";
 
 describe("Security Hardening: Role Isolation & Route-to-Role RBAC (Default Deny)", () => {
   test("1. Role USER (pelanggan) terisolasi penuh dari seluruh area internal", () => {

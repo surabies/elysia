@@ -1,14 +1,16 @@
 import { describe, test, expect } from "bun:test";
 import fs from "fs";
 import path from "path";
-import { app } from "../apps/web/src/server/app";
-import { importDataService } from "../apps/web/src/server/services/import/import-data.service";
+import { app } from "@cater/backend";
+import { importDataService } from "../packages/backend/src/services/pencatat-meter/import/import-data.service";
 import { navGroups } from "../apps/web/src/config/navigasi";
 
 describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor, PBPK)", () => {
-  const pbpkCsvPath = fs.existsSync(path.resolve(process.cwd(), "packages/db/data/raw/PBPK.csv"))
-    ? path.resolve(process.cwd(), "packages/db/data/raw/PBPK.csv")
-    : path.resolve(process.cwd(), "packages/db/data/jan/PBPK.csv");
+  const pbpkCsvPath = [
+    path.resolve(process.cwd(), "packages/db/docs/PBPK.csv"),
+    path.resolve(process.cwd(), "packages/db/data/raw/PBPK.csv"),
+    path.resolve(process.cwd(), "packages/db/data/jan/PBPK.csv"),
+  ].find((p) => fs.existsSync(p)) || path.resolve(process.cwd(), "packages/db/docs/PBPK.csv");
 
   test("1. Parse photo filename conforms strictly to {THBL}_{JENIS}_{NOLG}.jpg standard", () => {
     // 1. Stand meter photo
@@ -303,10 +305,10 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
 
   test("11. Verifikasi grid and cek foto backend services return fotoSegelUrl", async () => {
     const { verifikasiGridService } = await import(
-      "../apps/web/src/server/services/cater/verifikasi-grid.service"
+      "../packages/backend/src/services/pencatat-meter/cater/verifikasi-grid.service"
     );
     const { caterProgressService } = await import(
-      "../apps/web/src/server/services/cater/cater-progress.service"
+      "../packages/backend/src/services/pencatat-meter/cater/cater-progress.service"
     );
 
     // Test getLaporanRows returns fotoSegelUrl property
@@ -336,7 +338,7 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
 
   test("12. Detail pelanggan (info-pelanggan) returns fotoSegelUrl in riwayatBaca", async () => {
     const { pelangganService } = await import(
-      "../apps/web/src/server/services/pelanggan/pelanggan.service"
+      "../packages/backend/src/services/langganan/pelanggan/pelanggan.service"
     );
 
     // 00406100410 is one of the test customers that has segel photo in 202601
@@ -373,7 +375,7 @@ describe("Import Modules & Backend Data Integration (Foto Backup, Data, R Nomor,
       },
     ];
 
-    const result = await importDataService.importLapDataMeter(sampleItems);
+    const result = await importDataService.importLapDataMeter(sampleItems, "FORCE_RESET_OVERWRITE");
     expect(result.sukses).toBe(1);
     expect(result.gagal).toBe(0);
 

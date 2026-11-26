@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { masterExtendedService } from '../apps/web/src/server/services/master/master-extended.service';
+import { masterExtendedService } from '../packages/backend/src/services/langganan/master/master-extended.service';
 
 describe('Matriks Hak Akses & Ring Approval (RBAC)', () => {
   it('harus dapat mengambil matriks hak akses dan menginisialisasi default jika kosong', async () => {

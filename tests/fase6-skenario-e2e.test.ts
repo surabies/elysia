@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'bun:test';
 import { db, pengaduan, riwayatPengaduan, user, userRoles } from '@cater/db';
 import { eq, desc } from 'drizzle-orm';
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
 
 describe('Fase 6C: Pengujian 4 Skenario End-to-End Alur Pengaduan Pelanggan', () => {
   let adminId: string;

@@ -9,12 +9,12 @@ import {
   hitungPerubahanTransisi,
   evaluasiPembuatanTiket,
   TRANSISI_PENGADUAN,
-} from '../apps/web/src/server/domain/pengaduan/alur-pengaduan.engine';
+} from '../packages/backend/src/domain/pengaduan/alur-pengaduan.engine';
 import {
   BATAS_KONFIRMASI_JAM,
   MAKS_BUKA_KEMBALI,
   MIN_PANJANG_ALASAN_TOLAK,
-} from '../apps/web/src/server/domain/pengaduan/pengaduan.config';
+} from '../packages/backend/src/domain/pengaduan/pengaduan.config';
 import type { StatusPengaduan } from '@cater/types';
 
 describe('Fase 3: Domain Engine & Alur Bisnis (K1-K5, K7, K8, B9)', () => {
@@ -131,7 +131,7 @@ describe('Fase 3: Domain Engine & Alur Bisnis (K1-K5, K7, K8, B9)', () => {
       sekarang: now,
     });
     expect(selesai.patch.selesaiAt).toEqual(now);
-    expect(selesai.patch.konfirmasiBatasAt?.getTime() - now.getTime()).toBe(
+    expect(selesai.patch.konfirmasiBatasAt!.getTime() - now.getTime()).toBe(
       BATAS_KONFIRMASI_JAM * 60 * 60 * 1000
     );
 

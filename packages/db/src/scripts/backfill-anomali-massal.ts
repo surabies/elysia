@@ -10,7 +10,7 @@ import { sql, eq } from 'drizzle-orm';
 import {
   evaluasiAnomaliBaris,
   type ReadingInput,
-} from '../../../../apps/web/src/server/domain/cater/anomali-evaluator';
+} from '../../../backend/src/domain/cater/anomali-evaluator';
 
 export async function runBackfillMassal(
   batchSize: number = 2000,

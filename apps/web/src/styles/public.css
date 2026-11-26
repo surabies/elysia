@@ -1,0 +1,146 @@
+/* ==========================================================================
+   Public & Landing App Stylesheet
+   Khusus untuk halaman publik & konsumen warga (Landing page, Berita, Info Gangguan, Cek Tagihan, dll)
+   ========================================================================== */
+
+/* Running Text / Marquee Ticker Keyframes */
+@keyframes broadcast-ticker {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-broadcast-ticker {
+  animation: broadcast-ticker var(--ticker-duration, 38s) linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-broadcast-ticker {
+    animation: none !important;
+  }
+}
+
+/* Enterprise Content Motion, Gradient Surfaces & Interactive Hover Utilities */
+@keyframes content-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-content-fade-up {
+  animation: content-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animation-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
+
+/* Gradient Permukaan Card yang Halus & Senada dengan Tema Geist */
+.gradient-card-subtle {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(249, 250, 251, 0.92) 50%,
+    rgba(243, 246, 249, 0.85) 100%
+  );
+  position: relative;
+}
+
+:is(.dark) .gradient-card-subtle {
+  background: linear-gradient(
+    145deg,
+    rgba(20, 20, 20, 0.98) 0%,
+    rgba(14, 16, 20, 0.94) 50%,
+    rgba(10, 12, 16, 0.88) 100%
+  );
+}
+
+/* Gradient Nuansa Air Bersih Tirtawening yang Teduh */
+.gradient-card-water {
+  background: linear-gradient(
+    145deg,
+    rgba(240, 249, 255, 0.85) 0%,
+    rgba(238, 242, 255, 0.75) 50%,
+    rgba(241, 245, 249, 0.65) 100%
+  );
+  position: relative;
+}
+
+:is(.dark) .gradient-card-water {
+  background: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.75) 0%,
+    rgba(30, 27, 75, 0.35) 50%,
+    rgba(15, 23, 42, 0.6) 100%
+  );
+}
+
+/* Micro-Interaction Card dengan Top Accent Glow Halus */
+.motion-card-interactive {
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.motion-card-interactive::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59, 130, 246, 0.45),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.motion-card-interactive:hover::before {
+  opacity: 1;
+}
+
+.motion-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 25px -4px rgba(0, 0, 0, 0.05),
+    0 4px 8px -2px rgba(0, 0, 0, 0.03);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-content-fade-up {
+    animation: none !important;
+  }
+  .motion-card-interactive:hover {
+    transform: none !important;
+  }
+}

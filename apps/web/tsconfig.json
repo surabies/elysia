@@ -29,6 +29,252 @@
       "cn": [
         "./src/lib/utils.ts"
       ],
+      "elysia": [
+        "../../node_modules/elysia"
+      ],
+      "elysia/*": [
+        "../../node_modules/elysia/*"
+      ],
+      "@cater/backend": [
+        "../../packages/backend/src"
+      ],
+      "@cater/backend/*": [
+        "../../packages/backend/src/*"
+      ],
+      "@cater/ui": [
+        "../../packages/ui/src"
+      ],
+      "@cater/ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@/components/ui": [
+        "../../packages/ui/src/ui"
+      ],
+      "@/components/ui/*": [
+        "../../packages/ui/src/ui/*"
+      ],
+      "@/components/charts": [
+        "../../packages/ui/src/charts"
+      ],
+      "@/components/charts/*": [
+        "../../packages/ui/src/charts/*"
+      ],
+      "@/components/reui": [
+        "../../packages/ui/src/reui"
+      ],
+      "@/components/reui/*": [
+        "../../packages/ui/src/reui/*"
+      ],
+      "@/components/glide-grid": [
+        "../../packages/ui/src/glide-grid"
+      ],
+      "@/components/glide-grid/*": [
+        "../../packages/ui/src/glide-grid/*"
+      ],
+      "@/components/icons": [
+        "../../packages/ui/src/icons"
+      ],
+      "@/components/icons/*": [
+        "../../packages/ui/src/icons/*"
+      ],
+      "@/components/tanstacktable": [
+        "./src/features/pencatat-meter/verifikasi"
+      ],
+      "@/components/tanstacktable/*": [
+        "./src/features/pencatat-meter/verifikasi/*"
+      ],
+      "@/features/cater-monitoring": [
+        "./src/features/pencatat-meter/monitoring"
+      ],
+      "@/features/cater-monitoring/*": [
+        "./src/features/pencatat-meter/monitoring/*"
+      ],
+      "@/features/cater-simulation": [
+        "./src/features/pencatat-meter/simulation"
+      ],
+      "@/features/cater-simulation/*": [
+        "./src/features/pencatat-meter/simulation/*"
+      ],
+      "@/features/peta-pengaduan": [
+        "./src/features/langganan/peta-pengaduan"
+      ],
+      "@/features/peta-pengaduan/*": [
+        "./src/features/langganan/peta-pengaduan/*"
+      ],
+      "@/features/dashboard/cater": [
+        "./src/features/pencatat-meter/cater"
+      ],
+      "@/features/dashboard/cater/*": [
+        "./src/features/pencatat-meter/cater/*"
+      ],
+      "@/features/dashboard/progres": [
+        "./src/features/pencatat-meter/progres"
+      ],
+      "@/features/dashboard/progres/*": [
+        "./src/features/pencatat-meter/progres/*"
+      ],
+      "@/features/dashboard/import": [
+        "./src/features/pencatat-meter/import"
+      ],
+      "@/features/dashboard/import/*": [
+        "./src/features/pencatat-meter/import/*"
+      ],
+      "@/features/dashboard/rute": [
+        "./src/features/pencatat-meter/rute"
+      ],
+      "@/features/dashboard/rute/*": [
+        "./src/features/pencatat-meter/rute/*"
+      ],
+      "@/features/dashboard/meter": [
+        "./src/features/pencatat-meter/meter"
+      ],
+      "@/features/dashboard/meter/*": [
+        "./src/features/pencatat-meter/meter/*"
+      ],
+      "@/features/dashboard/closing": [
+        "./src/features/penagihan/closing"
+      ],
+      "@/features/dashboard/closing/*": [
+        "./src/features/penagihan/closing/*"
+      ],
+      "@/features/dashboard/drd": [
+        "./src/features/penagihan/drd"
+      ],
+      "@/features/dashboard/drd/*": [
+        "./src/features/penagihan/drd/*"
+      ],
+      "@/features/dashboard/laporan": [
+        "./src/features/penagihan/laporan"
+      ],
+      "@/features/dashboard/laporan/*": [
+        "./src/features/penagihan/laporan/*"
+      ],
+      "@/features/dashboard/pengaduan": [
+        "./src/features/langganan/pengaduan"
+      ],
+      "@/features/dashboard/pengaduan/*": [
+        "./src/features/langganan/pengaduan/*"
+      ],
+      "@/features/dashboard/pelanggan": [
+        "./src/features/langganan/pelanggan"
+      ],
+      "@/features/dashboard/pelanggan/*": [
+        "./src/features/langganan/pelanggan/*"
+      ],
+      "@/features/dashboard/info-pelanggan": [
+        "./src/features/langganan/info-pelanggan"
+      ],
+      "@/features/dashboard/info-pelanggan/*": [
+        "./src/features/langganan/info-pelanggan/*"
+      ],
+      "@/features/dashboard/master": [
+        "./src/features/langganan/master"
+      ],
+      "@/features/dashboard/master/*": [
+        "./src/features/langganan/master/*"
+      ],
+      "@/features/dashboard/kpi": [
+        "./src/features/sdm/kpi"
+      ],
+      "@/features/dashboard/kpi/*": [
+        "./src/features/sdm/kpi/*"
+      ],
+      "@/features/dashboard/gis": [
+        "./src/features/sub-zona/gis"
+      ],
+      "@/features/dashboard/gis/*": [
+        "./src/features/sub-zona/gis/*"
+      ],
+      "@/features/dashboard/peta-wilayah": [
+        "./src/features/sub-zona/peta-wilayah"
+      ],
+      "@/features/dashboard/peta-wilayah/*": [
+        "./src/features/sub-zona/peta-wilayah/*"
+      ],
+      "@/features/dashboard/gwm": [
+        "./src/features/rpm/gwm"
+      ],
+      "@/features/dashboard/gwm/*": [
+        "./src/features/rpm/gwm/*"
+      ],
+      "@/features/dashboard/overview": [
+        "./src/features/eksekutif/overview"
+      ],
+      "@/features/dashboard/overview/*": [
+        "./src/features/eksekutif/overview/*"
+      ],
+      "@/features/dashboard/analytics": [
+        "./src/features/eksekutif/analytics"
+      ],
+      "@/features/dashboard/analytics/*": [
+        "./src/features/eksekutif/analytics/*"
+      ],
+      "@/features/dashboard/pengaturan": [
+        "./src/features/pengaturan/pengaturan"
+      ],
+      "@/features/dashboard/pengaturan/*": [
+        "./src/features/pengaturan/pengaturan/*"
+      ],
+      "@/features/dashboard/setting-landing": [
+        "./src/features/pengaturan/setting-landing"
+      ],
+      "@/features/dashboard/setting-landing/*": [
+        "./src/features/pengaturan/setting-landing/*"
+      ],
+      "@/server/services/cater/*": [
+        "../../packages/backend/src/services/pencatat-meter/cater/*"
+      ],
+      "@/server/services/import/*": [
+        "../../packages/backend/src/services/pencatat-meter/import/*"
+      ],
+      "@/server/services/laporan/*": [
+        "../../packages/backend/src/services/pencatat-meter/laporan/*"
+      ],
+      "@/server/services/rute/*": [
+        "../../packages/backend/src/services/pencatat-meter/rute/*"
+      ],
+      "@/server/services/closing/*": [
+        "../../packages/backend/src/services/penagihan/closing/*"
+      ],
+      "@/server/services/mandiri/*": [
+        "../../packages/backend/src/services/langganan/mandiri/*"
+      ],
+      "@/server/services/pengaduan/*": [
+        "../../packages/backend/src/services/langganan/pengaduan/*"
+      ],
+      "@/server/services/master/*": [
+        "../../packages/backend/src/services/langganan/master/*"
+      ],
+      "@/server/services/pelanggan/*": [
+        "../../packages/backend/src/services/langganan/pelanggan/*"
+      ],
+      "@/server/services/publik/*": [
+        "../../packages/backend/src/services/langganan/publik/*"
+      ],
+      "@/server/services/pengaturan/*": [
+        "../../packages/backend/src/services/langganan/pengaturan/*"
+      ],
+      "@/server/services/kpi/*": [
+        "../../packages/backend/src/services/sdm/kpi/*"
+      ],
+      "@/server/services/geo/*": [
+        "../../packages/backend/src/services/sub-zona/geo/*"
+      ],
+      "@/server/services/gwm/*": [
+        "../../packages/backend/src/services/rpm/gwm/*"
+      ],
+      "@/server/services/dashboard/*": [
+        "../../packages/backend/src/services/core/dashboard/*"
+      ],
+      "@/server/services/mock/*": [
+        "../../packages/backend/src/services/core/mock/*"
+      ],
+      "@/server/services/broadcast/*": [
+        "../../packages/backend/src/services/core/broadcast/*"
+      ],
+      "@/server/*": [
+        "../../packages/backend/src/*"
+      ],
       "@cater/db": [
         "../../packages/db/src"
       ],
@@ -45,6 +291,7 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "../../archive"
   ]
 }

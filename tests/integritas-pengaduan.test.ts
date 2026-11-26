@@ -1,7 +1,7 @@
 import { describe, expect, it, afterAll } from 'bun:test';
 import { db, pengaduan, riwayatPengaduan, pengaduanNomorUrut } from '@cater/db';
 import { inArray, eq } from 'drizzle-orm';
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
 
 describe('Fase 2: Integritas Data & Transaksi Tiket (B3, B4, B5, B14, B15)', () => {
   const createdTicketIds: string[] = [];

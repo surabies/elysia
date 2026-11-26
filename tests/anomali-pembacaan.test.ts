@@ -33,7 +33,7 @@ describe('Radar Anomali Pembacaan & Halaman /progres/ekstrim (Sinkronisasi SSOT)
 
     for (const item of res.items) {
       const isEkstrem =
-        item.kategori === 'ekstrim' ||
+        (item as any).kategori === 'ekstrim' ||
         item.pakaiM3 >= 100 ||
         (item.persenDeviasi > 80 && item.selisihM3 >= 20);
       expect(isEkstrem).toBe(true);
@@ -55,7 +55,7 @@ describe('Radar Anomali Pembacaan & Halaman /progres/ekstrim (Sinkronisasi SSOT)
 
     for (const item of res.items) {
       const isTurun =
-        item.kategori === 'turun' ||
+        (item as any).kategori === 'turun' ||
         (item.selisihM3 < 0 && item.pakaiM3 <= item.pakaiLalu * 0.5);
       expect(isTurun).toBe(true);
     }

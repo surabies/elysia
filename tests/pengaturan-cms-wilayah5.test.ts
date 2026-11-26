@@ -11,7 +11,7 @@ import {
   DEFAULT_STRUKTUR_TARIF,
   DEFAULT_BERITA_PENGUMUMAN,
   DEFAULT_INFO_GANGGUAN,
-} from '../apps/web/src/server/services/pengaturan/pengaturan.service';
+} from '../packages/backend/src/services/langganan/pengaturan/pengaturan.service';
 import { GET as getWilayahCakupan } from '../apps/web/src/app/api/public/wilayah-cakupan/route';
 import { GET as getPengaturanPublik } from '../apps/web/src/app/api/public/pengaturan/route';
 

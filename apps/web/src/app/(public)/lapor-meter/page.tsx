@@ -59,9 +59,6 @@ export default async function LaporMeterPage({
                 <p className="text-muted-foreground">
                   Meter analog memiliki 2 warna angka:
                 </p>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
-                  Diagram Contoh
-                </span>
               </div>
 
               {/* Visual Meter Roll Demo */}

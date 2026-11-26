@@ -10,9 +10,8 @@ import {
   tentukanKlasifikasi,
   tentukanPrioritasAwal,
   evaluasiPembuatanTiket,
-  STATUS_PENGADUAN,
   TRANSISI_PENGADUAN,
-} from '../apps/web/src/server/domain/pengaduan/alur-pengaduan.engine';
+} from '../packages/backend/src/domain/pengaduan/alur-pengaduan.engine';
 
 describe('Fase 6A: Pengujian Komprehensif Engine & Properti Graf', () => {
   const SEMUA_STATUS: StatusPengaduan[] = [
@@ -168,7 +167,6 @@ describe('Fase 6A: Pengujian Komprehensif Engine & Properti Graf', () => {
     const kasus1 = ringkasSla(
       {
         status: 'DIPROSES',
-        createdAt: tAwal,
         targetResponsAt: targetRespons,
         targetSelesaiAt: targetSelesai,
         responsAt: new Date('2026-11-20T09:00:00Z'),
@@ -183,7 +181,6 @@ describe('Fase 6A: Pengujian Komprehensif Engine & Properti Graf', () => {
     const kasus2 = ringkasSla(
       {
         status: 'SELESAI',
-        createdAt: tAwal,
         targetResponsAt: targetRespons,
         targetSelesaiAt: targetSelesai,
         responsAt: new Date('2026-11-20T09:00:00Z'),
@@ -197,7 +194,6 @@ describe('Fase 6A: Pengujian Komprehensif Engine & Properti Graf', () => {
     const kasus3 = ringkasSla(
       {
         status: 'DITOLAK',
-        createdAt: tAwal,
         targetResponsAt: targetRespons,
         targetSelesaiAt: targetSelesai,
         responsAt: null,
@@ -212,7 +208,6 @@ describe('Fase 6A: Pengujian Komprehensif Engine & Properti Graf', () => {
     const kasus4 = ringkasSla(
       {
         status: 'MENUNGGU_PELANGGAN',
-        createdAt: tAwal,
         targetResponsAt: targetRespons,
         targetSelesaiAt: targetSelesai,
         responsAt: new Date('2026-11-20T09:00:00Z'),

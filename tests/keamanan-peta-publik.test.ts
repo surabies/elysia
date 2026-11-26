@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import { app } from '../apps/web/src/server/app';
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
-import { JENIS_PENGADUAN_PETA_PUBLIK } from '../apps/web/src/server/domain/pengaduan/pengaduan.config';
+import { app } from '@cater/backend';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
+import { JENIS_PENGADUAN_PETA_PUBLIK } from '../packages/backend/src/domain/pengaduan/pengaduan.config';
 
 describe('Fase 1: Keamanan Data & Privasi Peta Publik (B1, B2)', () => {
   it('1. Endpoint publik /api/publik/pengaduan/peta TIDAK membocorkan PII (pelapor, kontak, deskripsi, petugas)', async () => {

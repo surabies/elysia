@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeAll } from 'bun:test';
 import { db, caterBacaMeter } from '@cater/db';
 import { eq, sql } from 'drizzle-orm';
-import { aturanAnomaliService } from '../apps/web/src/server/services/cater/aturan-anomali.service';
+import { aturanAnomaliService } from '../packages/backend/src/services/pencatat-meter/cater/aturan-anomali.service';
 
 export function assertNotProductionDatabase(dbUrl: string = process.env.DATABASE_URL || '') {
   if (dbUrl.includes('ep-still-sun-azg726ne') && process.env.ALLOW_PRODUCTION_RUN !== 'true') {

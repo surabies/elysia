@@ -9,6 +9,7 @@ import {
   TopEventsSection,
 } from '@/components/home'
 import { ScrollProgressBar } from '@/components/shared/ScrollProgressBar'
+import '@/styles/public.css'
 import {
   benefitsContent,
   featureSections,

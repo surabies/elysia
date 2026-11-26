@@ -4,19 +4,19 @@ import {
   usulkanPemakaianTagih,
   hitungTotalTagihan,
   type HargaBlok,
-} from '../apps/web/src/server/domain/tagihan/tagihan.engine';
+} from '../packages/backend/src/domain/tagihan/tagihan.engine';
 import {
   hitungTaksasi,
   hitungRollover,
   PEMAKAIAN_MINIMUM_PERDIR,
-} from '../apps/web/src/server/domain/taksasi/taksasi.engine';
+} from '../packages/backend/src/domain/taksasi/taksasi.engine';
 import {
   periksaJendelaLaporMandiri,
   evaluasiGeofenceMandiri,
-} from '../apps/web/src/server/domain/mandiri/mandiri.engine';
+} from '../packages/backend/src/domain/mandiri/mandiri.engine';
 import {
   hitungKubikasiGantiMeter,
-} from '../apps/web/src/server/domain/gwm/gwm.engine';
+} from '../packages/backend/src/domain/gwm/gwm.engine';
 import { caterBacaMeter } from '@cater/db';
 
 describe('Verifikasi Ketahanan 6 Kasus Kritis Bisnis PDAM', () => {

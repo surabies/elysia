@@ -6,9 +6,9 @@ import {
   hitungRingkasanRute,
   hitungTinggiPilPerBaris,
   hitungTuntasRute,
-} from "../apps/web/src/features/cater-monitoring/lib/perhitungan-riwayat-rute";
-import { contoh8RuteBaca } from "../apps/web/src/features/cater-monitoring/lib/data-contoh-rute";
-import { caterProgressService } from "../apps/web/src/server/services/cater/cater-progress.service";
+} from "../apps/web/src/features/pencatat-meter/monitoring/lib/perhitungan-riwayat-rute";
+import { contoh8RuteBaca } from "../apps/web/src/features/pencatat-meter/monitoring/lib/data-contoh-rute";
+import { caterProgressService } from "../packages/backend/src/services/pencatat-meter/cater/cater-progress.service";
 
 describe("Riwayat Pembacaan Rute (Kalkulasi & Spesifikasi)", () => {
   it("memiliki tepat 8 rute dengan masing-masing 20 sesi (total 160 sesi)", () => {

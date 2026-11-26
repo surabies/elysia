@@ -9,9 +9,10 @@
  */
 
 import { describe, it, expect, beforeAll } from 'bun:test';
-import { kebijakanPengaduanService } from '../apps/web/src/server/services/pengaduan/kebijakan-pengaduan.service';
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
-import { db, pengaduan, riwayatPengaduan, eq } from '@cater/db';
+import { kebijakanPengaduanService } from '../packages/backend/src/services/langganan/pengaduan/kebijakan-pengaduan.service';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
+import { db, pengaduan, riwayatPengaduan } from '@cater/db';
+import { eq } from 'drizzle-orm';
 
 describe('Kebijakan Dinamis Pengaduan Berversi (Policy as Data)', () => {
   let createdTicketIds: string[] = [];

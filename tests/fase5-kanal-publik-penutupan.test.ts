@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'bun:test';
 import { db, pengaduan, riwayatPengaduan } from '@cater/db';
 import { eq } from 'drizzle-orm';
-import { pengaduanService } from '../apps/web/src/server/services/pengaduan/pengaduan.service';
+import { pengaduanService } from '../packages/backend/src/services/langganan/pengaduan/pengaduan.service';
 import {
   samarkanNama,
   verifikasiEmpatDigitKontak,
   cekBatasPercobaan,
   catatKegagalanPercobaan,
   resetPercobaan,
-} from '../apps/web/src/server/lib/public-rate-limiter';
+} from '../packages/backend/src/lib/public-rate-limiter';
 
 describe('Fase 5: Kanal Pelapor Publik, Verifikasi Kepemilikan, & Penutupan Otomatis (K4, K6)', () => {
   // 1. Sanitasi Nama Pelapor (Masking PII)
