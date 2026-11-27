@@ -5,6 +5,8 @@
  * Diturunkan langsung dari formula resmi tarif PDAM Tirtawening.
  */
 
+import { hitungKubikasiMudaKembali } from '../gwm/gwm.engine';
+
 export interface HargaBlok {
   blok: number;
   batasAwalM3: number; // Inklusif (1, 11, 21, 31)
@@ -129,6 +131,7 @@ export type AlasanTaksir =
   | 'KREDIT_TAKSASI_KELEBIHAN'
   | 'STAND_TETAP'
   | 'METER_BARU_RESET'
+  | 'MUDA_KEMBALI_ROLLOVER'
   | 'OVERRIDE_MANUAL';
 
 export type ModeHitungKondisiInput =
@@ -136,7 +139,8 @@ export type ModeHitungKondisiInput =
   | 'NOL'
   | 'TAKSASI_HISTORI'
   | 'METER_BARU'
-  | 'KREDIT_TAKSASI';
+  | 'KREDIT_TAKSASI'
+  | 'MUDA_KEMBALI';
 
 export type TagihanSaatKelebihanMode = 'NOL' | 'MINIMUM';
 
@@ -151,6 +155,9 @@ export interface HitungPemakaianBerbasisModeInput {
   tagihanSaatKelebihan?: TagihanSaatKelebihanMode; // 'NOL' | 'MINIMUM' (default 'MINIMUM' dari golongan_tarif)
   standAngkat?: number | null; // Opsional jika berita acara ganti meter sudah mencatat stand angkat meter lama
   standPasang?: number | null; // Opsional stand pasang awal meter baru (default 0)
+  ukuranMeter?: string | null; // Ukuran pipa meter untuk inferensi digit rollover
+  jumlahDigitAset?: number | null; // Jumlah digit register hitam pada aset meter
+  digitRollover?: number | null; // Override kapasitas digit dari operator pada kondisi MUDA_KEMBALI
 }
 
 export interface HasilHitungPemakaianBerbasisMode {
@@ -208,6 +215,9 @@ export function hitungPemakaianDanRekonsiliasiTaksasi(
     tagihanSaatKelebihan = 'MINIMUM',
     standAngkat = null,
     standPasang = 0,
+    ukuranMeter = null,
+    jumlahDigitAset = null,
+    digitRollover = null,
   } = input;
 
   // 1. Mode NOL (TIDAK ADA AIR / DICABUT)
@@ -224,6 +234,41 @@ export function hitungPemakaianDanRekonsiliasiTaksasi(
       perluReviewVerifikatorAkumulasi: false,
       alasanTaksir: 'NOL_TIDAK_ADA_AIR',
       pesanAnomali: null,
+    };
+  }
+
+  // 1b. Mode MUDA_KEMBALI (U | MUDA KEMBALI - Dial Rollover melewati 9999->0000 / 99999->00000)
+  if (modeHitung === 'MUDA_KEMBALI') {
+    const rollover = hitungKubikasiMudaKembali({
+      standAwal: stml,
+      standAkhir: stma,
+      ukuranMeter,
+      jumlahDigitAset,
+      digitOverride: digitRollover,
+    });
+    const selisihRollover = rollover.isValid ? rollover.totalPemakaianM3 : stma - stml;
+    const nettoRollover =
+      akumulasiTaksasiM3 > 0
+        ? Math.max(0, selisihRollover - akumulasiTaksasiM3)
+        : pemakaianMinimumM3 > 0 && selisihRollover >= 0 && selisihRollover < pemakaianMinimumM3
+          ? pemakaianMinimumM3
+          : selisihRollover;
+
+    return {
+      stmlAsli: stml,
+      stmaEfektif: stma,
+      selisihFisikM3: selisihRollover,
+      pakaiTagihM3: nettoRollover,
+      akumulasiTaksasiDikurangkan: akumulasiTaksasiM3 > 0 ? Math.min(akumulasiTaksasiM3, Math.max(0, selisihRollover)) : 0,
+      akumulasiTaksasiBerikutnya: 0,
+      isAnomaliKreditTaksasi: false,
+      isStandTetap: stma === stml,
+      perluReviewVerifikatorAkumulasi: false,
+      alasanTaksir:
+        pemakaianMinimumM3 > 0 && selisihRollover >= 0 && selisihRollover < pemakaianMinimumM3
+          ? 'MINIMUM_5M3'
+          : 'MUDA_KEMBALI_ROLLOVER',
+      pesanAnomali: rollover.peringatanPlausibilitas ?? rollover.pesanError ?? null,
     };
   }
 

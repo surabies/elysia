@@ -298,6 +298,29 @@ export async function submitPerubahanKategori(
   return { message: json.message };
 }
 
+export interface PelangganPkPreview {
+  nolg: string;
+  nama: string;
+  alamat: string;
+  status: string;
+  tarifKode?: string | null;
+  ruteKode?: string | null;
+  noMeter?: string | null;
+  noTelp?: string | null;
+}
+
+export async function fetchPelangganUntukPk(
+  nolg: string,
+): Promise<PelangganPkPreview> {
+  const cleanNolg = nolg.trim();
+  const res = await fetch(`/api/closing/pbpk/pelanggan/${encodeURIComponent(cleanNolg)}`);
+  const json = await res.json();
+  if (!json.success || !json.data) {
+    throw new Error(json.error || `Pelanggan dengan nomor ${cleanNolg} tidak ditemukan.`);
+  }
+  return json.data as PelangganPkPreview;
+}
+
 export async function submitBacaanPbpk(payload: {
   periode: string;
   items: Array<{ nolg: string; standAwal: number; standAkhir: number }>;

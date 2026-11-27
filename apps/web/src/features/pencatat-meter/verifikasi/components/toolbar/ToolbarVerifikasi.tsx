@@ -8,7 +8,9 @@
 import * as React from "react";
 import { CalendarDaysIcon } from "@/components/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/components/icons/IconRenderer";
+import { TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -39,6 +41,7 @@ export interface FilterVerifikasi {
   tanggalDari: string;
   tanggalSampai: string;
   hanyaAnomali: boolean | string;
+  filterPemakaian: string;
   kondisi: string;
   jenisInput: string;
   pageSize: number;
@@ -53,6 +56,7 @@ export const FILTER_AWAL: FilterVerifikasi = {
   tanggalDari: "",
   tanggalSampai: "",
   hanyaAnomali: false,
+  filterPemakaian: "",
   kondisi: "",
   jenisInput: "",
   pageSize: 100,
@@ -117,6 +121,7 @@ export function ToolbarVerifikasi({
     filter.pencatatId,
     filter.ruteId,
     filter.hanyaAnomali,
+    filter.filterPemakaian,
     filter.kondisi,
     filter.jenisInput,
   ]);
@@ -157,9 +162,24 @@ export function ToolbarVerifikasi({
           </SelectContent>
         </Select>
 
-        {/* REUI Filters Bar (Petugas, Rute, Status, Anomali, Kondisi, Asal Laporan) */}
+        {/* REUI Filters Bar (Petugas, Rute, Status, Pemakaian, Anomali, Kondisi, Asal Laporan) */}
         {!modeBelumDibaca && (
-          <div className="flex items-center">
+          <div className="flex items-center gap-1.5">
+            {!filter.filterPemakaian && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  onGanti({ ...filter, filterPemakaian: "MINUS" })
+                }
+                title="Tampilkan hanya laporan dengan pemakaian minus (< 0 m³)"
+                className="h-8 gap-1.5 px-2.5 text-xs font-normal border-border/60 bg-background hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer shrink-0"
+              >
+                <TrendingDown className="size-3.5 text-rose-500" />
+                <span>Minus (&lt; 0)</span>
+              </Button>
+            )}
             <Filters
               fields={filterSchema}
               query={filterQuery}

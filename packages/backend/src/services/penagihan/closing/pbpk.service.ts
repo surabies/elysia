@@ -423,6 +423,32 @@ export class PbpkService {
   }
 
   /**
+   * Mengambil data pelanggan lama dari master untuk keperluan Pemasangan Kembali (PK)
+   */
+  async getDetailPelangganUntukPk(nolg: string) {
+    const cleanNolg = nolg.trim();
+    const [cust] = await db
+      .select({
+        nolg: pelanggan.nolg,
+        nama: pelanggan.nama,
+        alamat: pelanggan.alamat,
+        status: pelanggan.status,
+        tarifKode: pelanggan.tarifKode,
+        ruteKode: pelanggan.ruteKode,
+        noMeter: pelanggan.noMeter,
+        noTelp: pelanggan.noTelp,
+      })
+      .from(pelanggan)
+      .where(eq(pelanggan.nolg, cleanNolg));
+
+    if (!cust) {
+      throw new Error(`Pelanggan dengan nomor ${cleanNolg} tidak ditemukan dalam database.`);
+    }
+
+    return cust;
+  }
+
+  /**
    * Pemasangan Kembali (PK) / Perubahan Kategori Tarif Pelanggan
    */
   async inputPerubahanKategori(data: InputPerubahanKategoriDTO) {

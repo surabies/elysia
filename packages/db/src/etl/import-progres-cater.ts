@@ -218,7 +218,7 @@ export async function importProgresCater(
     const trp = cols[5]?.trim() || "2A1";
     const namatrp = cols[6]?.trim() || "TARIF " + trp;
     const tmssRaw = cols[8]?.trim() || "";
-    const tmss = tmssRaw.length > 0 ? tmssRaw : " ";
+    const tmss = tmssRaw.length > 0 ? tmssRaw : "-";
     const ketcatat = cols[9]?.trim() || "Normal";
     const stml = parseFloat(cols[10]?.trim() || "0") || 0;
     const stma = parseFloat(cols[11]?.trim() || "0") || 0;

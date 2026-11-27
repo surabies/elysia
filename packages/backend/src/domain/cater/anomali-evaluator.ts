@@ -170,12 +170,18 @@ export function evaluasiAnomaliBaris(
     let matched = false;
 
     switch (rule.tipeAturan) {
-      // 1. Meter Mundur: stma < stml (Dikecualikan jika kondisi adalah METER_BARU / MB)
+      // 1. Meter Mundur: stma < stml (Dikecualikan jika kondisi METER_BARU / MB yang sah atau MUDA_KEMBALI yang wajar)
       case 'METER_MUNDUR': {
         const isMeterBaru =
           tmssClean === '4' ||
+          tmssClean.toUpperCase() === 'MB' ||
           currentMaps.some((m) => m.modeHitung === 'METER_BARU' || m.kategori === 'METER_BARU');
-        if (stma < stml && !isMeterBaru) {
+        const isMudaKembali =
+          tmssClean === 'U' ||
+          tmssClean.toUpperCase() === 'MUDA KEMBALI' ||
+          tmssClean.toUpperCase() === 'MUDA_KEMBALI' ||
+          currentMaps.some((m) => m.modeHitung === 'MUDA_KEMBALI');
+        if (stma < stml && !isMeterBaru && !isMudaKembali) {
           matched = true;
         }
         break;

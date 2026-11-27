@@ -30,6 +30,14 @@ export interface BarisVerifikasi {
   standMeterBaru?: number | null
   standMeterBaruRevisi?: number | null
   standPasang?: number | null
+  noMeterBaru?: string | null
+  mbTanpaStandAngkat?: boolean | null
+  digitRollover?: number | null
+  ukuranMeter?: string | null
+  jumlahDigitAset?: number | null
+  butuhKonfirmasiGuard?: boolean | null
+  kodeBlokirGuard?: string | null
+  pesanBlokirGuard?: string | null
   pemakaian?: number | null
   pemakaianRevisi?: number | null
   pemakaianTagihVerif?: number | null
@@ -182,6 +190,15 @@ export interface LaporanHarianDetail {
   standAngkatRevisi?: number | null
   standMeterBaru?: number | null
   standMeterBaruRevisi?: number | null
+  standPasang?: number | null
+  noMeterBaru?: string | null
+  mbTanpaStandAngkat?: boolean | null
+  digitRollover?: number | null
+  ukuranMeter?: string | null
+  jumlahDigitAset?: number | null
+  butuhKonfirmasiGuard?: boolean | null
+  kodeBlokirGuard?: string | null
+  pesanBlokirGuard?: string | null
   pemakaianTagihVerif?: number | null
   meterVerifId?: string | null
   blokTarifVerif?: number | null

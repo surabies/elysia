@@ -31,7 +31,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { PageContainer } from '@/components/layout/page/PageContainer';
-import { STANDAR_PERIODE_OPTIONS, PERIODE_TERKUNCI_KANTOR } from '@/config/periode';
+import { STANDAR_PERIODE_OPTIONS, PERIODE_BERJALAN_AKTIF } from '@/config/periode';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -72,7 +72,7 @@ export interface LaporanKoreksiData {
 export function LaporanMonitoringKoreksi() {
   const [data, setData] = React.useState<LaporanKoreksiData | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [periode, setPeriode] = React.useState(PERIODE_TERKUNCI_KANTOR);
+  const [periode, setPeriode] = React.useState(PERIODE_BERJALAN_AKTIF);
   const [search, setSearch] = React.useState('');
   const [filterSelisih, setFilterSelisih] = React.useState<'ALL' | 'PLUS' | 'MINUS'>('ALL');
 

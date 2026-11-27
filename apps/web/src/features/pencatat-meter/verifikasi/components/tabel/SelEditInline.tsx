@@ -18,6 +18,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -26,7 +27,10 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { hitungPemakaianGantiMeter } from "@/lib/domain/perhitungan-meter";
+import {
+  hitungPemakaianGantiMeter,
+  hitungPemakaianMudaKembali,
+} from "@/lib/domain/perhitungan-meter";
 import { cn } from "@/lib/utils";
 import { formatAngka } from "../../lib/format-tabel";
 import { LABEL_KONDISI_CATAT } from "../../lib/label-pencatatan";
@@ -41,6 +45,10 @@ export interface HasilKoreksiInline {
   kondisiRevisi: string | null;
   standAngkatLama: number | null;
   standMeterBaru: number | null;
+  standPasang?: number | null;
+  noMeterBaru?: string | null;
+  mbTanpaStandAngkat?: boolean | null;
+  digitRollover?: number | null;
   pemakaianTagihVerif?: number | null;
 }
 
@@ -112,6 +120,10 @@ function payloadSaatIni(row: BarisVerifikasi): HasilKoreksiInline {
     kondisiRevisi: row.kondisiRevisi ?? null,
     standAngkatLama: row.standAngkatLama ?? null,
     standMeterBaru: row.standMeterBaru ?? null,
+    standPasang: row.standPasang ?? null,
+    noMeterBaru: row.noMeterBaru ?? null,
+    mbTanpaStandAngkat: row.mbTanpaStandAngkat ?? null,
+    digitRollover: row.digitRollover ?? null,
     ...(row.pemakaianTagihVerif !== undefined
       ? { pemakaianTagihVerif: row.pemakaianTagihVerif }
       : {}),
@@ -161,38 +173,44 @@ export function SelStandAkhirEditable({
   const batalRef = React.useRef(false);
   const wrapperRef = React.useRef<HTMLDivElement>(null);
 
-  // State khusus Popover MB (2 input: Stand Angkat Lama & Stand Meter Baru)
+  // State khusus Popover MB (Stand Angkat Lama, Override Tanpa Stand Angkat, & Stand Meter Baru)
   const [angkatMB, setAngkatMB] = React.useState("");
+  const [tanpaAngkatMB, setTanpaAngkatMB] = React.useState(false);
   const [meterBaruMB, setMeterBaruMB] = React.useState("");
   const inputMeterBaruRef = React.useRef<HTMLInputElement>(null);
 
   // Jika sel Ket Catat baru saja memilih "MB", langsung buka Popover MB di sel ini.
   React.useEffect(() => {
     if (dipaksaMB && bisa) {
+      setTanpaAngkatMB(Boolean(row.mbTanpaStandAngkat));
       setAngkatMB(
-        row.standAngkatLama != null
-          ? String(row.standAngkatLama)
+        row.standAngkatLama != null ? String(row.standAngkatLama) : "",
+      );
+      setMeterBaruMB(
+        row.standMeterBaru != null
+          ? String(row.standMeterBaru)
           : row.standAkhir != null
             ? String(row.standAkhir)
             : "",
       );
-      setMeterBaruMB(
-        row.standMeterBaru != null ? String(row.standMeterBaru) : "",
-      );
       setBukaPopoverMB(true);
     }
-  }, [dipaksaMB, bisa, row.standAngkatLama, row.standAkhir, row.standMeterBaru]);
+  }, [
+    dipaksaMB,
+    bisa,
+    row.standAngkatLama,
+    row.mbTanpaStandAngkat,
+    row.standAkhir,
+    row.standMeterBaru,
+  ]);
 
   function bukaEditor(nilaiAwalOverride?: string) {
     if (!bisa) return;
     edit?.onPilihBaris?.(row);
     if (modeMB) {
+      setTanpaAngkatMB(Boolean(row.mbTanpaStandAngkat));
       setAngkatMB(
-        row.standAngkatLama != null
-          ? String(row.standAngkatLama)
-          : row.standAkhir != null
-            ? String(row.standAkhir)
-            : "",
+        row.standAngkatLama != null ? String(row.standAngkatLama) : "",
       );
       setMeterBaruMB(
         nilaiAwalOverride ??
@@ -253,21 +271,30 @@ export function SelStandAkhirEditable({
     e?.preventDefault();
     if (!edit?.onSimpanKoreksi) return;
 
-    const angkatNum = angkatMB.trim() === "" ? null : Number(angkatMB.trim());
+    const angkatNum =
+      tanpaAngkatMB || angkatMB.trim() === "" ? null : Number(angkatMB.trim());
     const baruNum =
       meterBaruMB.trim() === "" ? null : Number(meterBaruMB.trim());
     const standAwalAktif = baris.standAwal ?? 0;
 
-    if (
-      angkatNum == null ||
-      !Number.isInteger(angkatNum) ||
-      angkatNum < 0 ||
-      baruNum == null ||
-      !Number.isInteger(baruNum) ||
-      baruNum < 0
-    ) {
-      toast.error("Lengkapi Stand Angkat Lama dan Stand Meter Baru (minimal 0).");
+    if (baruNum == null || !Number.isInteger(baruNum) || baruNum < 0) {
+      toast.error("Lengkapi Stand Meter Baru (minimal 0).");
       return;
+    }
+
+    if (!tanpaAngkatMB) {
+      if (angkatNum == null || !Number.isInteger(angkatNum) || angkatNum < 0) {
+        toast.error(
+          "Isi Stand Angkat Lama, atau centang Override Tanpa Stand Angkat.",
+        );
+        return;
+      }
+      if (angkatNum < standAwalAktif) {
+        toast.error(
+          `Stand Angkat (${formatAngka(angkatNum)}) lebih kecil dari ST Awal (${formatAngka(standAwalAktif)}). Periksa kembali atau gunakan Override.`,
+        );
+        return;
+      }
     }
 
     const estimasiPakai = hitungPemakaianGantiMeter({
@@ -275,16 +302,16 @@ export function SelStandAkhirEditable({
       standAngkatLama: angkatNum,
       standMeterBaru: baruNum,
       standPasang: row.standPasang ?? 0,
+      tanpaStandAngkat: tanpaAngkatMB,
     });
 
     if (estimasiPakai < 0) {
       toast.error(
-        `Pemakaian ganti meter tidak boleh negatif (${estimasiPakai} m³). Periksa kembali Stand Angkat.`,
+        `Pemakaian ganti meter tidak boleh negatif (${estimasiPakai} m³). Periksa kembali angka stand.`,
       );
       return;
     }
 
-    // Tutup popover seketika (0ms latency) lalu jalankan update optimistik
     setBukaPopoverMB(false);
     edit.onSetBarisPopoverMB?.(null);
 
@@ -292,7 +319,8 @@ export function SelStandAkhirEditable({
     void edit.onSimpanKoreksi(row, {
       ...dasar,
       kondisiRevisi: row.kondisi === "MB" ? null : "MB",
-      standAngkatLama: angkatNum,
+      standAngkatLama: tanpaAngkatMB ? null : angkatNum,
+      mbTanpaStandAngkat: tanpaAngkatMB,
       standMeterBaru: baruNum,
       standAkhirRevisi: baruNum,
       pemakaianRevisi: null,
@@ -355,20 +383,22 @@ export function SelStandAkhirEditable({
     );
   }
 
-  const angkatPreview = angkatMB.trim() === "" ? null : Number(angkatMB.trim());
+  const angkatPreview =
+    tanpaAngkatMB || angkatMB.trim() === "" ? null : Number(angkatMB.trim());
   const baruPreview =
     meterBaruMB.trim() === "" ? null : Number(meterBaruMB.trim());
   const pakaiMBPreview =
     baris.standAwal != null &&
-    angkatPreview != null &&
-    Number.isInteger(angkatPreview) &&
     baruPreview != null &&
-    Number.isInteger(baruPreview)
+    Number.isInteger(baruPreview) &&
+    (tanpaAngkatMB ||
+      (angkatPreview != null && Number.isInteger(angkatPreview)))
       ? hitungPemakaianGantiMeter({
           standAwalLama: baris.standAwal,
           standAngkatLama: angkatPreview,
           standMeterBaru: baruPreview,
           standPasang: row.standPasang ?? 0,
+          tanpaStandAngkat: tanpaAngkatMB,
         })
       : null;
 
@@ -430,6 +460,20 @@ export function SelStandAkhirEditable({
           </PopoverHeader>
 
           <form onSubmit={(e) => komitPopoverMB(e)} className="space-y-2.5">
+            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-copy-11 select-none">
+              <Checkbox
+                checked={tanpaAngkatMB}
+                onCheckedChange={(v) => {
+                  const aktif = v === true;
+                  setTanpaAngkatMB(aktif);
+                  if (aktif) setAngkatMB("");
+                }}
+              />
+              <span className="font-medium text-foreground">
+                Override: Tanpa Stand Angkat
+              </span>
+            </label>
+
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label
@@ -444,7 +488,8 @@ export function SelStandAkhirEditable({
                   inputMode="numeric"
                   pattern="[0-9]*"
                   density="compact"
-                  autoFocus={angkatMB === ""}
+                  disabled={tanpaAngkatMB}
+                  autoFocus={!tanpaAngkatMB && angkatMB === ""}
                   value={angkatMB}
                   onChange={(e) => setAngkatMB(bersihkanDigit(e.target.value))}
                   onFocus={(e) => e.currentTarget.select()}
@@ -459,7 +504,7 @@ export function SelStandAkhirEditable({
                       edit?.onSetBarisPopoverMB?.(null);
                     }
                   }}
-                  placeholder="Meter lama"
+                  placeholder={tanpaAngkatMB ? "Override" : `Min ${formatAngka(baris.standAwal)}`}
                   className="font-mono tabular-nums"
                 />
               </div>
@@ -881,6 +926,29 @@ export function SelKondisiEditable({
         pemakaianRevisi: estimasiTaksasi,
         standAngkatLama: null,
         standMeterBaru: null,
+      });
+      return;
+    }
+
+    // 3b. Jika memilih MUDA_KEMBALI (Rollover): hitung otomatis berdasarkan ukuran/digit meter
+    if (kodeBaru === "MUDA_KEMBALI") {
+      const standAwalAktif = baris.standAwal ?? 0;
+      const standAkhirAktif = baris.standAkhir ?? 0;
+      const rollover = hitungPemakaianMudaKembali({
+        standAwal: standAwalAktif,
+        standAkhir: standAkhirAktif,
+        ukuranMeter: row.ukuranMeter ?? null,
+        jumlahDigitAset: row.jumlahDigitAset ?? null,
+        digitOverride: row.digitRollover ?? null,
+      });
+      void edit.onSimpanKoreksi(row, {
+        ...dasar,
+        kondisiRevisi: kodeBaru === row.kondisi ? null : kodeBaru,
+        standAngkatLama: null,
+        standMeterBaru: null,
+        mbTanpaStandAngkat: false,
+        digitRollover: rollover.digit,
+        pemakaianRevisi: rollover.isValid ? rollover.totalPemakaianM3 : null,
       });
       return;
     }

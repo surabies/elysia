@@ -46,12 +46,45 @@ export function resolveKondisiCatatWithPriority(
     byNama.set(k.nama.trim().toUpperCase(), k);
   }
 
+  const ALIAS_NAMA_KE_KODE: Record<string, string> = {
+    'RUMAH KOSONG': 'R',
+    'RUMAH_KOSONG': 'R',
+    'RMH/TANAH KSG': 'R',
+    'MATI ADA AIR': '7',
+    'METER_MATI_ADA_AIR': '7',
+    'METER MATI AIR ADA': '7',
+    'DICABUT': 'D',
+    'DI CABUT': 'D',
+    'DI_CABUT': 'D',
+    'METER DALAM AIR': 'AA',
+    'METER_DALAM_AIR': 'AA',
+    'STAND_TEMPEL': 'N',
+    'STAND_KONSUMEN': 'Z',
+    'TIDAK_DIPAKAI': 'H',
+    'TIDAK_ADA_AIR': '8',
+    'METER_RUSAK': 'O',
+    'METER_MUNDUR': 'F',
+    'METER_TERBALIK': 'T',
+    'LOS_METER': '9',
+    'ADA_ANJING': 'Q',
+    'MUDA_KEMBALI': 'U',
+    'REV_PENCATAT': 'P',
+    'REVISI PENCATAT': 'P',
+  };
+
   const kodeTrim = (rawKode ?? '').trim();
   const namaTrim = (rawNama ?? '').trim();
   const namaUpper = namaTrim.toUpperCase();
 
-  const fromKode = byKode.get(kodeTrim) ?? (kodeTrim === '' ? byKode.get(' ') ?? byKode.get('-') : undefined);
-  const fromNama = namaUpper ? byNama.get(namaUpper) : undefined;
+  const fromKode =
+    byKode.get(kodeTrim) ??
+    (kodeTrim === '' ? byKode.get('-') ?? byKode.get(' ') : undefined);
+  const fromNama = namaUpper
+    ? byNama.get(namaUpper) ??
+      (ALIAS_NAMA_KE_KODE[namaUpper]
+        ? byKode.get(ALIAS_NAMA_KE_KODE[namaUpper]!)
+        : undefined)
+    : undefined;
 
   const isNormal = (item?: KondisiRowLookup) =>
     !item ||
@@ -96,7 +129,7 @@ export function resolveKondisiCatatWithPriority(
   }
 
   return {
-    kodeTmss: kodeTrim || ' ',
+    kodeTmss: kodeTrim || '-',
     ketCatat: namaTrim || 'Normal',
     modeHitung: 'SELISIH_FISIK',
     isMismatch: false,
@@ -307,11 +340,13 @@ export async function carryForwardPeriode(
         stml: caterBacaMeter.stml,
         stma: caterBacaMeter.stma,
         stmaRevisi: caterBacaMeter.stmaRevisi,
+        standMeterBaruRevisi: caterBacaMeter.standMeterBaruRevisi,
         pakaiM3: caterBacaMeter.pakaiM3,
         pakaiM3Revisi: caterBacaMeter.pakaiM3Revisi,
         pakaiTagih: caterBacaMeter.pakaiTagih,
         tmss: caterBacaMeter.tmss,
         ketCatat: caterBacaMeter.ketCatat,
+        ketCatatRevisi: caterBacaMeter.ketCatatRevisi,
       })
       .from(caterBacaMeter)
       .where(eq(caterBacaMeter.thbl, periodeLalu)),
@@ -403,28 +438,30 @@ export async function carryForwardPeriode(
 
     if (caterLalu) {
       const stmlNum = Number(caterLalu.stml ?? 0);
-      const stmaNum = Number(caterLalu.stmaRevisi ?? caterLalu.stma ?? 0);
+      const stmaEfektifStr =
+        caterLalu.standMeterBaruRevisi ??
+        caterLalu.stmaRevisi ??
+        caterLalu.stma ??
+        '0';
+      const stmaNum = Number(stmaEfektifStr);
       const pakaiNum = Number(
         caterLalu.pakaiTagih ?? caterLalu.pakaiM3Revisi ?? caterLalu.pakaiM3 ?? 0
       );
-      standAwalBaru = String(caterLalu.stmaRevisi ?? caterLalu.stma ?? '0');
+      standAwalBaru = String(stmaEfektifStr);
       pakaiLaluBaru = String(
         caterLalu.pakaiTagih ?? caterLalu.pakaiM3Revisi ?? caterLalu.pakaiM3 ?? '0'
       );
 
       const resolvedKondisi = resolveKondisiCatatWithPriority(
-        caterLalu.tmss,
-        caterLalu.ketCatat,
+        caterLalu.ketCatatRevisi ? null : caterLalu.tmss,
+        caterLalu.ketCatatRevisi ?? caterLalu.ketCatat,
         kondisiRows
       );
       const modeKondisi = resolvedKondisi.modeHitung;
 
-      // 1. Jika di periodeLalu berstatus M | KELEBIHAN (mode_hitung === 'KREDIT_TAKSASI'):
-      //    akumulasi_taksasi_m3 dikurangi sebesar selisih fisik (max(0, stma - stml)), sisanya dibawa ke periode berikutnya.
-      // 2. Jika di periodeLalu pelanggan ditaksir (stma == stml dan pakai > 0):
-      //    tambahkan pemakaian taksasi bulan tersebut secara KUMULATIF ke akumulasi_taksasi_m3.
-      // 3. Sebaliknya jika di periodeLalu meter terbaca fisik (stma != stml), maka akumulasi di-reset ke 0!
-      if (modeKondisi === 'KREDIT_TAKSASI') {
+      if (modeKondisi === 'METER_BARU' || modeKondisi === 'MUDA_KEMBALI') {
+        akumulasiTaksasiBaru = '0.00';
+      } else if (modeKondisi === 'KREDIT_TAKSASI') {
         const selisihFisik = Math.max(0, stmaNum - stmlNum);
         akumulasiTaksasiBaru = Math.max(0, prevAkumulasi - selisihFisik).toFixed(2);
       } else if (stmaNum === stmlNum && pakaiNum > 0) {

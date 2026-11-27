@@ -80,10 +80,6 @@ export const waterMeterMutasi = pgTable(
     index('gwm_mutasi_nolg_idx').on(table.nolg),
     index('gwm_mutasi_periode_idx').on(table.periode),
     index('gwm_mutasi_status_idx').on(table.statusVerifikasi),
-    check(
-      'gwm_mutasi_approved_data_lengkap_chk',
-      sql`(${table.statusVerifikasi} <> 'APPROVED') OR (${table.noMeterBaru} IS NOT NULL AND ${table.standAngkat} IS NOT NULL)`
-    ),
   ]
 );
 

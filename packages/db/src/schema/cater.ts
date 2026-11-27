@@ -28,6 +28,8 @@ export const caterBacaMeter = pgTable(
     ketCatatRevisi: varchar('ket_catat_revisi', { length: 50 }),
     standAngkatRevisi: numeric('stand_angkat_revisi', { precision: 10, scale: 2 }),
     standMeterBaruRevisi: numeric('stand_meter_baru_revisi', { precision: 10, scale: 2 }),
+    mbTanpaStandAngkat: boolean('mb_tanpa_stand_angkat').notNull().default(false), // Override sadar manusia: MB sah tanpa stand angkat
+    digitRollover: integer('digit_rollover'), // Kapasitas digit roda hitam m3 yang disahkan pada kondisi MUDA KEMBALI (4/5/6/7)
     pakaiLalu: numeric('pakai_lalu', { precision: 10, scale: 2 }), // Pemakaian bulan lalu
     
     // Pemakaian Tagihan & Taksasi (Hasil Business Domain Engine)
@@ -35,7 +37,7 @@ export const caterBacaMeter = pgTable(
     alasanTaksir: varchar('alasan_taksir', { length: 50 }),           // MINIMUM_5M3 | TAKSIRAN_BULAN_LALU | NOL_TIDAK_ADA_AIR | OVERRIDE_MANUAL
 
     // Kode Kondisi STI & Keterangan Catat
-    tmss: varchar('tmss', { length: 10 }).default(' ').references(() => masterKondisiCatat.kodeTmss),
+    tmss: varchar('tmss', { length: 10 }).default('-').references(() => masterKondisiCatat.kodeTmss),
     ketCatat: varchar('ket_catat', { length: 50 }).notNull().default('Normal'),
     metodeCatat: varchar('metode_catat', { length: 20 }).notNull().default('ONSITE'), // ONSITE / OFFSITE
     

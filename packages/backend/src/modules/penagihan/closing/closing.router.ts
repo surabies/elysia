@@ -13,6 +13,7 @@ import {
   inputPasangBaruBodySchema,
   inputPerubahanKategoriBodySchema,
   simpanBacaanPbpkBodySchema,
+  pbpkPelangganParamsSchema,
 } from './closing.schema';
 
 const CLOSING_ROLES: AppRole[] = [
@@ -314,6 +315,23 @@ export const closingRouter = new Elysia({ prefix: '/closing' })
     },
     {
       body: inputPerubahanKategoriBodySchema,
+    }
+  )
+
+  // 12a. Ambil Data Pelanggan Lama untuk Pemasangan Kembali (PK)
+  .get(
+    '/pbpk/pelanggan/:nolg',
+    async ({ params: { nolg }, set }) => {
+      try {
+        const result = await pbpkService.getDetailPelangganUntukPk(nolg);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = err.message?.includes('tidak ditemukan') ? 404 : 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      params: pbpkPelangganParamsSchema,
     }
   )
 

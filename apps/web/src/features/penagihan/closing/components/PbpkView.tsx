@@ -25,9 +25,7 @@ import {
 } from '@cater/ui';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
@@ -37,7 +35,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageContainer } from '@/components/layout/page/PageContainer';
 import {
   ClosingSmoothPanel,
@@ -145,36 +142,6 @@ export function PbpkView() {
     }
     setDraftStands(map);
   }, [data?.daftarPasangBaru]);
-
-  // Form states: Pemasangan Kembali (PK) / Mutasi Tarif
-  const [pkPeriode, setPkPeriode] = React.useState(periode);
-  const [pkNolg, setPkNolg] = React.useState('');
-  const [pkTarifBaru, setPkTarifBaru] = React.useState('2A2');
-  const [pkNoMeterBaru, setPkNoMeterBaru] = React.useState('');
-  const [pkNomorSk, setPkNomorSk] = React.useState('');
-  const [pkAlasan, setPkAlasan] = React.useState('');
-
-  React.useEffect(() => {
-    setPkPeriode(periode);
-  }, [periode]);
-
-  const onSubmitPk = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const ok = await handleSimpanPerubahanKategori({
-      nolg: pkNolg.trim(),
-      tarifKodeBaru: pkTarifBaru,
-      noMeterBaru: pkNoMeterBaru.trim() || undefined,
-      periode: pkPeriode,
-      nomorSk: pkNomorSk.trim() || undefined,
-      alasan: pkAlasan.trim() || undefined,
-    });
-    if (ok) {
-      setPkNolg('');
-      setPkNoMeterBaru('');
-      setPkNomorSk('');
-      setPkAlasan('');
-    }
-  };
 
   const periodOptionsWithNext = React.useMemo(() => {
     const list = [...daftarPeriode];
@@ -370,134 +337,105 @@ export function PbpkView() {
           </div>
         </div>
 
-        {/* Tab Operasional */}
-        <Tabs defaultValue="pasang-baru" className="w-full space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <TabsList>
-              <TabsTrigger value="pasang-baru">
-                <UserPlus className="size-3.5" />
-                <span>Daftar &amp; Input Stand PBPK ({filteredPb.length})</span>
-              </TabsTrigger>
-              <TabsTrigger value="perubahan-kategori">
-                <Layers className="size-3.5" />
-                <span>Form Pasang Kembali (PK) / Tarif</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {dirtyItemsToSave.length > 0 && (
-                <Button
+        {/* Panel Toolbar Vercel Grey Terpadu */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border bg-muted/40 p-2 sm:p-2.5">
+          {/* Sisi Kiri: Segmented Filter (Semua, Belum Baca, Tercatat) & Badge */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5 text-xs">
+              {(
+                [
+                  { id: 'ALL', label: `Semua (${filteredPb.length})` },
+                  {
+                    id: 'BELUM_INPUT',
+                    label: `Belum Baca (${belumInputStandCount})`,
+                  },
+                  {
+                    id: 'TERCATAT',
+                    label: `Tercatat (${filteredPb.length - belumInputStandCount})`,
+                  },
+                ] as const
+              ).map((f) => (
+                <button
+                  key={f.id}
                   type="button"
-                  size="sm"
-                  onClick={handleSaveBatch}
-                  disabled={actionLoading}
-                  className="bg-emerald-600 text-white hover:bg-emerald-700"
-                >
-                  {actionLoading ? (
-                    <Spinner className="size-3.5" />
-                  ) : (
-                    <Save className="size-3.5" />
+                  onClick={() => setFilterStand(f.id)}
+                  className={cn(
+                    'rounded px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer',
+                    filterStand === f.id
+                      ? 'bg-muted text-foreground font-semibold shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
-                  <span>
-                    Simpan Semua Stand ({dirtyItemsToSave.length} SL)
-                  </span>
-                </Button>
-              )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
 
-              <Button asChild variant="outline" size="sm">
-                <Link href="/import/pbpk">
-                  <Upload className="size-3.5" />
-                  <span>Import CSV PBPK</span>
-                </Link>
-              </Button>
+            {belumInputStandCount > 0 && (
+              <Badge variant="amber-subtle" size="sm" className="hidden sm:inline-flex">
+                {belumInputStandCount} Belum Input Stand
+              </Badge>
+            )}
+          </div>
 
+          {/* Sisi Kanan: Pencarian, Simpan Stand, Import CSV, Tambah Mutasi PBPK */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative w-48 sm:w-56 flex items-center">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <Input
+                size="sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari NOLG / nama..."
+                className="h-8 pl-8 font-mono text-xs bg-background"
+              />
+            </div>
+
+            {dirtyItemsToSave.length > 0 && (
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
-                onClick={() => {
-                  setEditingItem(null);
-                  setShowPbDialog(true);
-                }}
+                onClick={handleSaveBatch}
+                disabled={actionLoading}
+                className="h-8 bg-emerald-600 text-white hover:bg-emerald-700"
               >
-                <Plus className="size-3.5" />
-                <span>Tambah PB Manual</span>
+                {actionLoading ? (
+                  <Spinner className="size-3.5" />
+                ) : (
+                  <Save className="size-3.5" />
+                )}
+                <span>
+                  Simpan Semua Stand ({dirtyItemsToSave.length} SL)
+                </span>
               </Button>
-            </div>
+            )}
+
+            <Button asChild variant="outline" size="sm" className="h-8 bg-background">
+              <Link href="/import/pbpk">
+                <Upload className="size-3.5" />
+                <span>Import CSV PBPK</span>
+              </Link>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEditingItem(null);
+                setShowPbDialog(true);
+              }}
+              className="h-8 bg-background gap-1.5"
+            >
+              <Plus className="size-3.5" />
+              <span>Tambah Mutasi PBPK</span>
+            </Button>
           </div>
+        </div>
 
-          {/* TAB 1: TABEL COMPACT GEIST + INPUT STAND AWAL & STAND AKHIR = PEMAKAIAN */}
-          <TabsContent value="pasang-baru" className="space-y-3">
-            <Card className="space-y-3 p-4">
-              {/* Toolbar Filter & Pencarian Compact */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="space-y-0.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-sm font-semibold text-foreground">
-                      Daftar Mutasi PBPK pada DPM {formatPeriodeLabelId(periode)}{' '}
-                      ({displayedRows.length} SL)
-                    </h2>
-                    {belumInputStandCount > 0 && (
-                      <Badge variant="amber-subtle" size="sm">
-                        {belumInputStandCount} Belum Input Stand
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Isi <strong>Stand Awal</strong> &amp;{' '}
-                    <strong>Stand Akhir</strong> untuk mencatat{' '}
-                    <strong>Pemakaian (m³)</strong> alamat baru yang diimpor dari{' '}
-                    <code className="font-mono">/import/pbpk</code>.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Segmented Filter Geist */}
-                  <div className="inline-flex items-center rounded-md border border-border bg-muted/40 p-0.5 text-xs">
-                    {(
-                      [
-                        { id: 'ALL', label: `Semua (${filteredPb.length})` },
-                        {
-                          id: 'BELUM_INPUT',
-                          label: `Belum Baca (${belumInputStandCount})`,
-                        },
-                        {
-                          id: 'TERCATAT',
-                          label: `Tercatat (${filteredPb.length - belumInputStandCount})`,
-                        },
-                      ] as const
-                    ).map((f) => (
-                      <button
-                        key={f.id}
-                        type="button"
-                        onClick={() => setFilterStand(f.id)}
-                        className={cn(
-                          'rounded px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer',
-                          filterStand === f.id
-                            ? 'bg-card text-foreground shadow-2xs'
-                            : 'text-muted-foreground hover:text-foreground',
-                        )}
-                      >
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="relative w-52">
-                    <Search className="pointer-events-none absolute top-2 left-2.5 size-3.5 text-muted-foreground" />
-                    <Input
-                      size="sm"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Cari NOLG / nama..."
-                      className="h-7 pl-7 font-mono text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Tabel High-Density sesuai Kontrak Vercel Geist */}
-              <div className="overflow-x-auto rounded-lg border border-border">
+        {/* Tabel High-Density Berdiri Sendiri */}
+        <div className="space-y-2.5">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-2xs">
                 <Table className="text-xs">
                   <TableHeader className="bg-muted/35">
                     <TableRow className="h-8">
@@ -808,149 +746,15 @@ export function PbpkView() {
               </div>
 
               {/* Catatan Ringkas di Bawah Tabel */}
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
                 <Info className="size-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
                 <span>
                   Tekan <kbd className="rounded border border-border bg-muted px-1 font-mono text-[10px]">Enter</kbd>{' '}
                   pada kolom Stand Akhir untuk menyimpan baris, atau klik{' '}
-                  <strong>Simpan Semua Stand</strong> di kanan atas untuk menyimpan sekaligus.
+                  <strong>Simpan Semua Stand</strong> di toolbar atas untuk menyimpan sekaligus.
                 </span>
               </div>
-            </Card>
-          </TabsContent>
-
-          {/* TAB 2: PEMASANGAN KEMBALI (PK) / MUTASI TARIF */}
-          <TabsContent value="perubahan-kategori" className="space-y-4">
-            <Card className="max-w-2xl space-y-4 p-5">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">
-                  Pemasangan Kembali (PK) / Penyesuaian Golongan Tarif
-                </h2>
-                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                  Mengaktifkan kembali sambungan <strong>DICABUT</strong> ke DPM
-                  periode terpilih, lalu Anda dapat langsung mengisi angka Stand
-                  Awal &amp; Stand Akhir pada tab daftar di sebelah kiri.
-                </p>
-              </div>
-
-              <form onSubmit={onSubmitPk} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="pk-periode"
-                    className="block text-xs font-semibold text-foreground"
-                  >
-                    Target Periode DPM
-                  </label>
-                  <NativeSelect
-                    id="pk-periode"
-                    value={pkPeriode}
-                    onChange={(e) => setPkPeriode(e.target.value)}
-                    className="max-w-md"
-                  >
-                    <option value={periode}>
-                      {formatPeriodeLabelId(periode)} ({periode}) — Periode Berjalan (Langsung Input Stand)
-                    </option>
-                    <option value={nextPeriode}>
-                      {formatPeriodeLabelId(nextPeriode)} ({nextPeriode}) — Antrean Bulan Depan
-                    </option>
-                  </NativeSelect>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="pk-nolg"
-                      className="block text-xs font-semibold text-foreground"
-                    >
-                      Nomor Sambungan Pelanggan (NOLG)
-                    </label>
-                    <Input
-                      id="pk-nolg"
-                      value={pkNolg}
-                      onChange={(e) => setPkNolg(e.target.value)}
-                      placeholder="Contoh: 00802300160"
-                      className="font-mono"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="pk-meter"
-                      className="block text-xs font-semibold text-foreground"
-                    >
-                      Nomor Seri Meter Pasang (Opsional)
-                    </label>
-                    <Input
-                      id="pk-meter"
-                      value={pkNoMeterBaru}
-                      onChange={(e) => setPkNoMeterBaru(e.target.value)}
-                      placeholder="Contoh: 106582"
-                      className="font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="pk-tarif"
-                      className="block text-xs font-semibold text-foreground"
-                    >
-                      Golongan Tarif
-                    </label>
-                    <NativeSelect
-                      id="pk-tarif"
-                      value={pkTarifBaru}
-                      onChange={(e) => setPkTarifBaru(e.target.value)}
-                    >
-                      {(data?.masterTarif ?? []).map((t) => (
-                        <option key={t.kode} value={t.kode}>
-                          {t.kode} - {t.nama}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="pk-sk"
-                      className="block text-xs font-semibold text-foreground"
-                    >
-                      Nomor Berita Acara / SK (Opsional)
-                    </label>
-                    <Input
-                      id="pk-sk"
-                      value={pkNomorSk}
-                      onChange={(e) => setPkNomorSk(e.target.value)}
-                      placeholder="BA-PK/11/2026/001"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="pk-alasan"
-                    className="block text-xs font-semibold text-foreground"
-                  >
-                    Keterangan
-                  </label>
-                  <Input
-                    id="pk-alasan"
-                    value={pkAlasan}
-                    onChange={(e) => setPkAlasan(e.target.value)}
-                    placeholder="Pelunasan tunggakan & pemasangan kembali meter air"
-                  />
-                </div>
-
-                <Button type="submit" size="sm" disabled={actionLoading}>
-                  {actionLoading && <Spinner className="size-3.5" />}
-                  <span>Simpan Proses PK ke DPM {pkPeriode}</span>
-                </Button>
-              </form>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            </div>
         </ClosingSmoothPanel>
 
         <PbpkPasangBaruDialog
@@ -965,6 +769,7 @@ export function PbpkView() {
           masterRute={data?.masterRute ?? []}
           actionLoading={actionLoading}
           onSubmit={handleSimpanPasangBaru}
+          onSubmitPerubahanKategori={handleSimpanPerubahanKategori}
         />
       </PageContainer>
     </TooltipProvider>

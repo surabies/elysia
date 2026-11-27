@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/reui/badge";
 import {
   AlertTriangle,
+  Droplets,
   MapPin,
   Radio,
   ShieldCheck,
@@ -93,6 +94,30 @@ export const ANOMALI_TONES: Tone[] = [
     dot: "bg-emerald-500",
     badge:
       "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/15 dark:text-emerald-300",
+  },
+];
+
+export const PEMAKAIAN_TONES: Tone[] = [
+  {
+    value: "MINUS",
+    label: "Pemakaian Minus (< 0 m³)",
+    dot: "bg-rose-500",
+    badge:
+      "border-rose-500/25 bg-rose-500/15 text-rose-800 dark:border-rose-400/30 dark:bg-rose-400/20 dark:text-rose-300",
+  },
+  {
+    value: "NOL",
+    label: "Pemakaian Nol (0 m³)",
+    dot: "bg-amber-500",
+    badge:
+      "border-amber-500/25 bg-amber-500/15 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/20 dark:text-amber-300",
+  },
+  {
+    value: "POSITIF",
+    label: "Pemakaian Positif (> 0 m³)",
+    dot: "bg-emerald-500",
+    badge:
+      "border-emerald-500/25 bg-emerald-500/15 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/20 dark:text-emerald-300",
   },
 ];
 
@@ -204,6 +229,7 @@ export const ALL_TONES = new Map<string, Tone>(
     ...STATUS_TONES,
     ...STATUS_MANDIRI_TONES,
     ...ANOMALI_TONES,
+    ...PEMAKAIAN_TONES,
     ...ASAL_TONES,
     ...KONDISI_TONES,
   ].map((tone) => [tone.value, tone]),
@@ -385,7 +411,25 @@ export function buatSkemaFilter({
     icon: <ShieldCheck className="size-3.5" />,
   });
 
-  // 4. Anomali
+  // 4. Pemakaian Kubikasi (Minus / Nol / Positif)
+  fields.push({
+    id: "filterPemakaian",
+    label: "Pemakaian",
+    type: "select",
+    defaultOperator: "is",
+    options: toOptions(PEMAKAIAN_TONES),
+    searchable: false,
+    renderValue: ({ options }) => (
+      <BadgesOrStack
+        options={options}
+        fallback="Semua Pemakaian"
+        toneMap={ALL_TONES}
+      />
+    ),
+    icon: <Droplets className="size-3.5" />,
+  });
+
+  // 5. Anomali
   fields.push({
     id: "anomali",
     label: `Anomali (>±${ambangAnomali}%)`,
@@ -503,6 +547,17 @@ export function filterVerifikasiToQuery(filter: FilterVerifikasi): FilterQuery {
     }
   }
 
+  if (filter.filterPemakaian) {
+    rules.push(
+      createFilterRule({
+        id: "rule-pemakaian",
+        path: ["filterPemakaian"],
+        operator: "is",
+        value: filter.filterPemakaian,
+      }),
+    );
+  }
+
   if (filter.kondisi) {
     rules.push(
       createFilterRule({
@@ -536,6 +591,7 @@ export function queryToFilterVerifikasi(
   let pencatatId = "";
   let ruteId = "";
   let hanyaAnomali = false;
+  let filterPemakaian = "";
   let kondisi = "";
   let jenisInput = "";
 
@@ -550,6 +606,8 @@ export function queryToFilterVerifikasi(
       ruteId = Array.isArray(val) ? (val[0] ?? "") : (val ?? "");
     } else if (key === "statusVerif") {
       statusVerif = Array.isArray(val) ? (val[0] ?? "") : (val ?? "");
+    } else if (key === "filterPemakaian") {
+      filterPemakaian = Array.isArray(val) ? (val[0] ?? "") : (val ?? "");
     } else if (key === "anomali") {
       if (Array.isArray(val)) {
         hanyaAnomali = val.includes("ANOMALI")
@@ -578,13 +636,14 @@ export function queryToFilterVerifikasi(
     pencatatId,
     ruteId,
     hanyaAnomali,
+    filterPemakaian,
     kondisi,
     jenisInput,
   };
 }
 
 /**
- * Skema Filter REUI khusus Verifikasi Mandiri Pelanggan (Status Laporan)
+ * Skema Filter REUI khusus Verifikasi Mandiri Pelanggan (Status & Pemakaian)
  */
 export function buatSkemaFilterMandiri(): FilterField[] {
   return [
@@ -604,10 +663,29 @@ export function buatSkemaFilterMandiri(): FilterField[] {
       ),
       icon: <ShieldCheck className="size-3.5" />,
     },
+    {
+      id: "filterPemakaian",
+      label: "Pemakaian",
+      type: "select",
+      defaultOperator: "is",
+      options: toOptions(PEMAKAIAN_TONES),
+      searchable: false,
+      renderValue: ({ options }) => (
+        <BadgesOrStack
+          options={options}
+          fallback="Semua Pemakaian"
+          toneMap={ALL_TONES}
+        />
+      ),
+      icon: <Droplets className="size-3.5" />,
+    },
   ];
 }
 
-export function filterMandiriToQuery(filter: { status: string }): FilterQuery {
+export function filterMandiriToQuery(filter: {
+  status: string;
+  filterPemakaian?: string;
+}): FilterQuery {
   const rules = [];
   if (filter.status) {
     rules.push(
@@ -619,21 +697,34 @@ export function filterMandiriToQuery(filter: { status: string }): FilterQuery {
       }),
     );
   }
+  if (filter.filterPemakaian) {
+    rules.push(
+      createFilterRule({
+        id: "rule-pemakaian-mandiri",
+        path: ["filterPemakaian"],
+        operator: "is",
+        value: filter.filterPemakaian,
+      }),
+    );
+  }
   return createFilterQuery(rules);
 }
 
 export function queryToFilterMandiri(
   query: FilterQuery,
-  current: { status: string },
-): { status: string } {
+  current: { status: string; filterPemakaian?: string },
+): { status: string; filterPemakaian: string } {
   const rules = flattenFilterRules(query);
   let status = "";
+  let filterPemakaian = "";
   for (const rule of rules) {
     const key = rule.path[0];
     const val = rule.value as any;
     if (key === "status") {
       status = Array.isArray(val) ? (val[0] ?? "") : (val ?? "");
+    } else if (key === "filterPemakaian") {
+      filterPemakaian = Array.isArray(val) ? (val[0] ?? "") : (val ?? "");
     }
   }
-  return { ...current, status };
+  return { ...current, status, filterPemakaian };
 }

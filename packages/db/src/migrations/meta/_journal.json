@@ -162,6 +162,20 @@
       "when": 1795419327197,
       "tag": "0022_romantic_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795756800000,
+      "tag": "0023_mb_rollover_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795763000000,
+      "tag": "0024_standarisasi_32_kode_kelainan",
+      "breakpoints": true
     }
   ]
 }

@@ -219,6 +219,7 @@ export function PanelTabel({
           : filter.hanyaAnomali === "NORMAL" || filter.hanyaAnomali === "false"
             ? "false"
             : undefined;
+      params.filterPemakaian = filter.filterPemakaian || undefined;
       params.kondisi = filter.kondisi || undefined;
       params.jenisInput = filter.jenisInput || undefined;
     }
@@ -623,9 +624,24 @@ export function PanelTabel({
                   kondisiRevisi: hasil.kondisiRevisi,
                   standAngkatLama: hasil.standAngkatLama,
                   standMeterBaru: hasil.standMeterBaru,
+                  ...(hasil.standPasang !== undefined
+                    ? { standPasang: hasil.standPasang }
+                    : {}),
+                  ...(hasil.noMeterBaru !== undefined
+                    ? { noMeterBaru: hasil.noMeterBaru }
+                    : {}),
+                  ...(hasil.mbTanpaStandAngkat !== undefined
+                    ? { mbTanpaStandAngkat: hasil.mbTanpaStandAngkat }
+                    : {}),
+                  ...(hasil.digitRollover !== undefined
+                    ? { digitRollover: hasil.digitRollover }
+                    : {}),
                   ...(hasil.pemakaianTagihVerif !== undefined
                     ? { pemakaianTagihVerif: hasil.pemakaianTagihVerif }
                     : {}),
+                  butuhKonfirmasiGuard: false,
+                  kodeBlokirGuard: null,
+                  pesanBlokirGuard: null,
                   isCorrected:
                     hasil.standAwalRevisi != null ||
                     hasil.standAkhirRevisi != null ||
@@ -633,6 +649,8 @@ export function PanelTabel({
                     hasil.kondisiRevisi != null ||
                     hasil.standAngkatLama != null ||
                     hasil.standMeterBaru != null ||
+                    Boolean(hasil.mbTanpaStandAngkat) ||
+                    hasil.digitRollover != null ||
                     hasil.pemakaianTagihVerif != null,
                 };
                 const { pemakaian } = tentukanHasilPembacaan(nextRow);
@@ -650,11 +668,20 @@ export function PanelTabel({
             );
 
             try {
-              await kirimJson(
-                `/laporan-harian/${row.id}/koreksi`,
-                "PATCH",
-                hasil,
-              );
+              const res = await kirimJson<{
+                id: string;
+                laporan?: BarisVerifikasi | null;
+              }>(`/laporan-harian/${row.id}/koreksi`, "PATCH", hasil);
+              if (res?.laporan) {
+                setRows((lama) =>
+                  lama.map((item) =>
+                    item.id === row.id ? res.laporan! : item,
+                  ),
+                );
+                if (idTerpilih === row.id) {
+                  onKlikBaris(res.laporan);
+                }
+              }
               toast.success("Koreksi berhasil disimpan.");
               onDetailBerubah?.();
             } catch (err) {

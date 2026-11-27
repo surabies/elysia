@@ -24,7 +24,9 @@ import DataEditor, {
 } from "@glideapps/glide-data-grid";
 import { ArrowDown, ArrowUp, Check, EyeOff, RotateCcw } from "lucide-react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -33,6 +35,10 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  hitungPemakaianGantiMeter,
+  hitungPemakaianMudaKembali,
+} from "@/lib/domain/perhitungan-meter";
 import { cn } from "@/lib/utils";
 import {
   DEFINISI_KOLOM,
@@ -358,6 +364,12 @@ export function CanvasTabelVerifikasi({
 
   // State Popover Meter Baru (MB) 2-Input
   const [popoverMB, setPopoverMB] = React.useState<{
+    item: BarisTurunan;
+    posisi: { x: number; y: number; width?: number; height?: number };
+  } | null>(null);
+
+  // State Popover Muda Kembali (Rollover Multi-Digit)
+  const [popoverRollover, setPopoverRollover] = React.useState<{
     item: BarisTurunan;
     posisi: { x: number; y: number; width?: number; height?: number };
   } | null>(null);
@@ -1639,7 +1651,7 @@ export function CanvasTabelVerifikasi({
         return;
       }
 
-      // 2. Klik kolom STAND AKHIR pada kondisi Meter Baru (MB): buka Popover 2-Input MB
+      // 2. Klik kolom STAND AKHIR pada kondisi Meter Baru (MB) atau Muda Kembali (Rollover)
       const isBarisMB =
         item.isMB ||
         item.row.kondisi === "MB" ||
@@ -1647,6 +1659,25 @@ export function CanvasTabelVerifikasi({
       if (colId === "standAkhir" && isBarisMB && userBolehEdit) {
         onKlikBaris(item.row);
         setPopoverMB({
+          item,
+          posisi: {
+            x: event.bounds.x,
+            y: event.bounds.y + event.bounds.height,
+            width: event.bounds.width,
+            height: event.bounds.height,
+          },
+        });
+        return;
+      }
+
+      const isBarisRollover =
+        item.isMudaKembali ||
+        item.row.kondisi === "MUDA_KEMBALI" ||
+        item.row.kondisi === "MUDA KEMBALI" ||
+        item.row.kondisiRevisi === "MUDA_KEMBALI";
+      if (colId === "standAkhir" && isBarisRollover && userBolehEdit) {
+        onKlikBaris(item.row);
+        setPopoverRollover({
           item,
           posisi: {
             x: event.bounds.x,
@@ -1737,35 +1768,92 @@ export function CanvasTabelVerifikasi({
       const userBolehEdit = bolehEdit ? bolehEdit(item.row) : true;
       const userBolehTagihan = bolehEditTagihan ? bolehEditTagihan(item.row) : true;
 
+      const isBarisMB =
+        item.isMB ||
+        item.row.kondisi === "MB" ||
+        item.row.kondisiRevisi === "MB";
+      const isBarisRollover =
+        item.isMudaKembali ||
+        item.row.kondisi === "MUDA_KEMBALI" ||
+        item.row.kondisi === "MUDA KEMBALI" ||
+        item.row.kondisiRevisi === "MUDA_KEMBALI";
+
       if (colId === "standAkhir" && userBolehEdit && !isNaN(angkaBaru)) {
+        const revAkhir = angkaBaru === item.row.standAkhir ? null : angkaBaru;
         await onSimpanKoreksi(item.row, {
           standAwalRevisi: item.row.standAwalRevisi ?? null,
-          standAkhirRevisi: angkaBaru,
-          kondisiRevisi: item.row.kondisiRevisi ?? item.row.kondisi ?? null,
+          standAkhirRevisi: revAkhir,
+          pemakaianRevisi: null,
+          kondisiRevisi: item.row.kondisiRevisi ?? null,
           standMeterBaru: null,
           standAngkatLama: null,
+          mbTanpaStandAngkat: false,
+          digitRollover: isBarisRollover ? (item.row.digitRollover ?? null) : null,
         });
       } else if (colId === "standRevisi" && userBolehEdit) {
         const strVal = String(nilaiRaw ?? "").trim();
-        const valRevisi = strVal === "" || isNaN(angkaBaru) ? null : angkaBaru;
+        const valRevisi =
+          strVal === "" || isNaN(angkaBaru) || angkaBaru === item.row.standAwal
+            ? null
+            : angkaBaru;
         await onSimpanKoreksi(item.row, {
           standAwalRevisi: valRevisi,
-          standAkhirRevisi:
-            item.row.standAkhirRevisi ?? item.standAkhir ?? null,
+          standAkhirRevisi: item.row.standAkhirRevisi ?? null,
           // Otomatis mengubah Kondisi Catat menjadi Revisi Pencatat (REV_PENCATAT)
-          kondisiRevisi: valRevisi != null ? "REV_PENCATAT" : null,
+          kondisiRevisi:
+            valRevisi != null
+              ? item.row.kondisi === "REV_PENCATAT"
+                ? null
+                : "REV_PENCATAT"
+              : null,
           standMeterBaru: null,
           standAngkatLama: null,
+          mbTanpaStandAngkat: false,
         });
       } else if (colId === "pakai" && userBolehEdit && !isNaN(angkaBaru)) {
+        if (angkaBaru < 0) {
+          toast.error("Pemakaian (Pakai) harus bilangan bulat minimal 0.");
+          return;
+        }
+        // Pada baris MB yang belum pernah dikonfirmasi Stand Angkat maupun Override, arahkan konfirmasi MB dulu
+        if (
+          isBarisMB &&
+          item.row.standAngkatLama == null &&
+          !item.row.mbTanpaStandAngkat
+        ) {
+          toast.info(
+            "Konfirmasi Stand Angkat atau aktifkan Override Tanpa Stand Angkat pada kolom ST Akhir terlebih dahulu, lalu sesuaikan kolom Pakai.",
+          );
+          return;
+        }
+
+        const selisihStandAsli =
+          !isBarisMB &&
+          !isBarisRollover &&
+          item.row.standAwalRevisi == null &&
+          item.row.standAkhirRevisi == null &&
+          item.row.kondisiRevisi == null &&
+          item.standAwal != null &&
+          item.standAkhir != null
+            ? item.standAkhir - item.standAwal
+            : null;
+
+        const pemakaianRevisiFinal =
+          selisihStandAsli != null && angkaBaru === selisihStandAsli
+            ? null
+            : angkaBaru;
+
         await onSimpanKoreksi(item.row, {
           standAwalRevisi: item.row.standAwalRevisi ?? null,
-          standAkhirRevisi:
-            item.row.standAkhirRevisi ?? item.standAkhir ?? null,
-          pemakaianRevisi: angkaBaru,
-          kondisiRevisi: item.row.kondisiRevisi ?? item.row.kondisi ?? null,
-          standMeterBaru: null,
-          standAngkatLama: null,
+          standAkhirRevisi: item.row.standAkhirRevisi ?? null,
+          pemakaianRevisi: pemakaianRevisiFinal,
+          kondisiRevisi: item.row.kondisiRevisi ?? null,
+          standMeterBaru: isBarisMB ? (item.row.standMeterBaru ?? item.standAkhir ?? null) : null,
+          standAngkatLama: isBarisMB ? (item.row.standAngkatLama ?? null) : null,
+          standPasang: isBarisMB ? (item.row.standPasang ?? 0) : null,
+          noMeterBaru: isBarisMB ? (item.row.noMeterBaru ?? null) : null,
+          mbTanpaStandAngkat: isBarisMB ? Boolean(item.row.mbTanpaStandAngkat) : false,
+          digitRollover: isBarisRollover ? (item.row.digitRollover ?? null) : null,
         });
       } else if (
         colId === "tagihan" &&
@@ -1774,11 +1862,15 @@ export function CanvasTabelVerifikasi({
       ) {
         await onSimpanKoreksi(item.row, {
           standAwalRevisi: item.row.standAwalRevisi ?? null,
-          standAkhirRevisi:
-            item.row.standAkhirRevisi ?? item.standAkhir ?? null,
-          kondisiRevisi: item.row.kondisiRevisi ?? item.row.kondisi ?? null,
-          standMeterBaru: null,
-          standAngkatLama: null,
+          standAkhirRevisi: item.row.standAkhirRevisi ?? null,
+          pemakaianRevisi: item.row.pemakaianRevisi ?? null,
+          kondisiRevisi: item.row.kondisiRevisi ?? null,
+          standMeterBaru: isBarisMB ? (item.row.standMeterBaru ?? item.standAkhir ?? null) : null,
+          standAngkatLama: isBarisMB ? (item.row.standAngkatLama ?? null) : null,
+          standPasang: isBarisMB ? (item.row.standPasang ?? 0) : null,
+          noMeterBaru: isBarisMB ? (item.row.noMeterBaru ?? null) : null,
+          mbTanpaStandAngkat: isBarisMB ? Boolean(item.row.mbTanpaStandAngkat) : false,
+          digitRollover: isBarisRollover ? (item.row.digitRollover ?? null) : null,
           pemakaianTagihVerif: angkaBaru,
         });
       }
@@ -1793,9 +1885,15 @@ export function CanvasTabelVerifikasi({
       const { item, posisi } = popoverKondisi;
       setPopoverKondisi(null);
 
-      // 1. Jika memilih MB -> langsung alihkan buka Popover 2-Input MB pada koordinat yang sama
+      // 1. Jika memilih MB -> langsung alihkan buka Popover MB pada koordinat yang sama
       if (kodeBaru === "MB") {
         setPopoverMB({ item, posisi });
+        return;
+      }
+
+      // 1b. Jika memilih MUDA_KEMBALI -> buka Popover Rollover Multi-Digit pada koordinat yang sama
+      if (kodeBaru === "MUDA_KEMBALI") {
+        setPopoverRollover({ item, posisi });
         return;
       }
 
@@ -1853,21 +1951,48 @@ export function CanvasTabelVerifikasi({
     [popoverKondisi, onSimpanKoreksi],
   );
 
-  // Handler simpan Popover Meter Baru (MB) 2-Input
+  // Handler simpan Popover Meter Baru (MB) dengan dukungan Override Tanpa Stand Angkat & Stand Pasang
   const handleSimpanMB = React.useCallback(
     async (
       item: BarisTurunan,
       angkatVal: number | null,
       baruVal: number | null,
-      pakaiVal: number | null,
+      pasangVal: number,
+      tanpaStandAngkat: boolean,
+      _pakaiVal: number | null,
     ) => {
       if (!onSimpanKoreksi) return;
       await onSimpanKoreksi(item.row, {
         standAwalRevisi: item.row.standAwalRevisi ?? null,
-        standAkhirRevisi: baruVal,
-        kondisiRevisi: "MB",
+        standAkhirRevisi: baruVal === item.row.standAkhir ? null : baruVal,
+        kondisiRevisi: item.row.kondisi === "MB" ? null : "MB",
         standMeterBaru: baruVal,
-        standAngkatLama: angkatVal,
+        standAngkatLama: tanpaStandAngkat ? null : angkatVal,
+        standPasang: pasangVal,
+        mbTanpaStandAngkat: tanpaStandAngkat,
+        pemakaianRevisi: null,
+      });
+    },
+    [onSimpanKoreksi],
+  );
+
+  // Handler simpan Popover Muda Kembali (Rollover Multi-Digit)
+  const handleSimpanRollover = React.useCallback(
+    async (
+      item: BarisTurunan,
+      akhirVal: number,
+      digitVal: number,
+      pakaiVal: number,
+    ) => {
+      if (!onSimpanKoreksi) return;
+      await onSimpanKoreksi(item.row, {
+        standAwalRevisi: item.row.standAwalRevisi ?? null,
+        standAkhirRevisi: akhirVal === item.row.standAkhir ? null : akhirVal,
+        kondisiRevisi: "MUDA_KEMBALI",
+        standAngkatLama: null,
+        standMeterBaru: null,
+        mbTanpaStandAngkat: false,
+        digitRollover: digitVal,
         pemakaianRevisi: pakaiVal,
       });
     },
@@ -1989,11 +2114,18 @@ export function CanvasTabelVerifikasi({
         onPilihKondisi={handlePilihKondisi}
       />
 
-      {/* Popover 2-Input Khusus Koreksi Meter Baru (MB) */}
+      {/* Popover Khusus Koreksi Meter Baru (MB) */}
       <PopoverMBDialog
         data={popoverMB}
         onTutup={() => setPopoverMB(null)}
         onSimpan={handleSimpanMB}
+      />
+
+      {/* Popover Khusus Koreksi Muda Kembali (Rollover Multi-Digit) */}
+      <PopoverRolloverDialog
+        data={popoverRollover}
+        onTutup={() => setPopoverRollover(null)}
+        onSimpan={handleSimpanRollover}
       />
 
       {/* Popover Menu Kolom Header Enterprise */}
@@ -2240,9 +2372,9 @@ function PopoverKondisiDialog({
                 )}
               >
                 <span>{label}</span>
-                {kode === "MB" && (
+                {(kode === "MB" || kode === "MUDA_KEMBALI") && (
                   <span className="rounded bg-muted px-1 py-0.5 text-copy-11 text-muted-foreground">
-                    2 Input
+                    {kode === "MB" ? "Stand Angkat" : "Rollover"}
                   </span>
                 )}
               </button>
@@ -2255,7 +2387,7 @@ function PopoverKondisiDialog({
 }
 
 // ============================================================================
-// Komponen Dialog Popover 2-Input Koreksi Meter Baru (MB)
+// Komponen Dialog Popover Koreksi Meter Baru (MB) + Override Manusia
 // ============================================================================
 
 interface PopoverMBDialogProps {
@@ -2268,6 +2400,8 @@ interface PopoverMBDialogProps {
     item: BarisTurunan,
     angkat: number | null,
     baru: number | null,
+    pasang: number,
+    tanpaStandAngkat: boolean,
     pakai: number | null,
   ) => Promise<void>;
 }
@@ -2294,6 +2428,8 @@ interface PopoverMBDialogInnerProps {
     item: BarisTurunan,
     angkat: number | null,
     baru: number | null,
+    pasang: number,
+    tanpaStandAngkat: boolean,
     pakai: number | null,
   ) => Promise<void>;
 }
@@ -2304,6 +2440,9 @@ function PopoverMBDialogInner({
   onSimpan,
 }: PopoverMBDialogInnerProps) {
   const { item, posisi } = data;
+  const [tanpaAngkat, setTanpaAngkat] = React.useState(() =>
+    Boolean(item.row.mbTanpaStandAngkat),
+  );
   const [angkatMB, setAngkatMB] = React.useState(() =>
     item.row.standAngkatLama != null ? String(item.row.standAngkatLama) : "",
   );
@@ -2314,20 +2453,64 @@ function PopoverMBDialogInner({
         ? String(item.standAkhir)
         : "",
   );
+  const [pasangMB, setPasangMB] = React.useState(() =>
+    String(item.row.standPasang ?? 0),
+  );
 
   const stAwal = item.standAwal ?? 0;
-  const angkatVal = angkatMB.trim() !== "" ? parseInt(angkatMB, 10) : null;
+  const angkatVal =
+    tanpaAngkat || angkatMB.trim() === "" ? null : parseInt(angkatMB, 10);
   const baruVal = meterBaruMB.trim() !== "" ? parseInt(meterBaruMB, 10) : null;
+  const pasangVal = pasangMB.trim() !== "" ? parseInt(pasangMB, 10) : 0;
 
   const pakaiMBPreview =
-    angkatVal != null && !isNaN(angkatVal)
-      ? Math.max(0, angkatVal - stAwal) +
-        (baruVal != null && !isNaN(baruVal) ? baruVal : 0)
+    baruVal != null &&
+    !isNaN(baruVal) &&
+    !isNaN(pasangVal) &&
+    (tanpaAngkat || (angkatVal != null && !isNaN(angkatVal)))
+      ? hitungPemakaianGantiMeter({
+          standAwalLama: stAwal,
+          standAngkatLama: angkatVal,
+          standMeterBaru: baruVal,
+          standPasang: pasangVal,
+          tanpaStandAngkat: tanpaAngkat,
+        })
       : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSimpan(item, angkatVal, baruVal, pakaiMBPreview);
+    if (baruVal == null || isNaN(baruVal) || baruVal < 0) {
+      toast.error("Lengkapi Stand Meter Baru (minimal 0).");
+      return;
+    }
+    if (baruVal < pasangVal) {
+      toast.error(
+        `Stand Meter Baru (${baruVal}) tidak boleh lebih kecil dari Stand Pasang (${pasangVal}).`,
+      );
+      return;
+    }
+    if (!tanpaAngkat) {
+      if (angkatVal == null || isNaN(angkatVal) || angkatVal < 0) {
+        toast.error(
+          "Isi Stand Angkat Meter Lama, atau centang Override Tanpa Stand Angkat jika data tidak tercatat.",
+        );
+        return;
+      }
+      if (angkatVal < stAwal) {
+        toast.error(
+          `Stand Angkat (${formatAngka(angkatVal)}) lebih kecil dari ST Awal (${formatAngka(stAwal)}). Periksa angka atau gunakan Override.`,
+        );
+        return;
+      }
+    }
+    await onSimpan(
+      item,
+      angkatVal,
+      baruVal,
+      pasangVal,
+      tanpaAngkat,
+      pakaiMBPreview,
+    );
     onTutup();
   };
 
@@ -2350,7 +2533,7 @@ function PopoverMBDialogInner({
         align="start"
         side="bottom"
         sideOffset={4}
-        className="w-80 p-3 text-copy-13 shadow-xl z-50 border border-border bg-popover"
+        className="w-84 p-3 text-copy-13 shadow-xl z-50 border border-border bg-popover"
         onClick={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
       >
@@ -2364,34 +2547,49 @@ function PopoverMBDialogInner({
         </PopoverHeader>
 
         <form onSubmit={handleSubmit} className="space-y-2.5">
-          <div className="grid grid-cols-2 gap-2">
+          <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-copy-12 select-none">
+            <Checkbox
+              checked={tanpaAngkat}
+              onCheckedChange={(v) => {
+                const aktif = v === true;
+                setTanpaAngkat(aktif);
+                if (aktif) setAngkatMB("");
+              }}
+            />
+            <span className="font-medium text-foreground">
+              Override: Tanpa Stand Angkat
+            </span>
+          </label>
+
+          <div className="grid grid-cols-3 gap-2">
             <div className="space-y-1">
               <label className="block text-copy-11 font-medium text-muted-foreground">
-                Stand Angkat Lama
+                Stand Angkat
               </label>
               <Input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                autoFocus={angkatMB === ""}
+                disabled={tanpaAngkat}
+                autoFocus={!tanpaAngkat && angkatMB === ""}
                 value={angkatMB}
                 onChange={(e) =>
                   setAngkatMB(e.target.value.replace(/[^\d]/g, ""))
                 }
-                placeholder="Meter lama"
+                placeholder={tanpaAngkat ? "Override" : `≥ ${formatAngka(stAwal)}`}
                 className="font-mono tabular-nums h-8 text-copy-13 text-right"
               />
             </div>
 
             <div className="space-y-1">
               <label className="block text-copy-11 font-medium text-muted-foreground">
-                Stand Meter Baru
+                Stand Baru
               </label>
               <Input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                autoFocus={angkatMB !== ""}
+                autoFocus={tanpaAngkat || angkatMB !== ""}
                 value={meterBaruMB}
                 onChange={(e) =>
                   setMeterBaruMB(e.target.value.replace(/[^\d]/g, ""))
@@ -2400,7 +2598,32 @@ function PopoverMBDialogInner({
                 className="font-mono tabular-nums h-8 text-copy-13 text-right"
               />
             </div>
+
+            <div className="space-y-1">
+              <label
+                className="block text-copy-11 font-medium text-muted-foreground"
+                title="Angka awal pada meter baru saat dipasang (umumnya 0)"
+              >
+                ST Awal Baru
+              </label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={pasangMB}
+                onChange={(e) =>
+                  setPasangMB(e.target.value.replace(/[^\d]/g, ""))
+                }
+                placeholder="0"
+                title="Biarkan 0 jika meter baru dipasang mulai dari angka 0"
+                className="font-mono tabular-nums h-8 text-copy-13 text-right"
+              />
+            </div>
           </div>
+
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            <strong>ST Awal Baru</strong> = angka meter baru saat dipasang (biarkan <strong>0</strong> untuk meter baru pabrik). Kolom <strong>Pakai</strong> tetap dapat diubah manual setelah disimpan.
+          </p>
 
           <div className="flex items-center justify-between rounded-md bg-muted/60 px-2.5 py-1.5 text-copy-12">
             <span className="text-muted-foreground">
@@ -2440,6 +2663,220 @@ function PopoverMBDialogInner({
               className="h-7 px-3 text-copy-12 cursor-pointer"
             >
               Simpan MB
+            </Button>
+          </div>
+        </form>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ============================================================================
+// Komponen Dialog Popover Muda Kembali (Rollover Multi-Digit)
+// ============================================================================
+
+interface PopoverRolloverDialogProps {
+  data: {
+    item: BarisTurunan;
+    posisi: { x: number; y: number; width?: number; height?: number };
+  } | null;
+  onTutup: () => void;
+  onSimpan: (
+    item: BarisTurunan,
+    akhirVal: number,
+    digitVal: number,
+    pakaiVal: number,
+  ) => Promise<void>;
+}
+
+function PopoverRolloverDialog({
+  data,
+  onTutup,
+  onSimpan,
+}: PopoverRolloverDialogProps) {
+  if (!data) return null;
+  return (
+    <PopoverRolloverDialogInner
+      key={data.item.id}
+      data={data}
+      onTutup={onTutup}
+      onSimpan={onSimpan}
+    />
+  );
+}
+
+function PopoverRolloverDialogInner({
+  data,
+  onTutup,
+  onSimpan,
+}: {
+  data: {
+    item: BarisTurunan;
+    posisi: { x: number; y: number; width?: number; height?: number };
+  };
+  onTutup: () => void;
+  onSimpan: (
+    item: BarisTurunan,
+    akhirVal: number,
+    digitVal: number,
+    pakaiVal: number,
+  ) => Promise<void>;
+}) {
+  const { item, posisi } = data;
+  const stAwal = item.standAwal ?? 0;
+  const [akhirStr, setAkhirStr] = React.useState(() =>
+    item.standAkhir != null ? String(item.standAkhir) : "",
+  );
+  const [digitMode, setDigitMode] = React.useState<number | null>(
+    () => item.row.digitRollover ?? null,
+  );
+
+  const akhirNum = akhirStr.trim() !== "" ? parseInt(akhirStr, 10) : null;
+  const evaluasi =
+    akhirNum != null && !isNaN(akhirNum)
+      ? hitungPemakaianMudaKembali({
+          standAwal: stAwal,
+          standAkhir: akhirNum,
+          ukuranMeter: item.row.ukuranMeter ?? "1/2",
+          jumlahDigitAset: item.row.jumlahDigitAset ?? null,
+          digitOverride: digitMode,
+        })
+      : null;
+
+  const digitAktif = evaluasi?.digit ?? digitMode ?? 4;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (akhirNum == null || isNaN(akhirNum) || akhirNum < 0) {
+      toast.error("Masukkan angka Stand Akhir yang valid.");
+      return;
+    }
+    if (!evaluasi || !evaluasi.isValid) {
+      toast.error(evaluasi?.pesanError ?? "Kapasitas digit tidak sesuai.");
+      return;
+    }
+    await onSimpan(item, akhirNum, evaluasi.digit, evaluasi.totalPemakaianM3);
+    onTutup();
+  };
+
+  return (
+    <Popover open onOpenChange={(open) => !open && onTutup()}>
+      <PopoverTrigger asChild>
+        <div
+          style={{
+            position: "fixed",
+            left: posisi.x,
+            top: posisi.y,
+            width: posisi.width ?? 1,
+            height: 1,
+            pointerEvents: "none",
+            opacity: 0,
+          }}
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        side="bottom"
+        sideOffset={4}
+        className="w-84 p-3 text-copy-13 shadow-xl z-50 border border-border bg-popover"
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+      >
+        <PopoverHeader className="mb-2.5 border-b border-border pb-2">
+          <PopoverTitle className="flex items-center justify-between text-copy-13 font-semibold">
+            <span>Muda Kembali · Ukuran {item.row.ukuranMeter ?? "1/2"}&quot;</span>
+            <span className="rounded bg-(--verif-info)/15 px-1.5 py-0.5 font-mono text-copy-11 text-(--verif-info)">
+              {item.nomor ?? "—"}
+            </span>
+          </PopoverTitle>
+        </PopoverHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-2.5">
+          <div className="space-y-1">
+            <span className="block text-copy-11 font-medium text-muted-foreground">
+              Kapasitas Digit Angka Hitam (m³)
+            </span>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { d: 4, label: "4 Digit · 10rb" },
+                { d: 5, label: "5 Digit · 100rb" },
+                { d: 6, label: "6 Digit · 1jt" },
+              ].map((opt) => (
+                <button
+                  key={opt.d}
+                  type="button"
+                  onClick={() => setDigitMode(opt.d)}
+                  className={cn(
+                    "rounded-md border px-2 py-1 text-copy-11 font-medium transition-colors cursor-pointer",
+                    digitAktif === opt.d
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-copy-11 font-medium text-muted-foreground">
+              Stand Akhir (Setelah Putar ke 0)
+            </label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoFocus
+              value={akhirStr}
+              onChange={(e) =>
+                setAkhirStr(e.target.value.replace(/[^\d]/g, ""))
+              }
+              className="font-mono tabular-nums h-8 text-copy-13 text-right"
+            />
+          </div>
+
+          {evaluasi && evaluasi.isValid && (
+            <div className="rounded-md bg-muted/60 px-2.5 py-1.5 text-copy-12 space-y-0.5">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>Rumus:</span>
+                <span className="font-mono text-foreground">
+                  {evaluasi.isRolloverTerjadi
+                    ? `(${formatAngka(evaluasi.batasPutar)} − ${formatAngka(stAwal)}) + ${formatAngka(akhirNum)}`
+                    : `${formatAngka(akhirNum)} − ${formatAngka(stAwal)}`}
+                </span>
+              </div>
+              <div className="flex items-center justify-between font-semibold">
+                <span className="text-muted-foreground">Pemakaian:</span>
+                <span className="font-mono text-foreground">
+                  {formatAngka(evaluasi.totalPemakaianM3)} m³
+                </span>
+              </div>
+            </div>
+          )}
+
+          {evaluasi?.peringatanPlausibilitas && (
+            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-copy-11 text-amber-700 dark:text-amber-300">
+              {evaluasi.peringatanPlausibilitas}
+            </p>
+          )}
+
+          <div className="flex items-center justify-end gap-1.5 pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2.5 text-copy-12 cursor-pointer"
+              onClick={onTutup}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className="h-7 px-3 text-copy-12 cursor-pointer"
+            >
+              Simpan Rollover
             </Button>
           </div>
         </form>

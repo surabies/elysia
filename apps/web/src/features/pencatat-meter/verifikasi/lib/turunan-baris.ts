@@ -38,6 +38,9 @@ export interface BarisTurunan {
   waktuCatat: number | null
 
   isMB: boolean
+  isMudaKembali: boolean
+  butuhKonfirmasiGuard: boolean
+  pesanBlokirGuard: string | null
   standAkhirDikoreksi: boolean
   kondisiDikoreksi: boolean
   pemakaianDikoreksi: boolean
@@ -61,7 +64,10 @@ export function turunkanBaris(row: BarisVerifikasi): BarisTurunan {
   const kondisiDikoreksi =
     row.kondisiRevisi != null && row.kondisiRevisi !== row.kondisi
   const gantiMeter =
-    row.standAngkatRevisi != null || row.standMeterBaruRevisi != null
+    row.standAngkatRevisi != null ||
+    row.standMeterBaruRevisi != null ||
+    Boolean(row.mbTanpaStandAngkat) ||
+    row.digitRollover != null
   const pemakaianDikoreksi =
     standAwalDikoreksi ||
     standAkhirDikoreksi ||
@@ -70,6 +76,7 @@ export function turunkanBaris(row: BarisVerifikasi): BarisTurunan {
     pemakaianTagih != null
 
   const kondisiAktif = row.kondisiRevisi ?? row.kondisi ?? null
+  const kondisiNorm = (kondisiAktif ?? "").trim().toUpperCase()
   const waktu = row.tanggalCatat ? new Date(row.tanggalCatat).getTime() : NaN
 
   return {
@@ -102,7 +109,11 @@ export function turunkanBaris(row: BarisVerifikasi): BarisTurunan {
     tanggalCatat: row.tanggalCatat ?? null,
     waktuCatat: Number.isNaN(waktu) ? null : waktu,
 
-    isMB: kondisiAktif === "MB",
+    isMB: kondisiNorm === "MB",
+    isMudaKembali:
+      kondisiNorm === "MUDA_KEMBALI" || kondisiNorm === "MUDA KEMBALI",
+    butuhKonfirmasiGuard: Boolean(row.butuhKonfirmasiGuard),
+    pesanBlokirGuard: row.pesanBlokirGuard ?? null,
     standAkhirDikoreksi,
     kondisiDikoreksi,
     pemakaianDikoreksi,

@@ -30,6 +30,8 @@ import {
   tentukanBlok,
   type HargaBlok,
 } from "@cater/backend/domain/tagihan/tagihan.engine";
+import { evaluasiGuardBacaanMeter } from "@cater/backend/domain/cater/guard-bacaan.engine";
+import { hitungKubikasiGantiMeter } from "@cater/backend/domain/gwm/gwm.engine";
 
 const UKURAN_BATCH = 500;
 const MAKS_CONTOH_HAMBATAN = 20;
@@ -187,6 +189,7 @@ const FINAL_VERIFIKASI_STATUSES = new Set([
 const BLOCKING_VERIFIKASI_STATUSES = new Set([
   'NEED_RESURVEY',
   'ANOMALY',
+  'ANOMALY_NEGATIVE',
   'DRAFT',
 ]);
 
@@ -413,17 +416,34 @@ export class ClosingService {
       .select({
         id: caterBacaMeter.id,
         nolg: caterBacaMeter.nolg,
+        stml: caterBacaMeter.stml,
+        stma: caterBacaMeter.stma,
+        stmlRevisi: caterBacaMeter.stmlRevisi,
+        stmaRevisi: caterBacaMeter.stmaRevisi,
         pakaiM3: caterBacaMeter.pakaiM3,
         pakaiM3Revisi: caterBacaMeter.pakaiM3Revisi,
         pakaiTagih: caterBacaMeter.pakaiTagih,
+        tmss: caterBacaMeter.tmss,
+        ketCatat: caterBacaMeter.ketCatat,
+        ketCatatRevisi: caterBacaMeter.ketCatatRevisi,
+        standAngkatRevisi: caterBacaMeter.standAngkatRevisi,
+        standMeterBaruRevisi: caterBacaMeter.standMeterBaruRevisi,
+        mbTanpaStandAngkat: caterBacaMeter.mbTanpaStandAngkat,
+        digitRollover: caterBacaMeter.digitRollover,
+        standAngkatMutasi: waterMeterMutasi.standAngkat,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
         tarifKode: pelanggan.tarifKode,
         ukuranMeterPelanggan: pelanggan.ukuranMeter,
         ukuranMeterAset: waterMeter.ukuran,
+        jumlahDigitAset: waterMeter.jumlahDigit,
       })
       .from(caterBacaMeter)
       .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
       .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
+      .leftJoin(
+        waterMeterMutasi,
+        sql`${waterMeterMutasi.id} = COALESCE(${caterBacaMeter.waterMeterMutasiId}, 'mutasi-' || ${caterBacaMeter.thbl} || '-' || ${caterBacaMeter.nolg})`,
+      )
       .where(
         and(
           eq(caterBacaMeter.thbl, periodeStr),
@@ -445,10 +465,30 @@ export class ClosingService {
     const barisSiapDisahkan: string[] = [];
 
     for (const c of caterRows) {
-      const vol = Number(c.pakaiTagih ?? c.pakaiM3Revisi ?? c.pakaiM3);
-      if (FINAL_VERIFIKASI_STATUSES.has(c.statusVerifikasi) && vol >= 0) {
+      const guard = evaluasiGuardBacaanMeter({
+        stml: c.stml,
+        stma: c.stma,
+        stmlRevisi: c.stmlRevisi,
+        stmaRevisi: c.stmaRevisi,
+        pakaiM3: c.pakaiM3,
+        pakaiM3Revisi: c.pakaiM3Revisi,
+        pakaiTagih: c.pakaiTagih,
+        tmss: c.tmss,
+        ketCatat: c.ketCatat,
+        ketCatatRevisi: c.ketCatatRevisi,
+        standAngkatRevisi: c.standAngkatRevisi,
+        standMeterBaruRevisi: c.standMeterBaruRevisi,
+        standAngkatMutasi: c.standAngkatMutasi,
+        mbTanpaStandAngkat: c.mbTanpaStandAngkat,
+        digitRollover: c.digitRollover,
+        ukuranMeter: c.ukuranMeterAset ?? c.ukuranMeterPelanggan,
+        jumlahDigitAset: c.jumlahDigitAset,
+        statusVerifikasi: c.statusVerifikasi,
+      });
+
+      if (FINAL_VERIFIKASI_STATUSES.has(c.statusVerifikasi) && guard.lolosDataMurni) {
         verifSelesaiV3++;
-      } else if (BLOCKING_VERIFIKASI_STATUSES.has(c.statusVerifikasi) || vol < 0) {
+      } else if (!guard.lolos) {
         barisButuhKoreksi.push(c.nolg);
       } else {
         barisSiapDisahkan.push(c.nolg);
@@ -712,15 +752,36 @@ export class ClosingService {
         );
       }
 
-      // Guard 2: Pastikan seluruh pembacaan meter pelanggan aktif periode ini sudah disahkan (APPROVED_FINAL / LOCKED_BILLING / CORRECTED_POST_CLOSE) dan bebas anomali negatif
-      const [unapprovedCater] = await db
+      // Guard 2: Pastikan seluruh pembacaan meter pelanggan aktif periode ini sudah disahkan (APPROVED_FINAL / LOCKED_BILLING / CORRECTED_POST_CLOSE) dan lolos Guard SSOT (bebas MB belum lengkap, rollover tidak wajar, maupun kubikasi negatif)
+      const guardRowsClosing = await db
         .select({
-          total: sql<number>`count(*)::int`,
-          butuhKoreksi: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} in ('NEED_RESURVEY', 'ANOMALY', 'DRAFT') or coalesce(${caterBacaMeter.pakaiTagih}, ${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric < 0 then 1 end)::int`,
-          belumDisahkan: sql<number>`count(case when ${caterBacaMeter.statusVerifikasi} not in ('APPROVED_FINAL', 'LOCKED_BILLING', 'CORRECTED_POST_CLOSE') then 1 end)::int`,
+          nolg: caterBacaMeter.nolg,
+          stml: caterBacaMeter.stml,
+          stma: caterBacaMeter.stma,
+          stmlRevisi: caterBacaMeter.stmlRevisi,
+          stmaRevisi: caterBacaMeter.stmaRevisi,
+          pakaiM3: caterBacaMeter.pakaiM3,
+          pakaiM3Revisi: caterBacaMeter.pakaiM3Revisi,
+          pakaiTagih: caterBacaMeter.pakaiTagih,
+          tmss: caterBacaMeter.tmss,
+          ketCatat: caterBacaMeter.ketCatat,
+          ketCatatRevisi: caterBacaMeter.ketCatatRevisi,
+          standAngkatRevisi: caterBacaMeter.standAngkatRevisi,
+          standMeterBaruRevisi: caterBacaMeter.standMeterBaruRevisi,
+          mbTanpaStandAngkat: caterBacaMeter.mbTanpaStandAngkat,
+          digitRollover: caterBacaMeter.digitRollover,
+          standAngkatMutasi: waterMeterMutasi.standAngkat,
+          ukuranMeter: pelanggan.ukuranMeter,
+          jumlahDigitAset: waterMeter.jumlahDigit,
+          statusVerifikasi: caterBacaMeter.statusVerifikasi,
         })
         .from(caterBacaMeter)
         .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
+        .leftJoin(
+          waterMeterMutasi,
+          sql`${waterMeterMutasi.id} = COALESCE(${caterBacaMeter.waterMeterMutasiId}, 'mutasi-' || ${caterBacaMeter.thbl} || '-' || ${caterBacaMeter.nolg})`,
+        )
         .where(
           and(
             eq(caterBacaMeter.thbl, periodeStr),
@@ -728,21 +789,35 @@ export class ClosingService {
           )
         );
 
-      if ((unapprovedCater?.total ?? 0) === 0) {
+      if (guardRowsClosing.length === 0) {
         throw new Error(
           `Tutup buku ditolak karena belum ada data bacaan meter pada periode ${periodeStr}. Tidak ada data yang diubah.`
         );
       }
 
-      if ((unapprovedCater?.butuhKoreksi ?? 0) > 0) {
+      let butuhKoreksiClosing = 0;
+      let belumDisahkanClosing = 0;
+      for (const r of guardRowsClosing) {
+        const g = evaluasiGuardBacaanMeter({
+          ...r,
+          ukuranMeter: r.ukuranMeter,
+        });
+        if (!g.lolos || !g.lolosDataMurni) {
+          butuhKoreksiClosing++;
+        } else if (!FINAL_VERIFIKASI_STATUSES.has(r.statusVerifikasi)) {
+          belumDisahkanClosing++;
+        }
+      }
+
+      if (butuhKoreksiClosing > 0) {
         throw new Error(
-          `Tutup buku ditolak karena masih terdapat ${unapprovedCater.butuhKoreksi.toLocaleString('id-ID')} hasil baca meter berstatus Anomali / Perlu Survei Ulang / Kubikasi Negatif. Selesaikan terlebih dahulu di menu Verifikasi Baca Petugas atau Koreksi Stand.`
+          `Tutup buku ditolak karena masih terdapat ${butuhKoreksiClosing.toLocaleString('id-ID')} hasil baca meter berstatus Anomali / Meter Baru Belum Lengkap / Kubikasi Negatif. Selesaikan terlebih dahulu di menu Verifikasi Baca Petugas.`
         );
       }
 
-      if ((unapprovedCater?.belumDisahkan ?? 0) > 0) {
+      if (belumDisahkanClosing > 0) {
         throw new Error(
-          `Tutup buku ditolak karena masih ada ${unapprovedCater.belumDisahkan.toLocaleString('id-ID')} hasil baca meter yang belum disahkan. Data tagihan tetap aman. Silakan kembali ke Langkah 2 dan klik "Sahkan Seluruh Bacaan Meter".`
+          `Tutup buku ditolak karena masih ada ${belumDisahkanClosing.toLocaleString('id-ID')} hasil baca meter yang belum disahkan. Data tagihan tetap aman. Silakan kembali ke Langkah 2 dan klik "Sahkan Seluruh Bacaan Meter".`
         );
       }
 
@@ -982,28 +1057,57 @@ export class ClosingService {
         );
       }
 
-      const blockingRows = await db
+      const allRowsPosting = await db
         .select({
           nolg: caterBacaMeter.nolg,
+          stml: caterBacaMeter.stml,
+          stma: caterBacaMeter.stma,
+          stmlRevisi: caterBacaMeter.stmlRevisi,
+          stmaRevisi: caterBacaMeter.stmaRevisi,
+          pakaiM3: caterBacaMeter.pakaiM3,
+          pakaiM3Revisi: caterBacaMeter.pakaiM3Revisi,
+          pakaiTagih: caterBacaMeter.pakaiTagih,
+          tmss: caterBacaMeter.tmss,
+          ketCatat: caterBacaMeter.ketCatat,
+          ketCatatRevisi: caterBacaMeter.ketCatatRevisi,
+          standAngkatRevisi: caterBacaMeter.standAngkatRevisi,
+          standMeterBaruRevisi: caterBacaMeter.standMeterBaruRevisi,
+          mbTanpaStandAngkat: caterBacaMeter.mbTanpaStandAngkat,
+          digitRollover: caterBacaMeter.digitRollover,
+          standAngkatMutasi: waterMeterMutasi.standAngkat,
+          ukuranMeter: pelanggan.ukuranMeter,
+          jumlahDigitAset: waterMeter.jumlahDigit,
           statusVerifikasi: caterBacaMeter.statusVerifikasi,
         })
         .from(caterBacaMeter)
         .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+        .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
+        .leftJoin(
+          waterMeterMutasi,
+          sql`${waterMeterMutasi.id} = COALESCE(${caterBacaMeter.waterMeterMutasiId}, 'mutasi-' || ${caterBacaMeter.thbl} || '-' || ${caterBacaMeter.nolg})`,
+        )
         .where(
           and(
             eq(caterBacaMeter.thbl, periodeStr),
-            sql`${pelanggan.status} != 'DICABUT'`,
-            sql`(${caterBacaMeter.statusVerifikasi} in ('NEED_RESURVEY', 'ANOMALY', 'DRAFT') or coalesce(${caterBacaMeter.pakaiTagih}, ${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric < 0)`
+            sql`${pelanggan.status} != 'DICABUT'`
           )
         );
+
+      const blockingRows = allRowsPosting
+        .map((r) => ({
+          nolg: r.nolg,
+          guard: evaluasiGuardBacaanMeter(r),
+          statusVerifikasi: r.statusVerifikasi,
+        }))
+        .filter((x) => !x.guard.lolos);
 
       if (blockingRows.length > 0) {
         const contoh = blockingRows
           .slice(0, 10)
-          .map((r) => `${r.nolg} (${r.statusVerifikasi})`)
+          .map((r) => `${r.nolg} (${r.guard.kodeBlokir ?? r.statusVerifikasi})`)
           .join(', ');
         throw new Error(
-          `Pengesahan massal ditahan karena masih ada ${blockingRows.length.toLocaleString('id-ID')} bacaan berstatus Anomali / Perlu Survei Ulang / Kubikasi Negatif: [${contoh}]${blockingRows.length > 10 ? ` ...dan ${blockingRows.length - 10} lainnya` : ''}. Selesaikan terlebih dahulu di menu Verifikasi Baca Petugas atau Koreksi Stand.`
+          `Pengesahan massal ditahan karena masih ada ${blockingRows.length.toLocaleString('id-ID')} bacaan berstatus Anomali / Meter Baru Belum Lengkap / Kubikasi Negatif: [${contoh}]${blockingRows.length > 10 ? ` ...dan ${blockingRows.length - 10} lainnya` : ''}. Selesaikan terlebih dahulu di menu Verifikasi Baca Petugas.`
         );
       }
 
@@ -1881,16 +1985,94 @@ export class ClosingService {
 
     const resolvedUser = await this.resolveValidUser(verifikatorId);
 
-    await db
-      .update(waterMeterMutasi)
-      .set({
-        statusVerifikasi: status,
-        verifikatorId: resolvedUser.id,
-        catatanVerifikasi: catatan ?? null,
-        tglVerifikasi: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(waterMeterMutasi.id, id));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(waterMeterMutasi)
+        .set({
+          statusVerifikasi: status,
+          verifikatorId: resolvedUser.id,
+          catatanVerifikasi: catatan ?? null,
+          tglVerifikasi: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(waterMeterMutasi.id, id));
+
+      if (status === 'APPROVED') {
+        const periodeStrMutasi = String(existingMutasi.periode);
+        if (existingMutasi.noMeterBaru && existingMutasi.noMeterBaru.trim() !== '-') {
+          const cleanBaru = existingMutasi.noMeterBaru.trim();
+          await tx
+            .insert(waterMeter)
+            .values({
+              noMeter: cleanBaru,
+              ukuran: '1/2',
+              tglPasang: new Date(),
+              kondisi: 'Normal',
+            })
+            .onConflictDoNothing({ target: waterMeter.noMeter });
+
+          await tx
+            .update(pelanggan)
+            .set({
+              noMeter: cleanBaru,
+              tglPasangMeter: new Date(),
+              perluVerifikasi: false,
+              updatedAt: new Date(),
+            })
+            .where(eq(pelanggan.nolg, existingMutasi.nolg));
+        }
+
+        const [caterExisting] = await tx
+          .select()
+          .from(caterBacaMeter)
+          .where(
+            and(
+              eq(caterBacaMeter.thbl, periodeStrMutasi),
+              eq(caterBacaMeter.nolg, existingMutasi.nolg),
+            ),
+          );
+
+        if (caterExisting && existingMutasi.standAngkat !== null) {
+          const stmlNum = Number(caterExisting.stmlRevisi ?? caterExisting.stml ?? 0);
+          const bacaBaruNum = Number(
+            caterExisting.standMeterBaruRevisi ??
+              caterExisting.stmaRevisi ??
+              caterExisting.stma ??
+              0,
+          );
+          const [fullMutasi] = await tx
+            .select({ standPasang: waterMeterMutasi.standPasang })
+            .from(waterMeterMutasi)
+            .where(eq(waterMeterMutasi.id, id));
+
+          const hitungMb = hitungKubikasiGantiMeter({
+            standLalu: stmlNum,
+            standAngkat: existingMutasi.standAngkat,
+            standPasang: fullMutasi?.standPasang ?? 0,
+            standBacaBaru: bacaBaruNum,
+          });
+
+          if (hitungMb.isValid) {
+            await tx
+              .update(caterBacaMeter)
+              .set({
+                waterMeterMutasiId: id,
+                standAngkatRevisi: String(existingMutasi.standAngkat),
+                standMeterBaruRevisi: String(bacaBaruNum),
+                pakaiM3Revisi: String(hitungMb.totalPemakaianM3),
+                ketCatatRevisi: caterExisting.ketCatat === 'MB' ? null : 'MB',
+                statusVerifikasi:
+                  caterExisting.statusVerifikasi === 'ANOMALY' ||
+                  caterExisting.statusVerifikasi === 'ANOMALY_NEGATIVE'
+                    ? 'VERIFIED_L1'
+                    : caterExisting.statusVerifikasi,
+                updatedAt: new Date(),
+              })
+              .where(eq(caterBacaMeter.id, caterExisting.id));
+          }
+        }
+      }
+    });
 
     return {
       success: true,

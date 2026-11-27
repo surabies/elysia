@@ -1,6 +1,7 @@
 export { MonitoringAnomaliKubikasi } from './components/MonitoringAnomaliKubikasi';
 export { AnomaliKubikasiHeader } from './components/AnomaliKubikasiHeader';
 export { MonitoringKoreksiStand } from './components/MonitoringKoreksiStand';
+export { KoreksiStandHeader } from './components/KoreksiStandHeader';
 export { MonitoringProgresLapangan } from './components/MonitoringProgresLapangan';
 export { ProgresLapanganHeader } from './components/ProgresLapanganHeader';
 export { MonitoringProgresWilayah } from './components/MonitoringProgresWilayah';

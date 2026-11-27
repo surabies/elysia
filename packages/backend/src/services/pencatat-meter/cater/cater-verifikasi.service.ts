@@ -7,9 +7,11 @@ import {
   pelanggan,
   golonganTarif,
   masterKondisiCatat,
+  waterMeter,
   waterMeterMutasi,
 } from "@cater/db";
 import { evaluasiAnomaliBaris } from "@cater/backend/domain/cater/anomali-evaluator";
+import { evaluasiGuardBacaanMeter } from "@cater/backend/domain/cater/guard-bacaan.engine";
 import { aturanAnomaliService } from "./aturan-anomali.service";
 import {
   hitungPemakaianDanRekonsiliasiTaksasi,
@@ -129,11 +131,14 @@ export class CaterVerifikasiService {
       db
         .select({
           tarifKode: pelanggan.tarifKode,
+          ukuranMeter: pelanggan.ukuranMeter,
+          jumlahDigit: waterMeter.jumlahDigit,
           pemakaianMinimumM3: golonganTarif.pemakaianMinimumM3,
           tagihanSaatKelebihan: golonganTarif.tagihanSaatKelebihan,
         })
         .from(pelanggan)
         .leftJoin(golonganTarif, eq(pelanggan.tarifKode, golonganTarif.kode))
+        .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
         .where(eq(pelanggan.nolg, nolg))
         .limit(1),
       db
@@ -215,6 +220,8 @@ export class CaterVerifikasiService {
       tagihanSaatKelebihan,
       standAngkat: mutasiMb?.standAngkat ?? null,
       standPasang: mutasiMb?.standPasang ?? 0,
+      ukuranMeter: pelRow[0]?.ukuranMeter ?? null,
+      jumlahDigitAset: pelRow[0]?.jumlahDigit ?? null,
     });
 
     // 2b. Taksasi manual operator: nilai sendiri (bukan hanya pakai_lalu), alasan wajib + audit log
@@ -245,11 +252,24 @@ export class CaterVerifikasiService {
     }
 
     const stmaEfektif = hasilMode.stmaEfektif;
-    const isMundur = (modeHitung === "METER_BARU" ? 0 : stml) > stmaEfektif;
+    const isMundur =
+      modeHitung !== "METER_BARU" &&
+      modeHitung !== "MUDA_KEMBALI" &&
+      modeHitung !== "KREDIT_TAKSASI" &&
+      stml > stmaEfektif;
+    const isMbBelumLengkap =
+      modeHitung === "METER_BARU" &&
+      (mutasiMb?.standAngkat === null || mutasiMb?.standAngkat === undefined);
 
-    const pakaiM3Fisik = Math.max(0, hasilMode.selisihFisikM3);
-    const pakaiTagihFinal =
-      pakaiM3Override !== undefined ? pakaiM3Override : hasilMode.pakaiTagihM3;
+    // Pertahankan nilai minus riil ketika isMundur agar indikator pemakaian minus (-) tampil terang-benderang di UI & ditahan Guard
+    const pakaiM3Fisik = isMundur
+      ? hasilMode.selisihFisikM3
+      : Math.max(0, hasilMode.selisihFisikM3);
+    const pakaiTagihFinal = isMundur
+      ? null
+      : pakaiM3Override !== undefined
+        ? pakaiM3Override
+        : hasilMode.pakaiTagihM3;
 
     const isExistingMandiri =
       existingCater &&
@@ -275,13 +295,19 @@ export class CaterVerifikasiService {
       ? "ANOMALY"
       : hasilMode.isAnomaliKreditTaksasi
         ? "ANOMALY"
-        : hasilMode.isStandTetap
-          ? "SUBMITTED"
-          : isMundur
-            ? "ANOMALY_NEGATIVE"
-            : "SUBMITTED";
+        : isMbBelumLengkap
+          ? "ANOMALY_NEGATIVE"
+          : hasilMode.isStandTetap
+            ? "SUBMITTED"
+            : isMundur
+              ? "ANOMALY_NEGATIVE"
+              : "SUBMITTED";
 
     const id = `cater-${thbl}-${nolg}`;
+    const mutasiIdTarget =
+      modeHitung === "METER_BARU"
+        ? (mutasiMb?.id ?? `mutasi-${thbl}-${nolg}`)
+        : null;
     const lokasiGps =
       longitude !== undefined && latitude !== undefined
         ? { x: longitude, y: latitude }
@@ -367,7 +393,43 @@ export class CaterVerifikasiService {
       }
     }
 
+    if (isMbBelumLengkap) {
+      evalRes.isAnomali = true;
+      if (!evalRes.kodeList) evalRes.kodeList = [];
+      if (!evalRes.kodeList.includes("MB_BUTUH_STAND_ANGKAT")) {
+        evalRes.kodeList.unshift("MB_BUTUH_STAND_ANGKAT");
+      }
+      evalRes.kodeUtama = "MB_BUTUH_STAND_ANGKAT";
+    }
+
     await db.transaction(async (tx) => {
+      // Kondisi MB tanpa data Teknik: buat draft mutasi lebih dulu agar FK waterMeterMutasiId selalu tertaut
+      if (modeHitung === "METER_BARU" && !mutasiMb && mutasiIdTarget) {
+        const [pel] = await tx
+          .select({
+            noMeter: pelanggan.noMeter,
+            noMeterAsli: pelanggan.noMeterAsli,
+          })
+          .from(pelanggan)
+          .where(eq(pelanggan.nolg, nolg));
+        await tx
+          .insert(waterMeterMutasi)
+          .values({
+            id: mutasiIdTarget,
+            nolg,
+            periode: Number(thbl),
+            alasan: "LAINNYA",
+            keterangan:
+              "Draft otomatis dari pembacaan kondisi 4 | MB; menunggu konfirmasi Stand Angkat / Override operator",
+            noMeterLama: pel?.noMeterAsli ?? pel?.noMeter ?? "-",
+            standAngkat: null,
+            noMeterBaru: null,
+            standPasang: 0,
+            statusVerifikasi: "DATA_METER_BELUM_LENGKAP",
+          })
+          .onConflictDoNothing();
+      }
+
       await tx
         .insert(caterBacaMeter)
         .values({
@@ -381,10 +443,12 @@ export class CaterVerifikasiService {
           pakaiLalu:
             pakaiLaluEfektif === null ? null : String(pakaiLaluEfektif),
           pakaiM3: String(pakaiM3Fisik),
-          pakaiTagih: String(pakaiTagihFinal),
+          pakaiTagih: pakaiTagihFinal === null ? null : String(pakaiTagihFinal),
           alasanTaksir: hasilMode.alasanTaksir,
           tmss: kodeTmssFinal,
           ketCatat: namaKondisiFinal,
+          waterMeterMutasiId: mutasiIdTarget,
+          mbTanpaStandAngkat: false,
           metodeCatat: (metodeCatat as any) || "ONSITE",
           sumberCatat: sumberCatat || "PETUGAS_ONSITE",
           fotoMeterUrl: processedFotoMeter,
@@ -408,10 +472,12 @@ export class CaterVerifikasiService {
             pakaiLalu:
               pakaiLaluEfektif === null ? null : String(pakaiLaluEfektif),
             pakaiM3: String(pakaiM3Fisik),
-            pakaiTagih: String(pakaiTagihFinal),
+            pakaiTagih: pakaiTagihFinal === null ? null : String(pakaiTagihFinal),
             alasanTaksir: hasilMode.alasanTaksir,
             tmss: kodeTmssFinal,
             ketCatat: namaKondisiFinal,
+            waterMeterMutasiId: mutasiIdTarget,
+            mbTanpaStandAngkat: false,
             metodeCatat: (metodeCatat as any) || "ONSITE",
             sumberCatat: sumberCatat || "PETUGAS_ONSITE",
             caterMandiriId: null,
@@ -454,37 +520,6 @@ export class CaterVerifikasiService {
         });
       }
 
-      // Kondisi MB tanpa data Teknik: buat draft mutasi agar pembacaan & closing tidak terblokir
-      if (modeHitung === "METER_BARU" && !mutasiMb) {
-        const [pel] = await tx
-          .select({
-            noMeter: pelanggan.noMeter,
-            noMeterAsli: pelanggan.noMeterAsli,
-          })
-          .from(pelanggan)
-          .where(eq(pelanggan.nolg, nolg));
-        const mutasiId = `mutasi-${thbl}-${nolg}`;
-        await tx
-          .insert(waterMeterMutasi)
-          .values({
-            id: mutasiId,
-            nolg,
-            periode: Number(thbl),
-            alasan: "LAINNYA",
-            keterangan:
-              "Draft otomatis dari pembacaan kondisi 4 | MB; data Teknik menyusul",
-            noMeterLama: pel?.noMeterAsli ?? pel?.noMeter ?? "-",
-            standAngkat: null,
-            noMeterBaru: null,
-            standPasang: 0,
-            statusVerifikasi: "DATA_METER_BELUM_LENGKAP",
-          })
-          .onConflictDoNothing();
-        await tx
-          .update(caterBacaMeter)
-          .set({ waterMeterMutasiId: mutasiId })
-          .where(eq(caterBacaMeter.id, id));
-      }
       if (isDicabut) {
         await tx
           .update(pelanggan)
@@ -510,15 +545,78 @@ export class CaterVerifikasiService {
   }
 
   /**
+   * Guard terpusat sebelum persetujuan V1 / V2 / V3 agar baris MB belum lengkap,
+   * Muda Kembali tidak wajar, maupun kubikasi negatif mustahil lolos verifikasi langsung/massal.
+   */
+  private async assertLolosGuardPersetujuan(caterId: string) {
+    const [detail] = await db
+      .select({
+        cater: caterBacaMeter,
+        ukuranMeter: pelanggan.ukuranMeter,
+        jumlahDigit: waterMeter.jumlahDigit,
+        standAngkatMutasi: waterMeterMutasi.standAngkat,
+      })
+      .from(caterBacaMeter)
+      .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+      .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
+      .leftJoin(
+        waterMeterMutasi,
+        eq(caterBacaMeter.waterMeterMutasiId, waterMeterMutasi.id),
+      )
+      .where(eq(caterBacaMeter.id, caterId));
+
+    if (!detail) {
+      throw new Error("Data baca meter tidak ditemukan");
+    }
+
+    const row = detail.cater;
+    const guard = evaluasiGuardBacaanMeter({
+      stml: row.stml,
+      stma: row.stma,
+      stmlRevisi: row.stmlRevisi,
+      stmaRevisi: row.stmaRevisi,
+      pakaiM3: row.pakaiM3,
+      pakaiM3Revisi: row.pakaiM3Revisi,
+      pakaiTagih: row.pakaiTagih,
+      tmss: row.tmss,
+      ketCatat: row.ketCatat,
+      ketCatatRevisi: row.ketCatatRevisi,
+      standAngkatRevisi: row.standAngkatRevisi,
+      standMeterBaruRevisi: row.standMeterBaruRevisi,
+      standAngkatMutasi: detail.standAngkatMutasi,
+      mbTanpaStandAngkat: row.mbTanpaStandAngkat,
+      digitRollover: row.digitRollover,
+      ukuranMeter: detail.ukuranMeter,
+      jumlahDigitAset: detail.jumlahDigit,
+      statusVerifikasi: row.statusVerifikasi,
+    });
+
+    if (!guard.lolosDataMurni) {
+      throw new Error(
+        guard.pesanBlokir ??
+          "Bacaan meter belum memenuhi syarat validasi dan wajib dikoreksi terlebih dahulu.",
+      );
+    }
+
+    return row;
+  }
+
+  /**
    * Verifikasi V1 - Supervisor Seksi / Rute
    */
   async verifikasiV1(input: VerifyV1Input, userId: string) {
     const { caterId, action, catatan } = input;
 
-    const [cater] = await db
-      .select()
-      .from(caterBacaMeter)
-      .where(eq(caterBacaMeter.id, caterId));
+    let cater: typeof caterBacaMeter.$inferSelect | undefined;
+    if (action === "APPROVE") {
+      cater = await this.assertLolosGuardPersetujuan(caterId);
+    } else {
+      const [found] = await db
+        .select()
+        .from(caterBacaMeter)
+        .where(eq(caterBacaMeter.id, caterId));
+      cater = found;
+    }
 
     if (!cater) {
       throw new Error("Data baca meter tidak ditemukan");
@@ -566,10 +664,16 @@ export class CaterVerifikasiService {
   async verifikasiV2(input: VerifyV2Input, userId: string) {
     const { caterId, action, stmaKoreksi, catatan } = input;
 
-    const [cater] = await db
-      .select()
-      .from(caterBacaMeter)
-      .where(eq(caterBacaMeter.id, caterId));
+    let cater: typeof caterBacaMeter.$inferSelect | undefined;
+    if (action === "APPROVE") {
+      cater = await this.assertLolosGuardPersetujuan(caterId);
+    } else {
+      const [found] = await db
+        .select()
+        .from(caterBacaMeter)
+        .where(eq(caterBacaMeter.id, caterId));
+      cater = found;
+    }
 
     if (!cater) {
       throw new Error("Data baca meter tidak ditemukan");
@@ -660,14 +764,7 @@ export class CaterVerifikasiService {
   async verifikasiV3(input: VerifyV3Input, userId: string) {
     const { caterId, catatan } = input;
 
-    const [cater] = await db
-      .select()
-      .from(caterBacaMeter)
-      .where(eq(caterBacaMeter.id, caterId));
-
-    if (!cater) {
-      throw new Error("Data baca meter tidak ditemukan");
-    }
+    const cater = await this.assertLolosGuardPersetujuan(caterId);
 
     const nextStatus = "APPROVED_FINAL";
 

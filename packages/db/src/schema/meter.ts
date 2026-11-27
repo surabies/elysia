@@ -5,6 +5,7 @@ export const waterMeter = pgTable('water_meter', {
   noMeter: varchar('no_meter', { length: 50 }).primaryKey(),
   merk: varchar('merk', { length: 50 }), // e.g. 'ITR' (Itron), 'LIN'
   ukuran: varchar('ukuran', { length: 20 }).default('1/2'), // e.g. '1/2', '3/4'
+  jumlahDigit: integer('jumlah_digit'), // Jumlah digit angka hitam m3 (mis. 4->10.000, 5->100.000, 6->1.000.000)
   noSegel: varchar('no_segel', { length: 50 }),
   tglPasang: timestamp('tgl_pasang'),
   umurTahun: integer('umur_tahun').default(0),

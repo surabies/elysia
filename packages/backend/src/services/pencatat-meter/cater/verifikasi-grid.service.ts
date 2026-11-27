@@ -32,6 +32,7 @@ import {
   zonaDistribusi,
 } from "@cater/db";
 import { hitungDeviasiPersentase } from "@cater/backend/domain/cater/anomali-evaluator";
+import { evaluasiGuardBacaanMeter } from "@cater/backend/domain/cater/guard-bacaan.engine";
 
 type GridQuery = {
   id?: string;
@@ -48,6 +49,7 @@ type GridQuery = {
   tanggalDari?: string;
   tanggalSampai?: string;
   hanyaAnomali?: string;
+  filterPemakaian?: string;
   kondisi?: string;
   jenisInput?: string;
 };
@@ -407,6 +409,45 @@ export class VerifikasiGridService {
     } else if (query.hanyaAnomali === "false") {
       conditions.push(eq(caterBacaMeter.isAnomali, false));
     }
+    if (query.filterPemakaian) {
+      const modePakai = query.filterPemakaian.trim().toUpperCase();
+      const sqlIsMinus = sql`(
+        COALESCE(${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric < 0
+        OR (
+          ${caterBacaMeter.statusVerifikasi} NOT IN ('APPROVED_FINAL', 'CORRECTED_POST_VERIF', 'LOCKED_BILLING')
+          AND ${caterBacaMeter.pakaiM3Revisi} IS NULL
+          AND ${caterBacaMeter.pakaiTagih} IS NULL
+          AND COALESCE(${caterBacaMeter.standMeterBaruRevisi}, ${caterBacaMeter.stmaRevisi}, ${caterBacaMeter.stma})::numeric
+            < COALESCE(${caterBacaMeter.stmlRevisi}, ${caterBacaMeter.stml})::numeric
+          AND ${caterBacaMeter.mbTanpaStandAngkat} = false
+          AND COALESCE(
+            ${caterBacaMeter.standAngkatRevisi}::numeric,
+            (
+              SELECT m.stand_angkat::numeric
+              FROM water_meter_mutasi m
+              WHERE m.id = COALESCE(${caterBacaMeter.waterMeterMutasiId}, 'mutasi-' || ${caterBacaMeter.thbl} || '-' || ${caterBacaMeter.nolg})
+              LIMIT 1
+            )
+          ) IS NULL
+          AND NOT (
+            UPPER(TRIM(COALESCE(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}, ''))) IN ('MUDA KEMBALI', 'MUDA_KEMBALI', 'KELEBIHAN')
+            OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND UPPER(TRIM(COALESCE(${caterBacaMeter.tmss}, ''))) IN ('U', 'M'))
+          )
+        )
+      )`;
+
+      if (modePakai === "MINUS") {
+        conditions.push(sqlIsMinus);
+      } else if (modePakai === "NOL") {
+        conditions.push(
+          sql`(COALESCE(${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric = 0 AND NOT (${sqlIsMinus}))`,
+        );
+      } else if (modePakai === "POSITIF") {
+        conditions.push(
+          sql`COALESCE(${caterBacaMeter.pakaiM3Revisi}, ${caterBacaMeter.pakaiM3})::numeric > 0`,
+        );
+      }
+    }
     if (query.q) {
       const pattern = `%${query.q}%`;
       conditions.push(
@@ -440,11 +481,17 @@ export class VerifikasiGridService {
         ketCatatRevisi: caterBacaMeter.ketCatatRevisi,
         standAngkatRevisi: caterBacaMeter.standAngkatRevisi,
         standMeterBaruRevisi: caterBacaMeter.standMeterBaruRevisi,
+        mbTanpaStandAngkat: caterBacaMeter.mbTanpaStandAngkat,
+        digitRollover: caterBacaMeter.digitRollover,
         standAngkatLama: waterMeterMutasi.standAngkat,
         standPasang: waterMeterMutasi.standPasang,
+        noMeterBaru: waterMeterMutasi.noMeterBaru,
+        ukuranMeter: pelanggan.ukuranMeter,
+        jumlahDigitAset: waterMeter.jumlahDigit,
         pakaiM3: caterBacaMeter.pakaiM3,
         pakaiTagih: caterBacaMeter.pakaiTagih,
         pakaiLalu: caterBacaMeter.pakaiLalu,
+        tmss: caterBacaMeter.tmss,
         ketCatat: caterBacaMeter.ketCatat,
         sumberCatat: caterBacaMeter.sumberCatat,
         statusVerifikasi: caterBacaMeter.statusVerifikasi,
@@ -463,9 +510,10 @@ export class VerifikasiGridService {
       })
       .from(caterBacaMeter)
       .innerJoin(pelanggan, eq(caterBacaMeter.nolg, pelanggan.nolg))
+      .leftJoin(waterMeter, eq(pelanggan.noMeter, waterMeter.noMeter))
       .leftJoin(
         waterMeterMutasi,
-        eq(caterBacaMeter.waterMeterMutasiId, waterMeterMutasi.id),
+        sql`${waterMeterMutasi.id} = COALESCE(${caterBacaMeter.waterMeterMutasiId}, 'mutasi-' || ${caterBacaMeter.thbl} || '-' || ${caterBacaMeter.nolg})`,
       )
       .leftJoin(petugasCater, eq(caterBacaMeter.petugasId, petugasCater.id))
       .leftJoin(golonganTarif, eq(pelanggan.tarifKode, golonganTarif.kode))
@@ -535,6 +583,48 @@ export class VerifikasiGridService {
         const hasV2 = !isBelumVerif && Boolean(v2);
         const hasV1 = !isBelumVerif && Boolean(v1);
 
+        const guardInfo = evaluasiGuardBacaanMeter({
+          stml: row.stml,
+          stma: row.stma,
+          stmlRevisi: row.stmlRevisi,
+          stmaRevisi: row.stmaRevisi,
+          pakaiM3: row.pakaiM3,
+          pakaiM3Revisi: row.pakaiM3Revisi,
+          pakaiTagih: row.pakaiTagih,
+          tmss: row.tmss,
+          ketCatat: row.ketCatat,
+          ketCatatRevisi: row.ketCatatRevisi,
+          standAngkatRevisi: row.standAngkatRevisi,
+          standMeterBaruRevisi: row.standMeterBaruRevisi,
+          standAngkatMutasi: row.standAngkatLama,
+          mbTanpaStandAngkat: row.mbTanpaStandAngkat,
+          digitRollover: row.digitRollover,
+          ukuranMeter: row.ukuranMeter,
+          jumlahDigitAset: row.jumlahDigitAset,
+          statusVerifikasi: row.statusVerifikasi,
+        });
+
+        // Tampilkan indikator minus riil apabila baris belum dikoreksi manusia & ditahan Guard (mis. MB belum ada Stand Angkat / Stand Mundur)
+        const tampilkanIndikatorMinus =
+          !final &&
+          !guardInfo.lolosDataMurni &&
+          row.pakaiM3Revisi == null &&
+          row.pakaiTagih == null &&
+          guardInfo.stmaEfektif < guardInfo.stmlEfektif;
+
+        const pemakaianTampil = tampilkanIndikatorMinus
+          ? guardInfo.stmaEfektif - guardInfo.stmlEfektif
+          : (asNumber(row.pakaiM3Revisi) ?? asNumber(row.pakaiM3));
+
+        const kodeListGabung = Array.from(
+          new Set([
+            ...(!guardInfo.lolosDataMurni && guardInfo.kodeBlokir
+              ? [guardInfo.kodeBlokir]
+              : []),
+            ...(((row.kodeAnomaliList as string[]) ?? [])),
+          ]),
+        );
+
         return {
           id: row.id,
           pelangganId: row.nolg,
@@ -552,23 +642,34 @@ export class VerifikasiGridService {
             asNumber(row.standAngkatRevisi) ?? asNumber(row.standAngkatLama),
           standMeterBaru:
             asNumber(row.standMeterBaruRevisi) ??
-            (row.ketCatatRevisi === "MB" || row.ketCatat === "MB"
+            (row.ketCatatRevisi === "MB" || row.ketCatat === "MB" || (row.tmss ?? "").trim() === "4"
               ? (asNumber(row.stmaRevisi) ?? asNumber(row.stma))
               : null),
           standPasang: asNumber(row.standPasang),
-          pemakaian: asNumber(row.pakaiM3Revisi) ?? asNumber(row.pakaiM3),
+          noMeterBaru: row.noMeterBaru ?? null,
+          mbTanpaStandAngkat: Boolean(row.mbTanpaStandAngkat),
+          digitRollover: row.digitRollover ?? null,
+          ukuranMeter: row.ukuranMeter ?? null,
+          jumlahDigitAset: row.jumlahDigitAset ?? null,
+          butuhKonfirmasiGuard: !final && !guardInfo.lolosDataMurni,
+          kodeBlokirGuard: !final ? guardInfo.kodeBlokir : null,
+          pesanBlokirGuard: !final ? guardInfo.pesanBlokir : null,
+          pemakaian: pemakaianTampil,
           pemakaianRevisi: asNumber(row.pakaiM3Revisi),
           pemakaianTagihVerif: asNumber(row.pakaiTagih),
           kondisiRevisi: row.ketCatatRevisi,
           pemakaianLalu: asNumber(row.pakaiLalu),
           persentase: hitungDeviasiPersentase(
-            asNumber(row.pakaiM3Revisi) ?? asNumber(row.pakaiM3),
+            pemakaianTampil,
             asNumber(row.pakaiLalu),
           ),
           kondisi: row.ketCatat,
-          isAnomali: Boolean(row.isAnomali),
-          kodeAnomaliUtama: row.kodeAnomaliUtama ?? null,
-          kodeAnomaliList: (row.kodeAnomaliList as string[]) ?? [],
+          isAnomali: Boolean(row.isAnomali) || (!final && !guardInfo.lolosDataMurni),
+          kodeAnomaliUtama:
+            !final && !guardInfo.lolosDataMurni && guardInfo.kodeBlokir
+              ? guardInfo.kodeBlokir
+              : (row.kodeAnomaliUtama ?? null),
+          kodeAnomaliList: kodeListGabung,
           jenisInput:
             row.sumberCatat.startsWith("MANDIRI") || Boolean(row.caterMandiriId)
               ? "KONSUMEN"
@@ -580,19 +681,17 @@ export class VerifikasiGridService {
           tanggalCatat: toIso(row.tglCatat),
           status: mapStatus(row.statusVerifikasi),
           isVerified: final,
-          isCorrected:
-            activeLogs.some(
-              (log) =>
-                log.stage === "FORM_CORRECTION" && log.action === "ADJUST_STAND",
-            ) ||
-            Boolean(
-              row.stmlRevisi ||
-                row.stmaRevisi ||
-                row.standAngkatRevisi ||
-                row.standMeterBaruRevisi ||
-                row.pakaiM3Revisi ||
-                row.ketCatatRevisi,
-            ),
+          isCorrected: Boolean(
+            row.stmlRevisi ||
+              row.stmaRevisi ||
+              row.standAngkatRevisi ||
+              row.standMeterBaruRevisi ||
+              row.pakaiM3Revisi ||
+              row.pakaiTagih ||
+              row.ketCatatRevisi ||
+              row.mbTanpaStandAngkat ||
+              row.digitRollover,
+          ),
           verifiedAt: rejected ? toIso(latestV1?.createdAt) : null,
           catatanVerif: rejected
             ? (latestV1?.alasan ?? row.catatan)
@@ -865,6 +964,22 @@ export class VerifikasiGridService {
         ),
       );
     }
+    if (query.filterPemakaian) {
+      const modePakai = query.filterPemakaian.trim().toUpperCase();
+      const stmlSub = sql`COALESCE(
+        (SELECT c1.stml::numeric FROM cater_baca_meter c1 WHERE c1.nolg = ${caterMandiriPelanggan.nolg} AND c1.thbl = ${caterMandiriPelanggan.thbl} LIMIT 1),
+        (SELECT c2.stma::numeric FROM cater_baca_meter c2 WHERE c2.nolg = ${caterMandiriPelanggan.nolg} AND c2.thbl < ${caterMandiriPelanggan.thbl} ORDER BY c2.thbl DESC LIMIT 1),
+        (SELECT m.stand_pasang::numeric FROM water_meter_mutasi m WHERE m.nolg = ${caterMandiriPelanggan.nolg} ORDER BY m.created_at DESC LIMIT 1),
+        0
+      )`;
+      if (modePakai === "MINUS") {
+        conditions.push(sql`(${caterMandiriPelanggan.stma}::numeric - ${stmlSub}) < 0`);
+      } else if (modePakai === "NOL") {
+        conditions.push(sql`(${caterMandiriPelanggan.stma}::numeric - ${stmlSub}) = 0`);
+      } else if (modePakai === "POSITIF") {
+        conditions.push(sql`(${caterMandiriPelanggan.stma}::numeric - ${stmlSub}) > 0`);
+      }
+    }
     if (query.q) {
       const pattern = `%${query.q}%`;
       conditions.push(
@@ -941,7 +1056,7 @@ export class VerifikasiGridService {
         const stAwal = asNumber(row.stml);
         const stAkhir = asNumber(row.stma);
         const pemakaian =
-          stAwal != null && stAkhir != null && stAkhir >= stAwal
+          stAwal != null && stAkhir != null
             ? stAkhir - stAwal
             : asNumber(row.pakaiM3);
         return {

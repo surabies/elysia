@@ -308,13 +308,13 @@ export function ClosingWizardStepper({
       </div>
 
       {/* ================================================================== */}
-      {/* BARIS 2: 12-COLUMN SPLIT CONTROL PLANE (GATES KIRI · KUNCI KANAN)  */}
+      {/* BARIS 2: 12-COLUMN CONTROL PLANE (GATES KIRI · KUNCI KANAN)        */}
       {/* ================================================================== */}
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12">
         {/* ---------------------------------------------------------------- */}
         {/* PANEL KIRI (7 KOLOM): 5 GERBANG KESIAPAN PRA-CLOSING             */}
         {/* ---------------------------------------------------------------- */}
-        <Card className="overflow-hidden border-border p-0 lg:col-span-7">
+        <Card className="flex h-full flex-col overflow-hidden border-border p-0 lg:col-span-7">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/25 px-4 py-3">
             <div>
               <h2 className="text-xs font-semibold text-foreground sm:text-sm">
@@ -345,7 +345,7 @@ export function ClosingWizardStepper({
             </div>
           </div>
 
-          <div className="divide-y divide-border">
+          <div className="flex-1 divide-y divide-border">
             {/* GATE 1: Ganti Meter (Stand Angkat) */}
             <div
               className={cn(
@@ -730,110 +730,109 @@ export function ClosingWizardStepper({
         </Card>
 
         {/* ---------------------------------------------------------------- */}
-        {/* PANEL KANAN (5 KOLOM): EKSEKUSI KUNCI BUKU & PERIODE BARU        */}
+        {/* PANEL KANAN (5 KOLOM): EKSEKUSI KUNCI BUKU & DRD                 */}
         {/* ---------------------------------------------------------------- */}
-        <div className="space-y-4 lg:col-span-5">
-          {/* KARTU A: KUNCI BUKU & PENERBITAN DRD */}
-          <Card
-            className={cn(
-              'overflow-hidden border p-0',
-              isTerkunci
-                ? 'border-emerald-500/40'
-                : pratinjau?.bisaDitutup
-                  ? 'border-foreground/50'
-                  : 'border-border',
-            )}
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/25 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Lock
-                  className={cn(
-                    'size-3.5',
-                    isTerkunci
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-foreground',
-                  )}
-                />
-                <h2 className="text-xs font-semibold text-foreground sm:text-sm">
-                  {isTerkunci
-                    ? 'Bukti Penguncian Buku DRD'
-                    : 'Eksekusi Kunci Buku & DRD'}
-                </h2>
-              </div>
-
-              <Badge
-                variant={
+        <Card
+          className={cn(
+            'flex h-full flex-col overflow-hidden border p-0 lg:col-span-5',
+            isTerkunci
+              ? 'border-emerald-500/40'
+              : pratinjau?.bisaDitutup
+                ? 'border-foreground/50'
+                : 'border-border',
+          )}
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/25 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Lock
+                className={cn(
+                  'size-3.5',
                   isTerkunci
-                    ? 'green-subtle'
-                    : pratinjau?.bisaDitutup
-                      ? 'blue-subtle'
-                      : 'subtle'
-                }
-                size="sm"
-              >
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-foreground',
+                )}
+              />
+              <h2 className="text-xs font-semibold text-foreground sm:text-sm">
                 {isTerkunci
-                  ? 'LOCKED_BILLING'
-                  : pratinjau?.bisaDitutup
-                    ? 'Siap Kunci'
-                    : 'Menunggu Syarat'}
-              </Badge>
+                  ? 'Bukti Penguncian Buku DRD'
+                  : 'Eksekusi Kunci Buku & DRD'}
+              </h2>
             </div>
 
-            {isTerkunci ? (
-              <div className="space-y-3 p-4">
-                <div className="divide-y divide-border rounded-md border border-border bg-muted/20 text-xs">
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-muted-foreground">Periode</span>
-                    <span className="font-mono font-semibold text-foreground">
-                      {formatPeriodeLabelId(periode)} ({periode})
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-muted-foreground">Ditutup Oleh</span>
-                    <span className="font-medium text-foreground">
-                      {pratinjau?.audit?.ditutupOlehNama ??
-                        pratinjau?.audit?.ditutupById ??
-                        'Admin Billing'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-muted-foreground">Waktu Kunci</span>
-                    <span className="font-mono text-[11px] tabular-nums text-foreground">
-                      {formatTanggalWaktuId(pratinjau?.audit?.ditutupAt)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-muted-foreground">Jatuh Tempo</span>
-                    <span className="font-mono tabular-nums text-foreground">
-                      {tanggalJatuhTempo}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-muted-foreground">Rekening DRD</span>
-                    <span className="font-mono font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                      {formatAngkaId(pratinjau?.perkiraan.jumlahSl)} SL ·{' '}
-                      {formatRupiahId(pratinjau?.perkiraan.totalTagihan)}
-                    </span>
-                  </div>
-                </div>
+            <Badge
+              variant={
+                isTerkunci
+                  ? 'green-subtle'
+                  : pratinjau?.bisaDitutup
+                    ? 'blue-subtle'
+                    : 'subtle'
+              }
+              size="sm"
+            >
+              {isTerkunci
+                ? 'LOCKED_BILLING'
+                : pratinjau?.bisaDitutup
+                  ? 'Siap Kunci'
+                  : 'Menunggu Syarat'}
+            </Badge>
+          </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button asChild variant="outline" size="sm" className="flex-1">
-                    <Link href="/laporan/lap-drd">
-                      <FileSpreadsheet className="size-3.5" />
-                      <span>Buka Laporan DRD Resmi</span>
-                    </Link>
-                  </Button>
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href="/tools-tutup/create-perbandingan">
-                      <span>4. Perbandingan</span>
-                      <ExternalLink className="size-3" />
-                    </Link>
-                  </Button>
+          {isTerkunci ? (
+            <div className="flex flex-1 flex-col justify-between p-4">
+              <div className="divide-y divide-border rounded-md border border-border bg-muted/20 text-xs">
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-muted-foreground">Periode</span>
+                  <span className="font-mono font-semibold text-foreground">
+                    {formatPeriodeLabelId(periode)} ({periode})
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-muted-foreground">Ditutup Oleh</span>
+                  <span className="font-medium text-foreground">
+                    {pratinjau?.audit?.ditutupOlehNama ??
+                      pratinjau?.audit?.ditutupById ??
+                      'Admin Billing'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-muted-foreground">Waktu Kunci</span>
+                  <span className="font-mono text-[11px] tabular-nums text-foreground">
+                    {formatTanggalWaktuId(pratinjau?.audit?.ditutupAt)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-muted-foreground">Jatuh Tempo</span>
+                  <span className="font-mono tabular-nums text-foreground">
+                    {tanggalJatuhTempo}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-muted-foreground">Rekening DRD</span>
+                  <span className="font-mono font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                    {formatAngkaId(pratinjau?.perkiraan.jumlahSl)} SL ·{' '}
+                    {formatRupiahId(pratinjau?.perkiraan.totalTagihan)}
+                  </span>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-3.5 p-4">
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Button asChild variant="outline" size="sm" className="flex-1">
+                  <Link href="/laporan/lap-drd">
+                    <FileSpreadsheet className="size-3.5" />
+                    <span>Buka Laporan DRD Resmi</span>
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/tools-tutup/create-perbandingan">
+                    <span>4. Perbandingan</span>
+                    <ExternalLink className="size-3" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-1 flex-col justify-between p-4">
+              <div className="space-y-3.5">
                 {/* Ringkasan Angka Buku */}
                 <div className="divide-y divide-border rounded-md border border-border bg-muted/20 text-xs">
                   <div className="flex items-center justify-between px-3 py-2">
@@ -921,176 +920,175 @@ export function ClosingWizardStepper({
                     , dan tanggal jatuh tempo.
                   </span>
                 </label>
-
-                <div className="space-y-1.5">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="default"
-                    className="w-full transition-all duration-150"
-                    onClick={() => onOpenDialog('closing')}
-                    disabled={
-                      loading ||
-                      actionLoading ||
-                      !pratinjau?.bisaDitutup ||
-                      !isDueDateValid ||
-                      !reviewConfirmed
-                    }
-                  >
-                    <Lock className="size-4" />
-                    <span>Kunci Buku &amp; Terbitkan DRD</span>
-                  </Button>
-
-                  {/* Tinggi baris status dikunci (min-h-4) agar klik checkbox tidak menggeser kartu di bawahnya */}
-                  <p
-                    className={cn(
-                      'min-h-4 text-center text-[11px] transition-colors duration-150',
-                      !loading &&
-                        remainingGatesCount === 0 &&
-                        pratinjau?.bisaDitutup &&
-                        reviewConfirmed
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : !loading &&
-                            remainingGatesCount === 0 &&
-                            pratinjau?.bisaDitutup &&
-                            !reviewConfirmed
-                          ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-muted-foreground',
-                    )}
-                  >
-                    {loading ? (
-                      'Memeriksa status kesiapan periode...'
-                    ) : remainingGatesCount > 0 ? (
-                      <>
-                        Selesaikan{' '}
-                        <strong className="font-mono text-foreground">
-                          {remainingGatesCount}
-                        </strong>{' '}
-                        syarat kesiapan di panel kiri untuk mengaktifkan kunci
-                        buku.
-                      </>
-                    ) : pratinjau?.bisaDitutup && !reviewConfirmed ? (
-                      'Centang pernyataan verifikasi di atas untuk melanjutkan.'
-                    ) : pratinjau?.bisaDitutup && reviewConfirmed ? (
-                      'Seluruh syarat terpenuhi — siap mengunci buku & menerbitkan DRD.'
-                    ) : (
-                      ''
-                    )}
-                  </p>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {/* KARTU B: INISIALISASI PERIODE BARU (CARRY-FORWARD N+1) */}
-          <Card
-            className={cn(
-              'overflow-hidden border p-4',
-              isTerkunci ? 'border-border bg-card' : 'border-border bg-muted/20',
-              (highlightStage === 'create-bulan-baru' ||
-                highlightStage === 'sync-pelanggan-baru' ||
-                highlightStage === 'update-data-pelanggan') &&
-                'ring-1 ring-foreground/30',
-            )}
-          >
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-0.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-xs font-semibold text-foreground sm:text-sm">
-                      Siklus Baru · {formatPeriodeLabelId(targetBulanBaru)}
-                    </h3>
-                    <Badge
-                      variant={
-                        hasNextPeriod
-                          ? 'green-subtle'
-                          : isTerkunci
-                            ? 'blue-subtle'
-                            : 'subtle'
-                      }
-                      size="sm"
-                      className="font-mono"
-                    >
-                      {hasNextPeriod
-                        ? `${targetBulanBaru} Aktif`
-                        : isTerkunci
-                          ? 'Siap Dibuka'
-                          : 'Terkunci Gate'}
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    Carry-forward otomatis stand akhir {periode} menjadi stand
-                    awal DPM {targetBulanBaru} (pelanggan DICABUT dilewati).
-                  </p>
-                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="mt-4 space-y-1.5">
                 <Button
                   type="button"
-                  variant={hasNextPeriod ? 'outline' : 'default'}
-                  size="sm"
-                  disabled={!isTerkunci || actionLoading}
-                  onClick={() => onOpenDialog('bulan-baru')}
-                  className={cn(!hasNextPeriod && 'flex-1')}
+                  variant="destructive"
+                  size="default"
+                  className="w-full transition-all duration-150"
+                  onClick={() => onOpenDialog('closing')}
+                  disabled={
+                    loading ||
+                    actionLoading ||
+                    !pratinjau?.bisaDitutup ||
+                    !isDueDateValid ||
+                    !reviewConfirmed
+                  }
                 >
-                  <Sparkles className="size-3.5" />
-                  <span>
-                    {hasNextPeriod
-                      ? `Perbarui DPM ${targetBulanBaru}`
-                      : `Buka Jadwal ${formatPeriodeLabelId(targetBulanBaru)}`}
-                  </span>
+                  <Lock className="size-4" />
+                  <span>Kunci Buku &amp; Terbitkan DRD</span>
                 </Button>
 
-                {hasNextPeriod && onSwitchPeriode && (
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => onSwitchPeriode(targetBulanBaru)}
-                  >
-                    <span>Beralih ke {targetBulanBaru}</span>
-                    <ArrowRight className="size-3.5" />
-                  </Button>
-                )}
+                {/* Tinggi baris status dikunci (min-h-4) agar klik checkbox tidak menggeser kartu di bawahnya */}
+                <p
+                  className={cn(
+                    'min-h-4 text-center text-[11px] transition-colors duration-150',
+                    !loading &&
+                      remainingGatesCount === 0 &&
+                      pratinjau?.bisaDitutup &&
+                      reviewConfirmed
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : !loading &&
+                          remainingGatesCount === 0 &&
+                          pratinjau?.bisaDitutup &&
+                          !reviewConfirmed
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-muted-foreground',
+                  )}
+                >
+                  {loading ? (
+                    'Memeriksa status kesiapan periode...'
+                  ) : remainingGatesCount > 0 ? (
+                    <>
+                      Selesaikan{' '}
+                      <strong className="font-mono text-foreground">
+                        {remainingGatesCount}
+                      </strong>{' '}
+                      syarat kesiapan di panel kiri untuk mengaktifkan kunci
+                      buku.
+                    </>
+                  ) : pratinjau?.bisaDitutup && !reviewConfirmed ? (
+                    'Centang pernyataan verifikasi di atas untuk melanjutkan.'
+                  ) : pratinjau?.bisaDitutup && reviewConfirmed ? (
+                    'Seluruh syarat terpenuhi — siap mengunci buku & menerbitkan DRD.'
+                  ) : (
+                    ''
+                  )}
+                </p>
               </div>
-
-              {hasNextPeriod && (
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2.5">
-                  <span className="text-[11px] text-muted-foreground">
-                    Utilitas DPM {targetBulanBaru}:
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      disabled={actionLoading}
-                      onClick={() => onExecuteStageAction('sync-pelanggan-baru')}
-                    >
-                      <Check className="size-3" />
-                      <span>Sinkron PBPK</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      disabled={actionLoading}
-                      onClick={() =>
-                        onExecuteStageAction('update-data-pelanggan')
-                      }
-                    >
-                      <RefreshCw className="size-3" />
-                      <span>Urutkan Rute</span>
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
-          </Card>
-        </div>
+          )}
+        </Card>
       </div>
+
+      {/* ================================================================== */}
+      {/* BARIS 3: INISIALISASI PERIODE BARU (CARRY-FORWARD N+1)             */}
+      {/* ================================================================== */}
+      <Card
+        className={cn(
+          'overflow-hidden border p-4',
+          isTerkunci ? 'border-border bg-card' : 'border-border bg-muted/20',
+          (highlightStage === 'create-bulan-baru' ||
+            highlightStage === 'sync-pelanggan-baru' ||
+            highlightStage === 'update-data-pelanggan') &&
+            'ring-1 ring-foreground/30',
+        )}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-xs font-semibold text-foreground sm:text-sm">
+                Siklus Baru · {formatPeriodeLabelId(targetBulanBaru)}
+              </h3>
+              <Badge
+                variant={
+                  hasNextPeriod
+                    ? 'green-subtle'
+                    : isTerkunci
+                      ? 'blue-subtle'
+                      : 'subtle'
+                }
+                size="sm"
+                className="font-mono"
+              >
+                {hasNextPeriod
+                  ? `${targetBulanBaru} Aktif`
+                  : isTerkunci
+                    ? 'Siap Dibuka'
+                    : 'Terkunci Gate'}
+              </Badge>
+            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Carry-forward otomatis stand akhir {periode} menjadi stand awal DPM{' '}
+              {targetBulanBaru} (pelanggan DICABUT dilewati).
+            </p>
+          </div>
+
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant={hasNextPeriod ? 'outline' : 'default'}
+              size="sm"
+              disabled={!isTerkunci || actionLoading}
+              onClick={() => onOpenDialog('bulan-baru')}
+              className={cn(!hasNextPeriod && 'min-w-44')}
+            >
+              <Sparkles className="size-3.5" />
+              <span>
+                {hasNextPeriod
+                  ? `Perbarui DPM ${targetBulanBaru}`
+                  : `Buka Jadwal ${formatPeriodeLabelId(targetBulanBaru)}`}
+              </span>
+            </Button>
+
+            {hasNextPeriod && onSwitchPeriode && (
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={() => onSwitchPeriode(targetBulanBaru)}
+              >
+                <span>Beralih ke {targetBulanBaru}</span>
+                <ArrowRight className="size-3.5" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {hasNextPeriod && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2.5">
+            <span className="text-[11px] text-muted-foreground">
+              Utilitas DPM {targetBulanBaru}:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                disabled={actionLoading}
+                onClick={() => onExecuteStageAction('sync-pelanggan-baru')}
+              >
+                <Check className="size-3" />
+                <span>Sinkron PBPK</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                disabled={actionLoading}
+                onClick={() =>
+                  onExecuteStageAction('update-data-pelanggan')
+                }
+              >
+                <RefreshCw className="size-3" />
+                <span>Urutkan Rute</span>
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

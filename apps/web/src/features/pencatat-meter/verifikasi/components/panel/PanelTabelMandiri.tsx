@@ -18,6 +18,7 @@ import {
   Task01Icon,
 } from "@/components/icons/ikon-lucide";
 import { HugeiconsIcon } from "@/components/icons/IconRenderer";
+import { TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -155,6 +156,7 @@ const LABEL_STATUS: Record<StatusMandiri, string> = {
 interface FilterMandiri {
   q: string;
   status: string;
+  filterPemakaian: string;
   pageSize: number;
 }
 
@@ -194,6 +196,7 @@ export function PanelTabelMandiri({
   const [filter, setFilter] = React.useState<FilterMandiri>({
     q: "",
     status: "",
+    filterPemakaian: "",
     pageSize: 100,
   });
   const [cari, setCari] = React.useState("");
@@ -229,6 +232,7 @@ export function PanelTabelMandiri({
       pageSize: filter.pageSize,
       periode: periode ?? undefined,
       status: filter.status || undefined,
+      filterPemakaian: filter.filterPemakaian || undefined,
       q: filter.q || undefined,
     })
       .then(({ rows: r, total: t }) => {
@@ -355,7 +359,7 @@ export function PanelTabelMandiri({
 
   React.useEffect(() => {
     setFilterQuery(filterMandiriToQuery(filter));
-  }, [filter.status]);
+  }, [filter.status, filter.filterPemakaian]);
 
   const toolbarContent = (
     <div className="flex items-center justify-between w-full min-w-0 overflow-visible py-1 gap-2">
@@ -393,15 +397,34 @@ export function PanelTabelMandiri({
           </SelectContent>
         </Select>
 
-        {/* REUI Filters Bar (Status Laporan Mandiri) */}
-        <div className="flex items-center">
+        {/* REUI Filters Bar (Status & Pemakaian Laporan Mandiri) */}
+        <div className="flex items-center gap-1.5">
+          {!filter.filterPemakaian && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setFilter((f) => ({ ...f, filterPemakaian: "MINUS" }))
+              }
+              title="Tampilkan hanya laporan mandiri dengan pemakaian minus (< 0 m³)"
+              className="h-8 gap-1.5 px-2.5 text-xs font-normal border-border/60 bg-background hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer shrink-0"
+            >
+              <TrendingDown className="size-3.5 text-rose-500" />
+              <span>Minus (&lt; 0)</span>
+            </Button>
+          )}
           <Filters
             fields={filterSchema}
             query={filterQuery}
             onQueryChange={(nextQuery) => {
               setFilterQuery(nextQuery);
               const updated = queryToFilterMandiri(nextQuery, filter);
-              setFilter((f) => ({ ...f, status: updated.status }));
+              setFilter((f) => ({
+                ...f,
+                status: updated.status,
+                filterPemakaian: updated.filterPemakaian,
+              }));
             }}
             showClear
             size="sm"

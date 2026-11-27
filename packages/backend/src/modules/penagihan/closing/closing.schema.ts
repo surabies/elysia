@@ -57,3 +57,7 @@ export const simpanBacaanPbpkBodySchema = t.Object({
     { minItems: 1 }
   ),
 });
+
+export const pbpkPelangganParamsSchema = t.Object({
+  nolg: t.String({ minLength: 3 }),
+});

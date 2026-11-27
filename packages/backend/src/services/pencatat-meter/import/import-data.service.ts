@@ -21,6 +21,7 @@ import {
   caterBacaMeter,
   caterVerifikasiLog,
   waterMeter,
+  waterMeterMutasi,
   daftarCatat,
   petugasCater,
   ruteCater,
@@ -35,9 +36,9 @@ import {
   uploadToCloudinary,
   type ModulFoto,
   type JenisFoto,
-} from "@cater/backend/lib/cloudinary";
-import { evaluasiAnomaliBaris, type ReadingInput } from "@cater/backend/domain/cater/anomali-evaluator";
-import { aturanAnomaliService } from "@/server/services/cater/aturan-anomali.service";
+} from "../../../lib/cloudinary";
+import { evaluasiAnomaliBaris, type ReadingInput } from "../../../domain/cater/anomali-evaluator";
+import { aturanAnomaliService } from "../cater/aturan-anomali.service";
 
 export interface ParsedPhotoInfo {
   thbl: string;
@@ -628,11 +629,15 @@ export class ImportDataService {
       const tmssRaw = tmssIdx >= 0 ? parts[tmssIdx]?.trim() : '-';
       const tmss = tmssRaw === '' ? '-' : tmssRaw;
       const ketCatat = ketCatatIdx >= 0 && parts[ketCatatIdx]?.trim() ? parts[ketCatatIdx].trim() : 'Normal';
-      const petugasId =
-        (petugasIdx >= 0 && parts[petugasIdx]?.trim()) ||
-        (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) ||
-        undefined;
-      const namaPetugas = (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) || petugasId;
+      const rawPetugasId = (petugasIdx >= 0 && parts[petugasIdx]?.trim()) || '';
+      const rawNamaPetugas = (namaPetugasIdx >= 0 && parts[namaPetugasIdx]?.trim()) || '';
+      const cleanPetugasId =
+        rawPetugasId && rawPetugasId !== '-' && rawPetugasId !== '0' ? rawPetugasId : undefined;
+      const cleanNamaPetugas =
+        rawNamaPetugas && rawNamaPetugas !== '-' && rawNamaPetugas !== '0' ? rawNamaPetugas : undefined;
+
+      const petugasId = cleanPetugasId || cleanNamaPetugas || undefined;
+      const namaPetugas = cleanNamaPetugas || cleanPetugasId;
       const kdWm = kdWmIdx >= 0 ? parts[kdWmIdx]?.trim() : undefined;
       const wil = wilIdx >= 0 ? parts[wilIdx]?.trim() : undefined;
       const ruteKode = ruteIdx >= 0 ? parts[ruteIdx]?.trim() : undefined;
@@ -836,14 +841,20 @@ export class ImportDataService {
             await tx.insert(ruteCater).values(routeRecords).onConflictDoNothing();
           }
 
-          // 2. Pastikan petugas_cater terdaftar untuk mencegah FK violation
-          const uniquePetugas = Array.from(new Set(uniqueBatch.map((b) => b.petugasId).filter(Boolean))) as string[];
+          // 2. Pastikan petugas_cater terdaftar untuk mencegah FK violation (abaikan ID '-' atau kosong)
+          const uniquePetugas = Array.from(
+            new Set(
+              uniqueBatch
+                .map((b) => b.petugasId)
+                .filter((id): id is string => Boolean(id && id !== '-' && id !== '0' && id.trim() !== ''))
+            )
+          );
           if (uniquePetugas.length > 0) {
             const petugasRecords = uniquePetugas.map((id) => {
               const itemMatch = uniqueBatch.find((b) => b.petugasId === id);
               return {
                 id,
-                nama: itemMatch?.namaPetugas || id,
+                nama: itemMatch?.namaPetugas && itemMatch.namaPetugas !== '-' ? itemMatch.namaPetugas : id,
                 aktif: true,
               };
             });
@@ -930,7 +941,7 @@ export class ImportDataService {
                 periode: thbl,
                 nolg: item.nolg,
                 ruteKode: ruteUpper,
-                petugasId: item.petugasId || null,
+                petugasId: item.petugasId && item.petugasId !== '-' ? item.petugasId : null,
                 urutan: 999,
                 standAwal: String(item.stml ?? 0),
                 pakaiLalu: String(item.pakaiLalu ?? 0),
@@ -1051,27 +1062,44 @@ export class ImportDataService {
             ? uniqueBatch
             : uniqueBatch.filter((item) => !existingNolgSet.has(item.nolg));
 
+          const draftMutasiRows: (typeof waterMeterMutasi.$inferInsert)[] = [];
+
           const bulkRecords = itemsToProcess.map((item) => {
+            const tmss = item.tmss?.trim() || '-';
+            const ketUpper = (item.ketCatat ?? '').trim().toUpperCase();
+            const isMb = tmss === '4' || ketUpper === 'MB';
+            const isMudaKembali =
+              tmss.toUpperCase() === 'U' ||
+              ketUpper === 'MUDA KEMBALI' ||
+              ketUpper === 'MUDA_KEMBALI';
+            const isNormalLike =
+              !isMb &&
+              !isMudaKembali &&
+              (tmss === '-' || tmss === '' || ketUpper === 'NORMAL');
+
             let pakaiM3 = item.pakaiM3;
             if (pakaiM3 === undefined || isNaN(pakaiM3)) {
               if (item.stma >= item.stml) {
                 pakaiM3 = item.stma - item.stml;
+              } else if (isNormalLike) {
+                // Pertahankan angka minus riil pada kondisi Normal agar memicu alert merah & ditahan Guard
+                pakaiM3 = item.stma - item.stml;
               } else {
-                pakaiM3 = item.pakaiLalu !== undefined && item.pakaiLalu >= 0 ? item.pakaiLalu : 0;
+                pakaiM3 =
+                  item.pakaiLalu !== undefined && item.pakaiLalu >= 0
+                    ? item.pakaiLalu
+                    : 0;
               }
-            }
-            if (pakaiM3 < 0) {
+            } else if (pakaiM3 < 0 && !isNormalLike) {
               pakaiM3 = 0;
             }
 
-            const tmss = item.tmss?.trim() || '-';
-            const isMb = tmss === '4' || item.ketCatat?.trim().toUpperCase() === 'MB';
             const tglCatat = item.tglCatat ? new Date(item.tglCatat) : new Date();
-            const isStandMundur = item.stma < item.stml && !isMb;
+            const isStandMundur = item.stma < item.stml && !isMb && !isMudaKembali;
             const defaultCatatan = isStandMundur
               ? `Import LapDataMeter (Anomali Stand: STMA ${item.stma} < STML ${item.stml}, Pakai=${pakaiM3}m³)`
               : isMb
-                ? `Import LapDataMeter ${item.thbl} (Meter Baru / Penggantian Meter)`
+                ? `Import LapDataMeter ${item.thbl} (Meter Baru / Wajib Konfirmasi Stand Angkat atau Override)`
                 : `Import LapDataMeter ${item.thbl}`;
             const catatan = item.catatan || defaultCatatan;
 
@@ -1080,7 +1108,10 @@ export class ImportDataService {
                 stml: Number(item.stml),
                 stma: Number(item.stma),
                 pakaiM3: Number(pakaiM3),
-                pakaiLalu: item.pakaiLalu !== undefined && item.pakaiLalu !== null ? Number(item.pakaiLalu) : null,
+                pakaiLalu:
+                  item.pakaiLalu !== undefined && item.pakaiLalu !== null
+                    ? Number(item.pakaiLalu)
+                    : null,
                 kodeTmss: tmss,
               },
               rules,
@@ -1088,20 +1119,51 @@ export class ImportDataService {
               versi
             );
 
+            let mutasiIdForRow: string | null = null;
+            if (isMb) {
+              mutasiIdForRow = `mutasi-${item.thbl}-${item.nolg}`;
+              const custExisting = existingCustMap.get(item.nolg);
+              draftMutasiRows.push({
+                id: mutasiIdForRow,
+                nolg: item.nolg,
+                periode: Number(item.thbl),
+                alasan: 'LAINNYA',
+                keterangan:
+                  'Terdeteksi otomatis dari Import LapDataMeter kondisi MB; menunggu konfirmasi Stand Angkat / Override operator.',
+                noMeterLama: custExisting?.noMeter ?? '-',
+                standAngkat: null,
+                noMeterBaru: null,
+                standPasang: 0,
+                statusVerifikasi: 'DATA_METER_BELUM_LENGKAP',
+              });
+              evalRes.isAnomali = true;
+              if (!evalRes.kodeList.includes('MB_BUTUH_STAND_ANGKAT')) {
+                evalRes.kodeList.unshift('MB_BUTUH_STAND_ANGKAT');
+              }
+              evalRes.kodeUtama = 'MB_BUTUH_STAND_ANGKAT';
+            }
+
+            const statusVerifImport =
+              isMb || (isStandMundur && isNormalLike) || pakaiM3 < 0
+                ? 'ANOMALY_NEGATIVE'
+                : 'SUBMITTED';
+
             return {
               thbl: item.thbl,
               nolg: item.nolg,
               ruteKode: item.ruteKode || null,
-              petugasId: item.petugasId || null,
+              petugasId: item.petugasId && item.petugasId !== '-' ? item.petugasId : null,
               stml: String(item.stml),
               stma: String(item.stma),
               pakaiM3: String(pakaiM3),
               pakaiLalu: item.pakaiLalu !== undefined ? String(item.pakaiLalu) : null,
               tmss,
               ketCatat: item.ketCatat || 'Normal',
+              waterMeterMutasiId: mutasiIdForRow,
+              mbTanpaStandAngkat: false,
               metodeCatat: 'ONSITE',
               sumberCatat: 'LAPDATAMETER',
-              statusVerifikasi: 'SUBMITTED',
+              statusVerifikasi: statusVerifImport,
               isAnomali: evalRes.isAnomali,
               kodeAnomaliUtama: evalRes.kodeUtama,
               kodeAnomaliList: evalRes.kodeList,
@@ -1112,6 +1174,15 @@ export class ImportDataService {
               updatedAt: new Date(),
             };
           });
+
+          if (draftMutasiRows.length > 0) {
+            for (let i = 0; i < draftMutasiRows.length; i += 500) {
+              await tx
+                .insert(waterMeterMutasi)
+                .values(draftMutasiRows.slice(i, i + 500))
+                .onConflictDoNothing({ target: waterMeterMutasi.id });
+            }
+          }
 
           // 8. Eksekusi penyimpanan data dalam chunks 1.000 baris
           const CHUNK_SIZE = 1000;
@@ -1132,8 +1203,11 @@ export class ImportDataService {
                     pakaiLalu: sql`excluded.pakai_lalu`,
                     tmss: sql`excluded.tmss`,
                     ketCatat: sql`excluded.ket_catat`,
+                    waterMeterMutasiId: sql`excluded.water_meter_mutasi_id`,
+                    mbTanpaStandAngkat: false,
+                    digitRollover: null,
                     sumberCatat: sql`excluded.sumber_catat`,
-                    statusVerifikasi: 'SUBMITTED',
+                    statusVerifikasi: sql`excluded.status_verifikasi`,
                     stmlRevisi: null,
                     stmaRevisi: null,
                     pakaiM3Revisi: null,

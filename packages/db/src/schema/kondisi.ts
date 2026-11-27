@@ -1,6 +1,6 @@
 import { pgTable, varchar, boolean, text, timestamp } from 'drizzle-orm/pg-core';
 
-export type ModeHitungKondisi = 'SELISIH_FISIK' | 'NOL' | 'TAKSASI_HISTORI' | 'METER_BARU' | 'KREDIT_TAKSASI';
+export type ModeHitungKondisi = 'SELISIH_FISIK' | 'NOL' | 'TAKSASI_HISTORI' | 'METER_BARU' | 'KREDIT_TAKSASI' | 'MUDA_KEMBALI';
 
 // Master Data Kamus Kondisi Catat (Keterangan Catat & Kode Kelainan STI)
 export const masterKondisiCatat = pgTable('master_kondisi_catat', {
