@@ -42,6 +42,8 @@ export const PEMAKAIAN_MINIMUM_PERDIR = 5;
  */
 export const KONDISI_TAKSASI_OTOMATIS = new Set<string>([
   'RUMAH_KOSONG',
+  'RMH_TANAH_KSG',
+  'TK',
   'METER_RUSAK',
   'METER_MATI_ADA_AIR',
   'MATI_ADA_AIR',
@@ -49,13 +51,18 @@ export const KONDISI_TAKSASI_OTOMATIS = new Set<string>([
   'METER_TERBALIK',
   'METER_DALAM_AIR',
   'LOS_METER',
+  'MT_DIBOLAK_BALIK',
+  'DIOPREK_DICOLOK_LIDI',
   'BMK_BMB',
   'TTB',
   'MTA',
+  'MTK',
   'TERHALANG',
   'ADA_ANJING',
+  'JAUH',
   'DK',
   'DICABUT',
+  'DI_CABUT',
 ]);
 
 export function apakahKondisiTaksasiOtomatis(

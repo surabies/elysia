@@ -1,7 +1,8 @@
-	-	Normal	
+No	Kode Alasan	Nama Alasan
+1	-	Normal	
 2	0	REV.PENGADUAN	
 3	1	TK	
-4	2	DK	
+4	2	DK	di 
 5	3	MTA	
 6	4	MB	
 7	5	TTB	

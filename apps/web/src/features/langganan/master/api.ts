@@ -119,10 +119,33 @@ export const masterApi = {
       }
       return json.data ?? [];
     },
+    async create(payload: {
+      kodeTmss: string;
+      nama: string;
+      kategori: string;
+      modeHitung: string;
+      deskripsi?: string | null;
+      aktif: boolean;
+      isKendalaAkses: boolean;
+      triggerBacaMandiri: boolean;
+    }) {
+      const res = await fetch("/api/master/kelainan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Gagal menambah kode kelainan baru");
+      }
+      return json.data;
+    },
     async update(
       kodeTmss: string,
       payload: {
         nama: string;
+        kategori?: string;
+        modeHitung?: string;
         deskripsi?: string | null;
         aktif: boolean;
         isKendalaAkses: boolean;

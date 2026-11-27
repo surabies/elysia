@@ -1899,20 +1899,25 @@ export function CanvasTabelVerifikasi({
 
       if (!onSimpanKoreksi) return;
 
-      // 2. Daftar 14 Kondisi Taksasi Otomatis
+      // 2. Daftar Kondisi Taksasi Otomatis
       const KONDISI_TAKSASI = new Set([
         "RUMAH_KOSONG",
+        "TK",
         "METER_RUSAK",
         "METER_MATI_ADA_AIR",
         "METER_MUNDUR",
         "METER_TERBALIK",
         "METER_DALAM_AIR",
         "LOS_METER",
+        "MT_DIBOLAK_BALIK",
+        "DIOPREK_DICOLOK_LIDI",
         "BMK_BMB",
         "TTB",
         "MTA",
+        "MTK",
         "TERHALANG",
         "ADA_ANJING",
+        "JAUH",
         "DK",
         "DICABUT",
       ]);

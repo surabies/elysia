@@ -88,63 +88,91 @@ function whereKondisi(value: string) {
       return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('TIDAK DIPAKAI', 'TIDAK_DIPAKAI')`;
     case "RUMAH_KOSONG":
     case "RUMAH KOSONG":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('RUMAH KOSONG', 'RUMAH_KOSONG', 'RMH/TANAH KSG', 'TANAH KOSONG')`;
+    case "RMH/TANAH KSG":
+    case "RMH_TANAH_KSG":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('RMH/TANAH KSG', 'RUMAH KOSONG', 'RUMAH_KOSONG', 'TANAH KOSONG') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'R'))`;
+    case "TK":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'TK' OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = '1'))`;
     case "STAND_TEMPEL":
     case "STAND TEMPEL":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('STAND TEMPEL', 'STAND_TEMPEL')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('STAND TEMPEL', 'STAND_TEMPEL')`;
     case "STAND_KONSUMEN":
     case "STAND-KONSUMEN":
     case "STAND KONSUMEN":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('STAND-KONSUMEN', 'STAND KONSUMEN', 'STAND_KONSUMEN')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('STAND-KONSUMEN', 'STAND KONSUMEN', 'STAND_KONSUMEN')`;
+    case "STAND-KONSUMEN/PENGADUAN":
+    case "STAND_KONSUMEN_PENGADUAN":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('STAND-KONSUMEN/PENGADUAN', 'STAND_KONSUMEN_PENGADUAN') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'W'))`;
     case "METER_RUSAK":
     case "METER RUSAK":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('METER RUSAK', 'METER_RUSAK', 'RUSAK')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('METER RUSAK', 'METER_RUSAK', 'RUSAK')`;
     case "METER_MATI_ADA_AIR":
     case "MATI ADA AIR":
     case "METER MATI AIR ADA":
     case "METER MATI":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('MATI ADA AIR', 'METER MATI AIR ADA', 'METER_MATI_ADA_AIR', 'METER MATI')`;
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('METER MATI AIR ADA', 'MATI ADA AIR', 'METER_MATI_ADA_AIR', 'METER MATI') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = '7'))`;
     case "METER_MUNDUR":
     case "METER MUNDUR":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('METER MUNDUR', 'METER_MUNDUR')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('METER MUNDUR', 'METER_MUNDUR')`;
     case "METER_TERBALIK":
     case "METER TERBALIK":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('METER TERBALIK', 'METER_TERBALIK')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('METER TERBALIK', 'METER_TERBALIK')`;
+    case "MT DIBOLAK BALIK":
+    case "MT_DIBOLAK_BALIK":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('MT DIBOLAK BALIK', 'MT_DIBOLAK_BALIK') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'C'))`;
+    case "DIOPREK/DICOLOK LIDI":
+    case "DIOPREK_DICOLOK_LIDI":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('DIOPREK/DICOLOK LIDI', 'DIOPREK_DICOLOK_LIDI') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'J'))`;
     case "METER_DALAM_AIR":
     case "METER DALAM AIR":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('METER DALAM AIR', 'METER_DALAM_AIR')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('METER DALAM AIR', 'METER_DALAM_AIR')`;
     case "LOS_METER":
     case "LOS METER":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('LOS METER', 'LOS_METER')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('LOS METER', 'LOS_METER')`;
     case "BMK_BMB":
     case "BMK/BMB":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('BMK/BMB', 'BMK_BMB', 'BMK', 'BMB')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('BMK/BMB', 'BMK_BMB', 'BMK', 'BMB')`;
     case "TTB":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) = 'TTB'`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'TTB'`;
     case "MTA":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) = 'MTA'`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'MTA'`;
+    case "MTK":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'MTK' OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'I'))`;
     case "TERHALANG":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('TERHALANG', 'TERHALANG ')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('TERHALANG', 'TERHALANG ')`;
+    case "JAUH":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'JAUH' OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'V'))`;
     case "TIDAK_ADA_AIR":
     case "TIDAK ADA AIR":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('TIDAK ADA AIR', 'TIDAK_ADA_AIR')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('TIDAK ADA AIR', 'TIDAK_ADA_AIR')`;
     case "ADA_ANJING":
     case "ADA ANJING":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('ADA ANJING', 'ADA_ANJING')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('ADA ANJING', 'ADA_ANJING')`;
     case "DK":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) = 'DK'`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'DK'`;
     case "MB":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) = 'MB'`;
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'MB' OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = '4'))`;
     case "MUDA_KEMBALI":
     case "MUDA KEMBALI":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('MUDA KEMBALI', 'MUDA_KEMBALI')`;
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('MUDA KEMBALI', 'MUDA_KEMBALI') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'U'))`;
     case "REV_PENCATAT":
     case "REV.PENCATAT":
     case "REVISI PENCATAT":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('REV.PENCATAT', 'REV_PENCATAT', 'REVISI PENCATAT')`;
+      return sql`upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('REV.PENCATAT', 'REV_PENCATAT', 'REVISI PENCATAT')`;
+    case "REV_PENGADUAN":
+    case "REV.PENGADUAN":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('REV.PENGADUAN', 'REV_PENGADUAN') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = '0'))`;
+    case "PEMBULATAN":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'PEMBULATAN' OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'G'))`;
+    case "STAN CICILAN":
+    case "STAN_CICILAN":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('STAN CICILAN', 'STAN_CICILAN') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'K'))`;
+    case "KELEBIHAN":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) = 'KELEBIHAN' OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'M'))`;
     case "DICABUT":
     case "DI CABUT":
-      return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('DICABUT', 'DI CABUT')`;
+    case "DI_CABUT":
+      return sql`(upper(trim(coalesce(${caterBacaMeter.ketCatatRevisi}, ${caterBacaMeter.ketCatat}))) IN ('DI CABUT', 'DICABUT', 'DI_CABUT') OR (${caterBacaMeter.ketCatatRevisi} IS NULL AND trim(${caterBacaMeter.tmss}) = 'D'))`;
     case "TAKSASI_PERDIR":
     case "TAKSASI PERDIR":
       return sql`upper(trim(${caterBacaMeter.ketCatat})) IN ('TAKSASI PERDIR', 'TAKSASI_PERDIR')`;

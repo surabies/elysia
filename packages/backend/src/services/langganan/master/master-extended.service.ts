@@ -22,6 +22,8 @@ import {
 } from '@cater/db';
 import { hashPassword } from 'better-auth/crypto';
 import type { UserEffectivePermission } from '@cater/types';
+import type { ModeHitungKondisi } from '@cater/db';
+import { aturanAnomaliService } from '../../pencatat-meter/cater/aturan-anomali.service';
 
 export interface PelangganUrutanItem {
   nolg: string;
@@ -37,6 +39,7 @@ export interface KelainanMasterItem {
   kodeTmss: string;
   nama: string;
   kategori: string;
+  modeHitung: ModeHitungKondisi | string;
   isKendalaAkses: boolean;
   triggerBacaMandiri: boolean;
   deskripsi: string | null;
@@ -566,6 +569,7 @@ export class MasterExtendedService {
       kodeTmss: k.kodeTmss,
       nama: k.nama,
       kategori: k.kategori,
+      modeHitung: k.modeHitung,
       isKendalaAkses: k.isKendalaAkses,
       triggerBacaMandiri: k.triggerBacaMandiri,
       deskripsi: k.deskripsi,
@@ -574,18 +578,101 @@ export class MasterExtendedService {
   }
 
   /**
-   * 4. Update status atau data kelainan
+   * 3b. Tambah kode kelainan / kondisi catat baru & sinkronkan pemetaan anomali SSOT
+   */
+  async tambahKelainan(input: {
+    kodeTmss: string;
+    nama: string;
+    kategori: string;
+    modeHitung: string;
+    isKendalaAkses?: boolean;
+    triggerBacaMandiri?: boolean;
+    deskripsi?: string | null;
+    aktif?: boolean;
+  }): Promise<KelainanMasterItem> {
+    const cleanKode = input.kodeTmss.trim().toUpperCase();
+    const cleanNama = input.nama.trim();
+    if (!cleanKode) {
+      throw new Error('Kode kelainan (Kode STI/TMSS) wajib diisi dan tidak boleh berupa spasi kosong.');
+    }
+    if (!cleanNama) {
+      throw new Error('Nama kondisi/kelainan wajib diisi.');
+    }
+
+    const [existing] = await db
+      .select({ kodeTmss: masterKondisiCatat.kodeTmss })
+      .from(masterKondisiCatat)
+      .where(eq(masterKondisiCatat.kodeTmss, cleanKode));
+
+    if (existing) {
+      throw new Error(`Kode kelainan '${cleanKode}' sudah terdaftar. Gunakan menu Ubah untuk memperbarui.`);
+    }
+
+    const [inserted] = await db
+      .insert(masterKondisiCatat)
+      .values({
+        kodeTmss: cleanKode,
+        nama: cleanNama,
+        kategori: input.kategori,
+        modeHitung: input.modeHitung,
+        isKendalaAkses: Boolean(input.isKendalaAkses),
+        triggerBacaMandiri: Boolean(input.triggerBacaMandiri),
+        deskripsi: input.deskripsi?.trim() || null,
+        aktif: input.aktif ?? true,
+      })
+      .returning();
+
+    await aturanAnomaliService.syncKondisiMeterMap(cleanKode, input.kategori);
+
+    return {
+      kodeTmss: inserted!.kodeTmss,
+      nama: inserted!.nama,
+      kategori: inserted!.kategori,
+      modeHitung: inserted!.modeHitung,
+      isKendalaAkses: inserted!.isKendalaAkses,
+      triggerBacaMandiri: inserted!.triggerBacaMandiri,
+      deskripsi: inserted!.deskripsi,
+      aktif: inserted!.aktif,
+    };
+  }
+
+  /**
+   * 4. Update status atau data kelainan & sinkronkan pemetaan anomali SSOT bila kategori berubah
    */
   async updateKelainan(
     kodeTmss: string,
     input: Partial<Omit<KelainanMasterItem, 'kodeTmss'>>
   ): Promise<{ success: boolean }> {
+    const cleanKode = decodeURIComponent(kodeTmss).trim();
+    const [existing] = await db
+      .select()
+      .from(masterKondisiCatat)
+      .where(eq(masterKondisiCatat.kodeTmss, cleanKode));
+
+    if (!existing) {
+      throw new Error(`Kode kelainan '${cleanKode}' tidak ditemukan.`);
+    }
+
+    const nextKategori = input.kategori ?? existing.kategori;
+
     await db
       .update(masterKondisiCatat)
       .set({
-        ...input,
+        ...(input.nama !== undefined ? { nama: input.nama.trim() } : {}),
+        ...(input.kategori !== undefined ? { kategori: input.kategori } : {}),
+        ...(input.modeHitung !== undefined ? { modeHitung: input.modeHitung } : {}),
+        ...(input.isKendalaAkses !== undefined ? { isKendalaAkses: input.isKendalaAkses } : {}),
+        ...(input.triggerBacaMandiri !== undefined
+          ? { triggerBacaMandiri: input.triggerBacaMandiri }
+          : {}),
+        ...(input.deskripsi !== undefined
+          ? { deskripsi: input.deskripsi?.trim() || null }
+          : {}),
+        ...(input.aktif !== undefined ? { aktif: input.aktif } : {}),
       })
-      .where(eq(masterKondisiCatat.kodeTmss, kodeTmss));
+      .where(eq(masterKondisiCatat.kodeTmss, cleanKode));
+
+    await aturanAnomaliService.syncKondisiMeterMap(cleanKode, nextKategori);
 
     return { success: true };
   }

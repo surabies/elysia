@@ -4,7 +4,7 @@
 // render sel — kolom, sortir, dan gaya baris hanya membaca hasilnya.
 import type { BarisVerifikasi } from "../types"
 import { tentukanHasilPembacaan } from "./hasil-pembacaan"
-import { LABEL_KONDISI_CATAT } from "./label-pencatatan"
+import { resolveLabelKondisi } from "./label-pencatatan"
 import { tahapDari, type Tahap } from "./warna-tahap"
 
 export interface BarisTurunan {
@@ -102,9 +102,7 @@ export function turunkanBaris(row: BarisVerifikasi): BarisTurunan {
     kodeAnomaliList: row.kodeAnomaliList ?? [],
 
     rute: row.pelanggan?.rute?.kode ?? null,
-    kondisiLabel: kondisiAktif
-      ? (LABEL_KONDISI_CATAT[kondisiAktif] ?? kondisiAktif)
-      : null,
+    kondisiLabel: resolveLabelKondisi(kondisiAktif),
     petugas: row.pencatat?.namaLapangan ?? null,
     tanggalCatat: row.tanggalCatat ?? null,
     waktuCatat: Number.isNaN(waktu) ? null : waktu,

@@ -1,27 +1,121 @@
-/// KondisiCatat — LENGKAP, seluruh 21 nilai enum (prisma/tagihan.prisma).
-/// Singkatan warisan ditampilkan sebagaimana adanya karena kepanjangannya
-/// tidak terdokumentasi di data sumber.
+/**
+ * Kamus Resmi 32 Kondisi Catat & Kode Kelainan Meter PDAM
+ * Diselaraskan dengan docs/kelainan/kode-kelainan.md & tabel master_kondisi_catat.
+ * Key internal dipertahankan stabil agar seluruh form, filter, dan validasi tetap sinkron.
+ */
 export const LABEL_KONDISI_CATAT: Record<string, string> = {
   NORMAL: "Normal",
-  TIDAK_DIPAKAI: "Tidak Dipakai",
-  RUMAH_KOSONG: "Rumah Kosong",
-  STAND_TEMPEL: "Stand Tempel",
-  STAND_KONSUMEN: "Stand Konsumen",
-  METER_RUSAK: "Meter Rusak",
-  METER_MATI_ADA_AIR: "Meter Mati",
-  METER_MUNDUR: "Meter Mundur",
-  METER_TERBALIK: "Meter Terbalik",
-  METER_DALAM_AIR: "Meter Dalam Air",
-  LOS_METER: "Los Meter",
-  BMK_BMB: "BMK/BMB",
-  TTB: "TTB",
-  MTA: "MTA",
-  TERHALANG: "Terhalang",
-  TIDAK_ADA_AIR: "Tidak ada air",
-  ADA_ANJING: "Ada Anjing",
+  REV_PENGADUAN: "REV.PENGADUAN",
+  TK: "TK",
   DK: "DK",
+  MTA: "MTA",
   MB: "MB",
-  MUDA_KEMBALI: "Muda Kembali",
-  REV_PENCATAT: "Revisi Pencatat",
-  DICABUT: "Dicabut",
+  TTB: "TTB",
+  BMK_BMB: "BMK/BMB",
+  METER_MATI_ADA_AIR: "METER MATI AIR ADA",
+  TIDAK_ADA_AIR: "TIDAK ADA AIR",
+  LOS_METER: "LOS METER",
+  METER_DALAM_AIR: "Meter Dalam Air",
+  MT_DIBOLAK_BALIK: "MT DIBOLAK BALIK",
+  DICABUT: "DI CABUT",
+  TERHALANG: "TERHALANG",
+  METER_MUNDUR: "METER MUNDUR",
+  PEMBULATAN: "PEMBULATAN",
+  TIDAK_DIPAKAI: "TIDAK DIPAKAI",
+  MTK: "MTK",
+  DIOPREK_DICOLOK_LIDI: "DIOPREK/DICOLOK LIDI",
+  STAN_CICILAN: "STAN CICILAN",
+  KELEBIHAN: "KELEBIHAN",
+  STAND_TEMPEL: "STAND TEMPEL",
+  METER_RUSAK: "METER RUSAK",
+  REV_PENCATAT: "REV.PENCATAT",
+  ADA_ANJING: "ADA ANJING",
+  RUMAH_KOSONG: "RMH/TANAH KSG",
+  METER_TERBALIK: "METER TERBALIK",
+  MUDA_KEMBALI: "MUDA KEMBALI",
+  JAUH: "JAUH",
+  STAND_KONSUMEN_PENGADUAN: "STAND-KONSUMEN/PENGADUAN",
+  STAND_KONSUMEN: "STAND-KONSUMEN",
 };
+
+const ALIAS_KONDISI_DB_KE_KEY: Record<string, string> = {
+  "-": "NORMAL",
+  "NORMAL": "NORMAL",
+  "NIHIL": "NORMAL",
+  "REV.PENGADUAN": "REV_PENGADUAN",
+  "REV_PENGADUAN": "REV_PENGADUAN",
+  "TK": "TK",
+  "DK": "DK",
+  "MTA": "MTA",
+  "MB": "MB",
+  "TTB": "TTB",
+  "BMK/BMB": "BMK_BMB",
+  "BMK_BMB": "BMK_BMB",
+  "METER MATI AIR ADA": "METER_MATI_ADA_AIR",
+  "MATI ADA AIR": "METER_MATI_ADA_AIR",
+  "METER_MATI_ADA_AIR": "METER_MATI_ADA_AIR",
+  "TIDAK ADA AIR": "TIDAK_ADA_AIR",
+  "TIDAK_ADA_AIR": "TIDAK_ADA_AIR",
+  "LOS METER": "LOS_METER",
+  "LOS_METER": "LOS_METER",
+  "METER DALAM AIR": "METER_DALAM_AIR",
+  "METER_DALAM_AIR": "METER_DALAM_AIR",
+  "MT DIBOLAK BALIK": "MT_DIBOLAK_BALIK",
+  "MT_DIBOLAK_BALIK": "MT_DIBOLAK_BALIK",
+  "DI CABUT": "DICABUT",
+  "DICABUT": "DICABUT",
+  "DI_CABUT": "DICABUT",
+  "TERHALANG": "TERHALANG",
+  "METER MUNDUR": "METER_MUNDUR",
+  "METER_MUNDUR": "METER_MUNDUR",
+  "PEMBULATAN": "PEMBULATAN",
+  "TIDAK DIPAKAI": "TIDAK_DIPAKAI",
+  "TIDAK_DIPAKAI": "TIDAK_DIPAKAI",
+  "MTK": "MTK",
+  "DIOPREK/DICOLOK LIDI": "DIOPREK_DICOLOK_LIDI",
+  "DIOPREK_DICOLOK_LIDI": "DIOPREK_DICOLOK_LIDI",
+  "STAN CICILAN": "STAN_CICILAN",
+  "STAN_CICILAN": "STAN_CICILAN",
+  "KELEBIHAN": "KELEBIHAN",
+  "STAND TEMPEL": "STAND_TEMPEL",
+  "STAND_TEMPEL": "STAND_TEMPEL",
+  "METER RUSAK": "METER_RUSAK",
+  "METER_RUSAK": "METER_RUSAK",
+  "REV.PENCATAT": "REV_PENCATAT",
+  "REV_PENCATAT": "REV_PENCATAT",
+  "REVISI PENCATAT": "REV_PENCATAT",
+  "ADA ANJING": "ADA_ANJING",
+  "ADA_ANJING": "ADA_ANJING",
+  "RMH/TANAH KSG": "RUMAH_KOSONG",
+  "RUMAH KOSONG": "RUMAH_KOSONG",
+  "RUMAH_KOSONG": "RUMAH_KOSONG",
+  "METER TERBALIK": "METER_TERBALIK",
+  "METER_TERBALIK": "METER_TERBALIK",
+  "MUDA KEMBALI": "MUDA_KEMBALI",
+  "MUDA_KEMBALI": "MUDA_KEMBALI",
+  "JAUH": "JAUH",
+  "STAND-KONSUMEN/PENGADUAN": "STAND_KONSUMEN_PENGADUAN",
+  "STAND_KONSUMEN_PENGADUAN": "STAND_KONSUMEN_PENGADUAN",
+  "STAND-KONSUMEN": "STAND_KONSUMEN",
+  "STAND KONSUMEN": "STAND_KONSUMEN",
+  "STAND_KONSUMEN": "STAND_KONSUMEN",
+};
+
+/**
+ * Mengonversi nilai mentah dari DB (mis. 'RMH/TANAH KSG', 'Normal', 'REV.PENCATAT')
+ * menjadi key kanonis di LABEL_KONDISI_CATAT.
+ */
+export function normalisasiKeyKondisi(raw: string | null | undefined): string {
+  const clean = (raw ?? "").trim();
+  if (!clean) return "";
+  return ALIAS_KONDISI_DB_KE_KEY[clean.toUpperCase()] ?? clean;
+}
+
+/**
+ * Mengambil label tampilan resmi untuk kondisi catat dari nilai key maupun teks DB.
+ */
+export function resolveLabelKondisi(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const key = normalisasiKeyKondisi(raw);
+  return LABEL_KONDISI_CATAT[key] ?? LABEL_KONDISI_CATAT[raw] ?? raw;
+}

@@ -211,6 +211,46 @@ export const masterRouter = new Elysia({ prefix: '/master' })
     return { success: true, data };
   })
 
+  // 9b. Tambah Kode Kelainan Baru
+  .post(
+    '/kelainan',
+    async ({ body, set }) => {
+      try {
+        const result = await masterExtendedService.tambahKelainan(body);
+        return { success: true, data: result };
+      } catch (err: any) {
+        set.status = 400;
+        return { success: false, error: err.message };
+      }
+    },
+    {
+      requireRole: MASTER_WRITE_ROLES,
+      body: t.Object({
+        kodeTmss: t.String({ minLength: 1, maxLength: 10 }),
+        nama: t.String({ minLength: 1, maxLength: 100 }),
+        kategori: t.Union([
+          t.Literal('TERBACA'),
+          t.Literal('KENDALA_AKSES'),
+          t.Literal('KENDALA_TEKNIS'),
+          t.Literal('KERUSAKAN_FISIK'),
+          t.Literal('PELANGGARAN'),
+        ]),
+        modeHitung: t.Union([
+          t.Literal('SELISIH_FISIK'),
+          t.Literal('TAKSASI_HISTORI'),
+          t.Literal('NOL'),
+          t.Literal('METER_BARU'),
+          t.Literal('MUDA_KEMBALI'),
+          t.Literal('KREDIT_TAKSASI'),
+        ]),
+        deskripsi: t.Optional(t.Nullable(t.String())),
+        aktif: t.Optional(t.Boolean()),
+        isKendalaAkses: t.Optional(t.Boolean()),
+        triggerBacaMandiri: t.Optional(t.Boolean()),
+      }),
+    }
+  )
+
   // 10. Update Kode Kelainan
   .put(
     '/kelainan/:kode',
@@ -224,10 +264,29 @@ export const masterRouter = new Elysia({ prefix: '/master' })
       }
     },
     {
+      requireRole: MASTER_WRITE_ROLES,
       params: t.Object({ kode: t.String() }),
       body: t.Object({
         nama: t.Optional(t.String()),
-        kategori: t.Optional(t.String()),
+        kategori: t.Optional(
+          t.Union([
+            t.Literal('TERBACA'),
+            t.Literal('KENDALA_AKSES'),
+            t.Literal('KENDALA_TEKNIS'),
+            t.Literal('KERUSAKAN_FISIK'),
+            t.Literal('PELANGGARAN'),
+          ])
+        ),
+        modeHitung: t.Optional(
+          t.Union([
+            t.Literal('SELISIH_FISIK'),
+            t.Literal('TAKSASI_HISTORI'),
+            t.Literal('NOL'),
+            t.Literal('METER_BARU'),
+            t.Literal('MUDA_KEMBALI'),
+            t.Literal('KREDIT_TAKSASI'),
+          ])
+        ),
         deskripsi: t.Optional(t.Nullable(t.String())),
         aktif: t.Optional(t.Boolean()),
         isKendalaAkses: t.Optional(t.Boolean()),

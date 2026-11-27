@@ -7,7 +7,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { LABEL_KONDISI_CATAT } from "../../lib/label-pencatatan";
+import {
+  LABEL_KONDISI_CATAT,
+  normalisasiKeyKondisi,
+} from "../../lib/label-pencatatan";
 import { ambilSatu, ApiError } from "@/lib/api-dashboard";
 import { PilihSatu } from "../DialogVerifikasi";
 import {
@@ -187,13 +190,8 @@ export function ModalKoreksi({
   onRata3?: () => void;
   bolehAturTagihan: boolean;
 }) {
-  const normalisasiKelainanAwal = (raw: string | null | undefined) => {
-    const t = (raw ?? "").trim();
-    if (t.toUpperCase() === "MUDA KEMBALI") return "MUDA_KEMBALI";
-    if (t.toUpperCase() === "REVISI PENCATAT" || t.toUpperCase() === "REV.PENCATAT")
-      return "REV_PENCATAT";
-    return t;
-  };
+  const normalisasiKelainanAwal = (raw: string | null | undefined) =>
+    normalisasiKeyKondisi(raw);
 
   const [standAkhir, setStandAkhir] = React.useState(
     String(data.standAkhirRevisi ?? data.standAkhir ?? ""),

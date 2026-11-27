@@ -186,14 +186,24 @@ export class CaterVerifikasiService {
           : null;
 
     const rawKondisi = (kondisiCatat || "Normal").trim();
+    const rawUpper = rawKondisi.toUpperCase();
+    const ALIAS_KONDISI: Record<string, string> = {
+      "RUMAH KOSONG": "RMH/TANAH KSG",
+      "RUMAH_KOSONG": "RMH/TANAH KSG",
+      "MATI ADA AIR": "METER MATI AIR ADA",
+      "METER_MATI_ADA_AIR": "METER MATI AIR ADA",
+      "DICABUT": "DI CABUT",
+      "DI_CABUT": "DI CABUT",
+    };
+    const lookupUpper = ALIAS_KONDISI[rawUpper] ?? rawUpper;
     const matchKondisi =
       kondisiRows.find(
         (k) =>
-          k.nama.trim().toUpperCase() === rawKondisi.toUpperCase() ||
-          k.kodeTmss.trim().toUpperCase() === rawKondisi.toUpperCase(),
-      ) || kondisiRows.find((k) => k.nama === "Normal");
+          k.nama.trim().toUpperCase() === lookupUpper ||
+          k.kodeTmss.trim().toUpperCase() === rawUpper,
+      ) || kondisiRows.find((k) => k.kodeTmss.trim() === "-" || k.nama === "Normal");
 
-    const kodeTmssFinal = matchKondisi?.kodeTmss ?? " ";
+    const kodeTmssFinal = matchKondisi?.kodeTmss ?? "-";
     const namaKondisiFinal = matchKondisi?.nama ?? rawKondisi;
     const modeHitung = (matchKondisi?.modeHitung ??
       "SELISIH_FISIK") as ModeHitungKondisiInput;
@@ -365,7 +375,10 @@ export class CaterVerifikasiService {
       }
     }
 
-    const isDicabut = kodeTmssFinal === "D" || namaKondisiFinal === "DICABUT";
+    const isDicabut =
+      kodeTmssFinal === "D" ||
+      namaKondisiFinal === "DI CABUT" ||
+      namaKondisiFinal === "DICABUT";
 
     // Evaluasi anomali terpusat (SSOT)
     const { rules, maps, versi } = await aturanAnomaliService.getCachedEngineContext();

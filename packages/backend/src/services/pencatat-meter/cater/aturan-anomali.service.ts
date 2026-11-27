@@ -70,6 +70,96 @@ class AturanAnomaliService {
   private cachedRules: RuleDefinition[] = [];
   private cachedMaps: KondisiMapItem[] = [];
 
+  invalidateCache(): void {
+    this.cachedVersi = null;
+    this.cachedRules = [];
+    this.cachedMaps = [];
+  }
+
+  /**
+   * Sinkronisasi otomatis pemetaan kode kelainan ke aturan anomali SSOT berdasarkan kategorinya
+   */
+  async syncKondisiMeterMap(kodeTmss: string, kategori: string): Promise<void> {
+    const cleanKode = kodeTmss.trim();
+    if (!cleanKode) return;
+
+    await db
+      .delete(aturanKondisiMeterMap)
+      .where(eq(aturanKondisiMeterMap.kodeTmss, cleanKode));
+
+    if (kategori === 'KERUSAKAN_FISIK' || kategori === 'PELANGGARAN') {
+      await db
+        .insert(aturanKondisiMeterMap)
+        .values({
+          id: `map-${cleanKode}-kerusakan`,
+          kodeTmss: cleanKode,
+          aturanAnomaliId: 'aturan-kerusakan-meter',
+          isBaselineNormal: false,
+          isPeriodeTidakAktif: true,
+          aktif: true,
+          keterangan: 'Pemetaan dinamis dari kategori master KERUSAKAN_FISIK / PELANGGARAN',
+        })
+        .onConflictDoNothing();
+    } else if (kategori === 'KENDALA_AKSES' || kategori === 'KENDALA_TEKNIS') {
+      await db
+        .insert(aturanKondisiMeterMap)
+        .values({
+          id: `map-${cleanKode}-kendala`,
+          kodeTmss: cleanKode,
+          aturanAnomaliId: 'aturan-kendala-akses',
+          isBaselineNormal: false,
+          isPeriodeTidakAktif: kategori === 'KENDALA_TEKNIS',
+          aktif: true,
+          keterangan: `Pemetaan dinamis dari kategori master ${kategori}`,
+        })
+        .onConflictDoNothing();
+
+      if (kategori === 'KENDALA_TEKNIS') {
+        await db
+          .insert(aturanKondisiMeterMap)
+          .values([
+            {
+              id: `map-${cleanKode}-mendadak`,
+              kodeTmss: cleanKode,
+              aturanAnomaliId: 'aturan-tidak-ada-air-mendadak',
+              isBaselineNormal: false,
+              isPeriodeTidakAktif: true,
+              aktif: true,
+              keterangan: 'Pemetaan kondisi air mendadak tidak mengalir',
+            },
+            {
+              id: `map-${cleanKode}-berkepanjangan`,
+              kodeTmss: cleanKode,
+              aturanAnomaliId: 'aturan-tidak-ada-air-berkepanjangan',
+              isBaselineNormal: false,
+              isPeriodeTidakAktif: true,
+              aktif: true,
+              keterangan: 'Pemetaan kondisi air tidak mengalir berkepanjangan',
+            },
+          ])
+          .onConflictDoNothing();
+      }
+    } else {
+      const isBaseline = cleanKode !== 'H';
+      await db
+        .insert(aturanKondisiMeterMap)
+        .values({
+          id: `map-${cleanKode}-baseline`,
+          kodeTmss: cleanKode,
+          aturanAnomaliId: 'aturan-deviasi-ring1',
+          isBaselineNormal: isBaseline,
+          isPeriodeTidakAktif: false,
+          aktif: true,
+          keterangan: isBaseline
+            ? 'Kondisi terbaca normal untuk baseline'
+            : 'Kondisi terbaca non-aktif (tarif minimum)',
+        })
+        .onConflictDoNothing();
+    }
+
+    this.invalidateCache();
+  }
+
   /**
    * Mengambil definisi aturan & pemetaan kondisi aktif dengan caching berbasis versi DB
    */
